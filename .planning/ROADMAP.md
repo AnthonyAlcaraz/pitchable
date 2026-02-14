@@ -24,7 +24,7 @@ Pitchable is a chat-driven AI presentation builder — like Lovable for slides. 
 ### Phase 1: Foundation
 **Goal**: Split-screen app shell running with auth, design constraints, and themes — the skeleton that everything else plugs into
 **Depends on**: Nothing (first phase)
-**Requirements**: FE-01..07, AUTH-01..04, DC-01..08, INF-01..07
+**Requirements**: FE-01, FE-02, FE-04..07, AUTH-01..04, DC-01..08, INF-01..07 (FE-03 deferred to Phase 8)
 **Plans:** 6 plans
 **Success Criteria** (what must be TRUE):
   1. User sees a split-screen layout: empty chat panel left, empty preview panel right
