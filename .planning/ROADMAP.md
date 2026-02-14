@@ -47,6 +47,7 @@ Plans:
 **Goal**: Users can upload their documents and the system indexes them for semantic retrieval. Frontend shows KB management UI.
 **Depends on**: Phase 1
 **Requirements**: KB-01..07
+**Plans:** 4 plans
 **Success Criteria** (what must be TRUE):
   1. User can upload PDF, DOCX, MD, and TXT files via the frontend and see them listed with status tracking
   2. User can paste raw text or a URL and it appears as a KB source
@@ -55,10 +56,10 @@ Plans:
   5. Document processing pipeline handles status transitions (UPLOADED -> PARSING -> EMBEDDING -> READY -> ERROR)
 
 Plans:
-- [ ] 02-01: File upload API, text/URL ingestion, document storage and status tracking
-- [ ] 02-02: Parsing pipeline (pdf-parse, mammoth, marked), heading-aware semantic chunking
-- [ ] 02-03: OpenAI embeddings, pgvector storage, RAG retrieval endpoint
-- [ ] 02-04: Frontend KB management page (upload, browse, search, delete, status indicators)
+- [ ] 02-01-PLAN.md — Prisma schema (Document + DocumentChunk), S3 service, file upload/text/URL endpoints, document CRUD
+- [ ] 02-02-PLAN.md — Parsing pipeline (pdf-parse, mammoth, marked, readability), heading-aware semantic chunking, BullMQ processor
+- [ ] 02-03-PLAN.md — OpenAI embeddings, pgvector storage, RAG retrieval endpoint, full pipeline integration
+- [ ] 02-04-PLAN.md — Frontend KB management page (upload, browse, search, delete, status indicators, DeckPilot rename)
 
 ### Phase 3: Chat + Generation Engine
 **Goal**: Users can chat with the AI co-pilot to generate, iterate, and refine slide decks with real-time preview updates — the core product experience
@@ -177,7 +178,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8
 | Phase | Plans Complete | Status | Completed |
 |-------|---------------|--------|-----------|
 | 1. Foundation | 6/6 | Complete | 2026-02-14 |
-| 2. Knowledge Base | 0/4 | Not started | - |
+| 2. Knowledge Base | 0/4 | Planning complete | - |
 | 3. Chat + Generation Engine | 0/10 | Not started | - |
 | 4. Core Export | 0/3 | Not started | - |
 | 5. Credit System + Billing | 0/3 | Not started | - |
