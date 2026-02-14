@@ -5,21 +5,26 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { join } from 'path';
-import { writeFile, mkdir } from 'fs/promises';
+import { mkdir } from 'fs/promises';
+import { readFile } from 'fs/promises';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { MarpExporterService } from './marp-exporter.service.js';
 import { RevealJsExporterService } from './revealjs-exporter.service.js';
+import { PptxGenJsExporterService } from './pptxgenjs-exporter.service.js';
+import { S3Service } from '../knowledge-base/storage/s3.service.js';
 import { ExportFormat, JobStatus } from '../../generated/prisma/enums.js';
 
 @Injectable()
 export class ExportsService {
   private readonly logger = new Logger(ExportsService.name);
-  private readonly exportDir = join(process.cwd(), 'exports');
+  private readonly tempDir = join(process.cwd(), 'exports');
 
   constructor(
     private readonly prisma: PrismaService,
     private readonly marpExporter: MarpExporterService,
     private readonly revealJsExporter: RevealJsExporterService,
+    private readonly pptxGenJsExporter: PptxGenJsExporterService,
+    private readonly s3: S3Service,
   ) {}
 
   async createExportJob(
@@ -92,43 +97,49 @@ export class ExportsService {
         );
       }
 
-      const jobDir = join(this.exportDir, jobId);
-      await mkdir(jobDir, { recursive: true });
-
-      let fileUrl: string;
+      let buffer: Buffer;
+      let contentType: string;
+      let filename: string;
 
       switch (job.format) {
         case ExportFormat.PPTX: {
-          const outputPath = join(jobDir, `${presentation.title}.pptx`);
-          const markdown = this.marpExporter.generateMarpMarkdown(
+          buffer = await this.pptxGenJsExporter.exportToPptx(
             presentation,
             slides,
             theme,
           );
-          fileUrl = await this.marpExporter.exportToPptx(markdown, outputPath);
+          contentType =
+            'application/vnd.openxmlformats-officedocument.presentationml.presentation';
+          filename = `${presentation.title}.pptx`;
           break;
         }
 
         case ExportFormat.PDF: {
+          // Marp CLI requires filesystem — write temp, read back
+          const jobDir = join(this.tempDir, jobId);
+          await mkdir(jobDir, { recursive: true });
           const outputPath = join(jobDir, `${presentation.title}.pdf`);
           const markdown = this.marpExporter.generateMarpMarkdown(
             presentation,
             slides,
             theme,
           );
-          fileUrl = await this.marpExporter.exportToPdf(markdown, outputPath);
+          await this.marpExporter.exportToPdf(markdown, outputPath);
+          buffer = await readFile(outputPath);
+          contentType = 'application/pdf';
+          filename = `${presentation.title}.pdf`;
           break;
         }
 
         case ExportFormat.REVEAL_JS: {
-          const outputPath = join(jobDir, `${presentation.title}.html`);
           const html = this.revealJsExporter.generateRevealHtml(
             presentation,
             slides,
             theme,
           );
-          await writeFile(outputPath, html, 'utf-8');
-          fileUrl = outputPath;
+          buffer = Buffer.from(html, 'utf-8');
+          contentType = 'text/html';
+          filename = `${presentation.title}.html`;
           break;
         }
 
@@ -136,17 +147,21 @@ export class ExportsService {
           throw new Error(`Unsupported export format: ${job.format}`);
       }
 
+      // Upload to S3
+      const s3Key = `exports/${jobId}/${filename}`;
+      await this.s3.upload(s3Key, buffer, contentType);
+
       await this.prisma.exportJob.update({
         where: { id: jobId },
         data: {
           status: JobStatus.COMPLETED,
-          fileUrl,
+          fileUrl: s3Key,
           completedAt: new Date(),
         },
       });
 
       this.logger.log(
-        `Export job ${jobId} completed: ${job.format} -> ${fileUrl}`,
+        `Export job ${jobId} completed: ${job.format} -> s3://${s3Key}`,
       );
     } catch (error: unknown) {
       const message =
@@ -164,6 +179,39 @@ export class ExportsService {
       this.logger.error(`Export job ${jobId} failed: ${message}`);
       throw error;
     }
+  }
+
+  async getSignedDownloadUrl(
+    jobId: string,
+  ): Promise<{ url: string; filename: string }> {
+    const job = await this.prisma.exportJob.findUnique({
+      where: { id: jobId },
+      include: { presentation: { select: { title: true } } },
+    });
+
+    if (!job) {
+      throw new NotFoundException(`Export job "${jobId}" not found`);
+    }
+
+    if (job.status !== JobStatus.COMPLETED || !job.fileUrl) {
+      throw new NotFoundException(
+        `Export job "${jobId}" is not completed or has no file`,
+      );
+    }
+
+    const url = await this.s3.getSignedDownloadUrl(job.fileUrl, 3600);
+
+    const extensionMap: Record<string, string> = {
+      [ExportFormat.PPTX]: 'pptx',
+      [ExportFormat.PDF]: 'pdf',
+      [ExportFormat.REVEAL_JS]: 'html',
+      [ExportFormat.GOOGLE_SLIDES]: 'json',
+    };
+    const ext = extensionMap[job.format] ?? 'bin';
+    const title = job.presentation?.title ?? 'presentation';
+    const filename = `${title}.${ext}`;
+
+    return { url, filename };
   }
 
   async getExportStatus(jobId: string) {

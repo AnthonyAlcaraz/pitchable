@@ -123,6 +123,16 @@ export const useChatStore = create<ChatState>((set, get) => ({
             set((state) => ({
               pendingValidations: [...state.pendingValidations, validation],
             }));
+          } else if (metadata?.action === 'export_ready') {
+            const downloadUrl = metadata.downloadUrl as string;
+            if (downloadUrl) {
+              const a = document.createElement('a');
+              a.href = downloadUrl;
+              a.download = '';
+              document.body.appendChild(a);
+              a.click();
+              document.body.removeChild(a);
+            }
           }
         } else if (event.type === 'error') {
           set({ error: event.content, isStreaming: false });

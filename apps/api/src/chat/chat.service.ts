@@ -6,6 +6,8 @@ import { GenerationService } from './generation.service.js';
 import { IntentClassifierService } from './intent-classifier.service.js';
 import { SlideModifierService } from './slide-modifier.service.js';
 import { ValidationGateService } from './validation-gate.service.js';
+import { ExportsService } from '../exports/exports.service.js';
+import { ExportFormat } from '../../generated/prisma/enums.js';
 import type { GenerationConfig } from './generation.service.js';
 import {
   parseSlashCommand,
@@ -31,6 +33,7 @@ export class ChatService {
     private readonly intentClassifier: IntentClassifierService,
     private readonly slideModifier: SlideModifierService,
     private readonly validationGate: ValidationGateService,
+    private readonly exportsService: ExportsService,
   ) {}
 
   async *handleMessage(
@@ -262,13 +265,51 @@ export class ChatService {
         break;
       }
       case 'export': {
-        const format = args[0] || 'pptx';
-        yield {
-          type: 'action',
-          content: `Starting export as ${format.toUpperCase()}...`,
-          metadata: { action: 'export', format },
+        const formatArg = (args[0] || 'pptx').toUpperCase();
+        const formatMap: Record<string, ExportFormat> = {
+          PPTX: ExportFormat.PPTX,
+          PDF: ExportFormat.PDF,
+          HTML: ExportFormat.REVEAL_JS,
+          REVEALJS: ExportFormat.REVEAL_JS,
         };
-        yield { type: 'done', content: '' };
+        const format = formatMap[formatArg];
+
+        if (!format) {
+          const msg = `Unknown format "${formatArg}". Supported: pptx, pdf, html`;
+          yield { type: 'token', content: msg };
+          yield { type: 'done', content: '' };
+          await this.persistAssistantMessage(presentationId, msg);
+          break;
+        }
+
+        yield { type: 'token', content: `Starting ${formatArg} export...\n\n` };
+
+        try {
+          const job = await this.exportsService.createExportJob(presentationId, format);
+          await this.exportsService.processExport(job.id);
+          const { url } = await this.exportsService.getSignedDownloadUrl(job.id);
+
+          const msg = `Export complete! Your ${formatArg} file is ready.`;
+          yield { type: 'token', content: msg };
+          yield {
+            type: 'action',
+            content: msg,
+            metadata: {
+              action: 'export_ready',
+              format: formatArg,
+              jobId: job.id,
+              downloadUrl: url,
+            },
+          };
+          yield { type: 'done', content: '' };
+          await this.persistAssistantMessage(presentationId, msg);
+        } catch (error: unknown) {
+          const errMsg = error instanceof Error ? error.message : 'Export failed';
+          const msg = `Export failed: ${errMsg}`;
+          yield { type: 'token', content: msg };
+          yield { type: 'done', content: '' };
+          await this.persistAssistantMessage(presentationId, msg);
+        }
         break;
       }
       case 'auto-approve': {

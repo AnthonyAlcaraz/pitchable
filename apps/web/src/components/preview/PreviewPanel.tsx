@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Monitor } from 'lucide-react';
 import { usePresentationStore } from '@/stores/presentation.store';
+import { useChatStore } from '@/stores/chat.store';
 import { useSlideUpdates } from '@/hooks/useSlideUpdates';
 import { ThumbnailSidebar } from './ThumbnailSidebar';
 import { SlideHeader } from './SlideHeader';
@@ -62,6 +63,14 @@ export function PreviewPanel({ presentationId }: PreviewPanelProps) {
     setIsFullscreen(false);
   }, []);
 
+  const sendMessage = useChatStore((s) => s.sendMessage);
+
+  const handleExport = useCallback((format: string) => {
+    if (presentationId) {
+      sendMessage(presentationId, `/export ${format}`);
+    }
+  }, [presentationId, sendMessage]);
+
   const slides = presentation?.slides ?? [];
   const currentSlide = slides[currentSlideIndex];
 
@@ -112,6 +121,7 @@ export function PreviewPanel({ presentationId }: PreviewPanelProps) {
           onPrevious={previousSlide}
           onNext={nextSlide}
           onFullscreen={handleFullscreen}
+          onExport={handleExport}
         />
 
         {/* Main content area */}

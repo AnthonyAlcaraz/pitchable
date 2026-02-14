@@ -12,9 +12,10 @@ import { ValidationGateService } from './validation-gate.service.js';
 import { PrismaModule } from '../prisma/prisma.module.js';
 import { KnowledgeBaseModule } from '../knowledge-base/knowledge-base.module.js';
 import { ConstraintsModule } from '../constraints/constraints.module.js';
+import { ExportsModule } from '../exports/exports.module.js';
 
 @Module({
-  imports: [PrismaModule, KnowledgeBaseModule, ConstraintsModule],
+  imports: [PrismaModule, KnowledgeBaseModule, ConstraintsModule, ExportsModule],
   controllers: [ChatController],
   providers: [
     ChatService,
