@@ -51,7 +51,7 @@
 - [ ] **IT-06**: User can regenerate a single slide's image
 
 ### Export (EX)
-- [ ] **EX-01**: User can export as editable PPTX (via PptxGenJS — NOT Marp, which produces non-editable images)
+- [ ] **EX-01**: User can export as editable PPTX (via PptxGenJS -- NOT Marp, which produces non-editable images)
 - [ ] **EX-02**: User can export as PDF (via Marp CLI)
 - [ ] **EX-03**: User can export as Reveal.js HTML (single self-contained file)
 - [ ] **EX-04**: User can choose export format at generation time
@@ -108,29 +108,85 @@
 | Custom template designer | Predefined themes sufficient for v1 |
 | AI voiceover/narration | Generation focus, not delivery |
 | Opaque credit deductions | Anti-pattern from Presentations.AI; always show cost before generation |
-| Auto-generation without outline approval | "AI Presentation Paradox" — outline-first is mandatory |
+| Auto-generation without outline approval | "AI Presentation Paradox" -- outline-first is mandatory |
 | Native mobile app | Responsive web sufficient for v1 |
 
 ## Traceability
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| AUTH-01..04 | Phase 1: Foundation | Pending |
-| DC-01..08 | Phase 1: Foundation | Pending |
-| INF-01..07 | Phase 1: Foundation | Pending |
-| KB-01..07 | Phase 2: Knowledge Base | Pending |
-| PG-01..10 | Phase 3: Presentation Engine | Pending |
-| IT-01..06 | Phase 3: Presentation Engine | Pending |
-| EX-01..06 | Phase 4: Export Pipeline | Pending |
-| CB-01..09 | Phase 5: Credits & Billing | Pending |
-| IG-01..07 | Phase 6: Image Generation | Pending |
+| AUTH-01 | Phase 1 | Pending |
+| AUTH-02 | Phase 1 | Pending |
+| AUTH-03 | Phase 1 | Pending |
+| AUTH-04 | Phase 1 | Pending |
+| DC-01 | Phase 1 | Pending |
+| DC-02 | Phase 1 | Pending |
+| DC-03 | Phase 1 | Pending |
+| DC-04 | Phase 1 | Pending |
+| DC-05 | Phase 1 | Pending |
+| DC-06 | Phase 1 | Pending |
+| DC-07 | Phase 1 | Pending |
+| DC-08 | Phase 1 | Pending |
+| INF-01 | Phase 1 | Pending |
+| INF-02 | Phase 1 | Pending |
+| INF-03 | Phase 1 | Pending |
+| INF-04 | Phase 1 | Pending |
+| INF-05 | Phase 1 | Pending |
+| INF-06 | Phase 1 | Pending |
+| INF-07 | Phase 1 | Pending |
+| KB-01 | Phase 2 | Pending |
+| KB-02 | Phase 2 | Pending |
+| KB-03 | Phase 2 | Pending |
+| KB-04 | Phase 2 | Pending |
+| KB-05 | Phase 2 | Pending |
+| KB-06 | Phase 2 | Pending |
+| KB-07 | Phase 2 | Pending |
+| PG-01 | Phase 3 | Pending |
+| PG-02 | Phase 3 | Pending |
+| PG-03 | Phase 3 | Pending |
+| PG-04 | Phase 3 | Pending |
+| PG-05 | Phase 3 | Pending |
+| PG-06 | Phase 3 | Pending |
+| PG-07 | Phase 3 | Pending |
+| PG-08 | Phase 3 | Pending |
+| PG-09 | Phase 3 | Pending |
+| PG-10 | Phase 3 | Pending |
+| IT-01 | Phase 3 | Pending |
+| IT-02 | Phase 3 | Pending |
+| IT-03 | Phase 3 | Pending |
+| IT-04 | Phase 3 | Pending |
+| IT-05 | Phase 3 | Pending |
+| IT-06 | Phase 3 | Pending |
+| EX-01 | Phase 4 | Pending |
+| EX-02 | Phase 4 | Pending |
+| EX-03 | Phase 7 | Pending |
+| EX-04 | Phase 4 | Pending |
+| EX-05 | Phase 4 | Pending |
+| EX-06 | Phase 7 | Pending |
+| IG-01 | Phase 6 | Pending |
+| IG-02 | Phase 6 | Pending |
+| IG-03 | Phase 6 | Pending |
+| IG-04 | Phase 6 | Pending |
+| IG-05 | Phase 6 | Pending |
+| IG-06 | Phase 6 | Pending |
+| IG-07 | Phase 6 | Pending |
+| CB-01 | Phase 5 | Pending |
+| CB-02 | Phase 5 | Pending |
+| CB-03 | Phase 5 | Pending |
+| CB-04 | Phase 5 | Pending |
+| CB-05 | Phase 5 | Pending |
+| CB-06 | Phase 5 | Pending |
+| CB-07 | Phase 5 | Pending |
+| CB-08 | Phase 5 | Pending |
+| CB-09 | Phase 5 | Pending |
 
 **Coverage:**
 - v1 requirements: 56 total across 9 categories
-- All mapped to 6 phases
+- Mapped to phases: 56
+- Unmapped: 0
 - 8 items deferred to v2
 - 8 explicit exclusions
 
 ---
 *Requirements defined: 2026-02-14*
-*Last updated: 2026-02-14 — enriched from research findings*
+*Last updated: 2026-02-14 -- all 56 requirements mapped to 7 phases*
