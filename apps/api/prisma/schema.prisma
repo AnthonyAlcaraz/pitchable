@@ -11,6 +11,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 // ─── Enums ───────────────────────────────────────────────────────────────────
@@ -78,15 +79,16 @@ enum JobStatus {
 // ─── Models ──────────────────────────────────────────────────────────────────
 
 model User {
-  id            String   @id @default(uuid()) @db.Uuid
-  email         String   @unique
-  passwordHash  String
-  name          String
-  role          UserRole @default(USER)
-  creditBalance Int      @default(0)
-  tier          UserTier @default(FREE)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id               String   @id @default(uuid()) @db.Uuid
+  email            String   @unique
+  passwordHash     String
+  name             String
+  role             UserRole @default(USER)
+  creditBalance    Int      @default(0)
+  tier             UserTier @default(FREE)
+  refreshTokenHash String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
   presentations      Presentation[]
   creditTransactions CreditTransaction[]
