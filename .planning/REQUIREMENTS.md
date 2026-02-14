@@ -68,6 +68,8 @@
 - [ ] **PG-08**: User can select a theme at generation time
 - [ ] **PG-09**: User can select presentation type (standard, vc-pitch, technical, executive)
 - [ ] **PG-10**: Presentation CRUD (list, view, rename, duplicate, delete)
+- [ ] **PG-11**: Content Reviewer LLM agent validates each slide before rendering — enforces density (max 6 bullets, max 80 words, 1 concept/slide), auto-splits overloaded slides, returns structured JSON verdict (PASS/NEEDS_SPLIT)
+- [ ] **PG-12**: Presentation Feedback Log — persistent JSON store tracking design violations, user corrections, and codified quality rules. System learns from past generations to improve future output.
 
 ### Iteration (IT)
 - [ ] **IT-01**: User can edit slide content after generation (title, body, speaker notes)
@@ -93,6 +95,9 @@
 - [ ] **IG-05**: Images processed asynchronously via BullMQ queue with progress tracking
 - [ ] **IG-06**: System maintains style consistency across images in a deck (seed/style params)
 - [ ] **IG-07**: Generated images stored in S3-compatible storage
+- [ ] **IG-08**: PaperBanana 5-agent pipeline orchestrates image generation: Retriever (reference selection) → Planner (figure layout) → Stylist (deck-wide aesthetic) → Visualizer (generation) → Critic (scoring)
+- [ ] **IG-09**: VLM Critic agent scores each image on 4 dimensions: Faithfulness (>=8/10), Readability (>=8/10), Conciseness (>=7/10), Aesthetics (>=7/10). Images below threshold auto-regenerate (max 3 rounds)
+- [ ] **IG-10**: Critic uses a Vision Language Model (GPT-4o or Claude) to analyze generated images — not heuristic scoring
 
 ### Credits & Billing (CB)
 - [ ] **CB-01**: Each user has a credit balance tracked in the database
@@ -200,6 +205,11 @@
 | IG-05 | Phase 6 | Pending |
 | IG-06 | Phase 6 | Pending |
 | IG-07 | Phase 6 | Pending |
+| IG-08 | Phase 6 | Pending |
+| IG-09 | Phase 6 | Pending |
+| IG-10 | Phase 6 | Pending |
+| PG-11 | Phase 3 | Pending |
+| PG-12 | Phase 3 | Pending |
 | CB-01 | Phase 5 | Pending |
 | CB-02 | Phase 5 | Pending |
 | CB-03 | Phase 5 | Pending |
@@ -211,12 +221,12 @@
 | CB-09 | Phase 5 | Pending |
 
 **Coverage:**
-- v1 requirements: 77 total across 12 categories (FE, CH, LP, AUTH, KB, DC, PG, IT, EX, IG, CB, INF)
-- Mapped to phases: 77
+- v1 requirements: 82 total across 12 categories (FE, CH, LP, AUTH, KB, DC, PG, IT, EX, IG, CB, INF)
+- Mapped to phases: 82
 - Unmapped: 0
 - 8 items deferred to v2
 - 8 explicit exclusions
 
 ---
 *Requirements defined: 2026-02-14*
-*Last updated: 2026-02-14 -- added FE (7), CH (8), LP (6) = 21 new frontend requirements. Renamed to Pitchable.*
+*Last updated: 2026-02-14 -- added Z4-proven capabilities: PaperBanana pipeline (IG-08..10), Content Reviewer Agent (PG-11), Feedback Log (PG-12). Total: 82 requirements.*

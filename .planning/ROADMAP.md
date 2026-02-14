@@ -63,7 +63,7 @@ Plans:
 ### Phase 3: Chat + Generation Engine
 **Goal**: Users can chat with the AI co-pilot to generate, iterate, and refine slide decks with real-time preview updates — the core product experience
 **Depends on**: Phase 1, Phase 2
-**Requirements**: CH-01..08, LP-01..06, PG-01..10, IT-01..06
+**Requirements**: CH-01..08, LP-01..06, PG-01..12, IT-01..06
 **Success Criteria** (what must be TRUE):
   1. User types "Create a VC pitch deck about AI agents" in chat and sees an outline appear in the preview panel
   2. User approves the outline and sees slides generate one-by-one in the live preview
@@ -74,6 +74,8 @@ Plans:
   7. AI responses stream token-by-token in the chat panel
   8. All generated slides pass design constraint validation (zero violations reach the user)
   9. Credit cost is shown in chat before any credit-consuming action
+  10. Content Reviewer LLM agent runs on every generated slide, auto-splitting overloaded slides
+  11. Feedback Log records design violations and user corrections for continuous improvement
 
 Plans:
 - [ ] 03-01: Socket.io setup for real-time communication between frontend and backend
@@ -83,6 +85,8 @@ Plans:
 - [ ] 03-05: Live preview component (slide rendering, thumbnail sidebar, click-to-edit)
 - [ ] 03-06: Chat-driven iteration (modify slides, change theme, add/remove slides via chat commands)
 - [ ] 03-07: Presentation CRUD (list, view, rename, duplicate, delete) + dashboard integration
+- [ ] 03-08: Content Reviewer LLM agent — Haiku-class model validates each slide (density, concept count, hierarchy), returns PASS/NEEDS_SPLIT with restructuring instructions
+- [ ] 03-09: Presentation Feedback Log — persistent store for design violations, user corrections, and codified rules. Feeds back into generation prompts for continuous improvement
 
 ### Phase 4: Core Export
 **Goal**: Users can download their generated deck as a PDF or editable PPTX file, triggered from chat or UI button
@@ -116,20 +120,24 @@ Plans:
 - [ ] 05-03: Frontend billing page, credit display in dashboard + chat integration
 
 ### Phase 6: Image Generation
-**Goal**: Users can request AI-generated images through chat with configurable tiers and async processing
+**Goal**: Users can request AI-generated images through chat with the PaperBanana 5-agent pipeline (proven in Z4 skill) — Retriever → Planner → Stylist → Visualizer → Critic with VLM-based quality scoring and auto-regeneration
 **Depends on**: Phase 3, Phase 4, Phase 5
-**Requirements**: IG-01..07
+**Requirements**: IG-01..10
 **Success Criteria** (what must be TRUE):
   1. User types "/images 6" in chat and the system generates 6 images with progress shown in chat
   2. Images generate asynchronously with live progress in both chat and preview
-  3. Generated images maintain visual consistency across the deck
+  3. Generated images maintain visual consistency across the deck (Stylist agent enforces deck-wide aesthetic)
   4. No text appears in generated images (enforced "no text" in every prompt)
   5. User can type "regenerate image on slide 3" to get a new image for one slide
+  6. VLM Critic scores every image on Faithfulness/Readability/Conciseness/Aesthetics — images below threshold auto-regenerate (max 3 rounds)
+  7. Critic uses a real Vision Language Model (GPT-4o or Claude), not heuristic scoring
 
 Plans:
-- [ ] 06-01: BullMQ queue setup, Replicate client (FLUX.1 schnell), prompt engineering per slide type
-- [ ] 06-02: S3 storage, credit deduction per image, progress tracking via Socket.io
-- [ ] 06-03: Image embedding in export formats, single-image regeneration, chat commands
+- [ ] 06-01: BullMQ queue setup, Replicate client (FLUX.1 schnell), 6 slide-type prompt templates (title, problem, solution, architecture, metrics, CTA)
+- [ ] 06-02: PaperBanana 5-agent pipeline — Retriever (reference style selection), Planner (figure layout from slide content), Stylist (deck-wide color/typography/shape guidelines)
+- [ ] 06-03: Visualizer + VLM Critic loop — generate image, score with vision model on 4 dimensions (>=8/10 primary, >=7/10 secondary), auto-regenerate up to 3 rounds if below threshold
+- [ ] 06-04: S3 storage, credit deduction per image (including regeneration rounds), progress tracking via Socket.io
+- [ ] 06-05: Image embedding in export formats, single-image regeneration, chat commands (/images, regenerate)
 
 ### Phase 7: Web Sharing + Polish
 **Goal**: Users can export decks as self-contained HTML and share them via web links
@@ -167,9 +175,9 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8
 |-------|---------------|--------|-----------|
 | 1. Foundation | 0/6 | Planning complete | - |
 | 2. Knowledge Base | 0/4 | Not started | - |
-| 3. Chat + Generation Engine | 0/7 | Not started | - |
+| 3. Chat + Generation Engine | 0/9 | Not started | - |
 | 4. Core Export | 0/3 | Not started | - |
 | 5. Credit System + Billing | 0/3 | Not started | - |
-| 6. Image Generation | 0/3 | Not started | - |
+| 6. Image Generation | 0/5 | Not started | - |
 | 7. Web Sharing + Polish | 0/2 | Not started | - |
 | 8. Landing Page + Onboarding | 0/2 | Not started | - |
