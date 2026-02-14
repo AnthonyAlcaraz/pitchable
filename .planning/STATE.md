@@ -11,28 +11,28 @@ See: .planning/PROJECT.md (updated 2026-02-14)
 ## Current Position
 
 Phase: 1 of 8 (Foundation)
-Plan: 0 of 6 in current phase (PLAN.md written, ready to execute)
-Status: Ready to execute
-Last activity: 2026-02-14 -- Phase 1 plan created (6 sub-plans)
+Plan: 5 of 6 complete (01-06 in progress)
+Status: Executing Plan 01-06 (Frontend Shell)
+Last activity: 2026-02-14 -- Plans 01-01 through 01-05 complete
 
-Progress: [░░░░░░░░░░░░░░░░░░░░] 0%
+Progress: [████████████████░░░░] 83%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 0
-- Average duration: -
-- Total execution time: 0 hours
+- Total plans completed: 5
+- Average duration: ~5 min/plan
+- Total execution time: ~25 min
 
 **By Phase:**
 
-| Phase | Plans | Total | Avg/Plan |
-|-------|-------|-------|----------|
-| - | - | - | - |
+| Phase | Plans | Completed | In Progress |
+|-------|-------|-----------|-------------|
+| 01-Foundation | 6 | 5 | 1 (01-06) |
 
 **Recent Trend:**
-- Last 5 plans: none
-- Trend: N/A
+- Plans 01-01 through 01-05: All passed type-check
+- Trend: Steady
 
 *Updated after each plan completion*
 
@@ -70,16 +70,21 @@ Phase 1 extends this codebase rather than rewriting it.
 
 None yet.
 
+### Completed Plans
+
+- **01-01**: Turborepo monorepo (apps/api, apps/web workspaces)
+- **01-02**: Docker Compose (pgvector, Redis, MinIO), Swagger, throttling, health checks, Prisma 7 adapter, env validation
+- **01-03**: argon2 auth, dual JWT (access 15m + refresh 7d), forgot/reset password, removed LocalStrategy
+- **01-04**: Layout validator (DC-06), wired into unified validator + constraints controller with POST /constraints/validate
+- **01-05**: Fixed all 5 theme font pairings (geometric + humanist), startup validation, Swagger docs on themes
+
 ### Blockers/Concerns
 
-- Existing auth uses bcrypt -- must migrate to argon2 (Plan 01-03)
-- Existing constraints have only 4 banned color pairs -- must extend to 8 (Plan 01-04)
-- Existing density validator allows max 5 bullets -- requirement is max 6 (Plan 01-04)
-- Existing typography validator allows 18pt body min -- requirement is 24pt (Plan 01-04)
-- No frontend exists -- must build from scratch (Plan 01-06)
+- Plan 01-06 (frontend) in progress — the last plan in Phase 1
+- LocalStrategy and LocalAuthGuard files still exist but are unused (dead code)
 
 ## Session Continuity
 
 Last session: 2026-02-14
-Stopped at: Phase 1 plan written, ready to execute Plan 01-01 (Monorepo Setup)
-Resume file: .planning/plans/01-PLAN.md
+Stopped at: Executing Plan 01-06 (Frontend Shell)
+Resume: Complete 01-06, then verify Phase 1 and move to Phase 2
