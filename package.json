@@ -16,7 +16,7 @@
     "onlyBuiltDependencies": [
       "@nestjs/core",
       "@prisma/engines",
-      "bcrypt",
+      "argon2",
       "esbuild",
       "msgpackr-extract",
       "prisma",
