@@ -18,6 +18,9 @@ A SaaS platform that transforms knowledge bases into professional presentations 
 
 - [ ] Users can sign up, log in, and manage their account
 - [ ] Users can ingest knowledge base content (upload files: PDF, MD, DOCX; paste text/URLs)
+- [ ] Knowledge base is indexed with vector embeddings for semantic retrieval
+- [ ] Users can browse and manage their knowledge base documents
+- [ ] When generating a deck, system retrieves relevant KB content via RAG
 - [ ] Users can choose output format (PPTX, Google Slides, Reveal.js, PDF)
 - [ ] Users can choose number of AI-generated images per deck (0, 3, 6, 12)
 - [ ] System enforces design constraints (forbidden color combos, typography rules, density limits)
@@ -44,12 +47,12 @@ A SaaS platform that transforms knowledge bases into professional presentations 
 - **Existing code**: `~/repos/z-commands/scripts/z4_orchestrator.py`, `z4_google_slides.py`, `z4_image_generator.py` — can inform backend design but SaaS will be rewritten as proper service.
 - **Design research**: Bad color combos (red+green, red+blue, orange+blue saturated, neon combos), max 2-3 fonts per deck, 1 idea per slide, max 5 bullets, min 24pt body text.
 - **Market**: Prezent.ai ($16-60/mo), Beautiful.ai ($15/mo), Presentations.AI ($8-15/mo), GenPPT ($198/yr). Credit-based image generation is standard billing model.
-- **Knowledge base ingestion**: Core differentiator. Users upload their documents, system indexes them, extracts relevant content for presentation topics. Not just "AI generates slides from a prompt" — it's "AI generates slides from YOUR knowledge."
+- **Knowledge base ingestion**: Core differentiator. Users upload their documents, system indexes them with vector embeddings, extracts relevant content for presentation topics via RAG. Not just "AI generates slides from a prompt" — it's "AI generates slides from YOUR knowledge."
 
 ## Constraints
 
 - **Tech stack**: Node.js + NestJS (TypeScript) for API, Python workers for image generation — matches existing JS ecosystem and Python Z4 scripts
-- **Database**: PostgreSQL (users, billing, presentations) + Redis (job queues, caching)
+- **Database**: PostgreSQL (users, billing, presentations) + Redis (job queues, caching) + pgvector or Chroma (KB embeddings)
 - **Queue**: BullMQ for async image generation jobs
 - **Auth**: JWT + bcrypt, OAuth 2.0 later
 - **Image generation**: Replicate API (Nano Banana Pro) — proven, good text rendering for schema diagrams
@@ -66,6 +69,7 @@ A SaaS platform that transforms knowledge bases into professional presentations 
 | Design constraint engine as first-class module | Prevents ugly output — the #1 reason users abandon AI presentation tools | — Pending |
 | Nano Banana Pro over DALL-E/Midjourney | Best text rendering for schema diagrams, proven in Z4 | — Pending |
 | Marp as primary PPTX engine | Open source, markdown-native, CLI-friendly, proven in Z4 | — Pending |
+| pgvector for KB embeddings | Stays in PostgreSQL ecosystem, no separate vector DB to manage | — Pending |
 
 ---
-*Last updated: 2026-02-14 after initialization*
+*Last updated: 2026-02-14 after initialization — added KB ingestion + RAG requirements*
