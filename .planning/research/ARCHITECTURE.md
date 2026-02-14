@@ -1,862 +1,639 @@
-# Architecture Patterns
+# Architecture Research
 
-**Domain:** AI Presentation SaaS (document-to-slides pipeline with image generation)
+**Domain:** AI Presentation SaaS (Knowledge Base to Slide Deck)
 **Researched:** 2026-02-14
-**Confidence:** HIGH (NestJS patterns, BullMQ integration, Marp CLI API verified against official docs)
+**Confidence:** HIGH
 
-## Recommended Architecture
+## Standard Architecture
 
-SlideForge is a modular monolith built on NestJS, organized into domain-specific modules that communicate through well-defined service interfaces and an async job queue. The system follows a pipeline architecture: documents flow through parsing, chunking, embedding, retrieval, slide structuring, image generation, and export stages. Each stage is an independent NestJS module with clear input/output contracts.
-
-```
-                                  +------------------+
-                                  |   API Gateway    |
-                                  | (NestJS + Guards)|
-                                  +--------+---------+
-                                           |
-                     +---------------------+---------------------+
-                     |                     |                     |
-              +------+------+    +--------+--------+    +-------+-------+
-              |  Auth Module |    | Presentation    |    |  Credit       |
-              |  (JWT/Bcrypt)|    | Module          |    |  Module       |
-              +--------------+    +--------+--------+    +-------+-------+
-                                           |                     |
-                     +---------------------+---------------------+
-                     |                     |                     |
-              +------+------+    +--------+--------+    +-------+-------+
-              |  Knowledge  |    | Design          |    |  Image Gen    |
-              |  Base Module|    | Constraint      |    |  Module       |
-              |  (RAG)      |    | Engine          |    |  (BullMQ)     |
-              +--------------+    +-----------------+    +-------+-------+
-                     |                                           |
-              +------+------+                           +-------+-------+
-              |  Document   |                           |  Replicate    |
-              |  Parser     |                           |  Client       |
-              |  Module     |                           |  + Imgur      |
-              +--------------+                           +---------------+
-                                           |
-                                  +--------+--------+
-                                  |  Export Pipeline |
-                                  |  (Marp/Reveal/  |
-                                  |   GSlides/PDF)  |
-                                  +-----------------+
-                                           |
-                                  +--------+--------+
-                                  |  File Storage   |
-                                  |  (Local + S3)   |
-                                  +-----------------+
-```
-
-### Component Boundaries
-
-| Component | Responsibility | Communicates With | NestJS Module |
-|-----------|---------------|-------------------|---------------|
-| **API Gateway** | HTTP routing, request validation, rate limiting, auth guards | All modules via DI | `AppModule` (root) |
-| **Auth Module** | User registration, login, JWT issuance/validation, password hashing | Credit Module (new user setup) | `AuthModule` |
-| **Knowledge Base Module** | Document storage, chunk management, vector search, RAG retrieval | Document Parser, Presentation Module | `KnowledgeBaseModule` |
-| **Document Parser Module** | File upload handling, PDF/DOCX/MD text extraction, chunking, embedding generation | Knowledge Base Module | `DocumentParserModule` |
-| **Presentation Module** | Slide structuring algorithm, presentation CRUD, slide ordering, content density management | Design Constraint Engine, Knowledge Base, Export Pipeline, Image Gen | `PresentationModule` |
-| **Design Constraint Engine** | Color validation, typography rules, density limits, theme enforcement, auto-fix violations | Presentation Module | `DesignModule` |
-| **Image Generation Module** | BullMQ queue management, job creation/tracking, concurrency control | Replicate Client, Credit Module, Presentation Module | `ImageGenModule` |
-| **Replicate Client** | API calls to Replicate (Nano Banana Pro), prompt building, image download, Imgur upload | Image Generation Module | `ReplicateModule` (provider within ImageGenModule) |
-| **Export Pipeline** | Format-specific rendering (Marp PPTX, Reveal.js HTML, Google Slides API, PDF) | Presentation Module, File Storage | `ExportModule` |
-| **Credit Module** | Balance tracking, deduction on usage, purchase records, tier enforcement | Auth Module, Image Gen Module, Export Module | `CreditModule` |
-| **File Storage** | Upload/download, signed URL generation, local disk + S3 abstraction | Export Pipeline, Document Parser | `StorageModule` |
-
-### Data Flow
-
-**Complete pipeline from upload to delivery:**
+### System Overview
 
 ```
-1. UPLOAD
-   User uploads PDF/DOCX/MD via multipart form
-   -> Multer intercepts (FileInterceptor)
-   -> File saved to temp storage
-   -> Returns document ID
-
-2. PARSE
-   DocumentParserModule triggered
-   -> pdf-parse (PDFs), mammoth (DOCX), or raw read (MD)
-   -> Raw text extracted with metadata (page numbers, headings)
-   -> Text stored in documents table
-
-3. CHUNK
-   -> RecursiveCharacterTextSplitter: 512 tokens, 50-100 token overlap
-   -> Heading-aware splitting (preserve document structure)
-   -> Chunks stored in document_chunks table
-
-4. EMBED
-   -> OpenAI text-embedding-3-small ($0.02/1M tokens)
-   -> Each chunk -> 1536-dim vector
-   -> Vectors stored in document_chunks.embedding (pgvector column)
-   -> IVFFlat index for approximate nearest neighbor search
-
-5. GENERATE (user triggers presentation creation)
-   -> User provides: topic, format, theme, image count
-   -> KnowledgeBaseModule: cosine similarity search on topic
-   -> Top-K chunks retrieved (K=15-25 depending on deck length)
-   -> Chunks re-ranked by relevance score
-
-6. STRUCTURE
-   -> PresentationModule: LLM structures content into slides
-   -> Rules: 1 idea per slide, max 5 bullets, 8-20 slides
-   -> Each slide gets: title, body, type (title/content/diagram/metrics/CTA)
-   -> DesignModule validates: colors, fonts, density, contrast
-
-7. IMAGE GENERATION (if image count > 0)
-   -> ImageGenModule creates BullMQ jobs
-   -> Jobs queued with: slide type, content summary, style
-   -> Worker processes jobs sequentially (Replicate rate limit: 600 RPM)
-   -> Replicate API (Nano Banana Pro) generates images
-   -> Images downloaded and uploaded to Imgur
-   -> Imgur URLs stored in slide_images table
-   -> Credits deducted per image
-
-8. EXPORT
-   -> ExportModule renders final output based on chosen format:
-     a. PPTX: Marp markdown generated -> marpCli(['input.md', '--pptx'])
-     b. PDF: Marp markdown generated -> marpCli(['input.md', '--pdf'])
-     c. Reveal.js: HTML template populated with slide data
-     d. Google Slides: OAuth flow -> Slides API batch requests
-   -> Output file saved to storage
-
-9. DELIVER
-   -> Signed download URL generated (24h expiry)
-   -> User notified (polling or WebSocket)
-   -> Download tracked for analytics
+┌─────────────────────────────────────────────────────────────────────┐
+│                        Client Layer                                  │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────────────────┐   │
+│  │  Web App      │  │  API Clients │  │  Webhook Receivers       │   │
+│  │  (React/Next) │  │  (REST)      │  │  (Replicate callbacks)   │   │
+│  └──────┬───────┘  └──────┬───────┘  └────────────┬─────────────┘   │
+│         │                 │                        │                 │
+├─────────┴─────────────────┴────────────────────────┴─────────────────┤
+│                        API Gateway Layer                             │
+│  ┌──────────────────────────────────────────────────────────────┐    │
+│  │                    NestJS API Server                          │    │
+│  │  ┌────────┐ ┌──────────┐ ┌──────────┐ ┌─────────────────┐   │    │
+│  │  │ Auth   │ │ Deck CRUD│ │ Credits  │ │ Format Selector │   │    │
+│  │  └────────┘ └──────────┘ └──────────┘ └─────────────────┘   │    │
+│  │  ┌────────────────────┐ ┌────────────────────────────────┐   │    │
+│  │  │ Design Constraint  │ │ Webhook Ingress                │   │    │
+│  │  │ Validator          │ │ (Replicate callbacks)          │   │    │
+│  │  └────────────────────┘ └────────────────────────────────┘   │    │
+│  └──────────────────────────────┬───────────────────────────────┘    │
+│                                 │                                    │
+├─────────────────────────────────┴────────────────────────────────────┤
+│                        Queue Layer (BullMQ + Redis)                  │
+│  ┌────────────┐ ┌────────────┐ ┌────────────┐ ┌──────────────┐      │
+│  │ image-gen  │ │ doc-ingest │ │ export     │ │ rag-query    │      │
+│  │ queue      │ │ queue      │ │ queue      │ │ queue        │      │
+│  └─────┬──────┘ └─────┬──────┘ └─────┬──────┘ └──────┬───────┘      │
+│        │              │              │               │               │
+├────────┴──────────────┴──────────────┴───────────────┴───────────────┤
+│                        Worker Layer                                   │
+│  ┌──────────────────┐  ┌──────────────────┐  ┌────────────────────┐  │
+│  │ Python Worker:   │  │ Python Worker:   │  │ Node Worker:       │  │
+│  │ Image Generation │  │ Doc Ingestion &  │  │ Export Engine      │  │
+│  │ (Replicate API)  │  │ RAG Pipeline     │  │ (PPTX/PDF/HTML/    │  │
+│  │                  │  │ (Embeddings,     │  │  Google Slides)    │  │
+│  │                  │  │  Parsing, Vector │  │                    │  │
+│  │                  │  │  Store)          │  │                    │  │
+│  └──────────────────┘  └──────────────────┘  └────────────────────┘  │
+│                                                                      │
+├──────────────────────────────────────────────────────────────────────┤
+│                        Data Layer                                     │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐               │
+│  │ PostgreSQL   │  │ pgvector /   │  │ S3-Compatible│               │
+│  │ (Users,Decks,│  │ Qdrant       │  │ (Uploads,    │               │
+│  │  Credits,    │  │ (Embeddings) │  │  Generated   │               │
+│  │  Jobs)       │  │              │  │  Assets)     │               │
+│  └──────────────┘  └──────────────┘  └──────────────┘               │
+│  ┌──────────────┐                                                    │
+│  │ Redis        │                                                    │
+│  │ (Queue state,│                                                    │
+│  │  Cache,      │                                                    │
+│  │  Sessions)   │                                                    │
+│  └──────────────┘                                                    │
+└──────────────────────────────────────────────────────────────────────┘
 ```
 
-## Module Architecture Details
+### Component Responsibilities
 
-### NestJS Module Structure
+| Component | Responsibility | Typical Implementation |
+|-----------|----------------|------------------------|
+| NestJS API | Auth, deck CRUD, credit tracking, format selection, design validation, job dispatch | NestJS modules with guards, interceptors, DTOs |
+| BullMQ Queues | Async job routing between API and workers | 4 queues: image-gen, doc-ingest, export, rag-query |
+| Python Image Worker | Calls Replicate API, handles webhook callbacks, stores results in S3 | Python BullMQ consumer + httpx for Replicate |
+| Python RAG Worker | PDF/DOCX parsing, chunking, embedding, vector storage, semantic retrieval | LangChain/LlamaIndex + sentence-transformers |
+| Node Export Worker | Generates PPTX, PDF, Reveal.js HTML, Google Slides from slide data model | PptxGenJS, Marp CLI, Google Slides API client |
+| Design Constraint Engine | Validates color palettes, typography, content density rules | TypeScript validator module within NestJS |
+| PostgreSQL | Users, decks, slides, credits, job metadata | Prisma ORM |
+| Vector Store | Document embeddings for RAG retrieval | pgvector extension (start), Qdrant (scale) |
+| S3-Compatible Storage | Uploaded documents, generated images, exported files | MinIO (dev), AWS S3 / Cloudflare R2 (prod) |
+| Redis | BullMQ backend, session cache, rate limiting | Single Redis instance, separate DB numbers |
 
-Each domain module follows the same internal pattern.
+## Recommended Project Structure
 
 ```
-src/
-  app.module.ts                    # Root module, imports all feature modules
-  common/
-    guards/
-      jwt-auth.guard.ts            # @UseGuards(JwtAuthGuard)
-      credits.guard.ts             # Checks sufficient credits before operation
-    interceptors/
-      logging.interceptor.ts
-      transform.interceptor.ts     # Standard response envelope
-    filters/
-      http-exception.filter.ts
-    decorators/
-      current-user.decorator.ts    # @CurrentUser() param decorator
-    pipes/
-      validation.pipe.ts           # Global class-validator pipe
-  auth/
-    auth.module.ts
-    auth.controller.ts
-    auth.service.ts
-    strategies/
-      jwt.strategy.ts
-      local.strategy.ts
-    dto/
-      register.dto.ts
-      login.dto.ts
-  knowledge-base/
-    knowledge-base.module.ts
-    knowledge-base.controller.ts
-    knowledge-base.service.ts       # Orchestrates parse->chunk->embed
-    document-parser.service.ts      # pdf-parse, mammoth, raw text
-    chunker.service.ts              # Text splitting logic
-    embedder.service.ts             # OpenAI embedding API calls
-    retriever.service.ts            # pgvector similarity search
-    dto/
-      upload-document.dto.ts
-      search-knowledge.dto.ts
-  presentation/
-    presentation.module.ts
-    presentation.controller.ts
-    presentation.service.ts         # Orchestrates generation pipeline
-    slide-structurer.service.ts     # Content -> slide array algorithm
-    dto/
-      create-presentation.dto.ts
-      update-slide.dto.ts
-  design/
-    design.module.ts
-    design.service.ts               # Main validation entry point
-    validators/
-      color.validator.ts            # Forbidden pairs, contrast ratio
-      typography.validator.ts       # Font whitelist, size minimums
-      density.validator.ts          # Bullets, words, slides count
-    theme.service.ts                # Theme definitions and application
-    data/
-      forbidden-combos.json
-      themes.json
-  image-gen/
-    image-gen.module.ts
-    image-gen.controller.ts         # Status polling endpoint
-    image-gen.service.ts            # Creates BullMQ jobs
-    image-gen.processor.ts          # @Processor('image-generation')
-    replicate.service.ts            # Replicate API client
-    imgur.service.ts                # Imgur upload client
-    prompt-builders/
-      title.prompt.ts
-      problem.prompt.ts
-      solution.prompt.ts
-      architecture.prompt.ts
-      metrics.prompt.ts
-      cta.prompt.ts
-  export/
-    export.module.ts
-    export.controller.ts
-    export.service.ts               # Format router
-    renderers/
-      marp.renderer.ts              # Markdown -> PPTX/PDF via Marp CLI API
-      revealjs.renderer.ts          # Slide data -> HTML
-      google-slides.renderer.ts     # Slides API integration
-    templates/
-      revealjs/
-        base.html
-        themes/
-  credit/
-    credit.module.ts
-    credit.controller.ts
-    credit.service.ts
-    credit.guard.ts                 # Insufficient credits check
-  storage/
-    storage.module.ts
-    storage.service.ts              # Abstract interface
-    local-storage.provider.ts       # Dev: local disk
-    s3-storage.provider.ts          # Prod: S3-compatible
+slideforge/
+├── apps/
+│   ├── api/                        # NestJS API server
+│   │   ├── src/
+│   │   │   ├── auth/               # JWT auth, guards, strategies
+│   │   │   ├── users/              # User CRUD, credit tracking
+│   │   │   ├── decks/              # Deck CRUD, slide ordering
+│   │   │   ├── slides/             # Slide data model, content
+│   │   │   ├── jobs/               # Job dispatch, status tracking
+│   │   │   ├── design/             # Design constraint engine
+│   │   │   │   ├── tokens/         # Color, typography, spacing tokens
+│   │   │   │   ├── validators/     # Constraint validators
+│   │   │   │   └── presets/        # Built-in design presets
+│   │   │   ├── webhooks/           # Replicate callback handlers
+│   │   │   ├── storage/            # S3 presigned URL generation
+│   │   │   ├── export/             # Export job dispatch + format router
+│   │   │   └── common/             # Shared DTOs, interfaces, utils
+│   │   └── prisma/                 # Database schema, migrations
+│   │
+│   ├── workers/                    # Python worker processes
+│   │   ├── image_gen/              # Replicate API integration
+│   │   │   ├── worker.py           # BullMQ consumer
+│   │   │   ├── replicate_client.py # Replicate API wrapper
+│   │   │   └── prompt_builder.py   # Image prompt construction
+│   │   ├── doc_ingest/             # Document ingestion pipeline
+│   │   │   ├── worker.py           # BullMQ consumer
+│   │   │   ├── parsers/            # PDF, DOCX, TXT parsers
+│   │   │   ├── chunker.py          # Semantic chunking logic
+│   │   │   └── embedder.py         # Embedding generation
+│   │   └── rag/                    # RAG query processing
+│   │       ├── worker.py           # BullMQ consumer
+│   │       ├── retriever.py        # Vector similarity search
+│   │       └── synthesizer.py      # Context assembly for LLM
+│   │
+│   └── export-worker/              # Node.js export worker
+│       ├── src/
+│       │   ├── worker.ts           # BullMQ consumer
+│       │   ├── renderers/          # Format-specific renderers
+│       │   │   ├── pptx.renderer.ts    # PptxGenJS
+│       │   │   ├── pdf.renderer.ts     # Marp CLI or Puppeteer
+│       │   │   ├── revealjs.renderer.ts # HTML generation
+│       │   │   └── gslides.renderer.ts  # Google Slides API
+│       │   ├── adapter.ts          # Slide model -> renderer adapter
+│       │   └── common/             # Shared rendering utilities
+│       └── templates/              # Slide layout templates
+│
+├── packages/
+│   ├── slide-model/                # Shared slide data model (TypeScript)
+│   │   ├── src/
+│   │   │   ├── types.ts            # Core slide/deck/element types
+│   │   │   ├── schema.ts           # JSON Schema validation
+│   │   │   └── transforms.ts       # Model transformation utilities
+│   │   └── package.json
+│   │
+│   └── design-tokens/              # Shared design token definitions
+│       ├── src/
+│       │   ├── colors.ts           # Color palette definitions
+│       │   ├── typography.ts       # Font scale, weights, line heights
+│       │   ├── spacing.ts          # Spacing scale
+│       │   └── presets.ts          # Pre-built design presets
+│       └── package.json
+│
+├── docker-compose.yml              # Dev environment
+├── turbo.json                      # Turborepo config (monorepo)
+└── package.json                    # Root workspace
 ```
 
-### Database Schema (Prisma)
+### Structure Rationale
 
-```prisma
-generator client {
-  provider        = "prisma-client-js"
-  previewFeatures = ["postgresqlExtensions"]
+- **`apps/api/`:** NestJS modular architecture. Each domain (decks, slides, users) is a self-contained NestJS module with its own controllers, services, and DTOs. The design constraint engine lives here because validation happens at the API boundary before jobs are dispatched.
+- **`apps/workers/`:** Python workers as separate processes consuming BullMQ queues. Each worker type is isolated with its own dependencies and can scale independently.
+- **`apps/export-worker/`:** Separate Node.js process for export rendering. Lives outside the API to avoid blocking the main server. Uses the renderer pattern to isolate format-specific code.
+- **`packages/slide-model/`:** The canonical slide data model shared between API and export worker. This is the critical boundary -- everything upstream produces this model, everything downstream consumes it.
+- **`packages/design-tokens/`:** Design constraint definitions shared across components. Validators in the API reference these; renderers in the export worker consume them.
+
+## Key Architecture Decisions
+
+### Decision 1: BullMQ as the Cross-Language Bridge (Not HTTP, Not Child Processes)
+
+**Recommendation:** Use BullMQ queues (backed by Redis) for all communication between NestJS and Python workers.
+
+**Why not HTTP microservices:** HTTP adds service discovery complexity, connection pooling, timeout management, and circuit breaking. For internal worker communication where jobs are inherently async, a message queue is simpler and more resilient. HTTP microservices make sense for synchronous request-response patterns between independent teams; they add unnecessary overhead for a single-team product.
+
+**Why not child processes:** Child processes (spawning Python from Node) create tight coupling, make scaling impossible (can only scale vertically), and complicate error handling. A dead child process kills the parent's reliability.
+
+**Why BullMQ specifically:** Native support in both Node.js and Python. Job retry, backoff, priority, and rate limiting built in. Workers scale independently by adding processes. BullMQ Python is newer and less battle-tested than the Node.js version, but it covers the needed functionality (consume jobs, report completion, handle failures). The alternative (RabbitMQ or Kafka) adds operational complexity that is unwarranted at this scale.
+
+**Trade-offs:**
+- PRO: Single communication pattern for all async work. No HTTP overhead between internal services.
+- PRO: Job visibility via BullBoard UI. Retry logic, dead letter queues, rate limiting out of the box.
+- CON: Python BullMQ library is less mature. Monitor for edge cases, especially around connection recovery.
+- CON: Redis becomes a hard dependency and single point of failure (mitigate with Redis Sentinel later).
+
+### Decision 2: RAG Pipeline Lives in Python
+
+**Recommendation:** The entire RAG pipeline (document parsing, chunking, embedding, vector storage, retrieval) runs as Python workers, not in Node.js.
+
+**Rationale:** Python has unstructured.io, PyMuPDF, python-docx for parsing. sentence-transformers, OpenAI, Cohere for embeddings. LangChain, LlamaIndex for RAG orchestration. Recursive/semantic chunkers with overlap. GPU-accelerated inference when needed. Node.js RAG libraries (LangChain.js, Vercel AI SDK) exist but lag behind in parsing quality, embedding model variety, and advanced retrieval patterns (hybrid search, re-ranking, query expansion). For a product where retrieval quality directly determines slide quality, use the best tools.
+
+**How it works:** NestJS dispatches jobs to `doc-ingest` and `rag-query` queues. Python workers consume them. Results return via BullMQ job completion (the Node.js producer can await or poll for the job result). The NestJS API never directly calls Python code.
+
+### Decision 3: Design Constraint Engine as In-Process Validator Module
+
+**Recommendation:** The design constraint engine is a NestJS module (TypeScript) that validates slide data against design tokens. It runs in-process within the API server, not as a separate microservice or middleware layer.
+
+**Why in-process, not a microservice:** Design validation is CPU-cheap pure data checking (color contrast ratios, font size ranges, bullet count limits). An HTTP roundtrip to a separate service would take longer than the validation itself. Keep it in-process.
+
+**Why a module with validators, not middleware:** NestJS middleware runs before route handlers and lacks access to the full request context. Design validation needs the complete slide data model and the associated theme configuration. A service-layer validator called explicitly from controllers/services gives full control over when and how validation runs.
+
+**Structure:**
+- `design/tokens/` -- JSON definitions of color palettes, typography scales, spacing. Data-driven, no code changes to update.
+- `design/validators/` -- Individual validator classes (ColorValidator, TypographyValidator, DensityValidator). Each checks one constraint category and returns structured violations.
+- `design/presets/` -- Pre-built theme presets that bundle tokens into named configurations.
+- `design/design.service.ts` -- Orchestrator that runs all validators and aggregates results.
+
+**Validation runs at two points:**
+1. On slide create/update (API boundary) -- catches user-provided content that violates constraints.
+2. Before export dispatch -- final check that the deck is valid before rendering.
+
+### Decision 4: Canonical Slide Data Model Separated from Export Formats
+
+**Recommendation:** Define a single, format-agnostic JSON data model for slides. This is the architectural spine of the system. Everything upstream (RAG, LLM generation, user edits) produces this model. Everything downstream (PPTX, PDF, Reveal.js, Google Slides) consumes it.
+
+**The boundary:** The slide model describes *what* is on a slide (text with a role, image with a position, chart with data). Export renderers decide *how* to render it in their target format.
+
+**Example model:**
+```typescript
+interface Deck {
+  id: string;
+  title: string;
+  theme: ThemeConfig;
+  slides: Slide[];
+  metadata: DeckMetadata;
 }
 
-datasource db {
-  provider   = "postgresql"
-  url        = env("DATABASE_URL")
-  extensions = [pgvector(map: "vector")]
+interface Slide {
+  id: string;
+  layout: LayoutType;       // 'title' | 'content' | 'two-column' | 'image-full'
+  elements: SlideElement[];
+  speakerNotes?: string;
+  transition?: TransitionConfig;
 }
 
-model User {
-  id             String          @id @default(uuid())
-  email          String          @unique
-  passwordHash   String
-  creditBalance  Int             @default(0)
-  tier           Tier            @default(FREE)
-  createdAt      DateTime        @default(now())
-  documents      Document[]
-  presentations  Presentation[]
-  creditRecords  CreditRecord[]
+type SlideElement =
+  | TextElement
+  | ImageElement
+  | ChartElement
+  | ShapeElement;
+
+interface TextElement {
+  type: 'text';
+  content: string;           // Markdown-formatted text
+  role: 'title' | 'subtitle' | 'body' | 'caption' | 'bullet-list';
+  position: BoundingBox;     // { x, y, width, height } in percentage
+  style?: TextStyleOverride; // Optional overrides to theme defaults
 }
 
-enum Tier {
-  FREE
-  PRO
+interface ImageElement {
+  type: 'image';
+  src: string;               // S3 URL or asset reference
+  alt: string;
+  position: BoundingBox;
+  fit: 'cover' | 'contain' | 'fill';
 }
 
-model Document {
-  id          String          @id @default(uuid())
-  userId      String
-  user        User            @relation(fields: [userId], references: [id])
-  filename    String
-  mimeType    String
-  rawText     String
-  metadata    Json?           // page count, headings, etc.
-  createdAt   DateTime        @default(now())
-  chunks      DocumentChunk[]
-}
-
-model DocumentChunk {
-  id          String    @id @default(uuid())
-  documentId  String
-  document    Document  @relation(fields: [documentId], references: [id], onDelete: Cascade)
-  content     String
-  chunkIndex  Int
-  tokenCount  Int
-  heading     String?   // section heading for context
-  // pgvector column - use Unsupported until Prisma native support
-  // embedding Unsupported("vector(1536)")
-  // Query via raw SQL: ORDER BY embedding <=> $1::vector
-  createdAt   DateTime  @default(now())
-
-  @@index([documentId])
-}
-
-model Presentation {
-  id          String    @id @default(uuid())
-  userId      String
-  user        User      @relation(fields: [userId], references: [id])
-  title       String
-  topic       String
-  format      ExportFormat
-  theme       String    @default("dark")
-  imageCount  Int       @default(0)
-  status      PresentationStatus @default(GENERATING)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  slides      Slide[]
-  exports     Export[]
-}
-
-enum ExportFormat {
-  PPTX
-  PDF
-  REVEALJS
-  GOOGLE_SLIDES
-}
-
-enum PresentationStatus {
-  GENERATING
-  IMAGES_PENDING
-  READY
-  EXPORTED
-  FAILED
-}
-
-model Slide {
-  id               String    @id @default(uuid())
-  presentationId   String
-  presentation     Presentation @relation(fields: [presentationId], references: [id], onDelete: Cascade)
-  orderIndex       Int
-  slideType        SlideType
-  title            String
-  body             String    // Markdown content
-  speakerNotes     String?
-  imageUrl         String?   // Imgur URL after generation
-  imageJobId       String?   // BullMQ job ID for tracking
-  imageStatus      ImageStatus @default(NONE)
-  createdAt        DateTime  @default(now())
-
-  @@index([presentationId])
-  @@unique([presentationId, orderIndex])
-}
-
-enum SlideType {
-  TITLE
-  CONTENT
-  PROBLEM
-  SOLUTION
-  ARCHITECTURE
-  METRICS
-  CTA
-  SECTION_BREAK
-}
-
-enum ImageStatus {
-  NONE
-  QUEUED
-  GENERATING
-  COMPLETED
-  FAILED
-}
-
-model Export {
-  id               String    @id @default(uuid())
-  presentationId   String
-  presentation     Presentation @relation(fields: [presentationId], references: [id])
-  format           ExportFormat
-  fileUrl          String    // Storage URL or signed URL
-  fileSize         Int?
-  createdAt        DateTime  @default(now())
-}
-
-model CreditRecord {
-  id          String    @id @default(uuid())
-  userId      String
-  user        User      @relation(fields: [userId], references: [id])
-  amount      Int       // positive = purchase, negative = usage
-  reason      String    // "image_generation", "purchase", "free_monthly"
-  referenceId String?   // presentation or export ID
-  createdAt   DateTime  @default(now())
-
-  @@index([userId])
+interface ThemeConfig {
+  colors: ColorPalette;
+  typography: TypographyScale;
+  spacing: SpacingScale;
 }
 ```
 
-### Key pgvector Setup
+**The `role` field is the key abstraction.** A TextElement with `role: 'title'` becomes a Title placeholder in PPTX, an `<h1>` in Reveal.js, a Title layout in Google Slides. The renderer maps roles to format-specific implementations.
 
-Prisma does not yet have full native vector type support. The recommended workaround (verified via Prisma GitHub issue #18442 and pgvector-node docs):
+### Decision 5: Renderer Adapter Pattern for Format Isolation
+
+**Recommendation:** Each export format gets its own renderer class behind a common interface. A router dispatches to the correct renderer. Format-specific code never leaks into the slide model, API, or other renderers.
+
+**How format-specific optimizations work:** Each renderer owns its format's quirks. PPTX renderer handles absolute positioning in EMU units. Reveal.js renderer generates CSS classes and fragment animations. Google Slides renderer batches API requests. PDF renderer runs Puppeteer or Marp CLI. None of these details escape the renderer boundary.
+
+**For edge cases that cannot be expressed in the abstract model:** Add an optional `formatHints` field to SlideElement. This field is a map of format-specific hints that renderers can optionally read. The model stays clean; renderers get escape hatches.
 
 ```typescript
-// In a migration SQL file (not Prisma schema):
-CREATE EXTENSION IF NOT EXISTS vector;
-ALTER TABLE "DocumentChunk" ADD COLUMN "embedding" vector(1536);
-CREATE INDEX ON "DocumentChunk" USING ivfflat (embedding vector_cosine_ops) WITH (lists = 100);
-
-// In retriever.service.ts:
-async findSimilarChunks(
-  userId: string,
-  queryEmbedding: number[],
-  topK: number = 15,
-): Promise<ChunkWithScore[]> {
-  const vectorStr = pgvector.toSql(queryEmbedding);
-  return this.prisma.$queryRaw`
-    SELECT dc.id, dc.content, dc.heading,
-           1 - (dc.embedding <=> ${vectorStr}::vector) AS score
-    FROM "DocumentChunk" dc
-    JOIN "Document" d ON dc."documentId" = d.id
-    WHERE d."userId" = ${userId}
-    ORDER BY dc.embedding <=> ${vectorStr}::vector
-    LIMIT ${topK}
-  `;
+interface SlideElement {
+  // ... core fields
+  formatHints?: {
+    pptx?: { animation?: string };
+    revealjs?: { fragment?: boolean; fragmentIndex?: number };
+    googleSlides?: { speakerNotesAsNotes?: boolean };
+  };
 }
 ```
 
-**Confidence: HIGH** - Prisma raw SQL with pgvector is the documented workaround. Prisma ORM v6.13.0 added pgvector support for Prisma Postgres (their hosted product), but self-hosted Postgres still requires raw SQL for vector operations.
+## Architectural Patterns
 
-## Patterns to Follow
-
-### Pattern 1: Pipeline Orchestrator
-
-**What:** A service that orchestrates multi-step async operations by managing state transitions.
-
-**When:** Presentation generation involves 5+ sequential steps, each of which can fail independently.
+### Pattern 1: BullMQ Cross-Language Job Dispatch
 
 ```typescript
-// presentation.service.ts
+// NestJS API: Dispatch image generation job
 @Injectable()
-export class PresentationService {
-  async generate(dto: CreatePresentationDto, user: User): Promise<Presentation> {
-    // 1. Create presentation record (status: GENERATING)
-    const presentation = await this.prisma.presentation.create({
-      data: { ...dto, userId: user.id, status: 'GENERATING' },
+export class ImageService {
+  constructor(@InjectQueue('image-gen') private imageQueue: Queue) {}
+
+  async generateImage(deckId: string, slideId: string, prompt: string) {
+    const job = await this.imageQueue.add('generate', {
+      deckId,
+      slideId,
+      prompt,
+      style: 'professional',
+      dimensions: { width: 1920, height: 1080 },
+    }, {
+      attempts: 3,
+      backoff: { type: 'exponential', delay: 5000 },
+      priority: 2,
     });
-
-    try {
-      // 2. Retrieve relevant knowledge
-      const chunks = await this.knowledgeBase.retrieve(user.id, dto.topic);
-
-      // 3. Structure slides from content
-      const slides = await this.slideStructurer.structure(chunks, dto);
-
-      // 4. Validate design constraints (auto-fix violations)
-      const validatedSlides = await this.design.validate(slides, dto.theme);
-
-      // 5. Persist slides
-      await this.prisma.slide.createMany({
-        data: validatedSlides.map((s, i) => ({
-          ...s, presentationId: presentation.id, orderIndex: i,
-        })),
-      });
-
-      // 6. Queue image generation if requested
-      if (dto.imageCount > 0) {
-        await this.imageGen.queueForPresentation(presentation.id, dto.imageCount);
-        await this.updateStatus(presentation.id, 'IMAGES_PENDING');
-      } else {
-        await this.updateStatus(presentation.id, 'READY');
-      }
-
-      return presentation;
-    } catch (error) {
-      await this.updateStatus(presentation.id, 'FAILED');
-      throw error;
-    }
+    return job.id;
   }
 }
 ```
 
-### Pattern 2: BullMQ Worker with Concurrency Control
+```python
+# Python Worker: Consume image generation job
+from bullmq import Worker
+import httpx
 
-**What:** Image generation jobs processed by a dedicated worker with rate limiting aligned to Replicate's 600 RPM limit.
+async def process_image(job, token):
+    data = job.data
+    prompt = data["prompt"]
 
-**When:** Any async operation that must respect external API rate limits.
+    # Call Replicate API
+    async with httpx.AsyncClient() as client:
+        response = await client.post(
+            "https://api.replicate.com/v1/predictions",
+            headers={"Authorization": f"Bearer {REPLICATE_TOKEN}"},
+            json={
+                "model": "stability-ai/sdxl",
+                "input": {"prompt": prompt, "width": data["dimensions"]["width"]},
+                "webhook": WEBHOOK_URL,
+                "webhook_events_filter": ["completed"],
+            },
+        )
+    prediction = response.json()
 
-```typescript
-// image-gen.processor.ts
-@Processor('image-generation', {
-  concurrency: 5,  // 5 concurrent jobs max
-  limiter: {
-    max: 10,        // 10 jobs per duration window
-    duration: 1000, // per second (600 RPM = 10 RPS)
-  },
-})
-export class ImageGenProcessor extends WorkerHost {
-  async process(job: Job<ImageGenJobData>): Promise<ImageGenResult> {
-    const { slideId, slideType, contentSummary, style } = job.data;
+    # For webhook mode: return prediction ID, let webhook handler update status
+    # For polling mode: await completion and upload to S3
+    return {"predictionId": prediction["id"], "slideId": data["slideId"]}
 
-    // 1. Build prompt from slide type
-    const prompt = this.promptBuilder.build(slideType, contentSummary, style);
-
-    // 2. Call Replicate API
-    const imageBuffer = await this.replicate.generateImage(prompt);
-
-    // 3. Upload to Imgur
-    const imgurUrl = await this.imgur.upload(imageBuffer);
-
-    // 4. Update slide record
-    await this.prisma.slide.update({
-      where: { id: slideId },
-      data: { imageUrl: imgurUrl, imageStatus: 'COMPLETED' },
-    });
-
-    // 5. Deduct credit
-    await this.credits.deduct(job.data.userId, 1, 'image_generation', slideId);
-
-    return { slideId, imageUrl: imgurUrl };
-  }
-
-  @OnWorkerEvent('failed')
-  onFailed(job: Job, error: Error) {
-    this.logger.error(`Image job ${job.id} failed: ${error.message}`);
-    // BullMQ handles retries (configured: 3 attempts, exponential backoff)
-  }
-}
+worker = Worker("image-gen", process_image, {"connection": redis_opts})
 ```
 
-### Pattern 3: Strategy Pattern for Export Renderers
-
-**What:** Each export format implemented as a separate renderer behind a common interface.
-
-**When:** Multiple output formats with different rendering logic but same input (slide data).
+### Pattern 2: Renderer Adapter for Multi-Format Export
 
 ```typescript
-// renderer.interface.ts
-export interface PresentationRenderer {
-  format: ExportFormat;
-  render(presentation: PresentationWithSlides, theme: Theme): Promise<Buffer | string>;
+// Common interface
+interface SlideRenderer {
+  render(deck: Deck): Promise<ExportResult>;
 }
 
-// export.service.ts
-@Injectable()
-export class ExportService {
-  private renderers: Map<ExportFormat, PresentationRenderer>;
+// Router
+class ExportAdapter {
+  private renderers: Map<ExportFormat, SlideRenderer> = new Map([
+    ['pptx', new PptxRenderer()],
+    ['pdf', new PdfRenderer()],
+    ['revealjs', new RevealJsRenderer()],
+    ['google-slides', new GoogleSlidesRenderer()],
+  ]);
 
-  constructor(
-    private marp: MarpRenderer,
-    private revealjs: RevealJsRenderer,
-    private googleSlides: GoogleSlidesRenderer,
-    private storage: StorageService,
-  ) {
-    this.renderers = new Map([
-      [ExportFormat.PPTX, this.marp],
-      [ExportFormat.PDF, this.marp],
-      [ExportFormat.REVEALJS, this.revealjs],
-      [ExportFormat.GOOGLE_SLIDES, this.googleSlides],
-    ]);
-  }
-
-  async export(presentationId: string, format: ExportFormat): Promise<Export> {
+  async export(deck: Deck, format: ExportFormat): Promise<ExportResult> {
     const renderer = this.renderers.get(format);
-    if (!renderer) throw new BadRequestException(`Unsupported format: ${format}`);
-
-    const presentation = await this.loadPresentation(presentationId);
-    const theme = await this.design.getTheme(presentation.theme);
-    const output = await renderer.render(presentation, theme);
-
-    const fileUrl = await this.storage.save(output, `${presentationId}.${format}`);
-    return this.prisma.export.create({
-      data: { presentationId, format, fileUrl },
-    });
+    if (!renderer) throw new Error(`Unsupported format: ${format}`);
+    return renderer.render(deck);
   }
 }
-```
 
-### Pattern 4: Marp CLI Programmatic API (Not Shell Exec)
-
-**What:** Use Marp CLI's JavaScript API directly instead of spawning a child process.
-
-**When:** Converting slide markdown to PPTX or PDF.
-
-```typescript
-// marp.renderer.ts
-import { marpCli } from '@marp-team/marp-cli';
-import { writeFile, mkdtemp } from 'fs/promises';
-import { join } from 'path';
-import { tmpdir } from 'os';
-
-@Injectable()
-export class MarpRenderer implements PresentationRenderer {
-  format = ExportFormat.PPTX; // Also handles PDF
-
-  async render(
-    presentation: PresentationWithSlides,
-    theme: Theme,
-  ): Promise<Buffer> {
-    const markdown = this.buildMarkdown(presentation, theme);
-    const tempDir = await mkdtemp(join(tmpdir(), 'slideforge-'));
-    const inputPath = join(tempDir, 'slides.md');
-    const outputPath = join(tempDir, `slides.${presentation.format === 'PDF' ? 'pdf' : 'pptx'}`);
-
-    await writeFile(inputPath, markdown);
-
-    const formatFlag = presentation.format === 'PDF' ? '--pdf' : '--pptx';
-    const exitCode = await marpCli([
-      inputPath,
-      formatFlag,
-      '--output', outputPath,
-      '--allow-local-files',
-    ]);
-
-    if (exitCode !== 0) {
-      throw new InternalServerErrorException('Marp conversion failed');
+// Format-specific renderer (PPTX example)
+class PptxRenderer implements SlideRenderer {
+  async render(deck: Deck): Promise<ExportResult> {
+    const pptx = new PptxGenJS();
+    for (const slide of deck.slides) {
+      const pptxSlide = pptx.addSlide();
+      for (const element of slide.elements) {
+        this.renderElement(pptxSlide, element, deck.theme);
+      }
     }
-
-    return readFile(outputPath);
+    const buffer = await pptx.write({ outputType: 'nodebuffer' });
+    const url = await uploadToS3(buffer, `${deck.id}.pptx`);
+    return { format: 'pptx', url, size: buffer.length };
   }
 
-  private buildMarkdown(pres: PresentationWithSlides, theme: Theme): string {
-    const frontmatter = [
-      '---',
-      'marp: true',
-      `theme: ${theme.marpTheme}`,
-      `backgroundColor: ${theme.backgroundColor}`,
-      `color: ${theme.textColor}`,
-      'paginate: true',
-      '---',
-    ].join('\n');
-
-    const slides = pres.slides
-      .sort((a, b) => a.orderIndex - b.orderIndex)
-      .map(slide => {
-        let content = `# ${slide.title}\n\n${slide.body}`;
-        if (slide.imageUrl) {
-          content += `\n\n![bg right:40%](${slide.imageUrl})`;
-        }
-        return content;
-      })
-      .join('\n\n---\n\n');
-
-    return `${frontmatter}\n\n${slides}`;
-  }
-}
-```
-
-**Confidence: HIGH** - Marp CLI API verified via DeepWiki documentation showing `marpCli()` accepts args array and returns Promise<exitCode>. The Converter class also supports `convert()`, `convertFile()`, and `convertFileToPPTX()` methods for more granular control.
-
-### Pattern 5: Credit Guard (Pre-check Before Expensive Operations)
-
-**What:** A NestJS guard that checks credit balance before allowing expensive operations to proceed.
-
-**When:** Image generation, exports, or any operation that consumes credits.
-
-```typescript
-// credits.guard.ts
-@Injectable()
-export class CreditsGuard implements CanActivate {
-  constructor(private creditService: CreditService, private reflector: Reflector) {}
-
-  async canActivate(context: ExecutionContext): Promise<boolean> {
-    const requiredCredits = this.reflector.get<number>('credits', context.getHandler());
-    if (!requiredCredits) return true;
-
-    const request = context.switchToHttp().getRequest();
-    const user = request.user;
-    const balance = await this.creditService.getBalance(user.id);
-
-    if (balance < requiredCredits) {
-      throw new ForbiddenException(
-        `Insufficient credits. Required: ${requiredCredits}, Available: ${balance}`,
-      );
+  private renderElement(pptxSlide: any, element: SlideElement, theme: ThemeConfig) {
+    switch (element.type) {
+      case 'text':
+        // Map role to PPTX placeholder or text box
+        // Map percentage position to EMU units
+        // Apply theme typography
+        break;
+      case 'image':
+        // Download from S3, add as image with position
+        break;
     }
-    return true;
   }
 }
-
-// Usage in controller:
-@Post(':id/generate-images')
-@UseGuards(JwtAuthGuard, CreditsGuard)
-@SetMetadata('credits', 6) // or dynamic from DTO
-async generateImages(@Param('id') id: string, @Body() dto: GenerateImagesDto) {
-  // ...
-}
 ```
 
-## Anti-Patterns to Avoid
-
-### Anti-Pattern 1: Synchronous Image Generation
-
-**What:** Waiting for Replicate API responses in the HTTP request cycle.
-
-**Why bad:** Image generation takes 5-30 seconds per image. A 12-image deck would block the request for 1-6 minutes. HTTP connections timeout, users see spinning wheels, server threads are consumed.
-
-**Instead:** Queue all image jobs via BullMQ immediately and return a presentation ID with status "IMAGES_PENDING". Client polls for completion or uses WebSocket notification. The pipeline continues asynchronously.
-
-### Anti-Pattern 2: Monolithic Presentation Generator
-
-**What:** A single function/service that handles retrieval, structuring, validation, image gen, and export in one call.
-
-**Why bad:** Impossible to retry failed steps independently. Cannot parallelize. Cannot show progress. Testing requires mocking everything.
-
-**Instead:** Pipeline with discrete stages and status tracking on the Presentation model. Each stage reads the presentation record, performs its work, updates status, and triggers the next stage (or returns to wait for async completion).
-
-### Anti-Pattern 3: Storing Vectors in a Separate Database
-
-**What:** Running a dedicated Chroma, Pinecone, or Weaviate instance alongside PostgreSQL.
-
-**Why bad for this project:** Added operational complexity, another service to manage, data consistency issues between relational data and vectors, separate backup strategy needed. SlideForge's vector needs are simple (per-user document similarity search) and do not require the scale of a dedicated vector DB.
-
-**Instead:** Use pgvector extension in the existing PostgreSQL instance. Single database, single backup, transactional consistency between documents and their embeddings. Sufficient for the expected scale (thousands of users with hundreds of documents each, not millions).
-
-### Anti-Pattern 4: Shell-Exec for Marp Conversion
-
-**What:** Using `child_process.exec('npx @marp-team/marp-cli ...')` for every conversion.
-
-**Why bad:** Process spawning overhead, environment variable leakage risk, harder error handling, no TypeScript type safety, potential command injection if any user input reaches the command.
-
-**Instead:** Use `marpCli()` JavaScript API directly (see Pattern 4 above). Same functionality, native error handling, no shell involved.
-
-### Anti-Pattern 5: Eager Embedding on Upload
-
-**What:** Embedding all chunks immediately during the file upload request.
-
-**Why bad:** A 100-page PDF produces 200+ chunks. Embedding all of them takes 5-10 seconds via the OpenAI API. Users experience a very slow upload.
-
-**Instead:** Upload and parse synchronously (fast: <2s). Queue chunking + embedding as a BullMQ job. Show document as "processing" until embeddings complete. The knowledge base module should expose a status field: `UPLOADED -> PARSING -> EMBEDDING -> READY`.
-
-### Anti-Pattern 6: Flat Credit Deduction (No Pre-Authorization)
-
-**What:** Deducting credits only after image generation completes.
-
-**Why bad:** Race condition where user starts two 12-image decks simultaneously but only has 15 credits. Both pass the initial check, but 24 credits are consumed.
-
-**Instead:** Pre-authorize (reserve) credits when the generation request is created. Reserve 12 credits immediately, deduct as each image completes, release unused if images fail. Use database transactions:
+### Pattern 3: Design Token Validation
 
 ```typescript
-async reserveCredits(userId: string, amount: number): Promise<string> {
-  return this.prisma.$transaction(async (tx) => {
-    const user = await tx.user.findUnique({ where: { id: userId } });
-    if (user.creditBalance < amount) throw new ForbiddenException('Insufficient credits');
-    await tx.user.update({
-      where: { id: userId },
-      data: { creditBalance: { decrement: amount } },
-    });
-    return tx.creditRecord.create({
-      data: { userId, amount: -amount, reason: 'reservation' },
-    }).then(r => r.id);
-  });
+// Data-driven constraint definitions
+const colorConstraints = {
+  rules: [
+    {
+      name: 'wcag-aa-contrast',
+      check: (fg: string, bg: string) => getContrastRatio(fg, bg) >= 4.5,
+      severity: 'error',
+      message: 'Text color does not meet WCAG AA contrast ratio (4.5:1)',
+    },
+    {
+      name: 'palette-membership',
+      check: (color: string, palette: string[]) => palette.includes(color),
+      severity: 'warning',
+      message: 'Color is not in the selected theme palette',
+    },
+  ],
+};
+
+// Validator service
+@Injectable()
+export class DesignService {
+  private validators: ConstraintValidator[];
+
+  validate(slide: Slide, theme: ThemeConfig): ValidationResult {
+    const violations: Violation[] = [];
+    for (const validator of this.validators) {
+      violations.push(...validator.check(slide, theme));
+    }
+    return {
+      valid: violations.filter(v => v.severity === 'error').length === 0,
+      violations,
+    };
+  }
 }
 ```
 
-## Scalability Considerations
+## Data Flow
 
-| Concern | At 100 users | At 10K users | At 1M users |
-|---------|-------------|-------------|-------------|
-| **Database** | Single PostgreSQL, pgvector sufficient | Read replicas, connection pooling (PgBouncer) | Partition document_chunks by user, consider dedicated vector DB |
-| **Job Queue** | Single Redis, BullMQ sufficient | Redis Sentinel for HA, multiple workers | Redis Cluster, worker auto-scaling, separate queues per priority |
-| **Image Generation** | Sequential processing fine | 5 concurrent workers, Replicate 600 RPM is ample | Multiple Replicate accounts, image caching, CDN for generated images |
-| **File Storage** | Local disk | S3-compatible (MinIO or AWS S3) | S3 with CloudFront CDN, lifecycle policies for old exports |
-| **Embeddings** | OpenAI API, real-time | Batch API (50% cost), background processing | Self-hosted embedding model (e5-large-v2), GPU inference server |
-| **Export** | Marp CLI in-process | Marp in separate worker processes (Puppeteer memory) | Dedicated export worker pool, pre-rendered templates |
-
-## Suggested Build Order
-
-The build order is driven by dependency chains. Each phase depends on the previous one.
+### Primary Flow: Knowledge Base to Presentation
 
 ```
-Phase 1: Scaffold + Database + Auth
-    No dependencies. Foundation everything else builds on.
-    Delivers: Running NestJS app, Prisma schema, JWT auth, Docker Compose
+[User uploads docs]
+    │
+    ▼
+[NestJS API] ──presigned URL──> [S3 Storage]
+    │                                 │
+    │ dispatch job                    │ download
+    ▼                                 ▼
+[doc-ingest queue] ──────────> [Python Worker]
+                                      │
+                              parse -> chunk -> embed
+                                      │
+                                      ▼
+                              [Vector Store (pgvector)]
 
-Phase 2: Design Constraint Engine
-    Depends on: Schema (themes table)
-    No external API dependencies - pure validation logic.
-    Build early because it validates ALL downstream output.
-    Delivers: Color/typography/density validators, theme system
 
-Phase 3: Knowledge Base + Document Parser
-    Depends on: Auth (user-scoped documents), Schema (documents, chunks tables)
-    External dependency: OpenAI Embeddings API
-    Delivers: File upload, text extraction, chunking, embedding, similarity search
-
-Phase 4: Presentation Engine
-    Depends on: Knowledge Base (RAG retrieval), Design Engine (validation)
-    This is the core value proposition. Cannot exist without KB and constraints.
-    Delivers: Slide structuring, presentation CRUD, design validation
-
-Phase 5: PPTX/PDF Export (Marp)
-    Depends on: Presentation Engine (slide data to render)
-    First tangible output users can download.
-    Delivers: Marp markdown generation, PPTX + PDF export, file storage
-
-Phase 6: Credit System
-    Depends on: Auth (user model), can be built in parallel with Phase 5
-    Needed before image generation (which costs credits).
-    Delivers: Balance tracking, deduction, tier enforcement
-
-Phase 7: Image Generation Queue
-    Depends on: Credit System (deduction), Presentation Engine (slide data)
-    External dependencies: BullMQ/Redis, Replicate API, Imgur API
-    Most complex external integration. Build after core pipeline works.
-    Delivers: BullMQ setup, Replicate client, Imgur upload, image-slide integration
-
-Phase 8: Multi-Format Export (Reveal.js, Google Slides)
-    Depends on: Presentation Engine, Export Pipeline (extends it)
-    External dependency: Google Slides API (OAuth flow)
-    Lower priority - PPTX/PDF covers 80% of use cases.
-    Delivers: Reveal.js HTML, Google Slides API integration
+[User requests deck generation]
+    │
+    ▼
+[NestJS API] ──dispatch──> [rag-query queue] ──> [Python RAG Worker]
+    │                                                     │
+    │                                              retrieve context
+    │                                                     │
+    │  <──── job result (structured context) ─────────────┘
+    │
+    ▼
+[NestJS API: LLM call to generate slide content]
+    │
+    ├── validate against design constraints
+    │
+    ├── dispatch to [image-gen queue] for AI visuals
+    │        │
+    │        ▼
+    │   [Python Worker -> Replicate API -> S3]
+    │        │
+    │   <────┘ (image URLs in job result)
+    │
+    ▼
+[Persist Deck + Slides to PostgreSQL]
+    │
+    ▼
+[User requests export in format X]
+    │
+    ▼
+[NestJS API] ──dispatch──> [export queue] ──> [Node Export Worker]
+                                                      │
+                                              renderer adapter
+                                              selects format
+                                                      │
+                                              ┌───────┼───────┐
+                                              ▼       ▼       ▼
+                                          [PPTX] [PDF]  [Reveal.js]
+                                              │       │       │
+                                              ▼       ▼       ▼
+                                          [Upload to S3]
+                                              │
+                                              ▼
+                                          [Return download URL]
 ```
 
-**Why this order:**
+### Key Data Flows
 
-1. **Auth + DB first** because every other module needs user context and data persistence.
-2. **Design constraints before presentation engine** because the constraint engine validates all generated output. Building it later means retrofitting validation, which leads to inconsistent output quality during development.
-3. **Knowledge base before presentation engine** because the presentation engine's primary input is RAG-retrieved content. Without the knowledge base, you can only generate presentations from raw text input (useful for testing but not the product's value prop).
-4. **First export format (Marp) before image generation** because this gives end-to-end value (upload doc, generate deck, download PPTX) without the complexity of async image processing. Users can test and provide feedback on the core flow.
-5. **Credit system before image generation** because image generation is the primary credit-consuming operation. The guard pattern needs to exist before the expensive operation.
-6. **Image generation after core pipeline** because it adds async complexity (BullMQ, external APIs, polling) that should not block the core synchronous flow.
-7. **Additional export formats last** because PPTX+PDF via Marp covers the majority use case. Google Slides requires OAuth complexity. Reveal.js is a nice-to-have.
+1. **Document Ingestion:** Client uploads via presigned URL to S3. NestJS dispatches parsing job to `doc-ingest` queue. Python worker downloads from S3, parses (PyMuPDF for PDF, python-docx for DOCX), chunks (recursive/semantic, 512 tokens, 10-20% overlap), generates embeddings (sentence-transformers or OpenAI), stores vectors in pgvector with metadata. Job completes, NestJS updates knowledge base status.
 
-## Infrastructure (Docker Compose for Development)
+2. **Deck Generation:** NestJS dispatches RAG query to `rag-query` queue. Python performs hybrid retrieval (vector similarity + BM25 keyword). Returns top-K chunks with scores. NestJS feeds assembled context to LLM (OpenAI/Anthropic structured output) for slide content generation. Design constraint engine validates output. Slides persisted to PostgreSQL as canonical slide model.
 
-```yaml
-# docker-compose.yml
-services:
-  postgres:
-    image: pgvector/pgvector:pg16
-    environment:
-      POSTGRES_DB: slideforge
-      POSTGRES_USER: slideforge
-      POSTGRES_PASSWORD: dev_password
-    ports:
-      - "5432:5432"
-    volumes:
-      - pgdata:/var/lib/postgresql/data
+3. **Image Generation:** For slides needing AI visuals, NestJS dispatches to `image-gen` queue with prompt and style parameters. Python worker calls Replicate API asynchronously (webhook mode preferred over polling). On completion, uploads result to S3, returns URL. NestJS updates slide's image reference. Credits deducted per image.
 
-  redis:
-    image: redis:7-alpine
-    ports:
-      - "6379:6379"
-    volumes:
-      - redisdata:/data
+4. **Export:** NestJS dispatches export job with deck ID and format to `export` queue. Node export worker loads deck from PostgreSQL (direct DB read access to avoid serializing large decks through Redis). Routes to format-specific renderer. Renderer converts canonical slide model to target format. Uploads output to S3. Returns presigned download URL with expiry.
 
-  # BullBoard UI for monitoring queues during development
-  bullboard:
-    image: deadly0/bull-board
-    environment:
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
-    ports:
-      - "3100:3000"
-    depends_on:
-      - redis
+## Scaling Considerations
 
-volumes:
-  pgdata:
-  redisdata:
-```
+| Scale | Architecture Adjustments |
+|-------|--------------------------|
+| 0-1k users | Single NestJS instance, 1-2 Python workers per queue, single Redis, PostgreSQL with pgvector. Monorepo deployed as 4 processes (API + 3 worker types). |
+| 1k-100k users | Horizontal scaling of Python workers (image-gen is the bottleneck -- Replicate latency). BullMQ rate limiting to manage API costs. Redis Sentinel for HA. Connection pooling (PgBouncer). CDN for exported assets. Consider Qdrant if pgvector query latency exceeds 100ms. |
+| 100k+ users | Separate export worker pool per format. Dedicated Redis instances (queue vs cache). PostgreSQL read replicas. Shard vector store by user/org. Queue priority lanes (paid users get faster processing). Self-hosted embedding models (e5-large-v2) to cut costs. |
 
-Use `pgvector/pgvector:pg16` Docker image instead of base `postgres:16` to get pgvector pre-installed. This avoids manual extension compilation.
+### Scaling Priorities
+
+1. **First bottleneck: Image generation latency.** Replicate API calls take 5-30 seconds. With 100 concurrent deck generations requesting images, the image-gen queue backs up. Mitigation: increase worker concurrency, use Replicate webhooks (not polling), implement image caching for repeated/similar prompts, set BullMQ rate limiter to match Replicate plan limits.
+
+2. **Second bottleneck: RAG query throughput.** Vector similarity search with re-ranking is CPU-intensive. Mitigation: cache frequent queries in Redis with TTL, pre-compute embeddings for common topics, use pgvector HNSW indexes (not IVFFlat) for sub-10ms approximate search at scale.
+
+3. **Third bottleneck: Export rendering memory.** PptxGenJS and Marp CLI (which uses Puppeteer internally for PDF) are memory-intensive for large decks (50+ slides with images). Mitigation: stream images from S3 instead of buffering, run export worker with increased heap size (--max-old-space-size=4096), consider dedicated export instances.
+
+## Anti-Patterns
+
+### Anti-Pattern 1: Format-Specific Logic in the Slide Model
+
+**What people do:** Add fields like `pptxFontSize`, `revealCssClass`, or `googleSlideObjectId` to the core slide data model.
+**Why it breaks:** Every new export format requires model changes. The model becomes a union of all format quirks rather than a clean abstraction. Tests must account for every format's fields.
+**Do this instead:** Keep the slide model format-agnostic. Each renderer maps abstract concepts (`role: 'title'`) to format-specific implementations. Use the optional `formatHints` extension for true edge cases.
+
+### Anti-Pattern 2: Synchronous Replicate API Calls from the API Server
+
+**What people do:** Call the Replicate API directly from a NestJS controller and await the result before responding to the client.
+**Why it breaks:** Image generation takes 5-30 seconds per image. A 12-image deck blocks the request for 1-6 minutes. HTTP connections timeout, the NestJS event loop saturates, and the server cannot handle other requests.
+**Do this instead:** Dispatch to BullMQ. Return a job ID immediately. Client polls for status or subscribes via WebSocket/SSE. Use Replicate webhooks instead of polling for completion.
+
+### Anti-Pattern 3: Running RAG in Node.js to Avoid Cross-Language Complexity
+
+**What people do:** Use LangChain.js or a minimal Node.js RAG implementation to keep everything in one language.
+**Why it breaks:** Node.js RAG libraries have fewer parsing options (poor PDF table extraction, no OCR), fewer embedding model choices, and less community support for advanced retrieval patterns (hybrid search, re-ranking, query expansion). Retrieval quality directly determines presentation quality.
+**Do this instead:** Accept the cross-language complexity. BullMQ handles it cleanly. Python gives access to unstructured.io, sentence-transformers, PyMuPDF, and the full LangChain/LlamaIndex ecosystem. The complexity cost is one-time (queue setup); the quality benefit is ongoing.
+
+### Anti-Pattern 4: One Giant Worker Process
+
+**What people do:** Run a single Python process that handles image generation, document ingestion, and RAG queries on the same queue.
+**Why it breaks:** A slow image generation job blocks document ingestion. A burst of ingestion jobs starves RAG queries. Different workloads need different scaling profiles: image gen is I/O bound (external API calls), ingestion is CPU bound (parsing/embedding), RAG is memory bound (vector search).
+**Do this instead:** Separate queues and separate worker processes per workload type. Scale each independently.
+
+### Anti-Pattern 5: Design Constraints Applied After Generation
+
+**What people do:** Generate slides first, then try to auto-fix design issues (bad contrast, wrong fonts, too dense).
+**Why it breaks:** Post-hoc fixes are lossy. Auto-changing a color may break visual intent. Shrinking text to meet density rules may hide content. Users don't understand why their output looks different from what was generated.
+**Do this instead:** Enforce constraints at two points: (1) feed design token definitions into the LLM prompt so generated content is constraint-aware from the start, (2) validate at the API boundary and return violations as actionable feedback to the user, not silent auto-corrections.
+
+## Integration Points
+
+### External Services
+
+| Service | Integration Pattern | Notes |
+|---------|---------------------|-------|
+| Replicate API | Async prediction via Python httpx + webhook callbacks | Use `webhook_events_filter: ["completed"]`. Verify webhook signatures. Budget ~$0.01-0.05/image. |
+| OpenAI / Anthropic (LLM) | Direct API call from NestJS for slide content generation | Structured output mode for reliable JSON. Stream for real-time preview. |
+| OpenAI Embeddings | Called from Python worker for document embedding | text-embedding-3-small at $0.02/1M tokens. Batch API for 50% cost reduction at scale. |
+| Google Slides API | OAuth2 + batch update from Node export worker | Requires user OAuth consent. Batch updates are atomic. Template-based approach preferred. |
+| S3-Compatible Storage | Presigned URLs for upload/download from NestJS | MinIO for dev, AWS S3 or Cloudflare R2 for prod. Lifecycle rules for temp exports. |
+
+### Internal Boundaries
+
+| Boundary | Communication | Notes |
+|----------|---------------|-------|
+| NestJS API <-> Python Workers | BullMQ queues (Redis) | Jobs carry JSON payloads. Workers return results via job completion. No direct HTTP calls. |
+| NestJS API <-> Node Export Worker | BullMQ export queue | Export worker reads deck from PostgreSQL directly (shared read access) to avoid serializing large decks through Redis. |
+| API <-> Client | REST + WebSocket/SSE | REST for CRUD. WebSocket or SSE for real-time job status (generation progress, image completion). |
+| Slide Model <-> Renderers | TypeScript package import | `slide-model` package is a build-time dependency of both `api` and `export-worker`. |
+| Design Tokens <-> Validators/Renderers | TypeScript package import | `design-tokens` package consumed by constraint validators (API) and renderers (export worker). |
+
+## Build Order (Dependencies Between Components)
+
+### Phase 1: Foundation (No Dependencies)
+
+1. **Slide Data Model** (`packages/slide-model/`) -- Define core types, JSON schema. Everything depends on this.
+2. **Design Tokens** (`packages/design-tokens/`) -- Color palettes, typography scales. Used by validators and renderers.
+3. **Database Schema** (PostgreSQL + Prisma) -- Users, decks, slides, credits, jobs, document chunks.
+4. **Redis + BullMQ Setup** -- Queue infrastructure, connection config.
+
+### Phase 2: Core API (Depends on Phase 1)
+
+5. **Auth Module** -- JWT, guards, user registration/login.
+6. **Deck/Slide CRUD** -- Create, read, update, delete using the slide data model.
+7. **Design Constraint Engine** -- Validate slides against design tokens. Build early because it validates all downstream output.
+8. **S3 Storage Module** -- Presigned URL generation, file lifecycle management.
+9. **Job Dispatch Module** -- BullMQ producers for all 4 queue types.
+
+### Phase 3: Workers (Depends on Phase 1 + Phase 2 Queue Infra)
+
+10. **Python Document Ingestion Worker** -- PDF/DOCX parsing, chunking, embedding. Needs BullMQ + S3.
+11. **Python Image Generation Worker** -- Replicate API integration. Independent of doc ingestion.
+12. **Python RAG Query Worker** -- Vector similarity search + context assembly. Requires vector store populated by ingestion worker (#10).
+
+### Phase 4: Export (Depends on Phase 1 Slide Model + Phase 2 Storage)
+
+13. **PPTX Renderer** -- PptxGenJS. Primary output format, build first.
+14. **PDF Renderer** -- Marp CLI or Puppeteer HTML-to-PDF.
+15. **Reveal.js Renderer** -- Static HTML generation with embedded assets.
+16. **Google Slides Renderer** -- OAuth2 consent flow + Slides API batch updates. Build last (most complex external dependency).
+
+### Phase 5: Integration and Polish
+
+17. **Real-time Status** -- WebSocket/SSE for job progress notifications.
+18. **Credit System** -- Reserve credits on dispatch, deduct on completion, refund on failure.
+19. **Webhook Handler** -- Replicate completion callbacks that update slide image status.
+
+**Build order rationale:**
+- Slide data model first because it is the shared contract between API and all workers/renderers. Get it right before building anything that produces or consumes it.
+- Design constraints before presentation engine so validation exists before any content is generated. Retrofitting constraints onto existing content is harder than designing constrained from the start.
+- Document ingestion before RAG queries because the RAG worker needs a populated vector store.
+- PPTX export before other formats because it covers the majority use case and validates the renderer adapter pattern.
+- Google Slides last because it requires OAuth2 complexity and user consent flows that should not block the core product.
+- Workers in Phase 3 can be built in parallel with each other (image gen and doc ingestion are independent).
+- Export renderers in Phase 4 can also be built in parallel.
 
 ## Sources
 
-- [NestJS Modular Architecture (Medium, Dec 2025)](https://medium.com/@bhagyarana80/nestjs-architecture-that-survived-real-production-traffic-d690fc6afefd) [MEDIUM confidence]
-- [NestJS Modular Architecture Principles (Level Up Coding)](https://levelup.gitconnected.com/nest-js-and-modular-architecture-principles-and-best-practices-806c2cb008d5) [MEDIUM confidence]
-- [BullMQ NestJS Integration (Official BullMQ Docs)](https://docs.bullmq.io/guide/nestjs) [HIGH confidence]
-- [NestJS Queue Management (Official NestJS Docs)](https://docs.nestjs.com/techniques/queues) [HIGH confidence]
-- [Marp CLI API Usage (DeepWiki)](https://deepwiki.com/marp-team/marp-cli/8.2-api-usage) [HIGH confidence]
-- [Marp CLI GitHub](https://github.com/marp-team/marp-cli) [HIGH confidence]
-- [pgvector-node (GitHub)](https://github.com/pgvector/pgvector-node) [HIGH confidence]
-- [Prisma pgvector Support Issue #18442](https://github.com/prisma/prisma/issues/18442) [HIGH confidence]
-- [Prisma ORM v6.13.0 pgvector for Prisma Postgres](https://www.prisma.io/blog/orm-6-13-0-ci-cd-workflows-and-pgvector-for-prisma-postgres) [HIGH confidence]
-- [Replicate Rate Limits (Official Docs)](https://replicate.com/docs/topics/predictions/rate-limits) [HIGH confidence]
-- [OpenAI Embedding Pricing](https://platform.openai.com/docs/pricing) [HIGH confidence]
-- [Document Chunking Best Practices (Firecrawl, 2025)](https://www.firecrawl.dev/blog/best-chunking-strategies-rag-2025) [MEDIUM confidence]
-- [RAG Chunking Strategies (Weaviate)](https://weaviate.io/blog/chunking-strategies-for-rag) [MEDIUM confidence]
-- [Google Slides API Node.js Quickstart (Official)](https://developers.google.com/workspace/slides/api/quickstart/nodejs) [HIGH confidence]
-- [NestJS File Upload (Official Docs)](https://docs.nestjs.com/techniques/file-upload) [HIGH confidence]
-- [Credit-Based SaaS Billing Architecture (ColorWhistle, 2026)](https://colorwhistle.com/saas-credits-system-guide/) [MEDIUM confidence]
-- [AI SaaS Pricing (Metronome, 2025)](https://metronome.com/blog/ai-pricing-in-practice-2025-field-report-from-leading-saas-teams) [MEDIUM confidence]
+- [NestJS Microservices Documentation](https://docs.nestjs.com/microservices/basics)
+- [BullMQ Architecture](https://docs.bullmq.io/guide/architecture)
+- [BullMQ Python Introduction](https://docs.bullmq.io/python/introduction)
+- [BullMQ NestJS Integration](https://docs.bullmq.io/guide/nestjs)
+- [BullMQ Workers Documentation](https://docs.bullmq.io/guide/workers)
+- [PptxGenJS Documentation](https://gitbrent.github.io/PptxGenJS/)
+- [python-pptx Documentation](https://python-pptx.readthedocs.io/)
+- [Reveal.js Framework](https://revealjs.com/)
+- [Google Slides API - Create Presentations](https://developers.google.com/workspace/slides/api/guides/presentations)
+- [Replicate HTTP API Reference](https://replicate.com/docs/reference/http)
+- [Marp Presentation Ecosystem](https://marp.app/)
+- [Constraint-Based Design Systems (Normal Flow)](https://normalflow.pub/posts/2022-08-12-an-introduction-to-constraint-based-design-systems)
+- [Design Tokens Beyond Colors (Bumble Tech)](https://medium.com/bumble-tech/design-tokens-beyond-colors-typography-and-spacing-ad7c98f4f228)
+- [RAG Chunking Strategies (Weaviate)](https://weaviate.io/blog/chunking-strategies-for-rag)
+- [Async AI Processing Architecture (GitHub Gist)](https://gist.github.com/horushe93/cc814ec8cc03e6e5f5f82b601423893b)
+- [NestJS Queues Documentation](https://docs.nestjs.com/techniques/queues)
+- [NestJS-Python-Kafka Microservices (GitHub)](https://github.com/gispada/nestjs-python-kafka-microservices)
+
+---
+*Architecture research for: AI Presentation SaaS (SlideForge)*
+*Researched: 2026-02-14*

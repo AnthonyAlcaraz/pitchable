@@ -1,489 +1,400 @@
-# Domain Pitfalls: SlideForge
+# Pitfalls Research
 
-**Domain:** AI Presentation Generation SaaS
+**Domain:** AI Presentation SaaS (knowledge base to slides with AI visuals)
 **Researched:** 2026-02-14
-**Overall Confidence:** MEDIUM-HIGH (most findings verified across multiple sources)
+**Confidence:** HIGH (combines web research, competitor analysis, official documentation, and direct Z4 operational experience)
 
 ---
 
 ## Critical Pitfalls
 
-Mistakes that cause rewrites, user churn, or fundamental product failure.
+### CP-1: Slide Content Overflow -- The Silent Destroyer
 
----
+**What goes wrong:**
+LLM-generated content exceeds slide boundaries. Markdown-based renderers (Marp) have no built-in vertical auto-scaling. python-pptx's `TEXT_TO_FIT_SHAPE` auto-fit is unreliable and does not persist after text edits. Content gets cropped in PDF export, invisible in preview, or renders as an unreadable wall of text. Marp Core v4 only auto-scales horizontally (code blocks, math blocks, fitting headers), not vertically exceeded content.
 
-### CP-1: The "Gamma Problem" -- Ugly Output Kills Trust Instantly
+**Why it happens:**
+LLMs optimize for completeness, not visual hierarchy. A prompt asking for "3 key points" might return 50 words or 300 words depending on the topic. No programmatic way exists to measure rendered text height before placement -- font metrics, line wrapping, and padding all interact unpredictably. The fundamental presentation design rules (6x6 rule: max 6 bullets x 6 words; 10-20-30 rule: minimum 30pt font) are violated by default by every LLM.
 
-**What goes wrong:** AI-generated slides look amateurish. Users see one bad slide and abandon the product. The most common complaints across Gamma, SlidesAI, and Plus AI reviews: broken layouts, mismatched fonts, repetitive "AI look" across every deck, and images that have zero relevance to the content. Gamma currently holds a 1.9/5 on Trustpilot, with design quality and export formatting as top complaints.
-
-**Why it happens:** Most AI presentation tools treat design as an afterthought. They generate content first, then attempt to style it. Without hard constraints, LLMs produce slides that violate basic design principles: too many bullet points, clashing colors, inconsistent font sizes, walls of text, and random stock imagery.
-
-**Consequences:** Users generate one deck, see it looks worse than what they could make manually in 15 minutes, and never return. First-impression failure is the #1 killer for AI presentation tools.
-
-**Prevention:** The design constraint engine must be a first-class system, not a styling layer applied after content generation. Every slide must pass through validation rules BEFORE reaching the user. This is SlideForge's stated core differentiator and must be built in Phase 1, not bolted on later.
-
-**Detection:** Monitor the percentage of generated slides that violate any design rule. If this number is above 0% in production, the constraint engine has gaps.
-
-**Confidence:** HIGH -- verified across multiple user review platforms and competitor analyses.
-
-**Phase:** Must be addressed in the foundation phase (Phase 1). The constraint engine is the product.
-
----
-
-### CP-2: Content Density Overflow -- The Wall-of-Text Slide
-
-**What goes wrong:** LLMs are verbose by nature. Without hard limits, they generate slides with 8+ bullet points, each containing full sentences, in 16px font. The result is a wall of text that nobody can read from the back of a room.
-
-**Why it happens:** LLMs optimize for completeness, not visual hierarchy. When asked to "create a slide about X," they dump everything they know. The 6x6 rule (max 6 bullets, max 6 words per bullet) and 10-20-30 rule (minimum 30pt font) are fundamental presentation design laws that LLMs violate by default.
-
-**Consequences:** Slides that look like documents. Audiences disengage. Presenters are embarrassed. Users blame the tool.
-
-**Prevention:** Hard-coded constraints in the generation pipeline:
-- Maximum 6 bullet points per slide
-- Maximum 10 words per bullet point
-- Minimum font size of 24pt (28pt+ preferred)
-- Maximum character count per slide (varies by layout: title-only = 50 chars, title + bullets = 200 chars, title + image + bullets = 150 chars)
+**How to avoid:**
+- Enforce hard character/word limits per slide in the LLM prompt (maximum 40 words per bullet, maximum 4-6 bullets per slide, minimum 24pt font)
+- Implement a post-generation validation pass that counts content length and triggers re-generation or auto-split when limits are exceeded
+- Build a "slide budget" system: estimate available content area per layout template, enforce that budget during content generation
+- For Marp: use the VS Code diagnostic API pattern to detect overflow before export
+- For python-pptx: pre-calculate text extents using font metrics (Pillow's `ImageFont.getsize()`) before placement
 - Auto-split: if content exceeds limits, split into multiple slides rather than shrinking text
-- Word count validation on every slide BEFORE rendering
 
-**Detection:** Count bullet points and word counts on every generated slide. Alert if any slide exceeds thresholds.
+**Warning signs:**
+- QA reports of "cut off text" in exported PDFs
+- Inconsistent slide density (some slides have 2 words, others have 200)
+- Marp VS Code diagnostics showing overflow warnings
+- Users complaining slides look like documents
 
-**Confidence:** HIGH -- the 6x6 and 10-20-30 rules are industry-standard presentation design principles documented across Microsoft, Cornell, and every presentation design guide.
-
-**Phase:** Phase 1 (constraint engine core).
+**Phase to address:**
+Phase 1 (Core Engine). Content budget enforcement must be baked into the generation pipeline from day one. Retrofitting overflow detection onto an existing pipeline requires touching every layout template.
 
 ---
 
-### CP-3: Color Combination Disasters -- Accessibility and Aesthetics
+### CP-2: The "Gamma Problem" -- Ugly Output Kills Trust Instantly
 
-**What goes wrong:** AI generates slides with color combinations that are illegible, ugly, or inaccessible. Specific failures: red text on green background (invisible to 8% of men), yellow text on white (fails WCAG contrast), neon green on neon pink (assault on eyes), light gray on white (invisible to everyone).
+**What goes wrong:**
+AI-generated slides look amateurish. Users see one bad slide and abandon the product. The most common complaints across Gamma (1.9/5 on Trustpilot), SlidesAI, and Plus AI reviews: broken layouts, mismatched fonts, repetitive "AI look" across every deck, and images with zero relevance to content. First-impression failure is the #1 killer for AI presentation tools.
 
-**Why it happens:** LLMs do not understand color theory. If given a free choice, they will suggest colors that sound reasonable in text ("red for urgency, green for growth") but fail in practice. Without a validated palette system, every generation is a gamble.
+**Why it happens:**
+Most AI presentation tools treat design as an afterthought. They generate content first, then attempt to style it. Without hard constraints, LLMs produce slides that violate basic design principles: too many bullet points, clashing colors, inconsistent font sizes, walls of text, and random stock imagery.
 
-**Consequences:** Slides that cannot be read by colorblind users (8% of male audience). Slides that look unprofessional. Slides where text literally disappears against the background on projected screens (projectors wash out low-contrast combinations).
+**How to avoid:**
+The design constraint engine must be a first-class system, not a styling layer applied after content generation. Every slide must pass through validation rules BEFORE reaching the user:
+- Maximum 6 bullet points per slide, maximum 10 words per bullet
+- Maximum 3 font sizes per slide (title, body, caption)
+- Maximum 3 distinct colors per slide (excluding neutrals)
+- WCAG AA contrast validation on every text-background pair (4.5:1 for body text, 3:1 for large text 24pt+)
+- Curated font pairings only (serif heading + sans-serif body, or vice versa; never two decorative fonts)
+- No text inside AI-generated images (text always in slide layer)
 
-**Prevention:** Implement a color constraint system with three layers:
+**Warning signs:**
+- Monitor percentage of generated slides that violate any design rule. If above 0% in production, the constraint engine has gaps
+- User retention drops after first generation (users see ugly output and never return)
 
-1. **Banned combinations (hard block):** See section "Excluded Design Combinations" below
-2. **WCAG contrast validation:** Every text-background pair must pass WCAG AA minimum (4.5:1 for body text, 3:1 for large text / 24pt+)
-3. **Curated palette system:** Users select from pre-validated palettes rather than arbitrary colors. Each palette is tested for all color-blindness variants (protanopia, deuteranopia, tritanopia)
+**Phase to address:**
+Phase 1. The constraint engine IS the product.
 
-**Detection:** Run automated WCAG contrast checks on every generated slide. Flag any slide below 4.5:1 ratio. Use tools like the WebAIM Contrast Checker algorithm.
+---
 
-**Confidence:** HIGH -- WCAG 2.1 SC 1.4.3 defines exact ratios. Color blindness statistics from National Eye Institute.
+### CP-3: Color Accessibility Disasters
 
-**Phase:** Phase 1 (constraint engine core).
+**What goes wrong:**
+AI generates slides with color combinations that are illegible, ugly, or inaccessible. Red text on green background is invisible to 8% of men (deuteranopia). Yellow text on white fails WCAG contrast (ratio ~1.07:1). Light gray on white disappears on projectors. Color contrast is the #1 accessibility violation on the web, affecting 83.6% of all websites (WebAIM 2024 Million analysis).
+
+**Why it happens:**
+LLMs do not understand color theory. Colors that sound reasonable in text ("red for urgency, green for growth") fail in practice. Without a validated palette system, every generation is a gamble. There is no exception to WCAG contrast rules for brand colors or corporate design systems (except logos).
+
+**How to avoid:**
+Implement a three-layer color constraint system:
+1. **Banned combinations (hard block):** Red/green, yellow/white, light gray/white, blue/purple, neon pairs
+2. **WCAG contrast validation:** Every text-background pair must pass AA minimum (4.5:1 for text <24pt, 3:1 for text >=24pt). Run WebAIM Contrast Checker algorithm on every generated slide
+3. **Curated palette system:** Users select from pre-validated palettes tested for all color-blindness variants (protanopia, deuteranopia, tritanopia). No arbitrary color selection.
+
+Safe default pairs: white on dark navy (#1a1a2e, ratio 15.6:1), dark charcoal (#333333) on white (ratio 12.6:1), white on dark teal (#006666, ratio 7.2:1)
+
+**Warning signs:**
+- Any generated slide failing automated WCAG contrast check
+- User reports of "can't read the text" especially in meeting room projector context
+
+**Phase to address:**
+Phase 1 (constraint engine core).
 
 ---
 
 ### CP-4: Export Format Fidelity -- "It Looked Fine Until I Downloaded It"
 
-**What goes wrong:** Slides render beautifully in the web app but break on export. Specific failures by format:
+**What goes wrong:**
+Presentations render beautifully in the web app but break on export. Specific failures by format:
 
-**Marp CLI (Markdown to PDF/PPTX):**
-- Regular PPTX output consists of pre-rendered background images -- content is NOT editable in PowerPoint
-- `--pptx-editable` is experimental, throws errors with complex themes (including Marp Core's `gaia` theme), and does NOT support presenter notes
-- Firefox PDF output has incompatible renderings vs. Chrome
-- Local file access (images) is blocked by default; requires `--allow-local-files` flag which has security implications
-- Standalone binaries cannot load ES Module configuration files
+**Marp CLI:** Regular PPTX output consists of pre-rendered background images (content NOT editable in PowerPoint). `--pptx-editable` is experimental, throws errors with complex themes, and does NOT support presenter notes. Firefox PDF output is incompatible with Chrome rendering.
 
-**python-pptx (direct PPTX generation):**
-- No support for animations or transitions
-- No SmartArt support
-- Font formatting gets reset to defaults during text replacement operations
-- Generated files sometimes trigger "PowerPoint found a problem with content" repair dialogs
-- Only supports .pptx format (not legacy .ppt)
+**python-pptx:** No animation/transition support. No SmartArt. Font formatting gets reset to defaults during text replacement. Generated files sometimes trigger "PowerPoint found a problem with content" repair dialogs. `TEXT_TO_FIT_SHAPE` auto-fit does not persist to later text changes. Only TrueType (.ttf) fonts can be embedded -- OpenType CFF fonts (.otf) are not supported by PowerPoint's embed feature.
 
-**Google Slides API:**
-- Write requests limited to 600/minute/project and 60/minute/user
-- Read requests limited to 3,000/minute/project
-- OAuth new user authorization has rate limits (can block rapid signups)
-- Exceeding quotas returns 429 errors requiring exponential backoff
-- OAuth scope risk levels affect available quota caps
+**Google Slides API:** Write requests limited to 600/minute/project and 60/minute/user. Exceeding quotas returns 429 errors. OAuth new-user authorization has its own rate limits.
 
-**Why it happens:** Each export format has its own rendering engine with different capabilities. What CSS can express is not what PPTX XML can express. Teams build for one format first and discover the others break.
+**PDF Export:** Variable fonts lose weight during PDF export. Cloud-managed fonts (Adobe, Google CDN) often fail to embed. Tables copied from external sources have corrupt formatting data.
 
-**Consequences:** Users generate a presentation, download it, open it in PowerPoint, and find broken layouts, missing fonts, uneditable content, or repair warnings. This destroys trust as thoroughly as ugly design.
+**Why it happens:**
+Each export format has its own rendering engine with different capabilities. What CSS can express is not what PPTX XML can express. The web preview renders with browser font engines, PPTX renders with PowerPoint's engine, PDF renders with yet another engine. Each has different font fallback behavior.
 
-**Prevention:**
-- Build export validation tests for every supported format from day one
+**How to avoid:**
 - Use python-pptx for PPTX generation (not Marp's --pptx-editable) since direct XML generation gives more control
-- For Google Slides: implement proper rate limiting with exponential backoff, queue system for batch operations, and handle OAuth carefully
+- Restrict font palette to confirmed-embeddable TrueType (.ttf) fonts. Never use variable fonts in exports
+- Bundle font files directly in the export pipeline rather than referencing system fonts
+- Use batchUpdate for Google Slides API (combine all mutations into one request) with exponential backoff (1s, 2s, 4s, 8s, max 60s)
+- Automated visual regression tests: render each slide in web, export to each format, screenshot the result, compare pixel differences. Alert on >5% deviation
 - Test every slide template in every export format before launching that template
-- Limit design features to the intersection of what ALL export formats support (lowest common denominator for cross-format features)
+- Limit design features to the intersection of what ALL export formats support
 
-**Detection:** Automated visual regression tests: render each slide in web, export to each format, screenshot the result, compare pixel differences. Alert on >5% deviation.
+**Warning signs:**
+- "The fonts look different on my computer" support tickets
+- PDF exports where text appears as boxes or question marks
+- Font substitution warnings in PowerPoint when opening generated files
+- PowerPoint "found a problem with content" repair dialogs
 
-**Confidence:** HIGH for Marp and Google Slides limits (verified from official docs). MEDIUM for python-pptx (verified from GitHub issues and docs).
-
-**Phase:** Phase 2 (export pipeline), but template design in Phase 1 must account for export constraints.
+**Phase to address:**
+Phase 1 (font selection constraints + template design), Phase 5 (export pipeline). Font decisions in Phase 1 prevent rewrite in Phase 5.
 
 ---
 
 ### CP-5: Image Generation Cost Explosion
 
-**What goes wrong:** Image generation APIs charge per image. At scale, costs spiral out of control. A user generating a 12-image presentation costs $0.48-$0.96 in image generation alone (at $0.04-$0.08/image for DALL-E 3 / Flux Pro). If the user is on a $10/month plan generating 20 presentations, image costs alone are $9.60-$19.20 -- exceeding revenue.
+**What goes wrong:**
+Each presentation generates 5-15 images. At $0.02-$0.17 per image (depending on provider and resolution), a single presentation costs $0.10-$2.55 in image generation alone. Free tier user generating 10 presentations burns $1-$25 in compute. Google slashed Gemini API free tier quotas by 50-92% on December 7, 2025. OpenAI said "our GPUs are melting" and introduced temporary rate limits. Nano Banana Pro reduced free tier from 3 to 2 images/day in November 2025.
 
-**Why it happens:** Teams price based on subscription models without modeling per-generation variable costs. Image generation is not like LLM tokens (fractions of a cent); it is 4-8 cents per image, and users choose 12 images per deck because "more is better."
+**Why it happens:**
+Image generation pricing is per-call, not per-token. Users choose "more images" because "more is better." Teams price based on subscription models without modeling per-generation variable costs. Pricing: GPT Image 1: $0.011-$0.167 per 1024x1024. Imagen 4: $0.02-$0.06. At 12 images/deck and 20 decks/month for a $10/month plan, image costs alone are $2.40-$40.08 -- potentially exceeding revenue.
 
-**Consequences:** Negative unit economics. Every active user loses money. The more successful the product, the faster it burns cash.
+**How to avoid:**
+- **Image caching:** Cache generated images keyed on prompt + style parameters. Same prompt = same image, no regeneration
+- **Tiered image quality:** Free tier gets 512x512 or no images; paid gets 1024x1024
+- **Provider fallback chains:** Try cheapest provider first, fall back to expensive on failure
+- **Model routing:** Use cheapest model (Flux.1 Schnell) for preview/draft, premium models only for final export
+- **Per-user daily image generation caps** independent of credits
+- **Cost-per-presentation as first-class metric** from day one
+- **Self-hosted fallback:** At >10K images/day, self-hosting Flux/SDXL on GPU instances ($1.29-$2.99/hr for A100) becomes cheaper than API pricing. Plan the migration path.
 
-**Prevention:**
-- **Tiered image credits:** Free = 0 images, Basic = 3/deck, Pro = 12/deck. Credits are the monetization lever.
-- **Cost modeling per tier:** Model the worst-case cost per user per month for each plan before setting prices
-- **Image caching:** Cache generated images with their prompts. If two users generate "professional team meeting" for the same template, serve the cached version.
-- **Model routing:** Use Flux.1 Schnell (cheapest, fastest) for preview/draft, Flux Pro or DALL-E 3 only for final export
-- **Self-hosted fallback:** At >10K images/day, self-hosting Flux or Stable Diffusion on GPU instances ($1.29-$2.99/hr for A100/H100) becomes cheaper than API pricing. Plan the migration path.
-- **Usage-based pricing:** 61% of SaaS companies now use usage-based pricing. For AI-heavy products, this is essential to protect margins.
+**Warning signs:**
+- Monthly image generation bill growing faster than user count
+- Free tier users generating more images than paid users
+- Single users triggering rate limits repeatedly
+- Any plan's average cost exceeding 40% of revenue
 
-**Detection:** Track cost-per-generation and cost-per-user-per-month in real-time. Alert if any plan's average cost exceeds 40% of revenue.
-
-**Confidence:** HIGH for pricing data (verified from official API pricing pages). The margin math is straightforward arithmetic.
-
-**Phase:** Phase 1 (pricing model), Phase 3 (image generation integration), Phase 5+ (self-hosting optimization).
+**Phase to address:**
+Phase 1 (cost modeling in architecture), Phase 3 (image generation implementation), Phase 4 (credit system must account for variable image costs).
 
 ---
 
 ### CP-6: AI Image Text Rendering Failure
 
-**What goes wrong:** Users expect AI-generated images to contain readable text (chart labels, diagram text, title graphics). DALL-E 3 warps, duplicates, and misspells text in generated images. Even Flux, which handles text better, fails on complex multi-word strings. Generated images with garbled text look worse than no image at all.
+**What goes wrong:**
+Users expect AI-generated images to contain readable text (chart labels, diagram text, title graphics). Current models warp, duplicate, and misspell text. Generated images reading "Quartlery Revenue" or "Anual Report" destroy credibility instantly. Sam Altman acknowledged OpenAI "refusing some generations that should be allowed." Nano Banana Pro sometimes ignores prompts entirely (confirmed from Z4 operational experience).
 
-**Why it happens:** Diffusion models generate images pixel-by-pixel and do not have a concept of "characters" or "spelling." Text rendering requires pixel-perfect placement that conflicts with the stochastic nature of image generation.
+**Why it happens:**
+Diffusion models generate images pixel-by-pixel without a concept of "characters" or "spelling." Text rendering requires pixel-perfect placement that conflicts with the stochastic nature of image generation.
 
-**Consequences:** Slides with images containing gibberish text. Users see "Annuall Revnue Grwoth" in a generated chart image and lose all confidence in the product.
+**How to avoid:**
+- **Golden rule: NEVER generate text inside images.** All text belongs in the slide layer, not the image layer
+- Use images as backgrounds/illustrations only. Generate scenes, objects, abstract visuals -- never charts, diagrams, or text graphics
+- Prompt engineering: explicitly include "no text, no words, no labels, no letters" in every image generation prompt
+- Post-generation OCR validation: run Tesseract on generated images, flag for regeneration if text detected with confidence > 0.7
+- For charts/diagrams: generate programmatically (Chart.js, D3, Mermaid) rather than through image AI
 
-**Prevention:**
-- **Never generate text inside images.** This is the golden rule. All text belongs in the slide layer, not the image layer.
-- **Use images as backgrounds/illustrations only.** Generate scenes, objects, abstract visuals -- never charts, diagrams, or text-containing graphics.
-- **Prompt engineering:** Explicitly include "no text, no words, no labels, no letters" in every image generation prompt.
-- **Post-generation validation:** Run OCR on generated images. If any text is detected, flag for regeneration with stronger no-text prompts.
-- **For charts/diagrams:** Generate them programmatically (Chart.js, D3, Mermaid) rather than through image AI.
+**Warning signs:**
+- User complaints about typos that don't exist in the slide text (they're in the images)
+- Image regeneration rates above 30%
+- Support tickets with screenshots showing garbled text in background images
 
-**Detection:** OCR scan every generated image before serving. If detected text confidence > 0.7, regenerate.
-
-**Confidence:** HIGH -- text rendering failures in DALL-E are extensively documented. Flux/Ideogram improvements are real but not reliable enough for professional use.
-
-**Phase:** Phase 3 (image generation). This constraint must be designed into the prompt system from the start.
-
----
-
-## Moderate Pitfalls
-
-Mistakes that cause delays, technical debt, or degraded user experience.
+**Phase to address:**
+Phase 3 (image generation). Establish as an architectural rule: text and images are always separate layers.
 
 ---
 
-### MP-1: Knowledge Base Ingestion Garbage-In-Garbage-Out
+### CP-7: Credit System Race Conditions and Abuse
 
-**What goes wrong:** Users upload PDFs, Word docs, and other files to build a knowledge base. The parsing pipeline mangles the content: tables lose their structure, multi-column layouts merge incorrectly, headers and footers pollute the body text, images are lost, and formatting metadata (bold, headings) is stripped.
+**What goes wrong:**
+Concurrent API requests drain credits below zero. Users discover they can start multiple presentations simultaneously and get 5 presentations for the cost of 1. Promotional credits stack with purchased credits in unintended ways. Partial credit transfers during tier upgrades create exploitable loopholes. Missing 1% of metering events means 1% revenue leakage -- at $2M ARR that equals $20K/year lost. Revenue loss from billing errors typically sits between 1-5% of total revenue.
 
-**Why it happens:** PDF is a page-description format, not a semantic format. Text is stored as drawing commands, not in reading order. Tables have no explicit structure in most PDFs. Multi-column layouts create interleaved text blocks. Even the best parsers (PyMuPDF, pdfplumber) struggle with complex layouts. VLM-based approaches (using vision models to "read" PDFs) hallucinate content and miss embedded text.
+**Why it happens:**
+Credit deduction is a distributed systems problem disguised as simple subtraction. When multiple requests hit the credit check simultaneously, each sees "sufficient credits" and proceeds. By the time deduction happens, the account is negative. Race conditions are especially dangerous during image generation, where a single presentation triggers 5-15 separate billable events.
 
-**Prevention:**
-- Use PyMuPDF or pypdfium for text extraction (best accuracy in comparative studies)
-- Use pdfplumber specifically for table extraction (it handles table structure better than general-purpose parsers)
-- For complex documents, offer a "review extracted content" step where users can verify and correct parsed content before presentation generation
-- Support direct text input and markdown as first-class alternatives to PDF upload
-- Display confidence scores for parsed sections so users know which content might be mangled
+**How to avoid:**
+- Use optimistic locking with atomic decrement operations (Redis DECRBY or PostgreSQL `UPDATE ... RETURNING` with row-level locks)
+- **Reserve credits at presentation start** (full estimated cost), then refund unused credits on completion -- the reservation pattern
+- Implement a credit ledger (append-only log) rather than a mutable balance field -- enables audit trail and replay
+- Rate limit presentation starts per user (not just API calls) -- maximum 3 concurrent generations
+- For free tier: email validation, device fingerprinting, rate limiting per IP, behavioral monitoring (flag accounts that consume all credits within 1 hour of creation)
+- Test with concurrent load: 100 simultaneous presentation requests from the same free-tier account
 
-**Detection:** Compare input document page count and approximate word count against extracted content. Large discrepancies (>20% content loss) indicate parsing failures.
+**Warning signs:**
+- Negative credit balances in the database
+- Users with more generated presentations than their credit purchases support
+- Revenue per user declining while usage per user increases
+- Account creation spikes from same IP/fingerprint
 
-**Confidence:** HIGH -- PDF parsing challenges are extensively documented. NVIDIA, Unstructured, and the arXiv comparative study all confirm these limitations.
-
-**Phase:** Phase 2 (knowledge base ingestion).
-
----
-
-### MP-2: Chunking Strategy Destroys Context
-
-**What goes wrong:** When indexing knowledge base content for RAG retrieval, naive fixed-size chunking (e.g., "every 512 tokens") splits content at arbitrary boundaries. A procedure gets cut in half. A table header separates from its data rows. A conclusion loses its supporting evidence.
-
-**Why it happens:** 70% of enterprise teams still use fixed-size chunking despite extensive evidence that it produces inferior results. It is the default in most RAG frameworks and the easiest to implement.
-
-**Prevention:**
-- Use semantic chunking (split at paragraph/section boundaries) instead of fixed-size chunking
-- Preserve table integrity: never split a table across chunks
-- Include section headers in every chunk for context
-- Use overlapping chunks (10-20% overlap) to prevent hard boundary artifacts
-- Adaptive chunking achieves 87% accuracy vs. 50% for naive approaches (NVIDIA study)
-
-**Detection:** Sample retrieval queries and check if returned chunks are self-contained and coherent. If chunks frequently start mid-sentence or mid-paragraph, the strategy needs fixing.
-
-**Confidence:** HIGH -- verified across NVIDIA, Weaviate, Stack Overflow, and Databricks documentation.
-
-**Phase:** Phase 2 (knowledge base indexing).
+**Phase to address:**
+Phase 4 (Credit System). The reservation pattern (reserve up front, refund on completion) must be the default architecture.
 
 ---
 
-### MP-3: Image Style Inconsistency Across Slides
+### CP-8: RAG Retrieval Produces Irrelevant or Hallucinated Slide Content
 
-**What goes wrong:** Each slide's image is generated independently, producing a deck where slide 1 has a photorealistic image, slide 3 has a watercolor illustration, and slide 7 has a flat vector graphic. The deck looks like a collage assembled by five different designers.
+**What goes wrong:**
+Knowledge base retrieval returns chunks that are semantically similar but contextually wrong. A query about "Q3 revenue growth" retrieves a chunk about "Q2 revenue growth" because embeddings are close. The LLM confidently presents Q2 data labeled as Q3. When AI tools are linked to company files with outdated or incomplete data, they hallucinate and generate faulty information, stating it as true. Users trust AI-generated presentations without fact-checking (documented human tendency toward AI trust).
 
-**Why it happens:** Image generation models produce varied outputs even with similar prompts. Without explicit style anchoring, each generation drifts. Seed values and style prompts help but do not guarantee consistency.
+**Why it happens:**
+Fixed-size chunking destroys contextual relationships. A 512-token chunk splitting a table in half produces an embedding matching the topic but containing only partial data. Poorly processed documents reduce retrieval accuracy by up to 45%. The fundamental conflict: small chunks (100-256 tokens) improve semantic matching precision, but large chunks (512-1024 tokens) preserve context. 70% of enterprise teams still use fixed-size chunking despite evidence it produces inferior results.
 
-**Prevention:**
-- **Style parameter system:** Define a style string (e.g., "flat illustration, blue and white palette, clean lines, corporate style") that is prepended to every image prompt in a deck
-- **Seed consistency:** Use the same random seed for all images in a deck (where API supports it)
-- **Style reference image:** Generate one "anchor" image first, then use image-to-image or style transfer for subsequent images
-- **Limited style presets:** Offer 5-8 curated style options rather than free-form style input. Each preset includes tested prompt prefixes that produce consistent results.
+**How to avoid:**
+- Use semantic chunking (split on section boundaries, not token counts) with 10-20% overlap between chunks
+- Attach metadata to every chunk: source document, page number, section header, date
+- Implement a retrieval verification step: after RAG retrieval, have the LLM assess whether retrieved content actually answers the query before generating slide content
+- For tabular data: chunk entire tables as single units, never split rows across chunks
+- Set a confidence threshold on retrieval similarity scores -- below threshold, the slide says "Data not found in knowledge base" rather than hallucinating
+- Include source attribution on every data-containing slide so users can verify
 
-**Detection:** Generate a 10-slide deck and visually compare all images. If style coherence is not immediately apparent, the system needs tuning.
+**Warning signs:**
+- Users reporting "wrong numbers" or "outdated data" in generated slides
+- High retrieval similarity scores (>0.9) but factually incorrect content
+- Slides containing data from the wrong time period, product, or department
 
-**Confidence:** MEDIUM -- style consistency techniques are well-documented but their reliability varies by model and API.
-
-**Phase:** Phase 3 (image generation pipeline).
-
----
-
-### MP-4: Image Generation Latency Destroys UX
-
-**What goes wrong:** A 12-image deck takes 60-120 seconds to generate images sequentially. Users stare at a spinner, assume the app is broken, and close the tab. Nielsen Norman Group research establishes that users lose attention focus after 10 seconds of waiting.
-
-**Why it happens:** Each image generation call takes 5-15 seconds via API. Sequential generation of 12 images = 60-180 seconds total. Mobile devices add another 15-20% to perceived latency.
-
-**Prevention:**
-- **Parallel generation:** Fire all image requests concurrently (watch API rate limits)
-- **Progressive rendering:** Show slides with placeholder images immediately, then swap in generated images as they complete. Users can start reviewing text content while images load.
-- **Two-phase generation:** Generate the deck with text-only first (fast, < 5 seconds). Let users review/edit content. Then generate images as a separate "enhance" step with a progress bar.
-- **Skeleton loading:** Show image-shaped skeletons with shimmer animation, not blank spaces or spinners
-- **Pre-generation:** For common templates (e.g., "company introduction"), pre-generate a library of generic images that can be served instantly and replaced with custom ones in the background.
-
-**Detection:** Measure p50 and p95 time-to-first-visible-slide and time-to-complete-deck. If p95 exceeds 30 seconds for text-only and 120 seconds for full deck with images, optimize.
-
-**Confidence:** HIGH -- Nielsen Norman Group response time research is canonical. API latency ranges verified from provider documentation and community reports.
-
-**Phase:** Phase 3 (image generation), Phase 4 (UX optimization).
+**Phase to address:**
+Phase 2 (Knowledge Base). Chunk strategy and retrieval quality directly determine product trustworthiness. Must be validated with real user documents before building presentation generation on top.
 
 ---
 
-### MP-5: Free Tier and Credit System Abuse
+## Technical Debt Patterns
 
-**What goes wrong:** Users create multiple accounts with disposable emails to farm free credits. Bot scripts automate presentation generation to extract AI-generated content. Competitors use free tier to benchmark your output quality at scale.
+| Shortcut | Immediate Benefit | Long-term Cost | When Acceptable |
+|----------|-------------------|----------------|-----------------|
+| Hardcoded slide dimensions (16:9 only) | Faster MVP | Cannot support custom aspect ratios (4:3, A4, square) | MVP only, refactor in Phase 2 |
+| Single image provider | Simpler integration | Provider outage = total image failure, no cost optimization | Never -- implement at least 2 providers from start |
+| String concatenation for Marp Markdown | Quick prototyping | Special characters break output (`$`, pipe `\|`, backticks); blank line collapse breaks tables | Never -- use a template engine (Handlebars, EJS) |
+| sed for Markdown post-processing on Windows | Quick fix | sed interprets `$` as backreferences, destroying dollar signs and template variables. Blank line collapse (`/^$/N;/^\n$/d`) removes blank lines required before Markdown tables. CONFIRMED from Z4 operational experience. | Never -- use Node.js string replacement |
+| Synchronous image generation | Simpler code flow | 15 images x 5-10 seconds = 75-150 second generation time, request timeouts | MVP only, must parallelize before launch |
+| Storing presentations as files on disk | No database needed | Cannot search, version, or share presentations; deployment becomes stateful | MVP only if self-hosted prototype |
+| Skipping chunk overlap in RAG | Faster ingestion | Information at chunk boundaries is lost, retrieval accuracy drops | Never |
+| Single generic embedding model for all doc types | Simpler pipeline | Tables, prose, and code embed differently. Retrieval quality varies by content type. | MVP only, test and specialize in Phase 2 |
 
-**Why it happens:** Any product offering AI-generated output for free attracts abuse. Disposable email services make multi-account creation trivial. The cost of abuse falls entirely on the provider (LLM tokens + image generation costs).
+## Integration Gotchas
 
-**Prevention:**
-- **Email validation:** Block disposable email domains (maintain a blocklist, services like Clearout provide this)
-- **Device fingerprinting:** Track browser/device fingerprints to detect same-device multi-account creation
-- **Rate limiting per IP:** Cap generations per IP address per day
-- **Phone verification for free tier:** Require SMS verification to activate free credits (highest friction but most effective)
-- **Behavioral monitoring:** Flag accounts that generate maximum allowed presentations immediately after signup with no editing/reviewing behavior
-- **Generous but bounded free tier:** Give enough to evaluate the product (3-5 presentations) but not enough to replace paying (no images on free tier is the strongest lever)
+| Integration | Common Mistake | Correct Approach |
+|-------------|----------------|------------------|
+| Google Slides API | Sending individual API calls per element (text box, image, shape) | Use `batchUpdate` to combine all mutations into one request. Per-user limit is 60 req/min, per-project is 300/min. Implement exponential backoff for 429s. |
+| OpenAI Image API | Not handling `429 Too Many Requests` with backoff | Implement truncated exponential backoff (1s, 2s, 4s, 8s, max 60s). Pre-check rate limit headers before sending. |
+| python-pptx | Assuming `TEXT_TO_FIT_SHAPE` auto-fit works reliably | It does not persist to later text changes. Pre-calculate text extents and manually set font sizes. |
+| python-pptx fonts | Using OpenType CFF fonts (.otf) expecting them to embed | PowerPoint only embeds TrueType (.ttf) fonts. Restrict palette to .ttf fonts only. Bundle font files in export. |
+| Marp CLI | Piping output through `sed` on Windows for post-processing | `sed` interprets `$` as backreferences, destroying dollar signs and template variables. Use Node.js string replacement instead. |
+| PDF export (any library) | Expecting exported PDF to match web preview pixel-for-pixel | PDF rendering engines differ from browser engines. Build visual regression test comparing screenshots. |
+| Node.js child_process to Python | Sending data to Python subprocess before it initializes | Listen for the `spawn` event before writing to stdin. Always call `sys.stdout.flush()` in Python or use `-u` flag for unbuffered output. |
+| Node.js child_process to Python | Not handling subprocess errors properly | Set stderr to inherit mode for error propagation. Check exit code (code === 0) before resolving. Use spawn for large data streams, exec for small outputs (<200k). |
+| Node.js child_process to Python | JSON parsing failures in exit handler | Python subprocess may emit partial JSON on crash. Wrap JSON.parse() in try/catch with proper error propagation to parent process. |
+| Embedding models | Using a single generic embedding model for all document types | Different content types (tables, prose, code) embed differently. Test retrieval quality per content type. Consider specialized models. |
+| PDF parsing | Assuming PyMuPDF handles all PDFs equally well | Tables lose structure, multi-column layouts merge incorrectly, headers/footers pollute body text. Use pdfplumber specifically for table extraction. |
 
-**Detection:** Monitor account creation velocity from same IP/fingerprint. Flag accounts that consume all credits within 1 hour of creation.
+## Performance Traps
 
-**Confidence:** HIGH -- SaaS abuse patterns are well-documented by Togai, AWS, and Paddle.
+| Trap | Symptoms | Prevention | When It Breaks |
+|------|----------|------------|----------------|
+| Sequential image generation | 60-150 second presentation generation time | Parallelize image generation with Promise.all() and rate limit pooling | Immediately -- any presentation with 5+ images |
+| Embedding entire documents on upload | Upload hangs for 5+ minutes on large files | Stream-process documents: parse, chunk, embed in batches of 50-100 chunks | Documents over 50 pages |
+| Storing embeddings in SQLite/PostgreSQL without HNSW | Vector search latency >500ms | Use purpose-built vector store (Qdrant, Pinecone, pgvector with HNSW index). Default to HNSW + metadata filtering for sub-100ms retrieval at 95%+ recall. | Over 100K chunks |
+| Re-embedding unchanged documents | Ingestion takes hours for large knowledge bases | Hash each chunk, skip embedding if hash unchanged | Knowledge bases with 1000+ documents |
+| Rendering full presentation preview on every edit | UI becomes sluggish, 2-3 second lag per keystroke | Render only the current slide; lazy-load adjacent slides | Presentations with 20+ slides |
+| Unbounded LLM context window usage | API costs spike, generation slows, context truncation causes errors | Cap retrieved chunks at 5-8 per slide, summarize before injection | Knowledge bases with high-similarity chunks |
+| No image cache | Same prompts generate new images every time, burning API budget | Cache generated images keyed on prompt + style + seed hash | Immediately -- any repeated template usage |
 
-**Phase:** Phase 4 (billing and auth system).
+## Security Mistakes
 
----
+| Mistake | Risk | Prevention |
+|---------|------|------------|
+| Storing uploaded documents without sanitization | Malicious PDFs exploit parsing libraries (CVEs in pdf.js, PyMuPDF, pdfminer) | Sandbox document parsing in isolated containers; validate file headers (magic bytes) before parsing |
+| Exposing RAG retrieval to prompt injection | Malicious content in uploaded documents gets retrieved and executed as instructions by the LLM | Separate system prompts from retrieved content; use input/output guardrails; treat all retrieved content as untrusted data |
+| Sharing presentation URLs without access control | Anyone with a URL can view confidential presentations | Implement signed URLs with expiration; require authentication for all presentation access |
+| Credit system API without rate limiting | Attackers enumerate valid API keys or exhaust credits via scripted requests | Rate limit by IP and API key; implement CAPTCHA on free tier generation |
+| Storing API keys (OpenAI, Google) in client-side code | API keys exposed in browser dev tools | All AI API calls must go through server-side proxy; never expose provider keys to clients |
+| User-uploaded images without validation | XSS via SVG uploads, server-side request forgery via image URL processing | Validate image file headers (magic bytes), strip SVG scripts, reject external URL image processing |
+| OAuth token storage | Tokens stored in plaintext allow account takeover if database is compromised | Encrypt tokens at rest. Implement proper refresh token rotation. Test token expiry paths explicitly. |
 
-## Minor Pitfalls
+## UX Pitfalls
 
-Mistakes that cause annoyance or small delays but are recoverable.
+| Pitfall | User Impact | Better Approach |
+|---------|-------------|-----------------|
+| Generating entire presentation before showing anything | User stares at loading spinner for 60-120 seconds, assumes it's broken. Nielsen Norman Group: users lose attention focus after 10 seconds. | Stream slides as they're generated -- show slide 1 immediately while slides 2-N generate. Progressive rendering with skeleton loading. |
+| No preview of image before placement | User gets a random AI image they don't like, must regenerate entire slide | Show 2-3 image options per slide, let user pick or regenerate individual images |
+| Over-constraining design templates | Every presentation looks identical; users feel the tool is "boring" | Provide 3-5 distinct visual themes with variation within each (color accents, layout alternatives). Give illusion of choice within validated constraints. |
+| Under-constraining design templates | Presentations are ugly -- clashing colors, inconsistent spacing, too many fonts | Enforce design rules silently (max 2 fonts, complementary palette, consistent margins) while giving users the illusion of choice |
+| Requiring knowledge base upload before first presentation | New user wants to try the product but has nothing to upload | Offer "quick start" mode with sample knowledge bases or a "paste your content" text box |
+| Showing raw LLM/API errors to users | "Error: 429 Too Many Requests" means nothing to non-technical users | Map all errors to human-readable messages: "We're generating a lot of images right now. Your presentation will be ready in ~2 minutes." |
+| Two-phase generation without progress feedback | Users don't know if the system is working or stuck | Show per-slide progress: "Generating slide 3 of 12... Creating image for slide 4..." |
+| Over-animating exported presentations | Animation fatigue on video calls, lag on slower devices (growing problem in 2026 with easy animation tools) | Minimal default animations. Offer animation presets but default to "none" or "subtle fade." |
 
----
+## "Looks Done But Isn't" Checklist
 
-### mP-1: Font Availability Across Export Formats
+- [ ] **Slide overflow:** Content renders in web preview but crops in PDF/PPTX export -- verify every layout template at maximum content length
+- [ ] **Font embedding:** Fonts display in browser but fallback to Arial in downloaded PPTX -- verify with a clean machine that has no custom fonts installed
+- [ ] **Image placement:** Images center correctly at 16:9 but break at 4:3 -- verify every image placeholder at every supported aspect ratio
+- [ ] **Table formatting:** Tables render in Markdown preview but lose borders/alignment in PPTX -- verify with tables that have 2 columns and tables that have 8 columns
+- [ ] **Credit deduction:** Credits deduct correctly for single requests but double-deduct under concurrent load -- verify with 10 simultaneous requests from one account
+- [ ] **RAG accuracy:** Retrieval works with test documents but fails on real user documents with OCR artifacts, scanned PDFs, mixed languages -- verify with 20+ real-world documents of varying quality
+- [ ] **Export parity:** PPTX export works but PDF from that PPTX has different formatting -- verify the full chain: generation -> PPTX export -> PDF from PPTX -> print
+- [ ] **Special characters:** Slides with `$`, `%`, `&`, `|`, backticks render correctly in preview but break in Markdown processing -- verify with financial data containing currency symbols
+- [ ] **Empty states:** Generation works with good input but crashes or produces blank slides when knowledge base returns zero results -- verify with queries that match nothing
+- [ ] **Reveal.js portability:** Downloaded HTML bundle works when served from localhost but fails when opened via double-click (CORS on local file access) -- verify both access methods
+- [ ] **Google OAuth refresh:** Token works for initial generation but fails silently after expiry -- force-expire tokens in staging and verify re-auth flow
+- [ ] **Multi-format parity:** Slides look identical in web preview but Slidev exports slides as images (text not selectable), Reveal.js loses animations in PDF, PPTX loses CSS effects -- verify each format preserves editability and visual fidelity
 
-**What goes wrong:** The web app renders slides with Google Fonts (Inter, Poppins, etc.), but exported PPTX files open on machines that do not have those fonts installed. PowerPoint substitutes Arial or Calibri, destroying the typography.
+## Recovery Strategies
 
-**Prevention:**
-- Use only fonts bundled with the export format (Calibri, Arial, Georgia for PPTX)
-- Alternatively, embed fonts in PPTX files (increases file size but guarantees consistency)
-- For web-only formats (Reveal.js, PDF), Google Fonts are safe since they render during export
+| Pitfall | Recovery Cost | Recovery Steps |
+|---------|---------------|----------------|
+| Slide overflow shipped to users | LOW | Add content length validation as middleware; existing presentations need re-generation only if users report issues |
+| Wrong data from RAG on user presentations | HIGH | Cannot un-send wrong data. Must implement retrieval verification, notify affected users, offer re-generation. Reputation damage is the real cost. |
+| Cost explosion from image generation | MEDIUM | Implement caching immediately. Historical presentations are sunk cost. Add daily cost alerting to prevent recurrence. |
+| Font rendering breaks in exports | MEDIUM | Restrict font palette to safe TrueType fonts. Existing exports need re-generation. User communication required. |
+| Credit system exploited via race conditions | HIGH | Fix requires architectural change (reservation pattern). Must audit all accounts for negative balances and decide whether to charge or absorb loss. |
+| Prompt injection via uploaded documents | HIGH | Requires content sanitization pipeline retrofit. Must re-process all existing documents. Security audit of all generated presentations. |
+| sed destroying dollar signs in Markdown | LOW | Replace all sed calls with Node.js string replacement. Re-process affected presentations. Confirmed fix from Z4 experience. |
 
-**Confidence:** MEDIUM -- font embedding in PPTX is supported but adds complexity.
+## Pitfall-to-Phase Mapping
 
-**Phase:** Phase 1 (template design must account for this).
-
----
-
-### mP-2: Reveal.js Presentation Portability
-
-**What goes wrong:** Reveal.js presentations are HTML/CSS/JS bundles. Users who download them may not know how to serve them locally. Double-clicking `index.html` may not work due to CORS restrictions on local file access.
-
-**Prevention:**
-- Export as a single self-contained HTML file (inline all CSS/JS/images as base64)
-- Provide a "present online" hosted option alongside download
-- Include a one-line instruction: "Open in any web browser" or provide a tiny local server script
-
-**Confidence:** MEDIUM -- standard web development knowledge.
-
-**Phase:** Phase 2 (export pipeline).
-
----
-
-### mP-3: Google Slides OAuth Token Management
-
-**What goes wrong:** OAuth tokens expire. Users connect their Google account, generate presentations for a week, then the token expires and they see an auth error. Refresh token handling fails silently, and presentations fail to export.
-
-**Prevention:**
-- Implement proper refresh token rotation
-- Test token expiry paths explicitly (force-expire in test environment)
-- Show clear UI when re-authorization is needed, not a cryptic error
-- Store refresh tokens securely (encrypted at rest)
-
-**Confidence:** HIGH -- OAuth token expiry is a standard issue with well-documented solutions.
-
-**Phase:** Phase 2 (Google Slides integration).
-
----
-
-## Excluded Design Combinations
-
-Specific rules that the constraint engine MUST enforce. These are not suggestions; they are hard blockers that prevent generation of slides violating them.
-
----
-
-### Banned Color Pairs
-
-These combinations must NEVER appear as text-on-background or foreground-on-background in any generated slide.
-
-| Text Color | Background Color | Why Banned |
-|-----------|-----------------|------------|
-| Red | Green | Invisible to 8% of male population (deuteranopia). Both appear as muddy brown. |
-| Green | Red | Same as above, reversed. |
-| Red | Black | Users with protanopia perceive red as black. Text disappears. |
-| Green | Black | Users with deuteranopia see green as very dark, near-black. |
-| Blue | Purple | Indistinguishable for tritanopia. Also low contrast for normal vision. |
-| Green | Brown | Nearly identical for red-green color blindness. |
-| Green | Gray | Indistinguishable for deuteranopia. |
-| Blue | Gray | Low contrast, problematic for tritanopia. |
-| Yellow | White | Fails WCAG contrast (ratio ~1.07:1). Invisible to all users. |
-| Light Gray | White | Fails WCAG contrast. Invisible on projectors. |
-| Cyan | White | Fails WCAG contrast (ratio ~1.25:1). |
-| Neon Green | Neon Pink | Visually aggressive, causes eye fatigue. Unprofessional. |
-| Neon Yellow | Neon Orange | Near-identical hue, no contrast. |
-| Orange | Red | Insufficient hue differentiation for color-blind users. |
-| Pastel Pink | Pastel Yellow | Fails WCAG contrast on both AA and AAA. |
-
-**Implementation rule:** Every text-background pair must pass WCAG AA contrast ratio (4.5:1 for text <24pt, 3:1 for text >=24pt). Run the WebAIM contrast algorithm on every generated slide. Reject and re-palette any slide that fails.
-
-**Safe default pairs (always allowed):**
-- White text on dark navy (#1a1a2e) -- ratio 15.6:1
-- Dark charcoal (#333333) on white (#ffffff) -- ratio 12.6:1
-- White text on dark teal (#006666) -- ratio 7.2:1
-- Navy (#003366) on light gray (#f0f0f0) -- ratio 10.1:1
-
----
-
-### Banned Font Choices
-
-These fonts must NEVER be used in any generated slide, regardless of user request.
-
-| Font | Why Banned |
-|------|-----------|
-| Comic Sans MS | Universally perceived as unprofessional. Destroys credibility of any business presentation. |
-| Papyrus | Same as above. Strongly associated with amateur design. |
-| Bradley Hand | Childlike handwriting font. Illegible at small sizes. Unprofessional. |
-| Mistral | Jagged, inconsistent strokes. Poor readability. Dated aesthetic. |
-| Curlz MT | Decorative, illegible, and cartoonish. |
-| Jokerman | Extremely decorative, unreadable, unprofessional. |
-| Bleeding Cowboys | Grunge aesthetic. Illegible. Inappropriate for any business context. |
-| Impact | Associated with memes. Overused. Unprofessional outside of specific creative contexts. |
-| Courier New (as body text) | Monospace fonts are designed for code, not slide content. |
-| Any decorative/display font as body text | Display fonts are designed for headlines at large sizes only. |
-
-**Banned font pairings (even if individual fonts are allowed):**
-
-| Heading Font | Body Font | Why Banned |
-|-------------|-----------|-----------|
-| Two serif fonts | (e.g., Times + Georgia) | Insufficient visual contrast. Hard to establish hierarchy. |
-| Two script/handwritten fonts | (any combination) | Illegible, chaotic. No hierarchy. |
-| Two display/decorative fonts | (any combination) | Visual noise. Neither reads as body text. |
-| Same font for heading and body at similar sizes | (any font) | No visual hierarchy. All text looks equally important. |
-
-**Approved font pairings (safe defaults):**
-
-| Heading | Body | Style |
-|---------|------|-------|
-| Montserrat (Bold) | Open Sans (Regular) | Modern corporate |
-| Playfair Display | Source Sans Pro | Elegant professional |
-| Roboto Slab | Roboto | Technical/data-driven |
-| Poppins (SemiBold) | Inter (Regular) | Clean startup |
-| Lato (Bold) | Merriweather | Warm professional |
-
----
-
-### Banned Layout Combinations
-
-| Layout Pattern | Why Banned |
-|---------------|-----------|
-| Full-bleed image with white text and no overlay | Text is illegible over busy image regions. Require 30-50% dark overlay minimum. |
-| More than 2 text columns on a single slide | Audiences cannot track 3+ columns from a distance. Splits attention. |
-| Centered body text exceeding 3 lines | Centered text is harder to read in blocks. Use left-aligned for body text >3 lines. |
-| Image + text where text covers >30% of image | Image becomes unrecognizable. Text becomes illegible. |
-| Slide with no visual hierarchy (all same font size) | Audience cannot identify the key point. Require at least title/body size differentiation. |
-| More than 3 font sizes on a single slide | Visual chaos. Limit to title, body, and caption sizes. |
-| Pie chart image with >7 segments | Segments become too thin to distinguish. Switch to bar chart or grouped categories. |
-| Slide with >3 distinct colors (excluding neutrals) | Color overload. Limit to primary, secondary, and accent. |
-
-**Image-over-text rules:**
-- All text placed over images MUST have either a dark scrim overlay (min 40% opacity black/navy) OR a solid-color text box behind the text
-- The contrast ratio between text and its immediate background (overlay or box) must meet WCAG AA
-- Blur effects on the image region behind text are acceptable as supplements but NOT as replacements for contrast overlays
-
----
-
-## Phase-Specific Warnings
-
-| Phase Topic | Likely Pitfall | Mitigation | Severity |
-|-------------|---------------|------------|----------|
-| Phase 1: Design Engine | Treating constraints as "nice to have" rather than core product | Build constraint validation as the FIRST thing. Every feature adds constraints, not removes them. | Critical |
-| Phase 1: Template Design | Designing templates without testing in all export formats | Test every template in PPTX, Google Slides, PDF, and Reveal.js before finalizing | Critical |
-| Phase 2: Document Parsing | Assuming PDF parsing "just works" | Budget 2-3x expected time for parsing edge cases. Tables and multi-column layouts will break. | High |
-| Phase 2: RAG Chunking | Using default fixed-size chunking | Implement semantic chunking from day one. Switching later requires re-indexing everything. | High |
-| Phase 3: Image Generation | Allowing text in generated images | Hard-block text generation in images from the start. Add "no text" to every prompt. | Critical |
-| Phase 3: Image Costs | Not modeling per-generation costs before pricing | Model worst-case image costs per plan tier before launching pricing. | Critical |
-| Phase 3: Image Latency | Sequential image generation | Implement parallel generation + progressive rendering from the start. | High |
-| Phase 4: Auth/Billing | Soft-launching without abuse prevention | Ship email validation, rate limiting, and device fingerprinting with the billing system, not after. | Medium |
-| Phase 4: Google OAuth | Not testing token refresh paths | Force-expire tokens in staging and verify the entire re-auth flow works smoothly. | Medium |
-| Phase 5: Scale | API costs growing linearly with users | Plan self-hosted image generation migration path when you cross 10K images/day. | High |
-
----
+| Pitfall | Prevention Phase | Verification |
+|---------|------------------|--------------|
+| Slide content overflow (CP-1) | Phase 1: Core Engine | Generate 100 presentations with varied content lengths; zero overflow in exports |
+| Ugly output / design quality (CP-2) | Phase 1: Core Engine | User testing: 10 users rate output >7/10 on visual appeal AND >6/10 on variety |
+| Color accessibility disasters (CP-3) | Phase 1: Core Engine | Every generated color pair passes WCAG AA contrast ratio (4.5:1 normal text, 3:1 large text) |
+| Export format fidelity (CP-4) | Phase 1 (templates) + Phase 5 (export) | Visual regression test suite passes on clean Windows, Mac, Linux machines |
+| Image generation cost explosion (CP-5) | Phase 1 (cost model) + Phase 3 (implementation) | Cost simulation: 1000 free-tier users x 10 presentations/month; monthly cost < $500 |
+| Text-in-image failures (CP-6) | Phase 3: Image Generation | Architectural rule enforced: text and images are separate layers, zero exceptions |
+| Credit system race conditions (CP-7) | Phase 4: Credit System | Load test: 100 concurrent requests from single account; final balance = initial - (N x cost), no negatives |
+| RAG hallucination (CP-8) | Phase 2: Knowledge Base | Benchmark retrieval accuracy against labeled test set; >90% precision at k=5 |
+| Knowledge base ingestion quality (MP-1) | Phase 2: Knowledge Base | Test with 20+ real-world documents (scanned PDFs, complex tables, multi-column); <20% content loss |
+| Image style inconsistency (MP-3) | Phase 3: Image Generation | Generate 10-slide deck; all images visually coherent in style |
+| Image generation latency (MP-4) | Phase 3: Image Generation | p95 time-to-first-visible-slide < 10 seconds; p95 time-to-complete-deck < 120 seconds |
+| Node.js/Python interop failures | Phase 1: Core Engine | Integration test: Python subprocess crash returns clean error to Node.js parent, no zombie processes |
+| Special character handling (Markdown) | Phase 1: Core Engine | Test suite with financial data: `$1,234`, `Q3 & Q4`, `100% growth`, pipe tables all render correctly |
+| Google Slides API rate limits | Phase 5: Export | Batch operations for all mutations; exponential backoff handles 429s; single presentation never exceeds 10 API calls |
+| Multi-format export parity | Phase 5: Export | Automated comparison: PPTX, PDF, Google Slides, Reveal.js exports all pass layout validation |
 
 ## Sources
 
 ### Design Quality and Accessibility
 - [WCAG 2.1 SC 1.4.3: Contrast Minimum](https://www.w3.org/WAI/WCAG21/Understanding/contrast-minimum.html) -- HIGH confidence
 - [WebAIM Contrast Checker](https://webaim.org/resources/contrastchecker/) -- HIGH confidence
-- [Penn State: Problematic Combinations for Color Deficient Vision](https://accessibility.psu.edu/color/colorvisiondetails/) -- HIGH confidence
-- [Microsoft 10-20-30 Rule](https://www.microsoft.com/en-us/microsoft-365-life-hacks/presentations/10-20-30-rule-of-powerpoint) -- HIGH confidence
-- [Cornell: Presentation Slides Avoid Bullets](https://chec.engineering.cornell.edu/presentation-slides-avoid-bullets/) -- HIGH confidence
-- [NN/G: Ensure High Contrast for Text Over Images](https://www.nngroup.com/articles/text-over-images/) -- HIGH confidence
-- [Smashing Magazine: Best Practices of Combining Typefaces](https://www.smashingmagazine.com/2010/11/best-practices-of-combining-typefaces/) -- HIGH confidence
+- [AllAccessible: Color Contrast Guide 2025](https://www.allaccessible.org/blog/color-contrast-accessibility-wcag-guide-2025) -- Color contrast #1 violation affecting 83.6% of websites
+- [Sparkbox: Myth of Creative Restraint in Design Systems](https://sparkbox.com/foundry/design_system_consistency_versus_flexibility_design_system_constraints) -- Consistency vs flexibility tradeoffs
+- [zeroheight: Balancing Flexibility and Consistency](https://zeroheight.com/blog/finding-the-right-balance-between-consistency-and-flexibility-for-your-design-system/) -- Design system constraints
 
 ### AI Presentation Tools -- Competitor Issues
-- [Gamma Reviews on Trustpilot](https://www.trustpilot.com/review/gamma.app) -- HIGH confidence (direct user reviews)
-- [Gamma Reviews on Product Hunt](https://www.producthunt.com/products/gamma-3/reviews) -- HIGH confidence
-- [Zapier: Best AI Presentation Makers 2026](https://zapier.com/blog/best-ai-presentation-maker/) -- MEDIUM confidence
-- [eesel.ai: Deep Dive into Gamma Reviews](https://www.eesel.ai/blog/gamma-reviews) -- MEDIUM confidence
-
-### PDF Parsing
-- [NVIDIA: Approaches to PDF Data Extraction](https://developer.nvidia.com/blog/approaches-to-pdf-data-extraction-for-information-retrieval/) -- HIGH confidence
-- [arXiv: Comparative Study of PDF Parsing Tools](https://arxiv.org/html/2410.09871v1) -- HIGH confidence
-- [Seattle Data Guy: Challenges Parsing PDFs with Python](https://www.theseattledataguy.com/challenges-you-will-face-when-parsing-pdfs-with-python-how-to-parse-pdfs-with-python/) -- MEDIUM confidence
-
-### RAG and Chunking
-- [NVIDIA: Finding the Best Chunking Strategy](https://developer.nvidia.com/blog/finding-the-best-chunking-strategy-for-accurate-ai-responses/) -- HIGH confidence
-- [Stack Overflow: Breaking Up is Hard to Do -- Chunking in RAG](https://stackoverflow.blog/2024/12/27/breaking-up-is-hard-to-do-chunking-in-rag-applications/) -- MEDIUM confidence
-- [ragaboutit.com: Semantic Boundaries Cut RAG Errors by 60%](https://ragaboutit.com/the-chunking-strategy-shift-why-semantic-boundaries-cut-your-rag-errors-by-60/) -- LOW confidence (single source)
-
-### Image Generation
-- [WaveSpeedAI: Complete Guide to AI Image Generation APIs 2026](https://wavespeed.ai/blog/posts/complete-guide-ai-image-apis-2026/) -- MEDIUM confidence
-- [getimg.ai: FLUX.1 vs DALL-E 3](https://getimg.ai/blog/flux-1-vs-dall-e-3-what-is-the-best-ai-text-to-image-model) -- MEDIUM confidence
-- [ImagineArt: AI Image Generation Costs 2026](https://www.imagine.art/blogs/ai-image-generation-cost) -- MEDIUM confidence
+- [SlidesAI: Common AI Presentation Mistakes](https://www.slidesai.io/blog/common-ai-presentation-mistakes) -- Generic templates, audience engagement, font mismatches
+- [Insight7: Avoid Common Pitfalls in AI Generated Presentations](https://insight7.io/avoid-common-pitfalls-in-ai-generated-presentations/) -- Content accuracy, design quality
+- [TeamSli.de: GenAI Effects on Slide Libraries](https://www.teamsli.de/genai-effects-on-slidelibraries/) -- AI hallucination in corporate presentations, human trust problem
 
 ### Export Formats
-- [Marp CLI GitHub](https://github.com/marp-team/marp-cli) -- HIGH confidence (official documentation)
-- [python-pptx Documentation](https://python-pptx.readthedocs.io/) -- HIGH confidence (official docs)
-- [Google Slides API Usage Limits](https://developers.google.com/workspace/slides/api/limits) -- HIGH confidence (official docs)
-- [python-pptx SmartArt Issue #83](https://github.com/scanny/python-pptx/issues/83) -- HIGH confidence (official tracker)
-- [python-pptx Animation Issue #400](https://github.com/scanny/python-pptx/issues/400) -- HIGH confidence (official tracker)
+- [Marp overflow discussion](https://github.com/orgs/marp-team/discussions/589) -- No vertical auto-scaling, only horizontal
+- [Marp Core v4 changes](https://github.com/orgs/marp-team/discussions/533) -- Content centering, overflow from bottom only
+- [python-pptx text fitting issue #715](https://github.com/scanny/python-pptx/issues/715) -- TEXT_TO_FIT_SHAPE limitations
+- [python-pptx auto-fit issue #973](https://github.com/scanny/python-pptx/issues/973) -- Auto-fit does not take effect
+- [python-pptx auto-fit analysis](https://python-pptx.readthedocs.io/en/latest/dev/analysis/txt-autofit-text.html) -- Complex interaction of shape size, font, autofit, wrap
+- [Google Slides API Usage Limits](https://developers.google.com/workspace/slides/api/limits) -- 60 req/user/min, 300 req/project/min -- HIGH confidence
+- [Microsoft: Font embedding in PDF export](https://learn.microsoft.com/en-us/answers/questions/4911249/how-can-i-force-export-to-pdf-to-embed-the-my-non) -- Only TrueType fonts embed
+- [Syncfusion: Font problems in PowerPoint to PDF conversion](https://support.syncfusion.com/kb/article/15472/how-to-resolve-font-problems-during-powerpoint-to-pdf-or-image-conversion) -- Variable font weight issues
+- [Slidev export limitations](https://sli.dev/guide/exporting.html) -- PPTX export as images, text not selectable
+- [Reveal.js PDF export](https://revealjs.com/pdf-export/) -- Format parity challenges
 
-### SaaS Business
-- [Togai: SaaS Free Trial Abuse Prevention](https://www.togai.com/blog/saas-free-trial-abuse-prevention/) -- MEDIUM confidence
-- [AWS: Preventing Free Trial Abuse](https://aws.amazon.com/blogs/architecture/preventing-free-trial-abuse-with-aws-managed-services/) -- HIGH confidence
-- [NN/G: Response Times -- 3 Important Limits](https://www.nngroup.com/articles/response-times-3-important-limits/) -- HIGH confidence
-- [Monetizely: Economics of AI-First B2B SaaS 2026](https://www.getmonetizely.com/blogs/the-economics-of-ai-first-b2b-saas-in-2026) -- MEDIUM confidence
+### Image Generation
+- [OpenAI Image Generation Rate Limits](https://help.openai.com/en/articles/6696591-what-are-the-rate-limits-for-image-generation) -- Official limits
+- [TechRadar: OpenAI "GPUs are melting"](https://www.techradar.com/computing/artificial-intelligence/our-gpus-are-melting-openai-puts-limits-on-image-creation-and-delays-rollout-to-free-accounts) -- Rate limit context
+- [AI Image Pricing 2026: Google vs OpenAI](https://intuitionlabs.ai/articles/ai-image-generation-pricing-google-openai) -- Imagen 4: $0.02-$0.06, GPT Image 1: $0.011-$0.167
+- [Nano Banana Pro Usage Limits](https://www.aifreeapi.com/en/posts/nano-banana-pro-usage-limit) -- Free tier cuts November 2025
+
+### RAG and Chunking
+- [RAG Pipeline Deep Dive (Medium, Jan 2026)](https://medium.com/@derrickryangiggs/rag-pipeline-deep-dive-ingestion-chunking-embedding-and-vector-search-abd3c8bfc177) -- Chunk overlap, embedding quality, HNSW + metadata filtering
+- [Deepchecks: High-Performance RAG Pipelines](https://www.deepchecks.com/build-high-performance-rag-pipelines-scale/) -- 45% accuracy reduction from poor document processing
+- [RAGFlow: From RAG to Context (2025 year-end review)](https://ragflow.io/blog/rag-review-2025-from-rag-to-context) -- Chunk size vs context tradeoff
+
+### SaaS Business and Billing
+- [ColorWhistle: SaaS Credits System Guide 2026](https://colorwhistle.com/saas-credits-system-guide/) -- Race conditions, partial credit transfers, metering accuracy
+- [Alguna: Consumption-based pricing 2026](https://blog.alguna.com/consumption-based-pricing/) -- 1-5% revenue loss from billing errors
+- [Growth Unhinged: State of SaaS Pricing](https://www.growthunhinged.com/p/2025-state-of-saas-pricing-changes) -- 79 companies using credits, 126% YoY growth
+
+### Node.js/Python Interop
+- [Starbeamrainbowlabs: JS-Python IPC](https://starbeamrainbowlabs.com/blog/article.php?article=posts/549-js-python-ipc.html) -- stdin/stdout communication, no built-in IPC for non-JS processes
+- [python-shell library](https://github.com/extrabacon/python-shell) -- Efficient inter-process communication through stdio
+- [freeCodeCamp: Integrate Python with Node.js using child_process](https://www.freecodecamp.org/news/how-to-integrate-a-python-ruby-php-shell-script-with-node-js-using-child-process-spawn-e26ca3268a11/) -- Buffer flushing, spawn timing, error propagation
+
+### Direct Operational Experience (Z4 Skill)
+- Marp slide overflow: content exceeding slide boundaries, no vertical auto-scaling
+- sed + dollar signs on Windows: backreference interpretation destroys `$` characters
+- Blank line collapse breaking Markdown tables: `sed -i '/^$/N;/^\n$/d'` removes required whitespace
+- Nano Banana Pro: intermittently ignores prompts entirely
+- Google Slides API: rate limits hit during batch presentation creation
+
+---
+*Pitfalls research for: AI Presentation SaaS (SlideForge)*
+*Researched: 2026-02-14*

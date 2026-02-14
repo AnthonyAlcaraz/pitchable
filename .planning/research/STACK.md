@@ -1,175 +1,233 @@
-# Technology Stack
+# Stack Research
 
 **Project:** SlideForge - AI Presentation Generation SaaS
-**Researched:** 2026-02-14
-**Overall Confidence:** HIGH (versions verified via npm/official sources)
+**Researched:** 2026-02-14 (v2 - full polyglot stack with Python workers)
+**Overall Confidence:** HIGH (versions verified via npm/PyPI registries, Feb 2026)
 
 ---
 
 ## Recommended Stack
 
-### Core Framework
+### Core Backend (NestJS API)
 
 | Technology | Version | Purpose | Why | Confidence |
 |------------|---------|---------|-----|------------|
-| NestJS | 11.x (11.1.13) | Backend framework | Pre-decided. Validated: NestJS 11 released Jan 2025, actively maintained, Series A funding guarantees support through 2030. Decorator-based architecture maps cleanly to this project's module boundaries (auth, billing, generation, storage). TypeScript-native. | HIGH |
-| Node.js | 22.x LTS | Runtime | LTS through April 2027. Required by pdf-parse (>=22.3.0) and sharp (>=20.3.0). Node 22 gives stable ES module support and built-in test runner. | HIGH |
+| NestJS | 11.x (11.1.13) | Backend framework | Pre-decided. 60k+ GitHub stars. Modular DI architecture maps to SlideForge's module boundaries (auth, billing, generation, storage, knowledge-base). TypeScript-native. | HIGH |
+| Node.js | 22.x LTS | Runtime | Active LTS through Oct 2027. NestJS 11 requires Node 20+. Node 22 provides stable ESM support and performance improvements. | HIGH |
 | TypeScript | 5.7.x | Type safety | NestJS 11 requires TS 5.5+. Version 5.7 adds isolated declarations and improved inference. | HIGH |
 
 **Why NestJS over alternatives:**
-- Express alone lacks structure for a multi-module SaaS (auth + billing + generation + storage + queues).
-- Fastify is faster raw but NestJS sits on top of it anyway (`@nestjs/platform-fastify`). Use Fastify adapter for performance without losing NestJS DX.
-- Hono/Elysia are too lightweight for this project's queue management, guard-based auth, and modular architecture needs.
+- Express alone lacks structure for a multi-module SaaS (auth + billing + generation + storage + queues + knowledge-base).
+- Fastify is faster raw but NestJS sits on top of it (`@nestjs/platform-fastify`). Use Fastify adapter for performance without losing NestJS DX.
+- Hono/Elysia are too lightweight for queue management, guard-based auth, and modular architecture needs.
 
 ### Database & Cache
 
 | Technology | Version | Purpose | Why | Confidence |
 |------------|---------|---------|-----|------------|
-| PostgreSQL | 16.x | Primary database | Pre-decided. Stores users, presentations, credits, job metadata. JSONB for flexible presentation config. Row-level security for future multi-tenancy. | HIGH |
+| PostgreSQL | 16.x | Primary database | Pre-decided. Stores users, presentations, credits, job metadata. JSONB for flexible presentation config. pgvector extension keeps embeddings co-located with relational data. | HIGH |
+| pgvector | 0.8.1 | Vector similarity search | Store and query document embeddings directly in PostgreSQL. Cosine, L2, inner product distance. IVFFlat and HNSW indexes. Supported by Supabase, Neon, Azure, GCP. Avoids a separate vector database service. | HIGH |
 | Redis | 7.x | Cache + BullMQ backend | Pre-decided. Required by BullMQ for job queue persistence. Also used for session cache, rate limiting, and presentation generation progress tracking. | HIGH |
-| Drizzle ORM | 0.45.x | Database ORM | Recommended over TypeORM and Prisma. 14x lower latency than Prisma on complex queries. No proprietary DSL (unlike Prisma's .prisma files). Schema defined in TypeScript. Zero cold-start overhead. SQL-first means no ORM abstraction leaks. | MEDIUM |
+| Prisma ORM | 7.x (7.2.0) | Database ORM | Prisma 7 removed the Rust engine (pure JS), faster cold starts. Schema-first approach with superior type safety. 2x npm downloads vs TypeORM. pgvector access via raw queries ($queryRaw) or prisma-extension-pgvector. Best DX for SaaS greenfield. | HIGH |
 
 **ORM Decision Rationale:**
 
-| Criterion | Drizzle | Prisma | TypeORM |
-|-----------|---------|--------|---------|
-| Performance | Fastest (compiles to SQL) | Slow on joins (N+1) | Moderate |
-| Type safety | Full (schema IS TypeScript) | Full (generated client) | Partial (decorators lose types) |
-| NestJS integration | Community module (@knaadh/nestjs-drizzle) | Official | Official (@nestjs/typeorm) |
-| Migration DX | drizzle-kit push/generate | prisma migrate | CLI migrations |
-| Bundle size | Tiny (~30KB) | Heavy (~2MB engine) | Moderate |
-| Lock-in | None (plain SQL) | High (proprietary DSL) | Low |
-| Maintenance | Active, growing fast | Active | Spotty (critical bugs sit months) |
+| Criterion | Prisma 7 | Drizzle | TypeORM |
+|-----------|----------|---------|---------|
+| Type safety | Full (generated client) | Full (schema IS TypeScript) | Partial (decorators lose types) |
+| NestJS integration | Mature community patterns | Community module (@knaadh/nestjs-drizzle) | Official (@nestjs/typeorm) |
+| Migration DX | `prisma migrate` + Prisma Studio | drizzle-kit push/generate | CLI migrations |
+| pgvector support | Raw queries + community extension | Raw SQL | Raw queries |
+| Ecosystem | Studio, seeders, Migrate, Pulse | Lighter tooling | Mature but stagnant |
+| Bundle size | Lighter in v7 (no Rust engine) | Tiny (~30KB) | Moderate |
+| Adoption trend | 2x TypeORM downloads, growing | Growing fast but smaller | Declining |
 
-**Recommendation:** Use Drizzle ORM with `@knaadh/nestjs-drizzle` for PostgreSQL integration. The lack of official NestJS module is the only downside, and the community module is solid. If the team strongly prefers first-party support, Prisma is the fallback, but the performance and lock-in tradeoffs are real.
+**Recommendation:** Use Prisma 7 for the relational data layer. The schema-first approach catches errors at compile time, Prisma Studio accelerates development, and the ecosystem is mature for SaaS patterns. Use `$queryRaw` or prisma-extension-pgvector for vector operations against pgvector. If the team has strong SQL preferences and wants zero ORM abstraction, Drizzle is the alternative.
+
+**pgvector Schema Pattern:**
+```sql
+CREATE EXTENSION IF NOT EXISTS vector;
+
+CREATE TABLE document_chunks (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  knowledge_base_id UUID REFERENCES knowledge_bases(id),
+  content TEXT NOT NULL,
+  embedding vector(3072),  -- OpenAI text-embedding-3-large dimension
+  metadata JSONB,
+  source_file TEXT,
+  chunk_index INTEGER,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- HNSW index for fast approximate nearest neighbor search
+CREATE INDEX ON document_chunks
+  USING hnsw (embedding vector_cosine_ops)
+  WITH (m = 16, ef_construction = 64);
+```
+
+**Scale trigger:** If a single knowledge base exceeds 1M chunks or query latency exceeds 200ms at p99, evaluate pgvectorscale (Timescale) or dedicated Qdrant.
 
 ### Job Queue
 
 | Technology | Version | Purpose | Why | Confidence |
 |------------|---------|---------|-----|------------|
-| BullMQ | 5.69.x | Async job processing | Pre-decided. Handles image generation jobs, presentation compilation, document parsing. Redis-backed for persistence and distributed workers. | HIGH |
-| @nestjs/bullmq | 11.0.x | NestJS integration | Official NestJS module. Decorator-based job processors (`@Processor`, `@Process`). Supports named queues for separating concerns (image-gen, compile, parse). | HIGH |
+| BullMQ | 5.69.x | Async job processing | Pre-decided. Redis-backed, supports cross-language workers (Node.js + Python). Rate limiting, retries, scheduling, concurrency control. | HIGH |
+| @nestjs/bullmq | 11.0.4 | NestJS integration | Official NestJS module. Queue processors, events, job scheduling via decorators. | HIGH |
+| BullMQ Python | 2.x | Python job consumers | Official Python SDK. Python workers consume jobs from the same Redis queues that NestJS enqueues to. First-class cross-language support. | HIGH |
 
-**Queue Architecture (3 named queues):**
-1. `document-parse` - Extract text from uploaded PDFs/DOCX/MD files
-2. `image-generate` - Call Replicate API for each slide image
-3. `presentation-compile` - Assemble final presentation (PPTX/HTML/Google Slides)
+**Queue Architecture (4 named queues):**
+1. `document-parse` - Extract text from uploaded PDFs/DOCX/MD/URLs (Python worker)
+2. `embedding-generate` - Compute vector embeddings for document chunks (Python worker)
+3. `image-generate` - Call Replicate API for slide images (Python worker)
+4. `presentation-compile` - Assemble final PPTX/HTML/PDF output (Node.js worker)
+
+**Cross-Language Communication Pattern:**
+```
+Client --> NestJS API --> BullMQ Queue (Redis) --> Python Worker
+                |                                      |
+                |                                      v
+                +--- PostgreSQL <--- Worker writes embeddings/results back
+```
+
+NestJS enqueues jobs with JSON payloads. Python workers consume from the same Redis queues via `bullmq` Python package. Results written to PostgreSQL or S3. NestJS polls job status or uses BullMQ events for completion notifications.
 
 **Why BullMQ over alternatives:**
 - Agenda.js: MongoDB-based, adds unnecessary DB dependency.
 - Bee-Queue: Abandoned (last commit 2021).
-- RabbitMQ/Kafka: Overkill for a SaaS with <10K concurrent jobs. BullMQ provides enough with Redis.
-- Temporal.io: Powerful but complex orchestration layer not needed at MVP stage.
+- RabbitMQ: Heavier to operate, requires separate broker. BullMQ reuses Redis.
+- Temporal.io: Powerful orchestration but massive operational overhead for a startup.
+- gRPC between NestJS and Python: Tight coupling, proto file management. BullMQ is async-first and handles "fire job, get result later" naturally.
+- HTTP from NestJS to FastAPI: Couples API to worker availability, loses retry/scheduling. Use BullMQ for dispatch; reserve FastAPI for health checks only.
+
+### Python Worker Stack
+
+| Technology | Version | Purpose | Why | Confidence |
+|------------|---------|---------|-----|------------|
+| FastAPI | 0.115.x | Worker HTTP API | Async, Pydantic validation, type-safe. Health check endpoint and direct invocation for debugging. Primary dispatch is via BullMQ, not HTTP. | HIGH |
+| uvicorn | 0.34.x | ASGI server | Production server for FastAPI. Use with `--workers` for multi-process. | HIGH |
+| bullmq (Python) | 2.x | Job consumption | BullMQ's official Python SDK. Consume jobs from same Redis queues NestJS enqueues to. | HIGH |
+| Pydantic | 2.x | Data validation | Settings management, job payload validation. FastAPI uses it natively. | HIGH |
+| replicate (Python) | 1.x | Image generation | Official Python SDK for Replicate API. Workers call for Nano Banana Pro / FLUX image generation. | HIGH |
+| pymupdf4llm | 0.3.3 | PDF text extraction | Converts PDF to Markdown optimized for LLM/RAG. Best speed/quality balance. Released Feb 13, 2026. | HIGH |
+| python-docx | 1.1.x | DOCX parsing | Standard library for reading Word documents. Extract text, tables, paragraphs. | HIGH |
+| trafilatura | 2.0.x | URL/HTML extraction | Extract main text from web pages. Used by HuggingFace, IBM, Microsoft Research. Outputs Markdown, JSON, XML, TXT. | HIGH |
+| mistune | 3.x | Markdown parsing | Zero-dependency Python Markdown parser. Parse .md files into structured text for chunking. | MEDIUM |
+| langchain-text-splitters | 0.3.x | Text chunking | RecursiveCharacterTextSplitter for document chunking. 256-512 token chunks with 10-20% overlap. | HIGH |
+| openai (Python SDK) | 1.x | Embeddings API | OpenAI text-embedding-3-large (3072-dim, 8191 tokens). Or use Cohere embed-v4 (65.2 MTEB score) if multilingual matters. | HIGH |
+| psycopg | 3.x | PostgreSQL driver | Direct SQL for writing embeddings to pgvector. psycopg[binary] for easier install. | HIGH |
+| pgvector (Python) | 0.3.x | Vector operations | Python client for pgvector. Register vector type with psycopg for native array handling. | HIGH |
+| Python | 3.12.x | Runtime | Best performance (faster interpreter). FastAPI and BullMQ Python require 3.8+. | HIGH |
+
+**Document Ingestion Pipeline (Python workers):**
+```
+Upload → Detect MIME type → Route to parser:
+  .pdf  → pymupdf4llm → Markdown text + metadata
+  .docx → python-docx → plain text + structure
+  .md   → mistune → structured text
+  URL   → trafilatura → main content as Markdown
+
+→ langchain-text-splitters (RecursiveCharacterTextSplitter)
+  → chunks (256-512 tokens, 10-20% overlap)
+
+→ OpenAI text-embedding-3-large (batch embed)
+  → vector embeddings (3072 dimensions)
+
+→ psycopg + pgvector → store in document_chunks table
+```
+
+**Embedding Model Choice:**
+
+| Model | MTEB Score | Dimensions | Max Tokens | Cost/1M tokens | Best For |
+|-------|-----------|------------|------------|----------------|----------|
+| OpenAI text-embedding-3-large | 64.6 | 3072 | 8191 | $0.13 | Best quality, production default |
+| OpenAI text-embedding-3-small | 62.3 | 1536 | 8191 | $0.02 | Budget/MVP |
+| Cohere embed-v4 | 65.2 | 1024 | 512 | $0.10 | Multilingual, slightly better MTEB |
+| BGE-M3 (self-hosted) | 63.0 | 1024 | 8192 | GPU cost only | Self-hosted, no API fees |
+
+**Recommendation:** Start with OpenAI text-embedding-3-small for MVP (cheapest, good quality). Upgrade to text-embedding-3-large or Cohere embed-v4 when retrieval quality matters. Switch to self-hosted BGE-M3 when volume makes API costs unfavorable.
 
 ### File Storage
 
 | Technology | Version | Purpose | Why | Confidence |
 |------------|---------|---------|-----|------------|
-| @aws-sdk/client-s3 | 3.990.x | S3-compatible storage | Cloud-agnostic via S3 protocol. Works with AWS S3, MinIO (self-hosted), Cloudflare R2, Backblaze B2. Stores uploaded knowledge bases and generated presentations. | HIGH |
+| @aws-sdk/client-s3 | 3.x | S3-compatible storage | Cloud-agnostic via S3 protocol. Works with AWS S3, MinIO (local), Cloudflare R2, Backblaze B2. | HIGH |
+| @aws-sdk/s3-request-presigner | 3.x | Presigned upload URLs | Client uploads documents directly to S3 via presigned URL. Reduces server load, handles large files. | HIGH |
 | MinIO | Latest | Local dev S3 | Docker-based S3-compatible storage for local development. Identical API to production S3. | HIGH |
-| multer | 1.4.x | File upload middleware | NestJS has built-in multer support via `@nestjs/platform-express`. Handles multipart form uploads before S3 transfer. | HIGH |
 
 **Storage Architecture:**
 ```
 Buckets:
   uploads/        - Raw user uploads (PDF, DOCX, MD)
-  parsed/         - Extracted text (JSON)
-  images/         - AI-generated images
-  presentations/  - Final output files (PPTX, HTML)
+  parsed/         - Extracted text chunks (JSON)
+  images/         - AI-generated slide images
+  presentations/  - Final output files (PPTX, HTML, PDF)
 ```
 
-**Why S3-compatible over alternatives:**
-- Direct filesystem: Not horizontally scalable, lost on container restart.
-- Google Cloud Storage: Vendor lock-in, no local equivalent.
-- Azure Blob Storage: Same lock-in concern.
-- S3 protocol: Universal. MinIO for local dev, any provider in production.
+**File Upload Pattern:**
+1. Client requests presigned upload URL from NestJS API
+2. NestJS generates presigned URL via @aws-sdk/s3-request-presigner (5-min expiry)
+3. Client uploads file directly to S3 (bypasses API server entirely)
+4. Client confirms upload to API
+5. API enqueues `document-parse` job with S3 key
 
-### Document Parsing
+**Why presigned URLs over Multer:**
+- Multer buffers entire file in server memory. Breaks on files > 100MB.
+- Presigned URLs offload bandwidth and storage to S3 directly.
+- Reduces API server CPU/memory usage.
+- Use Multer only for tiny uploads (avatars, thumbnails).
 
-| Library | Version | Purpose | Why | Confidence |
-|---------|---------|---------|-----|------------|
-| pdf-parse | 2.4.x | PDF text extraction | Pure TypeScript, cross-platform. Fast for text extraction (our primary need). Does not require system dependencies. 2.x is a major rewrite with improved Node 22+ support. | HIGH |
-| mammoth | 1.11.x | DOCX to HTML/text | De facto standard for DOCX parsing in Node.js. Semantic extraction (headings, lists, emphasis). TypeScript types included. 729 dependents on npm. | HIGH |
-| marked | 17.0.x | Markdown parsing | 26M weekly downloads. Built for speed. Converts MD to HTML for content extraction. Actively maintained (v17 published 2 days ago). | HIGH |
+### Presentation Export Pipeline
 
-**What NOT to use:**
-- `pdf.js` / `pdfjs-dist`: 2-3x slower than pdf-parse. Overkill for text extraction (designed for rendering). Use only if you need spatial positioning of text on pages.
-- `docx`: Lower-level DOCX manipulation library. Good for creating DOCX, wrong tool for reading/extracting content.
-- `unified`/`remark`: More powerful Markdown AST but unnecessary complexity for plain text extraction. Use `marked` for speed.
-
-**Parsing Pipeline:**
-```
-Upload → Detect MIME type → Route to parser:
-  .pdf  → pdf-parse → extracted text + metadata
-  .docx → mammoth → HTML → strip tags → text + structure
-  .md   → marked → HTML → strip tags → text + structure
-  URL   → fetch → readability (mozilla) → text + structure
-```
-
-### Presentation Generation
-
-**CRITICAL FINDING:** Marp CLI's PPTX output renders slides as background images, making them non-editable in PowerPoint. The `--pptx-editable` flag is experimental, requires LibreOffice installed, and produces lower quality output. This is a significant limitation for a SaaS product where users expect editable decks.
+**CRITICAL FINDING:** Marp CLI's PPTX output renders slides as background images, making them non-editable in PowerPoint. The `--pptx-editable` flag is experimental, requires LibreOffice installed, and produces lower quality output.
 
 | Technology | Version | Purpose | Why | Confidence |
 |------------|---------|---------|-----|------------|
-| PptxGenJS | 4.0.x | PPTX generation (PRIMARY) | Programmatic, fully editable PPTX creation. Text, images, shapes, charts, tables. OOXML-compliant. Works in Node.js. 165 npm dependents. This is the right tool for a SaaS product. | HIGH |
-| Marp CLI | 4.2.x | HTML presentation + PDF | Best for HTML slide decks and PDFs. Markdown-in, beautiful-slides-out. Use for the web preview format, NOT for PPTX export. | HIGH |
-| reveal.js | 5.2.x | HTML presentation viewer | Embed in web app for in-browser slide viewing. Markdown support, speaker notes, animations. Use for the "preview" experience before download. | MEDIUM |
-| Google Slides API | v1 (googleapis) | Google Slides export | For users who want output directly in Google Slides. REST API via `googleapis` npm package. Requires OAuth consent flow. Defer to post-MVP. | MEDIUM |
+| PptxGenJS | 4.0.1 | PPTX generation (PRIMARY) | Programmatic, fully editable PPTX creation. Text, images, shapes, charts, tables, slide masters. OOXML-compliant. Pure JavaScript, no system dependencies. | HIGH |
+| Puppeteer | 24.x | HTML to PDF export | Headless Chrome renders HTML slides to pixel-perfect PDF. Handles JS execution, web fonts, CSS layouts. Standard approach for HTML-to-PDF. | HIGH |
+| reveal.js | 5.2.1 | HTML presentation export | The HTML presentation framework. Markdown support, auto-animate, speaker notes, LaTeX. Export as self-contained HTML. Use for web preview and HTML download. | HIGH |
+| googleapis | 144.x | Google Slides API | Official Google client. Create presentations via Slides API v1 with batchUpdate. Requires OAuth 2.0 (Google Cloud project). Defer to post-MVP. | MEDIUM |
 
-**Presentation Generation Strategy:**
+**Export Strategy:**
 
-| Output Format | Technology | Editability | When |
-|---------------|-----------|-------------|------|
+| Output Format | Technology | Editability | Priority |
+|---------------|-----------|-------------|----------|
 | PPTX (download) | PptxGenJS | Fully editable | MVP - Primary output |
-| HTML (web view) | Marp CLI or reveal.js | View-only in browser | MVP - Preview |
-| PDF (download) | Marp CLI | View-only | MVP - Secondary output |
-| Google Slides | Google Slides API | Fully editable | Post-MVP |
+| PDF (download) | Puppeteer (render reveal.js to PDF) | View-only | MVP - Secondary output |
+| HTML (web view) | reveal.js | Interactive in browser | MVP - Preview |
+| Google Slides | Google Slides API | Fully editable in Google | Post-MVP |
 
-**Why NOT rely on Marp for PPTX:**
-- PPTX output is pre-rendered images (non-editable text, non-movable elements).
-- `--pptx-editable` requires LibreOffice Impress installed on the server (heavyweight dependency).
-- Experimental flag with "lower reproducibility" per official docs.
-- Users paying for a SaaS expect editable slides they can customize.
-
-**PptxGenJS gives us:**
-- Full programmatic control over slide elements (text boxes, images, shapes).
-- Design constraint engine can position elements precisely.
-- Editable output that users can modify in PowerPoint/Keynote/Google Slides.
-- No system dependencies (pure JavaScript).
+**Why PptxGenJS over Marp for PPTX:**
+- Marp PPTX output is pre-rendered images (non-editable text, non-movable elements).
+- `--pptx-editable` requires LibreOffice on the server (heavyweight dependency).
+- Users paying for a SaaS expect editable slides they can customize in PowerPoint/Keynote.
+- PptxGenJS gives full programmatic control: text boxes, images, shapes, precise positioning for the design constraint engine.
 
 ### Image Generation
 
 | Technology | Version | Purpose | Why | Confidence |
 |------------|---------|---------|-----|------------|
-| replicate | 1.4.x | Replicate API client | Pre-decided. Official Node.js SDK. Handles model invocation, webhook callbacks, file output. | HIGH |
-| FLUX.1 [schnell] | Latest on Replicate | Fast image generation | $0.003/image. Apache 2.0 license (unrestricted commercial use). 1-4 step inference (fastest FLUX variant). Best text rendering of any open model. | HIGH |
-| sharp | 0.34.x | Image post-processing | Resize generated images to slide dimensions. Convert formats (WebP to PNG for PPTX compatibility). Optimize file sizes. Fastest Node.js image processor. | HIGH |
+| replicate (Python) | 1.x | Replicate API client | Pre-decided. Official Python SDK. Called from Python workers. | HIGH |
+| FLUX.1 [schnell] | Latest on Replicate | Fast image generation | $0.003/image. Apache 2.0 license (unrestricted commercial). 1-4 step inference (fastest FLUX variant). | HIGH |
+| sharp | 0.34.x | Image post-processing | Resize generated images to slide dimensions. Convert formats (WebP to PNG for PPTX compatibility). Node.js side for final assembly. | HIGH |
 
 **Image Generation Cost Model:**
 ```
 FLUX.1 [schnell]: $0.003/image
-Average deck: 10 slides, 5 images → $0.015/deck
+Average deck: 10 slides, 5 custom images → $0.015/deck
 With overhead (retries, variants): ~$0.02/deck
 Margin at $1/deck credit: 98% gross margin on image generation
 ```
 
-**Model Alternatives (if FLUX schnell underperforms):**
+**Model Fallback Ladder:**
 
-| Model | Cost/Image | Speed | Quality | Commercial License |
-|-------|-----------|-------|---------|-------------------|
+| Model | Cost/Image | Speed | Quality | License |
+|-------|-----------|-------|---------|---------|
 | FLUX.1 [schnell] | $0.003 | Fastest | Good | Apache 2.0 (free) |
 | FLUX.1 [dev] | $0.030 | Medium | Better | Non-commercial |
 | FLUX.1 [pro] | $0.055 | Slower | Best | Paid license |
 | SDXL | ~$0.005 | Fast | Good for stylized | Open |
 
-**Recommendation:** Start with FLUX.1 [schnell] for MVP. It has the best cost/speed ratio and unrestricted commercial use. Upgrade to FLUX.1 [pro] for a premium tier later.
-
-**Why Replicate over alternatives:**
-- Banana/Nano Banana: Smaller ecosystem, fewer model options.
-- fal.ai: Competitive pricing but smaller community.
-- RunPod: Serverless GPU, but you manage the model deployment yourself.
-- Self-hosted: Requires GPU infrastructure. Premature optimization at MVP.
+**Recommendation:** Start with FLUX.1 [schnell] for MVP. Upgrade to FLUX.1 [pro] for a premium tier later.
 
 ### Authentication
 
@@ -178,13 +236,8 @@ Margin at $1/deck credit: 98% gross margin on image generation
 | @nestjs/passport | 11.x | Auth framework | Official NestJS integration. Strategy-based (JWT now, OAuth later). Guards-based route protection. | HIGH |
 | passport-jwt | 4.0.x | JWT strategy | Standard JWT validation strategy for Passport. | HIGH |
 | @nestjs/jwt | 11.x | JWT token operations | Sign/verify tokens. Access + refresh token pattern. | HIGH |
-| argon2 | 0.41.x | Password hashing | Recommended over bcrypt for new projects. Winner of Password Hashing Competition. Memory-hard (resists GPU attacks). bcrypt uses fixed 4KB memory; argon2id with 64MB makes GPU cracking infeasible. | MEDIUM |
-
-**Why argon2 over bcrypt:**
-- bcrypt: 4KB fixed memory. GPU with 8GB can run millions of parallel hashes.
-- argon2id: 64MB configurable memory. Same GPU limited to ~125 parallel computations.
-- OWASP 2024 recommends argon2id as primary choice.
-- Node.js `argon2` package is well-maintained, no native compilation issues on modern Node.
+| bcrypt | 5.x | Password hashing | Battle-tested, adaptive cost factor. Use bcryptjs (pure JS) if native compilation causes issues. | HIGH |
+| helmet | 8.x | HTTP security headers | Content-Security-Policy, X-Frame-Options, etc. One-line middleware. | HIGH |
 
 **Auth Architecture:**
 ```
@@ -202,190 +255,314 @@ Phase 3: SAML/SSO for enterprise customers
 
 | Technology | Version | Purpose | Why | Confidence |
 |------------|---------|---------|-----|------------|
-| stripe | 20.3.x | Payment processing | Industry standard. New Billing Meters API (replaces legacy usage records). Credit-based pricing model has first-class support. Stripe API version 2026-01-28.clover. | HIGH |
+| stripe | 20.3.1 | Payment processing | Industry standard. New Billing Meters API (replaces legacy usage records, deprecated 2025-03-31). Credit-based pricing has first-class support. | HIGH |
+| @stripe/stripe-js | 5.x | Frontend Stripe | Stripe Elements for checkout UI, payment method collection. | HIGH |
 
-**CRITICAL: Stripe API Migration Required**
-Legacy usage records API removed in Stripe version `2025-03-31.basil`. New projects MUST use the Billing Meters API:
+**CRITICAL: Use Billing Meters API, NOT legacy usage records.**
+Legacy usage records API removed in Stripe API version `2025-03-31.basil`. New projects MUST use the Billing Meters API:
 - Create a `Meter` for image generation credits
 - Send `MeterEvent` for each credit consumed
 - Attach meters to prices for automatic billing
-- Credit-based pricing model documented at: https://docs.stripe.com/billing/subscriptions/usage-based/use-cases/credits-based-pricing-model
+- [Stripe credit-based pricing docs](https://docs.stripe.com/billing/subscriptions/usage-based/use-cases/credits-based-pricing-model)
 
 **Credit System Architecture:**
 ```
 Purchase: User buys credit pack → Stripe Checkout → webhook → add credits to DB
-Consume:  User generates deck → deduct credits from DB → send MeterEvent to Stripe
+Consume:  User generates deck → deduct credits in PostgreSQL → send MeterEvent to Stripe
 Track:    Stripe meter aggregates usage per billing period
 Refund:   Failed generations → credits returned to DB balance
 ```
 
-**Why Stripe over alternatives:**
-- Paddle/LemonSqueezy: Merchant of Record (simpler tax handling) but less control over credit-based billing.
-- PayPal: Worse DX, no meter API equivalent.
-- Stripe is the only provider with a first-class credit-based pricing SDK.
+**Why dual tracking (PostgreSQL + Stripe Meters):**
+- PostgreSQL for real-time "can this user generate?" checks (low latency)
+- Stripe Meters for billing accuracy and invoice generation (eventual consistency is fine for billing)
 
-### Deployment & Infrastructure
+### Validation & Configuration
 
 | Technology | Version | Purpose | Why | Confidence |
 |------------|---------|---------|-----|------------|
-| Docker | Latest | Containerization | Standard. Multi-stage builds for small production images. Docker Compose for local dev (app + PostgreSQL + Redis + MinIO). | HIGH |
-| Docker Compose | 2.x | Local dev orchestration | Single `docker-compose up` spins up entire stack. | HIGH |
-
-**Docker Compose Services:**
-```yaml
-services:
-  app:         # NestJS application
-  postgres:    # PostgreSQL 16
-  redis:       # Redis 7
-  minio:       # S3-compatible storage
-  bullboard:   # BullMQ dashboard (dev only)
-```
-
-**Cloud-Agnostic Deployment Options:**
-- **AWS:** ECS/Fargate + RDS + ElastiCache + S3
-- **GCP:** Cloud Run + Cloud SQL + Memorystore + GCS
-- **Railway/Render:** Simplest for MVP (managed PostgreSQL + Redis included)
-- **Self-hosted:** Docker Compose on a VPS (Hetzner, DigitalOcean)
-
-**Recommendation:** Start on Railway or Render for MVP speed. Migrate to AWS/GCP when scaling demands it.
+| class-validator | 0.14.x | DTO validation | Decorator-based validation on DTOs. NestJS ValidationPipe integration. whitelist + forbidNonWhitelisted strips unknown fields. | HIGH |
+| class-transformer | 0.5.x | DTO transformation | Transforms plain JSON to class instances. Works with ValidationPipe for automatic type coercion. | HIGH |
+| @nestjs/config | 4.x | Environment config | Wraps dotenv with validation, typed config modules, namespace support. | HIGH |
+| @nestjs/swagger | 8.x | API documentation | Auto-generate OpenAPI spec from decorators. Essential for frontend integration. | HIGH |
 
 ### Supporting Libraries
 
 | Library | Version | Purpose | When to Use | Confidence |
 |---------|---------|---------|-------------|------------|
-| class-validator | 0.14.x | DTO validation | Every API endpoint. Decorators match NestJS style. | HIGH |
-| class-transformer | 0.5.x | DTO transformation | Pairs with class-validator for request/response shaping. | HIGH |
-| @nestjs/config | 4.x | Environment config | .env management. Type-safe config with validation. | HIGH |
-| @nestjs/swagger | 8.x | API documentation | Auto-generate OpenAPI spec from decorators. Essential for frontend integration. | HIGH |
-| helmet | 8.x | HTTP security headers | Standard security middleware. | HIGH |
 | rate-limiter-flexible | 5.x | Rate limiting | Redis-backed. Protect image generation endpoint from abuse. | MEDIUM |
-| winston | 3.x | Structured logging | JSON logs for production. Request tracing. | HIGH |
+| winston | 3.x | Structured logging | JSON logs for production. Request tracing with correlation IDs. | HIGH |
 | uuid | 11.x | Unique IDs | Presentation IDs, job IDs. Use UUIDv7 for time-sortable IDs. | HIGH |
+| ioredis | 5.x | Redis client | Required by BullMQ. Also used for direct Redis cache operations. | HIGH |
 
-### Dev Dependencies
+### Development Tools
 
-| Library | Version | Purpose | Confidence |
-|---------|---------|---------|------------|
-| vitest | 3.x | Testing | Faster than Jest. ESM-native. Compatible with NestJS. | MEDIUM |
-| @nestjs/testing | 11.x | NestJS test utilities | Official testing module. | HIGH |
-| eslint | 9.x | Linting | Flat config (ESLint 9). TypeScript-aware. | HIGH |
-| prettier | 3.x | Code formatting | Standard. | HIGH |
-| tsx | 4.x | TypeScript execution | Fast TS execution for scripts and dev. | HIGH |
-
-**Testing Note:** Vitest is recommended over Jest for new projects. NestJS 11 still ships with Jest config by default, but Vitest is faster, ESM-native, and gaining NestJS community adoption. If the team prefers stability, Jest 30.x works fine.
-
----
-
-## Alternatives Considered
-
-| Category | Recommended | Alternative | Why Not |
-|----------|-------------|-------------|---------|
-| Framework | NestJS 11 | Fastify (standalone) | Lacks structure for multi-module SaaS |
-| Framework | NestJS 11 | Hono | Too lightweight for queue management + guards + modules |
-| ORM | Drizzle | Prisma | Proprietary DSL lock-in, 2MB engine, N+1 on joins |
-| ORM | Drizzle | TypeORM | Spotty maintenance, critical bugs sit months, weaker types |
-| PPTX | PptxGenJS | Marp CLI | PPTX output is non-editable background images |
-| PPTX | PptxGenJS | python-pptx (via child process) | Adds Python dependency. PptxGenJS is native Node.js |
-| Password hash | argon2 | bcrypt | Fixed 4KB memory, GPU-vulnerable. argon2id is OWASP recommended |
-| Queue | BullMQ | RabbitMQ | Overkill. Adds infrastructure. BullMQ uses existing Redis |
-| Queue | BullMQ | Agenda.js | MongoDB dependency unnecessary |
-| Image API | Replicate | fal.ai | Smaller community, fewer model options |
-| Image API | Replicate | Self-hosted | Premature. Requires GPU infrastructure |
-| Storage | S3-compatible | Local filesystem | Not scalable, lost on container restart |
-| Deployment | Railway (MVP) | Kubernetes | Overkill for MVP. Move there at scale |
+| Tool | Purpose | Notes |
+|------|---------|-------|
+| Docker + Docker Compose | Local dev environment | PostgreSQL + Redis + MinIO + API + Workers in one `docker-compose.yml`. Essential for polyglot (TS + Python) local dev. |
+| Prisma Studio | Database GUI | Ships with Prisma CLI. Visual data browsing during development. Free. |
+| Bull Board (@bull-board/nestjs) | Job queue dashboard | Web UI for monitoring BullMQ queues, jobs, failures. Mount at `/admin/queues`. |
+| Vitest | Unit/integration testing (Node.js) | Faster than Jest, native ESM support. NestJS 11 still ships Jest by default; Vitest adoption is growing. |
+| @nestjs/testing | NestJS test utilities | Official testing module for unit/e2e tests. |
+| ESLint 9 + Prettier 3 | Code quality (Node.js) | Flat config (ESLint 9). TypeScript-aware rules. |
+| Ruff | Python linting + formatting | Replaces Black + isort + Flake8. Single tool, extremely fast. |
+| pytest + pytest-asyncio | Python testing | Standard Python test runner. pytest-asyncio for async worker tests. |
+| GitHub Actions | CI/CD | Lint, test, build, deploy. Matrix strategy for Node + Python. |
 
 ---
 
 ## Installation
 
+### Node.js (NestJS API)
+
 ```bash
 # Core framework
-npm install @nestjs/core @nestjs/common @nestjs/platform-fastify rxjs reflect-metadata
+npm install @nestjs/core @nestjs/common @nestjs/platform-express rxjs reflect-metadata
 
 # Database
-npm install drizzle-orm postgres
-npm install -D drizzle-kit
-
-# Cache & Queue
-npm install @nestjs/bullmq bullmq ioredis
-
-# File storage
-npm install @aws-sdk/client-s3 @aws-sdk/s3-request-presigner multer
-npm install -D @types/multer
-
-# Document parsing
-npm install pdf-parse mammoth marked
-npm install -D @types/mammoth
-
-# Presentation generation
-npm install pptxgenjs @marp-team/marp-cli
-npm install sharp
-
-# Image generation
-npm install replicate
+npm install prisma @prisma/client
+npm install pgvector  # pgvector client for raw queries if needed
 
 # Authentication
-npm install @nestjs/passport passport passport-jwt @nestjs/jwt argon2
-npm install -D @types/passport-jwt
+npm install @nestjs/passport passport passport-jwt @nestjs/jwt
+npm install bcrypt helmet
+npm install -D @types/passport-jwt @types/bcrypt
+
+# Validation & Config
+npm install class-validator class-transformer @nestjs/config @nestjs/swagger
+
+# Queue
+npm install @nestjs/bullmq bullmq ioredis
+
+# Export pipeline
+npm install pptxgenjs puppeteer reveal.js googleapis
+
+# Image post-processing
+npm install sharp
+
+# Storage
+npm install @aws-sdk/client-s3 @aws-sdk/s3-request-presigner
 
 # Billing
 npm install stripe
 
+# Replicate (for job enqueueing from API if needed)
+npm install replicate
+
 # Utilities
-npm install class-validator class-transformer @nestjs/config @nestjs/swagger
-npm install helmet rate-limiter-flexible winston uuid
+npm install rate-limiter-flexible winston uuid
 
 # Dev dependencies
-npm install -D typescript @nestjs/cli @nestjs/testing
+npm install -D typescript @nestjs/cli @nestjs/testing @types/node
+npm install -D prisma  # Prisma CLI (also a devDep)
 npm install -D vitest @vitest/coverage-v8
 npm install -D eslint prettier tsx
-npm install -D @types/node
+npm install -D @bull-board/nestjs @bull-board/api @bull-board/express
 ```
 
-**Note on Fastify adapter:** Using `@nestjs/platform-fastify` instead of the default Express adapter. Fastify is 2-3x faster for JSON serialization. NestJS abstracts the difference, so switching later is trivial.
+### Python (Workers)
+
+```bash
+# Core
+pip install fastapi uvicorn[standard] pydantic pydantic-settings
+
+# Job queue
+pip install bullmq
+
+# Image generation
+pip install replicate
+
+# Document processing
+pip install pymupdf4llm python-docx trafilatura mistune
+
+# Text splitting & embeddings
+pip install langchain-text-splitters openai  # or: pip install cohere
+
+# Database (for storing embeddings)
+pip install "psycopg[binary]" pgvector
+
+# Dev
+pip install pytest pytest-asyncio ruff httpx  # httpx for FastAPI test client
+```
+
+---
+
+## Alternatives Considered
+
+| Category | Recommended | Alternative | Why Not the Alternative |
+|----------|-------------|-------------|------------------------|
+| ORM | Prisma 7 | Drizzle ORM | Drizzle is lighter and SQL-first, better for edge/serverless. But Prisma's ecosystem (Studio, Migrate, seeders) and community patterns for NestJS are more mature. Drizzle NestJS integration relies on community module. |
+| ORM | Prisma 7 | TypeORM | Decorator-heavy, weaker type inference, declining adoption. Critical bugs sit months unresolved. |
+| Vector DB | pgvector (in PostgreSQL) | Pinecone / Weaviate | Separate vector DB adds cost, latency, operational complexity. SlideForge's vectors are scoped per-user (small collections). pgvector keeps embeddings co-located with relational data. |
+| Vector DB | pgvector | Qdrant | Qdrant is faster for pure vector workloads at massive scale. Not needed until millions of vectors per knowledge base. |
+| Vector DB | pgvector | ChromaDB | Great for prototyping but lacks production features (no RBAC, SQLite backend is single-node). |
+| Queue | BullMQ | RabbitMQ | Heavier to operate, requires separate broker. BullMQ reuses existing Redis. |
+| Queue | BullMQ | Temporal | Powerful orchestration but massive operational overhead for a startup. |
+| NestJS-Python comm | BullMQ queues | gRPC | Adds proto file management, code generation, tight coupling. BullMQ is async-first. |
+| NestJS-Python comm | BullMQ queues | HTTP (NestJS calls FastAPI) | Couples API to worker availability. Loses retry/scheduling semantics. |
+| PPTX generation | PptxGenJS | Marp CLI | Marp PPTX output is pre-rendered images (non-editable). `--pptx-editable` requires LibreOffice on server. |
+| PPTX generation | PptxGenJS | python-pptx | Requires routing through Python worker for a rendering task. PptxGenJS is native Node.js. |
+| PDF generation | Puppeteer | wkhtmltopdf | Abandoned QtWebKit engine. Cannot render modern CSS. |
+| PDF generation | Puppeteer | Playwright | Both work. Puppeteer is lighter for single-browser (Chrome only) PDF generation. |
+| PDF parsing | pymupdf4llm | Unstructured | Unstructured has better semantic chunks but is heavier (many deps, optional Docker). pymupdf4llm is faster, lighter, outputs clean Markdown. Start here; add Unstructured later if needed. |
+| Embeddings | OpenAI text-embedding-3 | Self-hosted BGE-M3 | Self-hosting saves per-token cost but requires GPU infrastructure. Use API at early stage. |
+| Auth | Passport + JWT | Auth0 / Clerk | Third-party auth adds cost ($0.05-0.25/MAU) and vendor lock-in. Passport + JWT is free and well-documented for NestJS. Consider Clerk if social login + MFA needed immediately. |
+| Billing | Stripe Billing Meters | Custom billing | Building custom credit tracking/billing is months of work. Stripe handles invoicing, failed payments, tax. Worth the 2.9% + $0.30 fee. |
+| URL extraction | trafilatura | BeautifulSoup + requests | BeautifulSoup requires manual boilerplate for encoding detection, boilerplate removal. Trafilatura handles all this in one call. |
+| Python framework | FastAPI | Flask | FastAPI is async-native, has Pydantic built in, generates OpenAPI automatically. Flask requires extensions for everything. |
+| Python linting | Ruff | Black + isort + Flake8 | Ruff replaces all three in a single, much faster tool. |
+
+---
+
+## What NOT to Use
+
+| Avoid | Why | Use Instead |
+|-------|-----|-------------|
+| Bull (legacy npm package) | Predecessor to BullMQ. No longer developed. Missing rate limiting, flow jobs, sandboxed processors. | BullMQ 5.x |
+| Stripe Usage Records API | Deprecated in API version 2025-03-31. Removed entirely. | Stripe Billing Meters API |
+| Sequelize | Predates modern TypeScript patterns. Weak typing, verbose. Community moved on. | Prisma 7 |
+| wkhtmltopdf | Abandoned QtWebKit engine. Cannot render modern CSS (Grid, Flexbox). Known rendering bugs. | Puppeteer |
+| Multer for large file uploads | Buffers entire file in server memory. Breaks on files > 100MB. | S3 presigned URLs (client uploads directly to S3) |
+| Separate vector DB at launch | Adds operational cost, another service, network latency for joins. Not needed until millions of vectors. | pgvector in PostgreSQL |
+| ChromaDB in production | No RBAC, SQLite backend is single-node. Great for prototyping only. | pgvector in PostgreSQL |
+| LangChain full framework | Heavy dependency, frequent breaking changes, abstraction leaks. | langchain-text-splitters only (the useful part) + direct API calls |
+| python-pptx for PPTX generation | Requires Python worker for rendering task. Cross-language call adds latency. | PptxGenJS (Node.js, same process as API) |
+| nodemailer without a service | Raw SMTP is unreliable for transactional email. | Resend, Postmark, or AWS SES |
+| Marp CLI for PPTX export | PPTX slides are background images, non-editable. | PptxGenJS for editable PPTX |
+
+---
+
+## Stack Patterns by Variant
+
+**If you need real-time collaboration (Google Docs-style):**
+- Add Yjs or Automerge for CRDT-based real-time sync
+- Add WebSocket gateway via @nestjs/websockets
+- Phase 3+ complexity; do not build at launch
+
+**If you need very large knowledge bases (10k+ documents per user):**
+- Add pgvectorscale (Timescale's extension) for faster ANN search
+- Partition the document_chunks table by knowledge_base_id
+- Monitor query latency; switch to Qdrant if pgvector becomes bottleneck
+
+**If you need offline/self-hosted deployment:**
+- Replace Replicate with self-hosted FLUX via ComfyUI + GPU server
+- Replace OpenAI embeddings with BGE-M3 on local GPU
+- Replace S3 with MinIO for S3-compatible local storage
+
+**If you want edge/serverless deployment:**
+- Replace Prisma with Drizzle ORM (7kb bundle, no binary)
+- Replace BullMQ with Upstash QStash for serverless-compatible queuing
+- Replace Puppeteer with Cloudflare Browser Rendering API
+
+---
+
+## Version Compatibility
+
+| Package A | Compatible With | Notes |
+|-----------|-----------------|-------|
+| NestJS 11.x | Prisma 7.x | Prisma 7 dropped Rust engine; works natively with Node.js 20+. NestJS 11 requires Node 20+. |
+| NestJS 11.x | Node.js 22 LTS | Required minimum is Node 20. Node 22 is current LTS (Active until Oct 2027). |
+| @nestjs/bullmq 11.0.x | bullmq 5.x | Must match NestJS major version. @nestjs/bullmq 11 requires NestJS 11. |
+| Prisma 7.x | pgvector 0.8.x | Use raw queries ($queryRaw) or prisma-extension-pgvector. Native vector type is on Prisma's 2026 roadmap but not shipped yet. |
+| BullMQ Node 5.x | BullMQ Python 2.x | Cross-language queue sharing works because both use same Redis data structures. Pin Redis 7.x. |
+| PptxGenJS 4.x | Node 18+ | ESM and CommonJS both supported. |
+| Puppeteer 24.x | Chrome 133+ | Puppeteer downloads its own Chromium. For Docker, use `puppeteer` (not `puppeteer-core`) for auto-download. |
+| stripe 20.x | Stripe API 2025-03-31+ | Uses Billing Meters (new). Do NOT use legacy usage-records API. |
+| Python 3.12.x | FastAPI 0.115.x | FastAPI requires Python 3.8+. Use 3.12 for best performance. |
+| pymupdf4llm 0.3.x | PyMuPDF 1.25.x | pymupdf4llm depends on PyMuPDF. Install pymupdf4llm and it pulls correct PyMuPDF version. |
 
 ---
 
 ## Version Pinning Strategy
 
-Pin major versions in `package.json` using `^` (caret) for patch/minor updates:
+**Node.js (package.json):** Pin major versions with `^` (caret) for patch/minor updates:
 ```json
 {
   "@nestjs/core": "^11.0.0",
-  "drizzle-orm": "^0.45.0",
+  "@prisma/client": "^7.0.0",
   "bullmq": "^5.69.0",
   "pptxgenjs": "^4.0.0",
   "stripe": "^20.3.0",
-  "replicate": "^1.4.0"
+  "replicate": "^1.4.0",
+  "reveal.js": "^5.2.0"
 }
 ```
-
 Lock exact versions with `npm ci` in CI/CD (uses package-lock.json).
+
+**Python (requirements.txt or pyproject.toml):** Pin with `~=` for compatible releases:
+```
+fastapi~=0.115.0
+bullmq~=2.0
+replicate~=1.0
+pymupdf4llm~=0.3.3
+python-docx~=1.1.0
+trafilatura~=2.0.0
+langchain-text-splitters~=0.3.0
+openai~=1.0
+psycopg[binary]~=3.2
+pgvector~=0.3.0
+pydantic~=2.0
+```
+
+---
+
+## Docker Compose Local Development
+
+```yaml
+services:
+  api:           # NestJS API (Node.js 22)
+  worker:        # Python workers (Python 3.12 + BullMQ)
+  postgres:      # PostgreSQL 16 + pgvector extension
+  redis:         # Redis 7 (BullMQ + cache)
+  minio:         # S3-compatible local storage
+```
+
+**Cloud Deployment Options:**
+- **AWS:** ECS/Fargate + RDS (PostgreSQL + pgvector) + ElastiCache + S3
+- **GCP:** Cloud Run + Cloud SQL + Memorystore + GCS
+- **Railway/Render:** Simplest for MVP (managed PostgreSQL + Redis included)
+- **Self-hosted:** Docker Compose on VPS (Hetzner, DigitalOcean)
+
+**Recommendation:** Start on Railway or Render for MVP speed. Migrate to AWS/GCP when scaling demands it.
 
 ---
 
 ## Sources
 
-### Verified (HIGH confidence)
-- NestJS 11.1.13: [npm @nestjs/core](https://www.npmjs.com/package/@nestjs/core) | [NestJS 11 announcement](https://trilon.io/blog/announcing-nestjs-11-whats-new)
-- BullMQ 5.69.1: [npm bullmq](https://www.npmjs.com/package/bullmq) | [BullMQ NestJS docs](https://docs.bullmq.io/guide/nestjs)
-- PptxGenJS 4.0.1: [npm pptxgenjs](https://www.npmjs.com/package/pptxgenjs) | [GitHub](https://github.com/gitbrent/PptxGenJS)
-- Marp CLI 4.2.3: [npm @marp-team/marp-cli](https://www.npmjs.com/package/@marp-team/marp-cli) | [PPTX editability issue #673](https://github.com/marp-team/marp-cli/issues/673)
-- pdf-parse 2.4.5: [npm pdf-parse](https://www.npmjs.com/package/pdf-parse)
-- mammoth 1.11.0: [npm mammoth](https://www.npmjs.com/package/mammoth)
-- marked 17.0.2: [npm marked](https://www.npmjs.com/package/marked)
-- sharp 0.34.5: [npm sharp](https://www.npmjs.com/package/sharp)
-- Replicate SDK 1.4.0: [npm replicate](https://www.npmjs.com/package/replicate) | [Replicate docs](https://replicate.com/docs/get-started/nodejs)
-- Stripe 20.3.1: [npm stripe](https://www.npmjs.com/package/stripe) | [Billing Meters API](https://docs.stripe.com/billing/subscriptions/usage-based/use-cases/credits-based-pricing-model)
-- @aws-sdk/client-s3 3.990.0: [npm @aws-sdk/client-s3](https://www.npmjs.com/package/@aws-sdk/client-s3)
-- FLUX.1 schnell pricing ($0.003/image): [Replicate pricing](https://replicate.com/pricing) | [FLUX collection](https://replicate.com/collections/flux)
+### Verified via npm/PyPI registries (HIGH confidence)
+- [NestJS @nestjs/core 11.1.13](https://www.npmjs.com/package/@nestjs/core) - verified Feb 2026
+- [Prisma 7.2.0](https://www.prisma.io/blog/announcing-prisma-orm-7-2-0) - released Dec 17, 2025
+- [BullMQ 5.69.1](https://www.npmjs.com/package/bullmq) - verified Feb 2026
+- [@nestjs/bullmq 11.0.4](https://www.npmjs.com/package/@nestjs/bullmq) - verified Feb 2026
+- [PptxGenJS 4.0.1](https://www.npmjs.com/package/pptxgenjs) - verified Feb 2026
+- [reveal.js 5.2.1](https://www.npmjs.com/package/reveal.js) - published ~Apr 2025
+- [stripe 20.3.1](https://www.npmjs.com/package/stripe) - verified Feb 2026
+- [replicate (Node) 1.4.0](https://www.npmjs.com/package/replicate) - verified Feb 2026
+- [pymupdf4llm 0.3.3](https://pypi.org/project/pymupdf4llm/) - released Feb 13, 2026
+- [pgvector 0.8.1](https://github.com/pgvector/pgvector) - verified Feb 2026
 
-### Verified via multiple sources (MEDIUM confidence)
-- Drizzle ORM 0.45.1: [npm drizzle-orm](https://www.npmjs.com/package/drizzle-orm) | [14x faster claim](https://betterstack.com/community/guides/scaling-nodejs/drizzle-vs-prisma/) | [NestJS integration](https://github.com/knaadh/nestjs-drizzle)
-- argon2 over bcrypt: [OWASP recommendation](https://guptadeepak.com/the-complete-guide-to-password-hashing-argon2-vs-bcrypt-vs-scrypt-vs-pbkdf2-2026/) | [Password Hashing Competition](https://ssojet.com/compare-hashing-algorithms/bcrypt-vs-argon2)
-- Stripe legacy API removal (2025-03-31.basil): [Stripe changelog](https://docs.stripe.com/changelog/basil/2025-03-31/deprecate-legacy-usage-based-billing)
-- reveal.js 5.2.1: [npm reveal.js](https://www.npmjs.com/package/reveal.js)
+### Verified via official documentation (HIGH confidence)
+- [Stripe Billing Meters](https://docs.stripe.com/billing/subscriptions/usage-based/implementation-guide) - legacy deprecated 2025-03-31
+- [Stripe Credit-Based Pricing](https://docs.stripe.com/billing/subscriptions/usage-based/use-cases/credits-based-pricing-model)
+- [NestJS Authentication](https://docs.nestjs.com/security/authentication) - Passport + JWT
+- [NestJS Queues](https://docs.nestjs.com/techniques/queues) - BullMQ integration
+- [NestJS Validation](https://docs.nestjs.com/techniques/validation) - class-validator + class-transformer
+- [Google Slides API Node.js Quickstart](https://developers.google.com/workspace/slides/api/quickstart/nodejs) - updated Dec 2025
+- [BullMQ Cross-Language Support](https://bullmq.io/) - Python, Elixir, PHP
+- [BullMQ NestJS Guide](https://docs.bullmq.io/guide/nestjs) - official integration docs
+- [Prisma pgvector](https://www.prisma.io/blog/orm-6-13-0-ci-cd-workflows-and-pgvector-for-prisma-postgres) - pgvector for Prisma Postgres
+- [Replicate Node.js Getting Started](https://replicate.com/docs/get-started/nodejs)
+- [Trafilatura 2.0 Documentation](https://trafilatura.readthedocs.io/)
+- [PptxGenJS Documentation](https://gitbrent.github.io/PptxGenJS/)
 
-### Training data only (LOW confidence - verify before using)
-- Vitest NestJS compatibility: Community adoption is growing but NestJS official templates still ship Jest. Verify setup before committing.
-- Drizzle 1.0 beta: A 1.0.0-beta.x exists on npm beta tag. Stick with 0.45.x stable for production.
+### Verified via multiple credible sources (MEDIUM confidence)
+- [Prisma vs TypeORM 2026](https://medium.com/@Nexumo_/prisma-or-typeorm-in-2026-the-nestjs-data-layer-call-ae47b5cfdd73) - Prisma recommended for SaaS greenfield
+- [Prisma vs Drizzle 2026](https://betterstack.com/community/guides/scaling-nodejs/drizzle-vs-prisma/) - Drizzle lighter but less ecosystem
+- [Embedding model comparison](https://research.aimultiple.com/embedding-models/) - Cohere embed-v4 (65.2 MTEB), OpenAI (64.6)
+- [Document parsing comparison 2025](https://onlyoneaman.medium.com/i-tested-7-python-pdf-extractors-so-you-dont-have-to-2025-edition-c88013922257) - pymupdf4llm recommended
+- [Chunking strategies for RAG 2025](https://www.firecrawl.dev/blog/best-chunking-strategies-rag-2025) - RecursiveCharacterTextSplitter as default
+- [S3 Presigned URLs NestJS](https://sandipwrites.medium.com/implementing-secure-aws-s3-file-uploads-in-nestjs-with-presigned-urls-573dfefe8f65) - recommended upload pattern
+
+---
+*Stack research for: SlideForge AI Presentation SaaS*
+*Researched: 2026-02-14 (v2)*
