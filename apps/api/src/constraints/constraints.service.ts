@@ -168,6 +168,61 @@ export class ConstraintsService {
    *
    * Returns the list of changes made and the fixed artifacts.
    */
+  /**
+   * Validate a theme definition against all constraint rules.
+   * Checks fonts, pairing, and color palette.
+   */
+  validateTheme(theme: {
+    headingFont: string;
+    bodyFont: string;
+    textColor: string;
+    backgroundColor: string;
+    primaryColor: string;
+    secondaryColor: string;
+    accentColor: string;
+  }): { valid: boolean; violations: string[] } {
+    const violations: string[] = [];
+
+    const headingResult = validateFontChoice(theme.headingFont);
+    if (!headingResult.valid) {
+      violations.push(
+        `Heading font "${theme.headingFont}" not allowed${headingResult.suggestion ? `. Suggested: "${headingResult.suggestion}"` : ''}`,
+      );
+    }
+
+    const bodyResult = validateFontChoice(theme.bodyFont);
+    if (!bodyResult.valid) {
+      violations.push(
+        `Body font "${theme.bodyFont}" not allowed${bodyResult.suggestion ? `. Suggested: "${bodyResult.suggestion}"` : ''}`,
+      );
+    }
+
+    const pairingResult = validateFontPairing(theme.headingFont, theme.bodyFont);
+    if (!pairingResult.valid && pairingResult.reason) {
+      violations.push(pairingResult.reason);
+    }
+
+    const palette: SlidePalette = {
+      text: theme.textColor,
+      background: theme.backgroundColor,
+      primary: theme.primaryColor,
+      secondary: theme.secondaryColor,
+      accent: theme.accentColor,
+    };
+
+    const contrastResult = validateTextContrast(palette.text, palette.background);
+    if (!contrastResult.valid) {
+      violations.push(
+        `Text/background contrast ratio ${contrastResult.ratio}:1 is below WCAG AA minimum ${contrastResult.required}:1`,
+      );
+    }
+
+    const paletteResult = validatePalette(palette);
+    violations.push(...paletteResult.violations);
+
+    return { valid: violations.length === 0, violations };
+  }
+
   autoFixSlide(slide: SlideContent, theme: SlideTheme): AutoFixResult {
     const changes: string[] = [];
     let fixedSlides: SlideContent[] = [slide];
