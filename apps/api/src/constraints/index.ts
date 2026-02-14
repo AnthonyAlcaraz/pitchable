@@ -57,6 +57,16 @@ export type {
   SplitResult,
 } from './density-validator';
 
+export {
+  validateLayout,
+  LAYOUT_LIMITS,
+} from './layout-validator';
+
+export type {
+  LayoutConfig,
+  LayoutValidationResult,
+} from './layout-validator';
+
 // ── Unified Slide Validator ─────────────────────────────────
 
 import {
@@ -80,6 +90,12 @@ import {
   type DensityValidationResult,
 } from './density-validator';
 
+import {
+  validateLayout as _validateLayout,
+  type LayoutConfig,
+  type LayoutValidationResult as _LayoutValidationResult,
+} from './layout-validator';
+
 // ── Unified Types ───────────────────────────────────────────
 
 export interface SlideTheme {
@@ -87,6 +103,7 @@ export interface SlideTheme {
   headingFont: string;
   bodyFont: string;
   sizes?: FontSizes;
+  layout?: LayoutConfig;
 }
 
 export interface DesignValidationResult {
@@ -100,6 +117,7 @@ export interface DesignValidationResult {
     sizes: { valid: boolean; violations: string[] };
   };
   density: DensityValidationResult;
+  layout: _LayoutValidationResult;
   allViolations: string[];
 }
 
@@ -128,6 +146,11 @@ export function validateSlideDesign(
   // Density
   const densityResult = _validateSlideContent(slide);
 
+  // Layout
+  const layoutResult = theme.layout
+    ? _validateLayout(theme.layout)
+    : { valid: true, violations: [] };
+
   // Flatten all violations
   const allViolations: string[] = [
     ...colorResult.violations,
@@ -143,6 +166,7 @@ export function validateSlideDesign(
     ...(pairingResult.valid ? [] : [pairingResult.reason ?? 'Font pairing issue']),
     ...sizesResult.violations,
     ...densityResult.violations,
+    ...layoutResult.violations,
   ];
 
   const valid = allViolations.length === 0;
@@ -158,6 +182,7 @@ export function validateSlideDesign(
       sizes: sizesResult,
     },
     density: densityResult,
+    layout: layoutResult,
     allViolations,
   };
 }

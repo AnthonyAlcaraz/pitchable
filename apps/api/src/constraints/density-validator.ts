@@ -35,8 +35,10 @@ export interface SplitResult {
 
 // ── Constants ───────────────────────────────────────────────
 
+export const MAX_WORDS_PER_BULLET = 10;
+
 export const DENSITY_LIMITS: Readonly<DensityLimits> = {
-  maxBulletsPerSlide: 5,
+  maxBulletsPerSlide: 6,
   maxTableRows: 6,
   maxWordsPerSlide: 80,
   maxConceptsPerSlide: 1,
@@ -104,6 +106,20 @@ export function validateSlideContent(slide: SlideContent): DensityValidationResu
     suggestions.push(
       `Split into ${Math.ceil(bulletCount / DENSITY_LIMITS.maxBulletsPerSlide)} slides with ${DENSITY_LIMITS.maxBulletsPerSlide} bullets each, or consolidate related points.`,
     );
+  }
+
+  // Words per bullet
+  const lines = slide.body.split('\n');
+  const bulletLines = lines.filter((line) => /^\s*[-*]\s/.test(line));
+  for (const bullet of bulletLines) {
+    const text = bullet.replace(/^\s*[-*]\s/, '');
+    const wordCount = countWords(text);
+    if (wordCount > MAX_WORDS_PER_BULLET) {
+      violations.push(
+        `Bullet has ${wordCount} words (max ${MAX_WORDS_PER_BULLET}): "${text.substring(0, 40)}..."`,
+      );
+      suggestions.push('Shorten bullet to a concise phrase.');
+    }
   }
 
   // Word count

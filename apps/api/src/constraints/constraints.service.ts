@@ -34,6 +34,12 @@ import {
 } from './density-validator';
 
 import {
+  validateLayout,
+  type LayoutConfig,
+  type LayoutValidationResult,
+} from './layout-validator';
+
+import {
   validateSlideDesign,
   type SlideTheme,
   type DesignValidationResult,
@@ -137,6 +143,13 @@ export class ConstraintsService {
    */
   validateDensity(slide: SlideContent): DensityValidationResult {
     return validateSlideContent(slide);
+  }
+
+  /**
+   * Validate layout constraints for a single slide.
+   */
+  validateLayout(layout: LayoutConfig): LayoutValidationResult {
+    return validateLayout(layout);
   }
 
   /**

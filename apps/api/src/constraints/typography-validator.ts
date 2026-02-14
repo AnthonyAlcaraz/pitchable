@@ -48,14 +48,26 @@ export const ALLOWED_FONTS: readonly string[] = [
   'DM Sans',
 ] as const;
 
+export const BANNED_FONTS: readonly string[] = [
+  'Comic Sans MS',
+  'Comic Sans',
+  'Papyrus',
+  'Bradley Hand',
+  'Curlz MT',
+  'Jokerman',
+  'Impact',
+  'Bleeding Cowboys',
+  'Courier New',
+] as const;
+
 export const FONT_SIZE_MINIMUMS: Readonly<Record<string, number>> = {
   heading: 28,
   subheading: 22,
-  body: 18,
+  body: 24,
   caption: 14,
 };
 
-export const MAX_FONTS_PER_DECK = 3;
+export const MAX_FONTS_PER_DECK = 2;
 
 /**
  * Geometric (sans-serif) fonts that pair poorly together because
@@ -148,6 +160,14 @@ function areSameCategory(font1: string, font2: string): boolean {
  * If not, suggest the closest allowed font.
  */
 export function validateFontChoice(font: string): FontValidationResult {
+  // Check banned fonts first
+  if (BANNED_FONTS.some((banned) => font.toLowerCase() === banned.toLowerCase())) {
+    return {
+      valid: false,
+      suggestion: 'Inter',
+    };
+  }
+
   if (ALLOWED_FONTS.includes(font)) {
     return { valid: true };
   }

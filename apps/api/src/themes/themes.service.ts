@@ -1,5 +1,12 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, OnModuleInit } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
+import {
+  validateFontChoice,
+  validateFontPairing,
+  validateTextContrast,
+  validatePalette,
+  type SlidePalette,
+} from '../constraints/index.js';
 
 interface ThemeDefinition {
   name: string;
@@ -36,7 +43,7 @@ const BUILT_IN_THEMES: ThemeDefinition[] = [
     accentColor: '#fbbf24',
     backgroundColor: '#0f172a',
     textColor: '#e2e8f0',
-    headingFont: 'Inter',
+    headingFont: 'Montserrat',
     bodyFont: 'Open Sans',
     colorPalette: {
       primary: '#60a5fa',
@@ -86,7 +93,7 @@ const BUILT_IN_THEMES: ThemeDefinition[] = [
     accentColor: '#f59e0b',
     backgroundColor: '#f8fafc',
     textColor: '#1e293b',
-    headingFont: 'Roboto',
+    headingFont: 'Poppins',
     bodyFont: 'Open Sans',
     colorPalette: {
       primary: '#1e40af',
@@ -111,8 +118,8 @@ const BUILT_IN_THEMES: ThemeDefinition[] = [
     accentColor: '#fbbf24',
     backgroundColor: '#1c1917',
     textColor: '#fafaf9',
-    headingFont: 'Poppins',
-    bodyFont: 'DM Sans',
+    headingFont: 'DM Sans',
+    bodyFont: 'Lato',
     colorPalette: {
       primary: '#f97316',
       secondary: '#fb923c',
@@ -136,7 +143,7 @@ const BUILT_IN_THEMES: ThemeDefinition[] = [
     accentColor: '#8b5cf6',
     backgroundColor: '#0f172a',
     textColor: '#e2e8f0',
-    headingFont: 'Source Sans Pro',
+    headingFont: 'Nunito Sans',
     bodyFont: 'Inter',
     colorPalette: {
       primary: '#0d9488',
@@ -154,10 +161,76 @@ const BUILT_IN_THEMES: ThemeDefinition[] = [
 ];
 
 @Injectable()
-export class ThemesService {
+export class ThemesService implements OnModuleInit {
+  private readonly logger = new Logger(ThemesService.name);
+
   constructor(private readonly prisma: PrismaService) {}
 
+  async onModuleInit() {
+    try {
+      await this.seedBuiltInThemes();
+      this.logger.log('Built-in themes seeded successfully');
+    } catch (error) {
+      this.logger.error('Failed to seed built-in themes', error);
+    }
+  }
+
+  validateAllThemes(): Array<{ themeName: string; valid: boolean; violations: string[] }> {
+    return BUILT_IN_THEMES.map((theme) => {
+      const violations: string[] = [];
+
+      const headingResult = validateFontChoice(theme.headingFont);
+      if (!headingResult.valid) {
+        violations.push(`Heading font "${theme.headingFont}" not allowed`);
+      }
+
+      const bodyResult = validateFontChoice(theme.bodyFont);
+      if (!bodyResult.valid) {
+        violations.push(`Body font "${theme.bodyFont}" not allowed`);
+      }
+
+      const pairingResult = validateFontPairing(theme.headingFont, theme.bodyFont);
+      if (!pairingResult.valid && pairingResult.reason) {
+        violations.push(pairingResult.reason);
+      }
+
+      const palette: SlidePalette = {
+        text: theme.textColor,
+        background: theme.backgroundColor,
+        primary: theme.primaryColor,
+        secondary: theme.secondaryColor,
+        accent: theme.accentColor,
+      };
+
+      const contrastResult = validateTextContrast(palette.text, palette.background);
+      if (!contrastResult.valid) {
+        violations.push(
+          `Text contrast ratio ${contrastResult.ratio}:1 below minimum ${contrastResult.required}:1`,
+        );
+      }
+
+      const paletteResult = validatePalette(palette);
+      if (!paletteResult.valid) {
+        violations.push(...paletteResult.violations);
+      }
+
+      return { themeName: theme.name, valid: violations.length === 0, violations };
+    });
+  }
+
   async seedBuiltInThemes(): Promise<void> {
+    const validationResults = this.validateAllThemes();
+    const failures = validationResults.filter((r) => !r.valid);
+    if (failures.length > 0) {
+      for (const f of failures) {
+        this.logger.error(`Theme "${f.themeName}" has violations: ${f.violations.join('; ')}`);
+      }
+      throw new Error(
+        `${failures.length} theme(s) failed validation: ${failures.map((f) => f.themeName).join(', ')}`,
+      );
+    }
+    this.logger.log('All 5 built-in themes passed design constraint validation');
+
     for (const theme of BUILT_IN_THEMES) {
       await this.prisma.theme.upsert({
         where: { name: theme.name },
