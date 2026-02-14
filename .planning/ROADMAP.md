@@ -10,7 +10,7 @@ Pitchable is a chat-driven AI presentation builder — like Lovable for slides. 
 - Integer phases (1, 2, 3): Planned milestone work
 - Decimal phases (2.1, 2.2): Urgent insertions (marked with INSERTED)
 
-- [ ] **Phase 1: Foundation** — Frontend shell, backend scaffold, auth, Docker, design constraint engine, themes
+- [x] **Phase 1: Foundation** — Frontend shell, backend scaffold, auth, Docker, design constraint engine, themes
 - [ ] **Phase 2: Knowledge Base** — Document upload, parsing, embedding, and semantic search
 - [ ] **Phase 3: Chat + Generation Engine** — Chat interface, live preview, RAG-powered slide generation with real-time updates
 - [ ] **Phase 4: Core Export** — PDF and PPTX export with theme-aware rendering
@@ -36,12 +36,12 @@ Pitchable is a chat-driven AI presentation builder — like Lovable for slides. 
   7. Frontend and backend communicate via API, auth flow works end-to-end
 
 Plans:
-- [ ] 01-01-PLAN.md — Monorepo setup (Turborepo) + React/Vite/Tailwind/shadcn frontend scaffold
-- [ ] 01-02-PLAN.md — Docker Compose upgrade (pgvector + MinIO), Prisma 7 driver adapter, env validation, Swagger, rate limiting, health checks, structured errors
-- [ ] 01-03-PLAN.md — Auth rewrite: argon2id, dual JWT (access 15m + refresh 7d), refresh rotation, logout, password reset
-- [ ] 01-04-PLAN.md — Design constraint fixes (density limits, typography minimums) + new layout validator (DC-06)
-- [ ] 01-05-PLAN.md — Theme font pairing fixes + validation proof + constraints/themes API endpoints
-- [ ] 01-06-PLAN.md — Frontend shell: auth pages, dashboard, settings, split-screen workspace layout
+- [x] 01-01-PLAN.md — Monorepo setup (Turborepo) + React/Vite/Tailwind/shadcn frontend scaffold
+- [x] 01-02-PLAN.md — Docker Compose upgrade (pgvector + MinIO), Prisma 7 driver adapter, env validation, Swagger, rate limiting, health checks, structured errors
+- [x] 01-03-PLAN.md — Auth rewrite: argon2id, dual JWT (access 15m + refresh 7d), refresh rotation, logout, password reset
+- [x] 01-04-PLAN.md — Design constraint fixes (density limits, typography minimums) + new layout validator (DC-06)
+- [x] 01-05-PLAN.md — Theme font pairing fixes + validation proof + constraints/themes API endpoints
+- [x] 01-06-PLAN.md — Frontend shell: auth pages, dashboard, settings, split-screen workspace layout
 
 ### Phase 2: Knowledge Base
 **Goal**: Users can upload their documents and the system indexes them for semantic retrieval. Frontend shows KB management UI.
@@ -176,7 +176,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8
 
 | Phase | Plans Complete | Status | Completed |
 |-------|---------------|--------|-----------|
-| 1. Foundation | 0/6 | Planning complete | - |
+| 1. Foundation | 6/6 | Complete | 2026-02-14 |
 | 2. Knowledge Base | 0/4 | Not started | - |
 | 3. Chat + Generation Engine | 0/10 | Not started | - |
 | 4. Core Export | 0/3 | Not started | - |
