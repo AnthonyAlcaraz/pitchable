@@ -1,0 +1,202 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── Enums ───────────────────────────────────────────────────────────────────
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+enum UserTier {
+  FREE
+  PRO
+  ENTERPRISE
+}
+
+enum PresentationType {
+  STANDARD
+  VC_PITCH
+  TECHNICAL
+  EXECUTIVE
+}
+
+enum PresentationStatus {
+  DRAFT
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum SlideType {
+  TITLE
+  PROBLEM
+  SOLUTION
+  ARCHITECTURE
+  PROCESS
+  COMPARISON
+  DATA_METRICS
+  CTA
+  CONTENT
+  QUOTE
+}
+
+enum CreditReason {
+  PURCHASE
+  IMAGE_GENERATION
+  DECK_EXPORT
+  MONTHLY_ALLOWANCE
+  ADMIN_GRANT
+}
+
+enum ExportFormat {
+  PPTX
+  PDF
+  GOOGLE_SLIDES
+  REVEAL_JS
+}
+
+enum JobStatus {
+  QUEUED
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+// ─── Models ──────────────────────────────────────────────────────────────────
+
+model User {
+  id            String   @id @default(uuid()) @db.Uuid
+  email         String   @unique
+  passwordHash  String
+  name          String
+  role          UserRole @default(USER)
+  creditBalance Int      @default(0)
+  tier          UserTier @default(FREE)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  presentations      Presentation[]
+  creditTransactions CreditTransaction[]
+
+  @@index([email])
+}
+
+model Presentation {
+  id               String             @id @default(uuid()) @db.Uuid
+  title            String
+  description      String?
+  sourceContent    String             @db.Text
+  presentationType PresentationType
+  status           PresentationStatus @default(DRAFT)
+  themeId          String             @db.Uuid
+  imageCount       Int                @default(0)
+  userId           String             @db.Uuid
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  theme      Theme       @relation(fields: [themeId], references: [id])
+  slides     Slide[]
+  exportJobs ExportJob[]
+
+  @@index([userId])
+  @@index([status])
+}
+
+model Slide {
+  id             String    @id @default(uuid()) @db.Uuid
+  presentationId String    @db.Uuid
+  slideNumber    Int
+  title          String
+  body           String    @db.Text
+  speakerNotes   String?   @db.Text
+  slideType      SlideType
+  imageUrl       String?
+  imageLocalPath String?
+  imagePrompt    String?   @db.Text
+  createdAt      DateTime  @default(now())
+
+  presentation Presentation @relation(fields: [presentationId], references: [id], onDelete: Cascade)
+  imageJobs    ImageJob[]
+
+  @@index([presentationId])
+}
+
+model Theme {
+  id              String   @id @default(uuid()) @db.Uuid
+  name            String   @unique
+  displayName     String
+  description     String
+  isBuiltIn       Boolean  @default(true)
+  primaryColor    String
+  secondaryColor  String
+  accentColor     String
+  backgroundColor String
+  textColor       String
+  headingFont     String
+  bodyFont        String
+  colorPalette    Json
+  createdAt       DateTime @default(now())
+
+  presentations Presentation[]
+}
+
+model CreditTransaction {
+  id           String       @id @default(uuid()) @db.Uuid
+  userId       String       @db.Uuid
+  amount       Int
+  reason       CreditReason
+  referenceId  String?
+  balanceAfter Int
+  createdAt    DateTime     @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model ExportJob {
+  id             String       @id @default(uuid()) @db.Uuid
+  presentationId String       @db.Uuid
+  format         ExportFormat
+  status         JobStatus    @default(QUEUED)
+  fileUrl        String?
+  errorMessage   String?
+  createdAt      DateTime     @default(now())
+  completedAt    DateTime?
+
+  presentation Presentation @relation(fields: [presentationId], references: [id], onDelete: Cascade)
+
+  @@index([presentationId])
+}
+
+model ImageJob {
+  id           String    @id @default(uuid()) @db.Uuid
+  slideId      String    @db.Uuid
+  status       JobStatus @default(QUEUED)
+  replicateId  String?
+  prompt       String    @db.Text
+  resultUrl    String?
+  imgurUrl     String?
+  creditsUsed  Int       @default(1)
+  errorMessage String?
+  createdAt    DateTime  @default(now())
+  completedAt  DateTime?
+
+  slide Slide @relation(fields: [slideId], references: [id], onDelete: Cascade)
+
+  @@index([slideId])
+}

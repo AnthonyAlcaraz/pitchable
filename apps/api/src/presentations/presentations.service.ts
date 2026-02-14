@@ -1,0 +1,622 @@
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+  BadRequestException,
+  Logger,
+} from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service.js';
+import { ConstraintsService } from '../constraints/constraints.service.js';
+import { ContentParserService } from './content-parser.service.js';
+import { SlideStructurerService } from './slide-structurer.service.js';
+import type { SlideDefinition } from './slide-structurer.service.js';
+import type { CreatePresentationDto } from './dto/create-presentation.dto.js';
+import type { UpdateSlideDto } from './dto/update-slide.dto.js';
+import {
+  PresentationType,
+  PresentationStatus,
+  SlideType,
+  ExportFormat,
+  JobStatus,
+} from '../../generated/prisma/enums.js';
+import type { SlideContent } from '../constraints/density-validator.js';
+
+// ── Interfaces ──────────────────────────────────────────────
+
+export interface PresentationWithSlides {
+  id: string;
+  title: string;
+  description: string | null;
+  sourceContent: string;
+  presentationType: PresentationType;
+  status: PresentationStatus;
+  themeId: string;
+  imageCount: number;
+  userId: string;
+  createdAt: Date;
+  updatedAt: Date;
+  slides: Array<{
+    id: string;
+    slideNumber: number;
+    title: string;
+    body: string;
+    speakerNotes: string | null;
+    slideType: SlideType;
+    imageUrl: string | null;
+    imagePrompt: string | null;
+    createdAt: Date;
+  }>;
+}
+
+export interface ImageJobResult {
+  id: string;
+  slideId: string;
+  status: JobStatus;
+  prompt: string;
+  createdAt: Date;
+}
+
+// ── Constants ───────────────────────────────────────────────
+
+/** Default theme name used when no themeId is provided. */
+const DEFAULT_THEME_NAME = 'dark-professional';
+
+/** Default presentation type when none specified. */
+const DEFAULT_PRESENTATION_TYPE = PresentationType.STANDARD;
+
+// ── Service ─────────────────────────────────────────────────
+
+@Injectable()
+export class PresentationsService {
+  private readonly logger = new Logger(PresentationsService.name);
+
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly constraints: ConstraintsService,
+    private readonly contentParser: ContentParserService,
+    private readonly slideStructurer: SlideStructurerService,
+  ) {}
+
+  /**
+   * Create a new presentation: parse content, structure slides,
+   * validate constraints, save to DB, and optionally queue jobs.
+   */
+  async create(
+    userId: string,
+    dto: CreatePresentationDto,
+  ): Promise<PresentationWithSlides> {
+    // 1. Resolve theme
+    const themeId = await this.resolveThemeId(dto.themeId);
+
+    // 2. Parse content into structured sections
+    const parsed = this.contentParser.parseContent(dto.content);
+
+    if (parsed.sections.length === 0) {
+      throw new BadRequestException(
+        'Content must contain at least one section of text. ' +
+        'Use Markdown headings (##) or separate paragraphs with blank lines.',
+      );
+    }
+
+    // 3. Structure into slide definitions
+    const presentationType = dto.presentationType ?? DEFAULT_PRESENTATION_TYPE;
+    let slideDefinitions = this.slideStructurer.structureSlides(
+      parsed,
+      presentationType,
+    );
+
+    // 4. Validate each slide against density constraints and auto-fix
+    slideDefinitions = this.validateAndFixSlides(slideDefinitions);
+
+    // 5. Create presentation + slides in a transaction
+    const presentation = await this.prisma.$transaction(async (tx) => {
+      const pres = await tx.presentation.create({
+        data: {
+          title: dto.title,
+          description: dto.description ?? null,
+          sourceContent: dto.content,
+          presentationType,
+          status: PresentationStatus.DRAFT,
+          themeId,
+          imageCount: dto.imageCount ?? 0,
+          userId,
+        },
+      });
+
+      // Create all slides
+      const slideData = slideDefinitions.map((def) => ({
+        presentationId: pres.id,
+        slideNumber: def.slideNumber,
+        title: def.title,
+        body: def.body,
+        speakerNotes: def.speakerNotes,
+        slideType: def.slideType,
+        imagePrompt: def.imagePromptHint,
+      }));
+
+      await tx.slide.createMany({ data: slideData });
+
+      // Fetch the full presentation with slides
+      const result = await tx.presentation.findUniqueOrThrow({
+        where: { id: pres.id },
+        include: {
+          slides: {
+            orderBy: { slideNumber: 'asc' },
+          },
+        },
+      });
+
+      return result;
+    });
+
+    // 6. Queue image generation jobs if requested
+    if ((dto.imageCount ?? 0) > 0) {
+      await this.queueImageGeneration(
+        presentation.id,
+        presentation.slides,
+        dto.imageCount ?? 0,
+      );
+    }
+
+    // 7. Queue export jobs if formats specified
+    if (dto.exportFormats && dto.exportFormats.length > 0) {
+      await this.queueExportJobs(presentation.id, dto.exportFormats);
+    }
+
+    // 8. Update status to COMPLETED (sync generation for now)
+    await this.prisma.presentation.update({
+      where: { id: presentation.id },
+      data: { status: PresentationStatus.COMPLETED },
+    });
+
+    this.logger.log(
+      `Created presentation "${dto.title}" with ${slideDefinitions.length} slides for user ${userId}`,
+    );
+
+    return {
+      ...presentation,
+      slides: presentation.slides.map((s) => ({
+        id: s.id,
+        slideNumber: s.slideNumber,
+        title: s.title,
+        body: s.body,
+        speakerNotes: s.speakerNotes,
+        slideType: s.slideType,
+        imageUrl: s.imageUrl,
+        imagePrompt: s.imagePrompt,
+        createdAt: s.createdAt,
+      })),
+    };
+  }
+
+  /**
+   * List all presentations for a user.
+   */
+  async findAll(userId: string): Promise<Array<{
+    id: string;
+    title: string;
+    description: string | null;
+    presentationType: PresentationType;
+    status: PresentationStatus;
+    imageCount: number;
+    createdAt: Date;
+    updatedAt: Date;
+    slideCount: number;
+  }>> {
+    const presentations = await this.prisma.presentation.findMany({
+      where: { userId },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        _count: { select: { slides: true } },
+      },
+    });
+
+    return presentations.map((p) => ({
+      id: p.id,
+      title: p.title,
+      description: p.description,
+      presentationType: p.presentationType,
+      status: p.status,
+      imageCount: p.imageCount,
+      createdAt: p.createdAt,
+      updatedAt: p.updatedAt,
+      slideCount: p._count.slides,
+    }));
+  }
+
+  /**
+   * Get a single presentation with all slides.
+   */
+  async findOne(id: string, userId: string): Promise<PresentationWithSlides> {
+    const presentation = await this.prisma.presentation.findUnique({
+      where: { id },
+      include: {
+        slides: {
+          orderBy: { slideNumber: 'asc' },
+        },
+      },
+    });
+
+    if (!presentation) {
+      throw new NotFoundException(`Presentation with id "${id}" not found`);
+    }
+
+    if (presentation.userId !== userId) {
+      throw new ForbiddenException('You do not have access to this presentation');
+    }
+
+    return {
+      ...presentation,
+      slides: presentation.slides.map((s) => ({
+        id: s.id,
+        slideNumber: s.slideNumber,
+        title: s.title,
+        body: s.body,
+        speakerNotes: s.speakerNotes,
+        slideType: s.slideType,
+        imageUrl: s.imageUrl,
+        imagePrompt: s.imagePrompt,
+        createdAt: s.createdAt,
+      })),
+    };
+  }
+
+  /**
+   * Update an individual slide's content.
+   */
+  async updateSlide(
+    slideId: string,
+    userId: string,
+    dto: UpdateSlideDto,
+  ): Promise<{
+    id: string;
+    slideNumber: number;
+    title: string;
+    body: string;
+    speakerNotes: string | null;
+    slideType: SlideType;
+    imageUrl: string | null;
+    imagePrompt: string | null;
+    createdAt: Date;
+  }> {
+    // Verify the slide exists and belongs to the user
+    const slide = await this.prisma.slide.findUnique({
+      where: { id: slideId },
+      include: { presentation: { select: { userId: true } } },
+    });
+
+    if (!slide) {
+      throw new NotFoundException(`Slide with id "${slideId}" not found`);
+    }
+
+    if (slide.presentation.userId !== userId) {
+      throw new ForbiddenException('You do not have access to this slide');
+    }
+
+    // Build update data from provided fields
+    const updateData: Record<string, string> = {};
+    if (dto.title !== undefined) updateData.title = dto.title;
+    if (dto.body !== undefined) updateData.body = dto.body;
+    if (dto.speakerNotes !== undefined) updateData.speakerNotes = dto.speakerNotes;
+    if (dto.slideType !== undefined) updateData.slideType = dto.slideType;
+
+    if (Object.keys(updateData).length === 0) {
+      throw new BadRequestException('At least one field must be provided for update');
+    }
+
+    // Validate density if body is being updated
+    if (dto.body !== undefined || dto.title !== undefined) {
+      const slideContent: SlideContent = {
+        title: dto.title ?? slide.title,
+        body: dto.body ?? slide.body,
+      };
+      const densityResult = this.constraints.validateDensity(slideContent);
+      if (!densityResult.valid) {
+        throw new BadRequestException(
+          `Slide content violates density constraints: ${densityResult.violations.join('; ')}`,
+        );
+      }
+    }
+
+    const updated = await this.prisma.slide.update({
+      where: { id: slideId },
+      data: updateData,
+    });
+
+    return {
+      id: updated.id,
+      slideNumber: updated.slideNumber,
+      title: updated.title,
+      body: updated.body,
+      speakerNotes: updated.speakerNotes,
+      slideType: updated.slideType,
+      imageUrl: updated.imageUrl,
+      imagePrompt: updated.imagePrompt,
+      createdAt: updated.createdAt,
+    };
+  }
+
+  /**
+   * Regenerate the AI image for a specific slide.
+   * Creates a new ImageJob in QUEUED status.
+   */
+  async regenerateSlideImage(
+    slideId: string,
+    userId: string,
+  ): Promise<ImageJobResult> {
+    // Verify slide ownership
+    const slide = await this.prisma.slide.findUnique({
+      where: { id: slideId },
+      include: { presentation: { select: { userId: true } } },
+    });
+
+    if (!slide) {
+      throw new NotFoundException(`Slide with id "${slideId}" not found`);
+    }
+
+    if (slide.presentation.userId !== userId) {
+      throw new ForbiddenException('You do not have access to this slide');
+    }
+
+    if (!slide.imagePrompt) {
+      throw new BadRequestException('This slide has no image prompt configured');
+    }
+
+    // Create a new image job
+    const imageJob = await this.prisma.imageJob.create({
+      data: {
+        slideId,
+        status: JobStatus.QUEUED,
+        prompt: slide.imagePrompt,
+        creditsUsed: 1,
+      },
+    });
+
+    this.logger.log(
+      `Queued image regeneration job ${imageJob.id} for slide ${slideId}`,
+    );
+
+    return {
+      id: imageJob.id,
+      slideId: imageJob.slideId,
+      status: imageJob.status,
+      prompt: imageJob.prompt,
+      createdAt: imageJob.createdAt,
+    };
+  }
+
+  /**
+   * Delete a presentation and all associated data.
+   */
+  async delete(id: string, userId: string): Promise<void> {
+    const presentation = await this.prisma.presentation.findUnique({
+      where: { id },
+      select: { userId: true },
+    });
+
+    if (!presentation) {
+      throw new NotFoundException(`Presentation with id "${id}" not found`);
+    }
+
+    if (presentation.userId !== userId) {
+      throw new ForbiddenException('You do not have access to this presentation');
+    }
+
+    await this.prisma.presentation.delete({ where: { id } });
+
+    this.logger.log(`Deleted presentation ${id} for user ${userId}`);
+  }
+
+  /**
+   * Queue export jobs for the given formats.
+   */
+  async queueExport(
+    presentationId: string,
+    userId: string,
+    formats: string[],
+  ): Promise<Array<{ id: string; format: ExportFormat; status: JobStatus }>> {
+    // Verify ownership
+    const presentation = await this.prisma.presentation.findUnique({
+      where: { id: presentationId },
+      select: { userId: true },
+    });
+
+    if (!presentation) {
+      throw new NotFoundException(`Presentation with id "${presentationId}" not found`);
+    }
+
+    if (presentation.userId !== userId) {
+      throw new ForbiddenException('You do not have access to this presentation');
+    }
+
+    return this.queueExportJobs(presentationId, formats);
+  }
+
+  // ── Private Helpers ───────────────────────────────────────
+
+  /**
+   * Resolve a theme ID. If none provided, look up the default theme.
+   */
+  private async resolveThemeId(themeId?: string): Promise<string> {
+    if (themeId) {
+      const theme = await this.prisma.theme.findUnique({
+        where: { id: themeId },
+      });
+
+      if (!theme) {
+        throw new BadRequestException(`Theme with id "${themeId}" not found`);
+      }
+
+      return theme.id;
+    }
+
+    // Look up default theme
+    const defaultTheme = await this.prisma.theme.findUnique({
+      where: { name: DEFAULT_THEME_NAME },
+    });
+
+    if (!defaultTheme) {
+      // Fall back to any built-in theme
+      const anyTheme = await this.prisma.theme.findFirst({
+        where: { isBuiltIn: true },
+      });
+
+      if (!anyTheme) {
+        throw new BadRequestException(
+          'No themes available. Please create at least one theme before creating presentations.',
+        );
+      }
+
+      return anyTheme.id;
+    }
+
+    return defaultTheme.id;
+  }
+
+  /**
+   * Validate each slide definition against density constraints.
+   * Auto-fixes violations by splitting dense slides.
+   */
+  private validateAndFixSlides(slides: SlideDefinition[]): SlideDefinition[] {
+    const fixedSlides: SlideDefinition[] = [];
+
+    for (const slide of slides) {
+      const slideContent: SlideContent = {
+        title: slide.title,
+        body: slide.body,
+      };
+
+      const densityResult = this.constraints.validateDensity(slideContent);
+
+      if (!densityResult.valid) {
+        // Use constraints service auto-fix
+        const fixResult = this.constraints.autoFixSlide(slideContent, {
+          palette: {
+            primary: '#60a5fa',
+            secondary: '#94a3b8',
+            accent: '#fbbf24',
+            background: '#0f172a',
+            text: '#e2e8f0',
+          },
+          headingFont: 'Inter',
+          bodyFont: 'Roboto',
+        });
+
+        if (fixResult.fixed && fixResult.slides.length > 1) {
+          // Map split results back to SlideDefinitions
+          for (const splitSlide of fixResult.slides) {
+            fixedSlides.push({
+              ...slide,
+              title: splitSlide.title,
+              body: splitSlide.body,
+            });
+          }
+          this.logger.debug(
+            `Auto-split slide "${slide.title}" into ${fixResult.slides.length} slides`,
+          );
+        } else {
+          fixedSlides.push(slide);
+        }
+      } else {
+        fixedSlides.push(slide);
+      }
+    }
+
+    // Renumber all slides
+    return fixedSlides.map((slide, index) => ({
+      ...slide,
+      slideNumber: index + 1,
+    }));
+  }
+
+  /**
+   * Queue image generation jobs for a subset of slides.
+   * Selects slides that benefit most from images.
+   */
+  private async queueImageGeneration(
+    presentationId: string,
+    slides: Array<{ id: string; slideType: SlideType; imagePrompt: string | null }>,
+    imageCount: number,
+  ): Promise<void> {
+    // Prioritize slide types that benefit from images
+    const typePriority: Record<string, number> = {
+      [SlideType.TITLE]: 10,
+      [SlideType.PROBLEM]: 8,
+      [SlideType.SOLUTION]: 8,
+      [SlideType.ARCHITECTURE]: 9,
+      [SlideType.DATA_METRICS]: 7,
+      [SlideType.CTA]: 6,
+      [SlideType.COMPARISON]: 5,
+      [SlideType.PROCESS]: 5,
+      [SlideType.QUOTE]: 4,
+      [SlideType.CONTENT]: 3,
+    };
+
+    // Sort slides by image priority
+    const prioritizedSlides = [...slides]
+      .filter((s) => s.imagePrompt !== null)
+      .sort((a, b) => {
+        const priorityA = typePriority[a.slideType] ?? 0;
+        const priorityB = typePriority[b.slideType] ?? 0;
+        return priorityB - priorityA;
+      })
+      .slice(0, imageCount);
+
+    // Create image jobs
+    const imageJobData = prioritizedSlides.map((slide) => ({
+      slideId: slide.id,
+      status: JobStatus.QUEUED,
+      prompt: slide.imagePrompt ?? '',
+      creditsUsed: 1,
+    }));
+
+    if (imageJobData.length > 0) {
+      await this.prisma.imageJob.createMany({ data: imageJobData });
+      this.logger.log(
+        `Queued ${imageJobData.length} image generation jobs for presentation ${presentationId}`,
+      );
+    }
+  }
+
+  /**
+   * Queue export jobs for the specified formats.
+   */
+  private async queueExportJobs(
+    presentationId: string,
+    formats: string[],
+  ): Promise<Array<{ id: string; format: ExportFormat; status: JobStatus }>> {
+    const validFormats = formats.filter(
+      (f): f is ExportFormat => Object.values(ExportFormat).includes(f as ExportFormat),
+    );
+
+    if (validFormats.length === 0) {
+      throw new BadRequestException(
+        `No valid export formats provided. Valid formats: ${Object.values(ExportFormat).join(', ')}`,
+      );
+    }
+
+    const jobs: Array<{ id: string; format: ExportFormat; status: JobStatus }> = [];
+
+    for (const format of validFormats) {
+      const job = await this.prisma.exportJob.create({
+        data: {
+          presentationId,
+          format,
+          status: JobStatus.QUEUED,
+        },
+      });
+
+      jobs.push({
+        id: job.id,
+        format: job.format,
+        status: job.status,
+      });
+    }
+
+    this.logger.log(
+      `Queued ${jobs.length} export jobs for presentation ${presentationId}: ${validFormats.join(', ')}`,
+    );
+
+    return jobs;
+  }
+}
