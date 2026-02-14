@@ -5,187 +5,132 @@
 
 ## v1 Requirements
 
-### Authentication
+### Authentication (AUTH)
+- [ ] **AUTH-01**: User can sign up with email and password (argon2 hashing)
+- [ ] **AUTH-02**: User can log in and receive JWT access + refresh tokens
+- [ ] **AUTH-03**: User can log out and invalidate refresh token
+- [ ] **AUTH-04**: User can reset password via email link
 
-- [ ] **AUTH-01**: User can sign up with email and password
-- [ ] **AUTH-02**: User can log in and receive a JWT token for authenticated requests
-- [ ] **AUTH-03**: User can reset password via email link
-- [ ] **AUTH-04**: User session persists across browser refresh (JWT refresh tokens)
-
-### Knowledge Base
-
+### Knowledge Base (KB)
 - [ ] **KB-01**: User can upload documents (PDF, DOCX, MD, TXT) to their knowledge base
 - [ ] **KB-02**: User can paste raw text or a URL as a knowledge base source
-- [ ] **KB-03**: Uploaded documents are parsed and chunked into semantic segments
-- [ ] **KB-04**: Chunks are embedded with vector embeddings and stored in pgvector
-- [ ] **KB-05**: User can browse, search, and delete documents in their knowledge base
-- [ ] **KB-06**: When generating a deck, system retrieves relevant KB chunks via RAG
+- [ ] **KB-03**: System parses uploaded files and extracts text (pdf-parse, mammoth, marked)
+- [ ] **KB-04**: System chunks extracted text with heading-aware semantic chunking
+- [ ] **KB-05**: System generates vector embeddings (OpenAI text-embedding-3-small) and stores in pgvector
+- [ ] **KB-06**: User can browse, search, and delete documents in their KB
+- [ ] **KB-07**: Document status tracking (UPLOADED -> PARSING -> EMBEDDING -> READY -> ERROR)
 
-### Presentation Generation
+### Design Constraints (DC)
+- [ ] **DC-01**: System validates color combinations against WCAG AA contrast ratios (4.5:1 body, 3:1 for 24pt+)
+- [ ] **DC-02**: System enforces banned color pairs (red/green, yellow/white, cyan/white, blue/purple, light-gray/white, neon-green/neon-pink, red/black)
+- [ ] **DC-03**: System enforces typography rules (max 2 fonts, min 24pt body, sans-serif only, banned fonts: Comic Sans, Papyrus, Bradley Hand, Curlz MT, Jokerman, Impact)
+- [ ] **DC-04**: System enforces banned font pairings (two serifs, two scripts, two display, same font heading/body at similar sizes)
+- [ ] **DC-05**: System enforces content density limits (max 6 bullets, max 10 words/bullet, max 80 words/slide)
+- [ ] **DC-06**: System enforces layout rules (no full-bleed text without 30%+ overlay, max 2 columns, max 3 font sizes, max 3 distinct colors per slide)
+- [ ] **DC-07**: System auto-splits slides that exceed density limits
+- [ ] **DC-08**: Five built-in themes with pre-validated palettes and font pairings (dark, light, corporate, creative, minimal)
 
-- [ ] **GEN-01**: User can enter a topic/prompt and trigger deck generation from their KB
-- [ ] **GEN-02**: System generates a slide outline first, user approves before full generation
-- [ ] **GEN-03**: System structures slides automatically (1 core idea per slide, max 5 bullets per slide)
-- [ ] **GEN-04**: User can select target slide count (8, 12, 16, 20)
-- [ ] **GEN-05**: User can select presentation type (standard, vc-pitch, technical, executive)
-- [ ] **GEN-06**: Generated slides include speaker notes derived from KB content
+### Presentation Generation (PG)
+- [ ] **PG-01**: User can generate a presentation by providing a topic/prompt
+- [ ] **PG-02**: System retrieves relevant chunks from user's KB via RAG (pgvector similarity search)
+- [ ] **PG-03**: System generates an outline first; user approves before full generation
+- [ ] **PG-04**: System structures slides (1 idea/slide, proper hierarchy)
+- [ ] **PG-05**: System generates speaker notes for each slide
+- [ ] **PG-06**: System validates every generated slide against design constraints before persisting
+- [ ] **PG-07**: User can choose slide count range (8-12 quick, 12-18 standard, 18-25 comprehensive)
+- [ ] **PG-08**: User can select a theme at generation time
+- [ ] **PG-09**: User can select presentation type (standard, vc-pitch, technical, executive)
+- [ ] **PG-10**: Presentation CRUD (list, view, rename, duplicate, delete)
 
-### Design Constraints
+### Iteration (IT)
+- [ ] **IT-01**: User can edit slide content after generation (title, body, speaker notes)
+- [ ] **IT-02**: User can reorder slides
+- [ ] **IT-03**: User can regenerate a single slide's content from KB
+- [ ] **IT-04**: User can delete individual slides
+- [ ] **IT-05**: User can add a blank slide
+- [ ] **IT-06**: User can regenerate a single slide's image
 
-- [ ] **DSN-01**: System enforces forbidden color combinations (red+green, red+blue bright, orange+blue saturated, neon pairs)
-- [ ] **DSN-02**: System enforces typography rules (max 2 font families, heading min 28pt, body min 18pt, nothing below 14pt)
-- [ ] **DSN-03**: System enforces content density rules (max 5 bullets per slide, max 25 words per bullet, max 6 table rows)
-- [ ] **DSN-04**: System enforces contrast ratio >= 4.5:1 for text on backgrounds (WCAG AA)
-- [ ] **DSN-05**: System validates all constraints before export and rejects/fixes violations
-- [ ] **DSN-06**: Constraint violations are reported to the user with fix suggestions
+### Export (EX)
+- [ ] **EX-01**: User can export as editable PPTX (via PptxGenJS — NOT Marp, which produces non-editable images)
+- [ ] **EX-02**: User can export as PDF (via Marp CLI)
+- [ ] **EX-03**: User can export as Reveal.js HTML (single self-contained file)
+- [ ] **EX-04**: User can choose export format at generation time
+- [ ] **EX-05**: Exported files stored in S3-compatible storage with signed download URLs
+- [ ] **EX-06**: User can share presentation via web link
 
-### Themes
+### Image Generation (IG)
+- [ ] **IG-01**: User can choose image count per deck: 0 (none), 3 (key slides), 6 (balanced), 12 (image-rich)
+- [ ] **IG-02**: System generates images via Replicate API (FLUX.1 schnell at $0.003/image)
+- [ ] **IG-03**: System generates slide-appropriate prompts based on slide type (title, problem, solution, architecture, data, CTA)
+- [ ] **IG-04**: System enforces "no text, no words, no labels" in every image prompt
+- [ ] **IG-05**: Images processed asynchronously via BullMQ queue with progress tracking
+- [ ] **IG-06**: System maintains style consistency across images in a deck (seed/style params)
+- [ ] **IG-07**: Generated images stored in S3-compatible storage
 
-- [ ] **THM-01**: User can select from predefined themes (dark, light, corporate-blue, corporate-green, creative, minimal)
-- [ ] **THM-02**: Each theme defines color palette, font pairing, background style, and layout rules
-- [ ] **THM-03**: User can customize primary/secondary colors within a theme (constrained by DSN rules)
-- [ ] **THM-04**: User can upload a logo that is placed on title and closing slides
+### Credits & Billing (CB)
+- [ ] **CB-01**: Each user has a credit balance tracked in the database
+- [ ] **CB-02**: Image generation consumes 1 credit per image
+- [ ] **CB-03**: System pre-authorizes credits before starting image generation (reservation pattern)
+- [ ] **CB-04**: Free tier: 3 decks/month, 0 images (text-only)
+- [ ] **CB-05**: Starter tier: 10 decks/month, 30 image credits/month
+- [ ] **CB-06**: Pro tier: unlimited decks, 100 image credits/month
+- [ ] **CB-07**: Stripe Checkout for credit purchases (Stripe Billing Meters API)
+- [ ] **CB-08**: Stripe webhook handling for payment events
+- [ ] **CB-09**: Transparent credit cost display before generation starts
 
-### Image Generation
+### Infrastructure (INF)
+- [ ] **INF-01**: Docker Compose for local dev (PostgreSQL 16 + pgvector, Redis 7, MinIO)
+- [ ] **INF-02**: Environment configuration via .env with validation
+- [ ] **INF-03**: OpenAPI/Swagger auto-generated docs
+- [ ] **INF-04**: Request validation (class-validator)
+- [ ] **INF-05**: Rate limiting middleware
+- [ ] **INF-06**: Structured error responses with error codes
+- [ ] **INF-07**: Health check endpoints
 
-- [ ] **IMG-01**: User can choose image tier per deck: 0 (none), 3 (key slides), 6 (balanced), 12 (image-rich)
-- [ ] **IMG-02**: Images are generated asynchronously via Replicate API (Nano Banana Pro / FLUX.1)
-- [ ] **IMG-03**: Generated images are uploaded to permanent hosting (Imgur) and URLs stored
-- [ ] **IMG-04**: Image prompts are derived from slide content and themed for visual consistency
-- [ ] **IMG-05**: Image generation jobs are queued via BullMQ with progress tracking
-- [ ] **IMG-06**: User can regenerate individual slide images
+## v2 Requirements (Deferred)
 
-### Export
-
-- [ ] **EXP-01**: User can export deck as PDF
-- [ ] **EXP-02**: User can export deck as PPTX (editable PowerPoint) via PptxGenJS or Marp
-- [ ] **EXP-03**: User can export deck as Reveal.js HTML (self-contained, openable in browser)
-- [ ] **EXP-04**: User can share deck via a web link (hosted Reveal.js viewer)
-- [ ] **EXP-05**: All exports respect the selected theme and design constraints
-
-### Credits & Billing
-
-- [ ] **BIL-01**: Each user account has a credit balance
-- [ ] **BIL-02**: Image generation consumes credits (2 credits per image)
-- [ ] **BIL-03**: Credit cost is shown to user before generation (transparent pricing)
-- [ ] **BIL-04**: Free tier includes 50 one-time credits
-- [ ] **BIL-05**: Paid plans refill credits monthly (Starter: 200, Pro: 600)
-- [ ] **BIL-06**: Stripe integration for subscription management and credit purchase
-
-### Iteration
-
-- [ ] **ITR-01**: User can edit slide text content after generation
-- [ ] **ITR-02**: User can reorder slides via drag-and-drop
-- [ ] **ITR-03**: User can regenerate a single slide (new content from KB)
-- [ ] **ITR-04**: User can delete individual slides
-- [ ] **ITR-05**: User can add a blank slide and write content manually
-
-## v2 Requirements
-
-### Google Slides Export
-
-- **GSL-01**: User can export deck to Google Slides via API
-- **GSL-02**: Google Slides export preserves all formatting and images
-
-### Audience Adaptation
-
-- **AUD-01**: User can select audience type (executive, technical, sales, training)
-- **AUD-02**: Same KB content generates different depth/framing per audience
-
-### Viewer Analytics
-
-- **ANL-01**: User can see who viewed their shared web-link deck
-- **ANL-02**: User can see time spent per slide by viewers
-- **ANL-03**: User can see which slides got most engagement
-
-### Advanced Auth
-
-- **AUTH-05**: User can log in via Google OAuth
-- **AUTH-06**: User can log in via Microsoft OAuth
-- **AUTH-07**: Team accounts with shared knowledge base
-
-### Multi-Language
-
-- **LANG-01**: UI available in English, French, Spanish
-- **LANG-02**: Presentations generated in user's chosen language
-
-### Vault Integrations
-
-- **INT-01**: Connect Obsidian vault as knowledge base source
-- **INT-02**: Connect Notion workspace as knowledge base source
-- **INT-03**: Connect Confluence space as knowledge base source
+- Google Slides export via API (OAuth complexity)
+- Audience-aware content adaptation (executive/technical/sales variants)
+- Viewer analytics for web-shared presentations
+- Multi-language support
+- Notion/Confluence/Obsidian vault integrations
+- Team accounts with shared knowledge bases
+- Custom branding (upload logo, custom color palette)
+- Google/Microsoft OAuth login
 
 ## Out of Scope
 
 | Feature | Reason |
 |---------|--------|
-| Full WYSIWYG slide editor | Multi-year effort to build PowerPoint clone; export to PowerPoint for fine-tuning instead |
-| Real-time collaboration | Requires OT/CRDT, WebSocket infra; export to Google Slides for collab |
-| Video/animation export | Breaks across formats, animation rarely translates to PPTX |
-| Custom template designer | Predefined themes with customization sufficient for v1 |
-| AI voiceover/narration | Focus on generation, not delivery |
-| Opaque credit deductions | Anti-pattern from Presentations.AI; credits only for images, always shown before generation |
-| Auto-generation without outline approval | "AI Presentation Paradox" — generates faster mediocrity; outline-first is mandatory |
+| Full WYSIWYG slide editor | Multi-year effort; export to PowerPoint for fine-tuning |
+| Real-time collaboration | CRDT/OT complexity; export to Google Slides for collab |
+| Video/animation export | Breaks across formats |
+| Custom template designer | Predefined themes sufficient for v1 |
+| AI voiceover/narration | Generation focus, not delivery |
+| Opaque credit deductions | Anti-pattern from Presentations.AI; always show cost before generation |
+| Auto-generation without outline approval | "AI Presentation Paradox" — outline-first is mandatory |
 | Native mobile app | Responsive web sufficient for v1 |
 
 ## Traceability
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| AUTH-01 | TBD | Pending |
-| AUTH-02 | TBD | Pending |
-| AUTH-03 | TBD | Pending |
-| AUTH-04 | TBD | Pending |
-| KB-01 | TBD | Pending |
-| KB-02 | TBD | Pending |
-| KB-03 | TBD | Pending |
-| KB-04 | TBD | Pending |
-| KB-05 | TBD | Pending |
-| KB-06 | TBD | Pending |
-| GEN-01 | TBD | Pending |
-| GEN-02 | TBD | Pending |
-| GEN-03 | TBD | Pending |
-| GEN-04 | TBD | Pending |
-| GEN-05 | TBD | Pending |
-| GEN-06 | TBD | Pending |
-| DSN-01 | TBD | Pending |
-| DSN-02 | TBD | Pending |
-| DSN-03 | TBD | Pending |
-| DSN-04 | TBD | Pending |
-| DSN-05 | TBD | Pending |
-| DSN-06 | TBD | Pending |
-| THM-01 | TBD | Pending |
-| THM-02 | TBD | Pending |
-| THM-03 | TBD | Pending |
-| THM-04 | TBD | Pending |
-| IMG-01 | TBD | Pending |
-| IMG-02 | TBD | Pending |
-| IMG-03 | TBD | Pending |
-| IMG-04 | TBD | Pending |
-| IMG-05 | TBD | Pending |
-| IMG-06 | TBD | Pending |
-| EXP-01 | TBD | Pending |
-| EXP-02 | TBD | Pending |
-| EXP-03 | TBD | Pending |
-| EXP-04 | TBD | Pending |
-| EXP-05 | TBD | Pending |
-| BIL-01 | TBD | Pending |
-| BIL-02 | TBD | Pending |
-| BIL-03 | TBD | Pending |
-| BIL-04 | TBD | Pending |
-| BIL-05 | TBD | Pending |
-| BIL-06 | TBD | Pending |
-| ITR-01 | TBD | Pending |
-| ITR-02 | TBD | Pending |
-| ITR-03 | TBD | Pending |
-| ITR-04 | TBD | Pending |
-| ITR-05 | TBD | Pending |
+| AUTH-01..04 | Phase 1: Foundation | Pending |
+| DC-01..08 | Phase 1: Foundation | Pending |
+| INF-01..07 | Phase 1: Foundation | Pending |
+| KB-01..07 | Phase 2: Knowledge Base | Pending |
+| PG-01..10 | Phase 3: Presentation Engine | Pending |
+| IT-01..06 | Phase 3: Presentation Engine | Pending |
+| EX-01..06 | Phase 4: Export Pipeline | Pending |
+| CB-01..09 | Phase 5: Credits & Billing | Pending |
+| IG-01..07 | Phase 6: Image Generation | Pending |
 
 **Coverage:**
-- v1 requirements: 45 total
-- Mapped to phases: 0
-- Unmapped: 45 (awaiting roadmap)
+- v1 requirements: 56 total across 9 categories
+- All mapped to 6 phases
+- 8 items deferred to v2
+- 8 explicit exclusions
 
 ---
 *Requirements defined: 2026-02-14*
-*Last updated: 2026-02-14 after initial definition*
+*Last updated: 2026-02-14 — enriched from research findings*
