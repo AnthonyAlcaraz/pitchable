@@ -29,7 +29,7 @@ async function bootstrap() {
 
   // Swagger
   const config = new DocumentBuilder()
-    .setTitle('DeckPilot API')
+    .setTitle('Pitchable API')
     .setVersion('1.0')
     .addBearerAuth()
     .build();

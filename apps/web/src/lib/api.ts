@@ -145,6 +145,48 @@ class ApiClient {
   delete<T>(url: string): Promise<T> {
     return this.request<T>('DELETE', url);
   }
+
+  async uploadFile<T>(url: string, file: File, extraFields?: Record<string, string>): Promise<T> {
+    const formData = new FormData();
+    formData.append('file', file);
+    if (extraFields) {
+      for (const [key, value] of Object.entries(extraFields)) {
+        formData.append(key, value);
+      }
+    }
+
+    const { accessToken } = this.getTokens();
+    const headers: Record<string, string> = {};
+    if (accessToken) {
+      headers['Authorization'] = `Bearer ${accessToken}`;
+    }
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: formData,
+    });
+
+    if (response.status === 401) {
+      const refreshed = await this.attemptRefresh();
+      if (refreshed) {
+        return this.uploadFile<T>(url, file, extraFields);
+      }
+      localStorage.removeItem('auth-storage');
+      window.location.href = '/login';
+      throw new Error('Session expired');
+    }
+
+    if (!response.ok) {
+      const errorBody = (await response.json().catch(() => ({
+        message: response.statusText,
+        statusCode: response.status,
+      }))) as ApiError;
+      throw new Error(errorBody.message || `Upload failed: ${response.status}`);
+    }
+
+    return response.json() as Promise<T>;
+  }
 }
 
 export const api = new ApiClient();

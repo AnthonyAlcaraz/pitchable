@@ -6,6 +6,7 @@ import { ResetPasswordPage } from '@/pages/ResetPasswordPage';
 import { DashboardPage } from '@/pages/DashboardPage';
 import { SettingsPage } from '@/pages/SettingsPage';
 import { WorkspacePage } from '@/pages/WorkspacePage';
+import { KnowledgeBasePage } from '@/pages/KnowledgeBasePage';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { AppLayout } from '@/components/layout/AppLayout';
 
@@ -28,6 +29,7 @@ function App() {
           }
         >
           <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/knowledge-base" element={<KnowledgeBasePage />} />
           <Route path="/settings" element={<SettingsPage />} />
         </Route>
 

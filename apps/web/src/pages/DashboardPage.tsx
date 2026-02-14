@@ -54,7 +54,7 @@ export function DashboardPage() {
           No presentations yet
         </h2>
         <p className="mb-6 max-w-sm text-center text-sm text-muted-foreground">
-          Create your first presentation by describing what you need. DeckPilot
+          Create your first presentation by describing what you need. Pitchable
           will handle the design.
         </p>
         <Link

@@ -22,6 +22,42 @@ class EnvironmentVariables {
   @IsOptional()
   @IsNumberString()
   PORT?: string = '3000';
+
+  @IsOptional()
+  @IsString()
+  S3_ENDPOINT?: string = 'http://localhost:9000';
+
+  @IsOptional()
+  @IsString()
+  S3_REGION?: string = 'us-east-1';
+
+  @IsOptional()
+  @IsString()
+  S3_ACCESS_KEY?: string = 'minioadmin';
+
+  @IsOptional()
+  @IsString()
+  S3_SECRET_KEY?: string = 'minioadmin';
+
+  @IsOptional()
+  @IsString()
+  S3_BUCKET?: string = 'pitchable-documents';
+
+  @IsOptional()
+  @IsString()
+  OPENAI_API_KEY?: string;
+
+  @IsOptional()
+  @IsString()
+  EDGEQUAKE_ENABLED?: string = 'false';
+
+  @IsOptional()
+  @IsString()
+  EDGEQUAKE_URL?: string = 'http://edgequake:8080';
+
+  @IsOptional()
+  @IsString()
+  EDGEQUAKE_API_KEY?: string;
 }
 
 export function validate(config: Record<string, unknown>): EnvironmentVariables {

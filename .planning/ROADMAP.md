@@ -11,7 +11,7 @@ Pitchable is a chat-driven AI presentation builder — like Lovable for slides. 
 - Decimal phases (2.1, 2.2): Urgent insertions (marked with INSERTED)
 
 - [x] **Phase 1: Foundation** — Frontend shell, backend scaffold, auth, Docker, design constraint engine, themes
-- [ ] **Phase 2: Knowledge Base** — Document upload, parsing, embedding, and semantic search
+- [x] **Phase 2: Knowledge Base** — Document upload, parsing, embedding, and semantic search
 - [ ] **Phase 3: Chat + Generation Engine** — Chat interface, live preview, RAG-powered slide generation with real-time updates
 - [ ] **Phase 4: Core Export** — PDF and PPTX export with theme-aware rendering
 - [ ] **Phase 5: Credit System + Billing** — Credit balance, Stripe subscriptions, transparent cost in chat
@@ -56,10 +56,10 @@ Plans:
   5. Document processing pipeline handles status transitions (UPLOADED -> PARSING -> EMBEDDING -> READY -> ERROR)
 
 Plans:
-- [ ] 02-01-PLAN.md — Prisma schema (Document + DocumentChunk), S3 service, file upload/text/URL endpoints, document CRUD
-- [ ] 02-02-PLAN.md — Parsing pipeline (pdf-parse, mammoth, marked, readability), heading-aware semantic chunking, BullMQ processor
-- [ ] 02-03-PLAN.md — OpenAI embeddings, pgvector storage, RAG retrieval endpoint, full pipeline integration
-- [ ] 02-04-PLAN.md — Frontend KB management page (upload, browse, search, delete, status indicators, DeckPilot rename)
+- [x] 02-01-PLAN.md — Prisma schema (Document + DocumentChunk), S3 service, file upload/text/URL endpoints, document CRUD
+- [x] 02-02-PLAN.md — Parsing pipeline (pdf-parse, mammoth, marked, readability), heading-aware semantic chunking, BullMQ processor
+- [x] 02-03-PLAN.md — OpenAI embeddings, pgvector storage, RAG retrieval endpoint, full pipeline integration
+- [x] 02-04-PLAN.md — Frontend KB management page (upload, browse, search, delete, status indicators, DeckPilot rename)
 
 ### Phase 3: Chat + Generation Engine
 **Goal**: Users can chat with the AI co-pilot to generate, iterate, and refine slide decks with real-time preview updates — the core product experience
@@ -178,7 +178,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8
 | Phase | Plans Complete | Status | Completed |
 |-------|---------------|--------|-----------|
 | 1. Foundation | 6/6 | Complete | 2026-02-14 |
-| 2. Knowledge Base | 0/4 | Planning complete | - |
+| 2. Knowledge Base | 4/4 | Complete | 2026-02-14 |
 | 3. Chat + Generation Engine | 0/10 | Not started | - |
 | 4. Core Export | 0/3 | Not started | - |
 | 5. Credit System + Billing | 0/3 | Not started | - |

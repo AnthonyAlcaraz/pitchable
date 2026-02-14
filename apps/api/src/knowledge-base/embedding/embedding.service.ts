@@ -1,0 +1,49 @@
+import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import OpenAI from 'openai';
+
+@Injectable()
+export class EmbeddingService {
+  private readonly logger = new Logger(EmbeddingService.name);
+  private readonly openai: OpenAI;
+  private readonly model = 'text-embedding-3-small';
+
+  constructor(config: ConfigService) {
+    const apiKey = config.get<string>('OPENAI_API_KEY');
+    if (!apiKey) {
+      this.logger.warn('OPENAI_API_KEY not set -- embedding generation will fail at runtime');
+    }
+    this.openai = new OpenAI({ apiKey: apiKey || 'missing' });
+  }
+
+  async embed(text: string): Promise<number[]> {
+    const response = await this.openai.embeddings.create({
+      model: this.model,
+      input: text,
+    });
+    return response.data[0].embedding;
+  }
+
+  async batchEmbed(texts: string[]): Promise<number[][]> {
+    if (texts.length === 0) return [];
+
+    const results: number[][] = [];
+    const BATCH_SIZE = 100;
+
+    for (let i = 0; i < texts.length; i += BATCH_SIZE) {
+      const batch = texts.slice(i, i + BATCH_SIZE);
+      this.logger.log(
+        `Embedding batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(texts.length / BATCH_SIZE)}: ${batch.length} texts`,
+      );
+
+      const response = await this.openai.embeddings.create({
+        model: this.model,
+        input: batch,
+      });
+
+      results.push(...response.data.map((d) => d.embedding));
+    }
+
+    return results;
+  }
+}

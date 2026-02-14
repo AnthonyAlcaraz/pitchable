@@ -4,6 +4,7 @@ import { useAuthStore } from '@/stores/auth.store';
 import {
   Layers,
   LayoutDashboard,
+  BookOpen,
   Settings,
   LogOut,
   ChevronLeft,
@@ -16,6 +17,7 @@ import { cn } from '@/lib/utils';
 
 const NAV_ITEMS = [
   { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { path: '/knowledge-base', label: 'Knowledge Base', icon: BookOpen },
   { path: '/settings', label: 'Settings', icon: Settings },
 ] as const;
 
@@ -56,7 +58,7 @@ export function AppLayout() {
             <Layers className="h-6 w-6 shrink-0 text-primary" />
             {!collapsed && (
               <span className="text-lg font-semibold text-foreground">
-                DeckPilot
+                Pitchable
               </span>
             )}
           </div>
@@ -147,7 +149,7 @@ export function AppLayout() {
             <Menu className="h-5 w-5" />
           </button>
           <Layers className="h-5 w-5 text-primary" />
-          <span className="text-sm font-semibold text-foreground">DeckPilot</span>
+          <span className="text-sm font-semibold text-foreground">Pitchable</span>
         </header>
 
         {/* Main content */}

@@ -14,6 +14,7 @@ import { PresentationsModule } from './presentations/presentations.module.js';
 import { ImagesModule } from './images/images.module.js';
 import { ConstraintsModule } from './constraints/constraints.module.js';
 import { HealthModule } from './health/health.module.js';
+import { KnowledgeBaseModule } from './knowledge-base/knowledge-base.module.js';
 import { validate } from './config/env.validation.js';
 
 @Module({
@@ -38,6 +39,7 @@ import { validate } from './config/env.validation.js';
     PresentationsModule,
     ImagesModule,
     ExportsModule,
+    KnowledgeBaseModule,
     HealthModule,
   ],
   controllers: [AppController],

@@ -75,6 +75,20 @@ enum JobStatus {
   FAILED
 }
 
+enum DocumentStatus {
+  UPLOADED
+  PARSING
+  EMBEDDING
+  READY
+  ERROR
+}
+
+enum DocumentSourceType {
+  FILE
+  TEXT
+  URL
+}
+
 // ─── Models ──────────────────────────────────────────────────────────────────
 
 model User {
@@ -91,6 +105,8 @@ model User {
 
   presentations      Presentation[]
   creditTransactions CreditTransaction[]
+  documents          Document[]
+  edgequakeMapping   EdgeQuakeMapping?
 
   @@index([email])
 }
@@ -200,4 +216,53 @@ model ImageJob {
   slide Slide @relation(fields: [slideId], references: [id], onDelete: Cascade)
 
   @@index([slideId])
+}
+
+model Document {
+  id           String             @id @default(uuid()) @db.Uuid
+  userId       String             @db.Uuid
+  title        String
+  sourceType   DocumentSourceType
+  mimeType     String?
+  fileSize     Int?
+  s3Key        String?
+  sourceUrl    String?
+  status       DocumentStatus     @default(UPLOADED)
+  chunkCount   Int                @default(0)
+  errorMessage String?
+  processedAt  DateTime?
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+
+  user   User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  chunks DocumentChunk[]
+
+  @@index([userId])
+  @@index([status])
+}
+
+model EdgeQuakeMapping {
+  id          String   @id @default(uuid()) @db.Uuid
+  userId      String   @unique @db.Uuid
+  tenantId    String
+  workspaceId String
+  createdAt   DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model DocumentChunk {
+  id           String   @id @default(uuid()) @db.Uuid
+  documentId   String   @db.Uuid
+  content      String   @db.Text
+  heading      String?
+  headingLevel Int      @default(0)
+  chunkIndex   Int
+  embedding    Unsupported("vector(1536)")?
+  metadata     Json     @default("{}")
+  createdAt    DateTime @default(now())
+
+  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@index([documentId])
 }
