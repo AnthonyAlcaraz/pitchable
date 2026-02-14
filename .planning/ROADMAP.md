@@ -25,6 +25,7 @@ Pitchable is a chat-driven AI presentation builder — like Lovable for slides. 
 **Goal**: Split-screen app shell running with auth, design constraints, and themes — the skeleton that everything else plugs into
 **Depends on**: Nothing (first phase)
 **Requirements**: FE-01..07, AUTH-01..04, DC-01..08, INF-01..07
+**Plans:** 6 plans
 **Success Criteria** (what must be TRUE):
   1. User sees a split-screen layout: empty chat panel left, empty preview panel right
   2. User can sign up, log in, and see a dashboard with their (empty) presentations list
@@ -35,12 +36,12 @@ Pitchable is a chat-driven AI presentation builder — like Lovable for slides. 
   7. Frontend and backend communicate via API, auth flow works end-to-end
 
 Plans:
-- [ ] 01-01: Monorepo setup (Turborepo), React + Vite + Tailwind + shadcn/ui frontend scaffold, NestJS backend scaffold
-- [ ] 01-02: Docker Compose (Postgres + pgvector + Redis + MinIO), Drizzle/Prisma schema, env config
-- [ ] 01-03: JWT auth (argon2, access/refresh tokens, guards) — backend API + frontend auth pages
-- [ ] 01-04: Design constraint engine (color WCAG validator, banned pairs, typography rules, density limits, auto-split)
-- [ ] 01-05: Theme system (5 themes, palette validation, font pairing enforcement)
-- [ ] 01-06: Frontend shell (split-screen layout, dashboard, settings) + infrastructure (Swagger, rate limiting, errors, health)
+- [ ] 01-01-PLAN.md — Monorepo setup (Turborepo) + React/Vite/Tailwind/shadcn frontend scaffold
+- [ ] 01-02-PLAN.md — Docker Compose upgrade (pgvector + MinIO), Prisma 7 driver adapter, env validation, Swagger, rate limiting, health checks, structured errors
+- [ ] 01-03-PLAN.md — Auth rewrite: argon2id, dual JWT (access 15m + refresh 7d), refresh rotation, logout, password reset
+- [ ] 01-04-PLAN.md — Design constraint fixes (density limits, typography minimums) + new layout validator (DC-06)
+- [ ] 01-05-PLAN.md — Theme font pairing fixes + validation proof + constraints/themes API endpoints
+- [ ] 01-06-PLAN.md — Frontend shell: auth pages, dashboard, settings, split-screen workspace layout
 
 ### Phase 2: Knowledge Base
 **Goal**: Users can upload their documents and the system indexes them for semantic retrieval. Frontend shows KB management UI.
@@ -164,7 +165,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8
 
 | Phase | Plans Complete | Status | Completed |
 |-------|---------------|--------|-----------|
-| 1. Foundation | 0/6 | Not started | - |
+| 1. Foundation | 0/6 | Planning complete | - |
 | 2. Knowledge Base | 0/4 | Not started | - |
 | 3. Chat + Generation Engine | 0/7 | Not started | - |
 | 4. Core Export | 0/3 | Not started | - |
