@@ -1,4 +1,4 @@
-# DeckPilot
+# Pitchable
 
 ## What This Is
 
@@ -6,7 +6,7 @@ A chat-driven AI presentation builder that turns your knowledge base into polish
 
 Born from an internal Z4 skill that impressed colleagues enough to ask "how did you do this?"
 
-**Repo:** https://github.com/AnthonyAlcaraz/deckpilot
+**Repo:** https://github.com/AnthonyAlcaraz/pitchable
 
 ## Core Value
 
@@ -108,4 +108,4 @@ See `.planning/REQUIREMENTS.md` for full list (56+ requirements across 10 catego
 - Native mobile app — responsive web sufficient
 
 ---
-*Last updated: 2026-02-14 — major pivot: added chat-driven frontend, Lovable-style UX, renamed to DeckPilot*
+*Last updated: 2026-02-14 — major pivot: added chat-driven frontend, Lovable-style UX, renamed to Pitchable*

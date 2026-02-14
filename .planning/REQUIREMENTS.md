@@ -1,4 +1,4 @@
-# Requirements: DeckPilot
+# Requirements: Pitchable
 
 **Defined:** 2026-02-14
 **Core Value:** Chat your way from knowledge base to polished deck
@@ -219,4 +219,4 @@
 
 ---
 *Requirements defined: 2026-02-14*
-*Last updated: 2026-02-14 -- added FE (7), CH (8), LP (6) = 21 new frontend requirements. Renamed to DeckPilot.*
+*Last updated: 2026-02-14 -- added FE (7), CH (8), LP (6) = 21 new frontend requirements. Renamed to Pitchable.*

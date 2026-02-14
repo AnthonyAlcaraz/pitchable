@@ -1,8 +1,8 @@
-# Roadmap: DeckPilot
+# Roadmap: Pitchable
 
 ## Overview
 
-DeckPilot is a chat-driven AI presentation builder — like Lovable for slides. The roadmap builds a full-stack application: frontend shell with split-screen chat + live preview, backend API with design constraints, knowledge base with RAG, chat-powered generation engine, export pipeline, billing, and image generation. Eight phases, each delivering a verifiable capability.
+Pitchable is a chat-driven AI presentation builder — like Lovable for slides. The roadmap builds a full-stack application: frontend shell with split-screen chat + live preview, backend API with design constraints, knowledge base with RAG, chat-powered generation engine, export pipeline, billing, and image generation. Eight phases, each delivering a verifiable capability.
 
 ## Phases
 
