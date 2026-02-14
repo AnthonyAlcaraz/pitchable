@@ -37,3 +37,5 @@ export function WorkspacePage() {
     </div>
   );
 }
+
+export default WorkspacePage;

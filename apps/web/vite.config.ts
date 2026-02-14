@@ -10,6 +10,17 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'router': ['react-router-dom'],
+          'socket': ['socket.io-client'],
+          'markdown': ['react-markdown', 'remark-gfm'],
+        },
+      },
+    },
+  },
   server: {
     port: 5173,
     proxy: {
