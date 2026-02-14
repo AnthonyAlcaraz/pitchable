@@ -16,6 +16,7 @@ import { CurrentUser, type RequestUser } from '../auth/decorators/current-user.d
 import { PresentationsService } from './presentations.service.js';
 import { CreatePresentationDto } from './dto/create-presentation.dto.js';
 import { UpdateSlideDto } from './dto/update-slide.dto.js';
+import { RenamePresentationDto } from './dto/rename-presentation.dto.js';
 
 // ── Export Request DTO ──────────────────────────────────────
 
@@ -65,6 +66,32 @@ export class PresentationsController {
     @Param('id', ParseUUIDPipe) id: string,
   ) {
     return this.presentationsService.findOne(id, user.userId);
+  }
+
+  /**
+   * PATCH /presentations/:id
+   * Rename a presentation (title and/or description).
+   */
+  @Patch(':id')
+  async rename(
+    @CurrentUser() user: RequestUser,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: RenamePresentationDto,
+  ) {
+    return this.presentationsService.rename(id, user.userId, dto);
+  }
+
+  /**
+   * POST /presentations/:id/duplicate
+   * Duplicate a presentation with all slides.
+   */
+  @Post(':id/duplicate')
+  @HttpCode(HttpStatus.CREATED)
+  async duplicate(
+    @CurrentUser() user: RequestUser,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.presentationsService.duplicate(id, user.userId);
   }
 
   /**

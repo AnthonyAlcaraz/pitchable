@@ -432,6 +432,117 @@ export class PresentationsService {
     return this.queueExportJobs(presentationId, formats);
   }
 
+  /**
+   * Rename a presentation (title and/or description).
+   */
+  async rename(
+    id: string,
+    userId: string,
+    data: { title?: string; description?: string },
+  ): Promise<{ id: string; title: string; description: string | null }> {
+    const presentation = await this.prisma.presentation.findUnique({
+      where: { id },
+      select: { userId: true },
+    });
+
+    if (!presentation) {
+      throw new NotFoundException(`Presentation with id "${id}" not found`);
+    }
+
+    if (presentation.userId !== userId) {
+      throw new ForbiddenException('You do not have access to this presentation');
+    }
+
+    const updateData: Record<string, string> = {};
+    if (data.title !== undefined) updateData.title = data.title;
+    if (data.description !== undefined) updateData.description = data.description;
+
+    if (Object.keys(updateData).length === 0) {
+      throw new BadRequestException('At least one field (title or description) must be provided');
+    }
+
+    const updated = await this.prisma.presentation.update({
+      where: { id },
+      data: updateData,
+    });
+
+    return {
+      id: updated.id,
+      title: updated.title,
+      description: updated.description,
+    };
+  }
+
+  /**
+   * Duplicate a presentation with all its slides.
+   */
+  async duplicate(
+    id: string,
+    userId: string,
+  ): Promise<PresentationWithSlides> {
+    const original = await this.prisma.presentation.findUnique({
+      where: { id },
+      include: { slides: { orderBy: { slideNumber: 'asc' } } },
+    });
+
+    if (!original) {
+      throw new NotFoundException(`Presentation with id "${id}" not found`);
+    }
+
+    if (original.userId !== userId) {
+      throw new ForbiddenException('You do not have access to this presentation');
+    }
+
+    const duplicated = await this.prisma.$transaction(async (tx) => {
+      const pres = await tx.presentation.create({
+        data: {
+          title: `${original.title} (copy)`,
+          description: original.description,
+          sourceContent: original.sourceContent,
+          presentationType: original.presentationType,
+          status: PresentationStatus.COMPLETED,
+          themeId: original.themeId,
+          imageCount: 0,
+          userId,
+        },
+      });
+
+      const slideData = original.slides.map((s) => ({
+        presentationId: pres.id,
+        slideNumber: s.slideNumber,
+        title: s.title,
+        body: s.body,
+        speakerNotes: s.speakerNotes,
+        slideType: s.slideType,
+        imagePrompt: s.imagePrompt,
+      }));
+
+      await tx.slide.createMany({ data: slideData });
+
+      return tx.presentation.findUniqueOrThrow({
+        where: { id: pres.id },
+        include: { slides: { orderBy: { slideNumber: 'asc' } } },
+      });
+    });
+
+    this.logger.log(`Duplicated presentation ${id} → ${duplicated.id} for user ${userId}`);
+
+    return {
+      ...duplicated,
+      slides: duplicated.slides.map((s) => ({
+        id: s.id,
+        slideNumber: s.slideNumber,
+        title: s.title,
+        body: s.body,
+        speakerNotes: s.speakerNotes,
+        slideType: s.slideType,
+        imageUrl: s.imageUrl,
+        imagePrompt: s.imagePrompt,
+        createdAt: s.createdAt,
+      })),
+    };
+  }
+
   // ── Private Helpers ───────────────────────────────────────
 
   /**

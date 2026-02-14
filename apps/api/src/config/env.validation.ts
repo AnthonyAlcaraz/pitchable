@@ -49,6 +49,10 @@ class EnvironmentVariables {
 
   @IsOptional()
   @IsString()
+  OPENAI_CHAT_MODEL?: string = 'gpt-4o';
+
+  @IsOptional()
+  @IsString()
   EDGEQUAKE_ENABLED?: string = 'false';
 
   @IsOptional()

@@ -15,6 +15,8 @@ import { ImagesModule } from './images/images.module.js';
 import { ConstraintsModule } from './constraints/constraints.module.js';
 import { HealthModule } from './health/health.module.js';
 import { KnowledgeBaseModule } from './knowledge-base/knowledge-base.module.js';
+import { EventsModule } from './events/events.module.js';
+import { ChatModule } from './chat/chat.module.js';
 import { validate } from './config/env.validation.js';
 
 @Module({
@@ -40,6 +42,8 @@ import { validate } from './config/env.validation.js';
     ImagesModule,
     ExportsModule,
     KnowledgeBaseModule,
+    EventsModule,
+    ChatModule,
     HealthModule,
   ],
   controllers: [AppController],

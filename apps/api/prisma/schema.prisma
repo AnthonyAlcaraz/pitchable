@@ -107,6 +107,7 @@ model User {
   creditTransactions CreditTransaction[]
   documents          Document[]
   edgequakeMapping   EdgeQuakeMapping?
+  feedbackEntries    FeedbackEntry[]
 
   @@index([email])
 }
@@ -126,8 +127,9 @@ model Presentation {
 
   user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   theme      Theme       @relation(fields: [themeId], references: [id])
-  slides     Slide[]
-  exportJobs ExportJob[]
+  slides       Slide[]
+  exportJobs   ExportJob[]
+  chatMessages ChatMessage[]
 
   @@index([userId])
   @@index([status])
@@ -265,4 +267,36 @@ model DocumentChunk {
   document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
 
   @@index([documentId])
+}
+
+model ChatMessage {
+  id             String   @id @default(uuid()) @db.Uuid
+  presentationId String   @db.Uuid
+  role           String   // 'user' | 'assistant' | 'system'
+  content        String   @db.Text
+  messageType    String   @default("text") // 'text' | 'outline' | 'validation' | 'credit_confirmation'
+  metadata       Json     @default("{}")
+  createdAt      DateTime @default(now())
+
+  presentation Presentation @relation(fields: [presentationId], references: [id], onDelete: Cascade)
+
+  @@index([presentationId])
+}
+
+model FeedbackEntry {
+  id               String   @id @default(uuid()) @db.Uuid
+  userId           String   @db.Uuid
+  presentationId   String?  @db.Uuid
+  slideId          String?  @db.Uuid
+  type             String   // 'VIOLATION' | 'CORRECTION' | 'RULE'
+  category         String   // 'density' | 'typography' | 'concept' | 'style' | 'tone'
+  originalContent  String?  @db.Text
+  correctedContent String?  @db.Text
+  rule             String?  @db.Text
+  createdAt        DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, type])
 }

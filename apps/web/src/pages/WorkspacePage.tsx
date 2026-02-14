@@ -1,6 +1,8 @@
 import { Link, useParams } from 'react-router-dom';
 import { ArrowLeft, Layers } from 'lucide-react';
 import { SplitScreen } from '@/components/layout/SplitScreen';
+import { ChatPanel } from '@/components/chat/ChatPanel';
+import { PreviewPanel } from '@/components/preview/PreviewPanel';
 
 export function WorkspacePage() {
   const { id } = useParams<{ id: string }>();
@@ -27,7 +29,10 @@ export function WorkspacePage() {
 
       {/* Split-screen workspace */}
       <div className="flex-1">
-        <SplitScreen />
+        <SplitScreen
+          leftPanel={<ChatPanel presentationId={id} />}
+          rightPanel={<PreviewPanel presentationId={id} />}
+        />
       </div>
     </div>
   );

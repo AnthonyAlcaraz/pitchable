@@ -1,9 +1,21 @@
-import { Link } from 'react-router-dom';
+import { useEffect } from 'react';
 import { useAuthStore } from '@/stores/auth.store';
-import { Plus, Layers, CreditCard, FileText } from 'lucide-react';
+import { usePresentationsStore } from '@/stores/presentations.store';
+import { PresentationGrid } from '@/components/dashboard/PresentationGrid';
+import { CreditCard, FileText } from 'lucide-react';
 
 export function DashboardPage() {
   const user = useAuthStore((s) => s.user);
+  const presentations = usePresentationsStore((s) => s.presentations);
+  const isLoading = usePresentationsStore((s) => s.isLoading);
+  const loadPresentations = usePresentationsStore((s) => s.loadPresentations);
+  const deletePresentation = usePresentationsStore((s) => s.deletePresentation);
+  const duplicatePresentation = usePresentationsStore((s) => s.duplicatePresentation);
+  const renamePresentation = usePresentationsStore((s) => s.renamePresentation);
+
+  useEffect(() => {
+    loadPresentations();
+  }, [loadPresentations]);
 
   return (
     <div className="p-8">
@@ -39,32 +51,27 @@ export function DashboardPage() {
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Presentations</p>
-              <p className="text-xl font-semibold text-foreground">0</p>
+              <p className="text-xl font-semibold text-foreground">
+                {presentations.length}
+              </p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Empty state */}
-      <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-border py-16">
-        <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
-          <Layers className="h-8 w-8 text-primary" />
+      {/* Presentations grid */}
+      {isLoading ? (
+        <div className="flex justify-center py-16">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
         </div>
-        <h2 className="mb-2 text-lg font-semibold text-foreground">
-          No presentations yet
-        </h2>
-        <p className="mb-6 max-w-sm text-center text-sm text-muted-foreground">
-          Create your first presentation by describing what you need. Pitchable
-          will handle the design.
-        </p>
-        <Link
-          to="/workspace/new"
-          className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-        >
-          <Plus className="h-4 w-4" />
-          New Presentation
-        </Link>
-      </div>
+      ) : (
+        <PresentationGrid
+          presentations={presentations}
+          onDelete={deletePresentation}
+          onDuplicate={duplicatePresentation}
+          onRename={renamePresentation}
+        />
+      )}
     </div>
   );
 }
