@@ -1,8 +1,8 @@
-# Roadmap: SlideForge
+# Roadmap: DeckPilot
 
 ## Overview
 
-SlideForge delivers an end-to-end pipeline from knowledge base ingestion to polished presentation export. The roadmap builds foundation-up: authentication and design constraints first (because ugly output kills trust before launch), then the knowledge base that differentiates us from every competitor, then the generation engine that connects them, then exports, billing, and image generation as layered capabilities. Seven phases, each delivering a verifiable capability that the next phase depends on.
+DeckPilot is a chat-driven AI presentation builder — like Lovable for slides. The roadmap builds a full-stack application: frontend shell with split-screen chat + live preview, backend API with design constraints, knowledge base with RAG, chat-powered generation engine, export pipeline, billing, and image generation. Eight phases, each delivering a verifiable capability.
 
 ## Phases
 
@@ -10,142 +10,165 @@ SlideForge delivers an end-to-end pipeline from knowledge base ingestion to poli
 - Integer phases (1, 2, 3): Planned milestone work
 - Decimal phases (2.1, 2.2): Urgent insertions (marked with INSERTED)
 
-Decimal phases appear between their surrounding integers in numeric order.
-
-- [ ] **Phase 1: Foundation + Design Engine** — Auth, database, Docker, design constraint validators, theme system, infrastructure
+- [ ] **Phase 1: Foundation** — Frontend shell, backend scaffold, auth, Docker, design constraint engine, themes
 - [ ] **Phase 2: Knowledge Base** — Document upload, parsing, embedding, and semantic search
-- [ ] **Phase 3: Presentation Generation** — RAG-powered slide structuring with outline approval and post-generation editing
+- [ ] **Phase 3: Chat + Generation Engine** — Chat interface, live preview, RAG-powered slide generation with real-time updates
 - [ ] **Phase 4: Core Export** — PDF and PPTX export with theme-aware rendering
-- [ ] **Phase 5: Credit System + Billing** — Credit balance, Stripe subscriptions, and transparent cost display
+- [ ] **Phase 5: Credit System + Billing** — Credit balance, Stripe subscriptions, transparent cost in chat
 - [ ] **Phase 6: Image Generation** — Async image pipeline with BullMQ, Replicate, and credit deduction
 - [ ] **Phase 7: Web Sharing + Polish** — Reveal.js HTML export and shareable web links
+- [ ] **Phase 8: Landing Page + Onboarding** — Public landing page, pricing page, onboarding flow
 
 ## Phase Details
 
-### Phase 1: Foundation + Design Engine
-**Goal**: Users can authenticate and the system enforces design quality rules that prevent ugly output from ever reaching downstream phases
+### Phase 1: Foundation
+**Goal**: Split-screen app shell running with auth, design constraints, and themes — the skeleton that everything else plugs into
 **Depends on**: Nothing (first phase)
-**Requirements**: AUTH-01..04, DC-01..08, INF-01..07
+**Requirements**: FE-01..07, AUTH-01..04, DC-01..08, INF-01..07
 **Success Criteria** (what must be TRUE):
-  1. User can create an account, log in with JWT, and stay logged in via refresh tokens
-  2. User can reset a forgotten password via email
-  3. A programmatic test submits a slide with forbidden color combos (red/green), excessive bullets (>6), or banned fonts (Comic Sans), and the system rejects it with specific violation messages
-  4. Five built-in themes are available with pre-validated color palettes and font pairings
+  1. User sees a split-screen layout: empty chat panel left, empty preview panel right
+  2. User can sign up, log in, and see a dashboard with their (empty) presentations list
+  3. A programmatic test submits a slide with forbidden color combos (red/green), excessive bullets (>6), or banned fonts (Comic Sans), and the API rejects it with specific violation messages
+  4. Five built-in themes are available via API with pre-validated color palettes and font pairings
   5. Docker Compose spins up PostgreSQL 16 + pgvector, Redis 7, and MinIO with a single command
-  6. OpenAPI/Swagger docs are auto-generated and accessible at /api/docs
+  6. OpenAPI/Swagger docs are accessible at /api/docs
+  7. Frontend and backend communicate via API, auth flow works end-to-end
 
 Plans:
-- [ ] 01-01: NestJS scaffold, Docker Compose (Postgres + pgvector + Redis + MinIO), Drizzle schema, env config
-- [ ] 01-02: JWT auth (argon2 hashing, access/refresh tokens, guards, password reset)
-- [ ] 01-03: Design constraint engine (color WCAG validator, banned pairs, typography rules, density limits, auto-split)
-- [ ] 01-04: Theme system (5 themes, palette validation, font pairing enforcement)
-- [ ] 01-05: Infrastructure (Swagger, rate limiting, error standardization, health checks)
+- [ ] 01-01: Monorepo setup (Turborepo), React + Vite + Tailwind + shadcn/ui frontend scaffold, NestJS backend scaffold
+- [ ] 01-02: Docker Compose (Postgres + pgvector + Redis + MinIO), Drizzle/Prisma schema, env config
+- [ ] 01-03: JWT auth (argon2, access/refresh tokens, guards) — backend API + frontend auth pages
+- [ ] 01-04: Design constraint engine (color WCAG validator, banned pairs, typography rules, density limits, auto-split)
+- [ ] 01-05: Theme system (5 themes, palette validation, font pairing enforcement)
+- [ ] 01-06: Frontend shell (split-screen layout, dashboard, settings) + infrastructure (Swagger, rate limiting, errors, health)
 
 ### Phase 2: Knowledge Base
-**Goal**: Users can upload their documents and the system indexes them for semantic retrieval
+**Goal**: Users can upload their documents and the system indexes them for semantic retrieval. Frontend shows KB management UI.
 **Depends on**: Phase 1
 **Requirements**: KB-01..07
 **Success Criteria** (what must be TRUE):
-  1. User can upload PDF, DOCX, MD, and TXT files and see them listed with status tracking
+  1. User can upload PDF, DOCX, MD, and TXT files via the frontend and see them listed with status tracking
   2. User can paste raw text or a URL and it appears as a KB source
   3. Given a topic query, the system retrieves the most semantically relevant KB chunks (not keyword match)
-  4. User can browse, search, and delete documents in their knowledge base
+  4. User can browse, search, and delete documents in their knowledge base via frontend
   5. Document processing pipeline handles status transitions (UPLOADED -> PARSING -> EMBEDDING -> READY -> ERROR)
 
 Plans:
-- [ ] 02-01: File upload, text/URL ingestion, document storage and status tracking
+- [ ] 02-01: File upload API, text/URL ingestion, document storage and status tracking
 - [ ] 02-02: Parsing pipeline (pdf-parse, mammoth, marked), heading-aware semantic chunking
-- [ ] 02-03: OpenAI embeddings, pgvector storage, RAG retrieval endpoint, KB management API
+- [ ] 02-03: OpenAI embeddings, pgvector storage, RAG retrieval endpoint
+- [ ] 02-04: Frontend KB management page (upload, browse, search, delete, status indicators)
 
-### Phase 3: Presentation Generation
-**Goal**: Users can generate a structured slide deck from their KB content, approve an outline first, and edit slides after generation
+### Phase 3: Chat + Generation Engine
+**Goal**: Users can chat with the AI co-pilot to generate, iterate, and refine slide decks with real-time preview updates — the core product experience
 **Depends on**: Phase 1, Phase 2
-**Requirements**: PG-01..10, IT-01..06
+**Requirements**: CH-01..08, LP-01..06, PG-01..10, IT-01..06
 **Success Criteria** (what must be TRUE):
-  1. User enters a topic, selects slide count and type, and receives an outline for approval before full generation
-  2. Generated slides follow 1-idea-per-slide / max-6-bullets and include speaker notes
-  3. User can edit slide text, reorder slides, delete slides, and add blank slides
-  4. User can regenerate a single slide with fresh content from KB
-  5. All generated slides pass design constraint validation (zero violations reach the user)
+  1. User types "Create a VC pitch deck about AI agents" in chat and sees an outline appear in the preview panel
+  2. User approves the outline and sees slides generate one-by-one in the live preview
+  3. User types "make slide 3 more concise" and the preview updates in real-time
+  4. User types "/theme dark" and the entire deck re-renders with the dark theme
+  5. User can click on any text in the preview to edit it inline
+  6. Slide thumbnail sidebar shows all slides with the current slide highlighted
+  7. AI responses stream token-by-token in the chat panel
+  8. All generated slides pass design constraint validation (zero violations reach the user)
+  9. Credit cost is shown in chat before any credit-consuming action
 
 Plans:
-- [ ] 03-01: Generation pipeline (RAG retrieval, LLM slide structuring, design validation pass)
-- [ ] 03-02: Outline generation with user approval flow
-- [ ] 03-03: Post-generation editing (text edit, reorder, delete, add, single-slide regeneration)
-- [ ] 03-04: Presentation CRUD (list, view, rename, duplicate, delete)
+- [ ] 03-01: Socket.io setup for real-time communication between frontend and backend
+- [ ] 03-02: Chat interface component (input, history, markdown rendering, streaming responses)
+- [ ] 03-03: Generation pipeline (RAG retrieval, LLM slide structuring, design validation pass)
+- [ ] 03-04: Outline generation with approval flow (shown in chat + preview)
+- [ ] 03-05: Live preview component (slide rendering, thumbnail sidebar, click-to-edit)
+- [ ] 03-06: Chat-driven iteration (modify slides, change theme, add/remove slides via chat commands)
+- [ ] 03-07: Presentation CRUD (list, view, rename, duplicate, delete) + dashboard integration
 
 ### Phase 4: Core Export
-**Goal**: Users can download their generated deck as a PDF or editable PPTX file
+**Goal**: Users can download their generated deck as a PDF or editable PPTX file, triggered from chat or UI button
 **Depends on**: Phase 1, Phase 3
 **Requirements**: EX-01, EX-02, EX-04, EX-05
 **Success Criteria** (what must be TRUE):
-  1. User can export a deck as PDF and open it in any PDF reader with correct formatting
-  2. User can export a deck as PPTX and edit individual slide elements in PowerPoint (editable, not images)
+  1. User types "/export pptx" in chat and receives a download link for an editable PPTX
+  2. User can export a deck as PDF and open it in any PDF reader with correct formatting
   3. Both formats respect the selected theme (colors, fonts, layout) and pass design constraint checks
   4. Exported files are stored in S3 with signed download URLs
 
 Plans:
 - [ ] 04-01: PDF export via Marp CLI with theme-aware markdown generation
 - [ ] 04-02: PPTX export via PptxGenJS with editable slide elements
-- [ ] 04-03: S3 storage integration and signed download URLs
+- [ ] 04-03: S3 storage integration, signed download URLs, export chat command (/export)
 
 ### Phase 5: Credit System + Billing
-**Goal**: Users have a credit balance and can purchase credits via Stripe to pay for image generation
+**Goal**: Users have a credit balance visible in the dashboard and chat, can purchase credits via Stripe
 **Depends on**: Phase 1
 **Requirements**: CB-01..09
 **Success Criteria** (what must be TRUE):
-  1. New free-tier user can generate 3 text-only decks/month
-  2. User can see exactly how many credits an image generation will cost before confirming
-  3. User can subscribe to Starter/Pro via Stripe Checkout and see monthly credit refills
-  4. Credit deductions are atomic (no double-charges on concurrent requests, no negative balances)
-  5. Stripe webhooks correctly handle payment success, failure, and subscription changes
+  1. Credit balance visible in dashboard header and in chat responses
+  2. User sees "This will use 6 credits for images. Proceed?" in chat before image generation
+  3. User can subscribe to Starter/Pro via Stripe Checkout from settings page
+  4. Credit deductions are atomic (no double-charges, no negative balances)
+  5. Stripe webhooks correctly handle payment events
 
 Plans:
 - [ ] 05-01: Credit balance model, free tier allocation, reservation pattern, atomic deduction
-- [ ] 05-02: Stripe Billing Meters API integration, subscription plans, webhook handlers
+- [ ] 05-02: Stripe Billing Meters API, subscription plans, webhook handlers
+- [ ] 05-03: Frontend billing page, credit display in dashboard + chat integration
 
 ### Phase 6: Image Generation
-**Goal**: Users can add AI-generated images to their decks with configurable tiers and async processing
+**Goal**: Users can request AI-generated images through chat with configurable tiers and async processing
 **Depends on**: Phase 3, Phase 4, Phase 5
 **Requirements**: IG-01..07
 **Success Criteria** (what must be TRUE):
-  1. User can select image tier (0, 3, 6, or 12) and see the credit cost before generation
-  2. Images generate asynchronously with visible progress tracking
-  3. Generated images match slide content and maintain visual consistency across the deck
-  4. "No text, no words, no labels" enforced in every prompt — no text appears in generated images
-  5. User can regenerate any individual slide image
-  6. Generated images appear correctly in exported PDF and PPTX files
+  1. User types "/images 6" in chat and the system generates 6 images with progress shown in chat
+  2. Images generate asynchronously with live progress in both chat and preview
+  3. Generated images maintain visual consistency across the deck
+  4. No text appears in generated images (enforced "no text" in every prompt)
+  5. User can type "regenerate image on slide 3" to get a new image for one slide
 
 Plans:
 - [ ] 06-01: BullMQ queue setup, Replicate client (FLUX.1 schnell), prompt engineering per slide type
-- [ ] 06-02: S3 storage, credit deduction per image, progress tracking
-- [ ] 06-03: Image embedding in export formats and single-image regeneration
+- [ ] 06-02: S3 storage, credit deduction per image, progress tracking via Socket.io
+- [ ] 06-03: Image embedding in export formats, single-image regeneration, chat commands
 
 ### Phase 7: Web Sharing + Polish
 **Goal**: Users can export decks as self-contained HTML and share them via web links
 **Depends on**: Phase 3, Phase 4
 **Requirements**: EX-03, EX-06
 **Success Criteria** (what must be TRUE):
-  1. User can export a deck as a single self-contained Reveal.js HTML file that opens in any browser
-  2. User can generate a shareable web link for any deck that others can view without an account
+  1. User types "/share" in chat and receives a shareable web link
+  2. User can export a deck as a single self-contained Reveal.js HTML file
   3. Shared web presentations render correctly on desktop and mobile browsers
 
 Plans:
 - [ ] 07-01: Reveal.js HTML export (single self-contained file)
-- [ ] 07-02: Web sharing infrastructure (hosted viewer, shareable links)
+- [ ] 07-02: Web sharing infrastructure (hosted viewer, shareable links, chat /share command)
+
+### Phase 8: Landing Page + Onboarding
+**Goal**: Public-facing landing page converts visitors to sign-ups, smooth onboarding guides new users
+**Depends on**: Phase 1, Phase 5
+**Requirements**: FE-03 (enhanced)
+**Success Criteria** (what must be TRUE):
+  1. Non-authenticated user sees a compelling landing page with product demo, features, and pricing
+  2. New user completes onboarding: upload first document, generate first deck, see result
+  3. Pricing page shows tiers with clear feature comparison
+
+Plans:
+- [ ] 08-01: Landing page (hero, features, social proof, pricing, CTA)
+- [ ] 08-02: Onboarding flow (guided first-deck experience)
 
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7
+Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8
 (Phase 5 can run in parallel with Phase 4 since both depend on Phase 1, not each other)
 
 | Phase | Plans Complete | Status | Completed |
 |-------|---------------|--------|-----------|
-| 1. Foundation + Design Engine | 0/5 | Not started | - |
-| 2. Knowledge Base | 0/3 | Not started | - |
-| 3. Presentation Generation | 0/4 | Not started | - |
+| 1. Foundation | 0/6 | Not started | - |
+| 2. Knowledge Base | 0/4 | Not started | - |
+| 3. Chat + Generation Engine | 0/7 | Not started | - |
 | 4. Core Export | 0/3 | Not started | - |
-| 5. Credit System + Billing | 0/2 | Not started | - |
+| 5. Credit System + Billing | 0/3 | Not started | - |
 | 6. Image Generation | 0/3 | Not started | - |
 | 7. Web Sharing + Polish | 0/2 | Not started | - |
+| 8. Landing Page + Onboarding | 0/2 | Not started | - |

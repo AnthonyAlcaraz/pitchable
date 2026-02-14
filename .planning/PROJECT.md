@@ -1,12 +1,92 @@
-# SlideForge
+# DeckPilot
 
 ## What This Is
 
-A SaaS platform that transforms knowledge bases into professional presentations with AI-generated visuals. Users ingest their documents (PDF, MD, DOCX, URLs), choose a visual format and style, and get a polished slide deck with schema diagrams and images — all with design guardrails that prevent ugly combinations. Born from an internal Z4 skill that impressed colleagues enough to ask "how did you do this?"
+A chat-driven AI presentation builder that turns your knowledge base into polished slide decks through conversation. Like Lovable for code, but for designing slides. Users upload their documents, then chat with an AI co-pilot to generate, iterate, and refine presentations in real-time — seeing every change live in a split-screen preview.
+
+Born from an internal Z4 skill that impressed colleagues enough to ask "how did you do this?"
+
+**Repo:** https://github.com/AnthonyAlcaraz/deckpilot
 
 ## Core Value
 
-**Turn any knowledge base into a presentation-ready deck with one click** — the content extraction, slide structuring, visual generation, and design enforcement must work end-to-end without manual intervention.
+**Chat your way from knowledge base to polished deck** — upload your documents, describe what you need, and watch the AI build your presentation in real-time. Iterate through conversation: "make slide 3 more concise", "add a comparison table", "change to dark theme". Design constraints prevent ugly output automatically.
+
+## UX Pattern (Lovable-style)
+
+Split-screen interface:
+- **Left panel**: Chat interface where users describe, iterate, and refine their deck
+- **Right panel**: Live preview of the slide deck, updating in real-time as the AI makes changes
+- **Iteration loop**: Describe → Generate → See live → Chat to refine → Export
+
+Key UX principles (from Lovable + Gamma research):
+- Chat-first: every action is expressible through conversation
+- Real-time preview: changes appear instantly in the right panel
+- Outline-first: AI shows outline for approval before full generation (prevents "AI Presentation Paradox")
+- Credit transparency: cost shown before any credit-consuming action
+- Slash commands in chat for power users (/theme, /export, /regenerate)
+
+## Target Users
+
+All professionals who build presentations regularly:
+- Consultants building client deliverables from internal knowledge
+- Startup founders creating pitch decks and investor updates
+- Sales teams building prospect-specific presentations
+- Educators creating lecture materials
+- Analysts presenting research findings
+
+## Differentiators (vs Gamma, Beautiful.ai, etc.)
+
+1. **Knowledge Base Ingestion** — No competitor does RAG from user-uploaded documents. You present YOUR knowledge, not generic AI output.
+2. **Chat-Driven Iteration** — Like Lovable for slides. Modify any aspect through natural conversation.
+3. **Design Constraint Engine** — Algorithmic enforcement of design rules (WCAG contrast, banned combos, density limits). Not template constraints — generation-time constraints.
+4. **Transparent Credits** — Per-image credits with cost shown before every action. No opaque deductions.
+
+## Context
+
+- **Prior art**: Working Z4 skill (Python) — Replicate API, Google Slides API, Marp CLI, Imgur hosting. Proven pipeline.
+- **UX inspiration**: Lovable (split-screen chat + live preview), Gamma (AI Agent for slide editing, card-based slides)
+- **Design research**: Banned combos (red/green, yellow/white), max 2 fonts, 1 idea/slide, max 6 bullets, WCAG AA contrast.
+- **Market**: Gamma (1.9/5 Trustpilot, export quality issues), Beautiful.ai ($15/mo, good constraints), Presentations.AI ($8-15/mo, opaque billing).
+- **KB gap**: Verified across 10 competitors — none offer persistent multi-document knowledge base with RAG retrieval.
+
+## Tech Stack
+
+### Frontend
+- **React 18** + **TypeScript** + **Vite**
+- **Tailwind CSS** + **shadcn/ui** for components
+- **Zustand** for state management
+- **Socket.io** for real-time preview updates
+- **React-Markdown** for chat rendering
+
+### Backend
+- **NestJS 11** (TypeScript) on Fastify adapter
+- **PostgreSQL 16** + **pgvector** for embeddings
+- **Redis 7** for BullMQ job queues + caching
+- **BullMQ** for async image generation and document processing
+- **Drizzle ORM** (or Prisma 7 as fallback)
+
+### Services
+- **Replicate API** (FLUX.1 schnell) for image generation ($0.003/image)
+- **OpenAI** text-embedding-3-small for KB embeddings
+- **Stripe Billing Meters API** for credit-based billing
+- **S3-compatible** storage (MinIO dev, S3/R2 prod)
+- **PptxGenJS** for editable PPTX export
+- **Marp CLI** for PDF export
+
+## Key Decisions
+
+| Decision | Rationale | Outcome |
+|----------|-----------|---------|
+| Chat-driven UX over form-based | Lovable proved chat iteration is faster than UI clicks for complex creation tasks | Confirmed |
+| React + Vite frontend | Industry standard, Lovable uses same stack, fast HMR | Confirmed |
+| Split-screen layout | Lovable pattern: chat left, live preview right. Proven for builder tools | Confirmed |
+| NestJS over FastAPI | Matches full-stack TypeScript, frontend shares types with backend | Confirmed |
+| Credit-based billing | Industry standard, per-image credits with transparent cost display | Confirmed |
+| Design constraint engine as Phase 1 | Ugly output is #1 trust killer (Gamma 1.9/5 Trustpilot) | Confirmed |
+| PptxGenJS over Marp for PPTX | Marp PPTX = non-editable background images | Confirmed |
+| pgvector over Pinecone | Stays in PostgreSQL, no separate vector DB to manage | Confirmed |
+| Socket.io for real-time | Bi-directional communication for live preview updates | Confirmed |
 
 ## Requirements
 
@@ -16,60 +96,16 @@ A SaaS platform that transforms knowledge bases into professional presentations 
 
 ### Active
 
-- [ ] Users can sign up, log in, and manage their account
-- [ ] Users can ingest knowledge base content (upload files: PDF, MD, DOCX; paste text/URLs)
-- [ ] Knowledge base is indexed with vector embeddings for semantic retrieval
-- [ ] Users can browse and manage their knowledge base documents
-- [ ] When generating a deck, system retrieves relevant KB content via RAG
-- [ ] Users can choose output format (PPTX, Google Slides, Reveal.js, PDF)
-- [ ] Users can choose number of AI-generated images per deck (0, 3, 6, 12)
-- [ ] System enforces design constraints (forbidden color combos, typography rules, density limits)
-- [ ] System parses content and structures slides automatically (1 idea per slide, max 5 bullets)
-- [ ] System generates schema diagrams via AI (Nano Banana Pro / Replicate API)
-- [ ] System uploads images to permanent hosting (Imgur)
-- [ ] System exports to multiple formats (Marp/PPTX, Reveal.js HTML, Google Slides, PDF)
-- [ ] Users can see and customize presentation themes (dark, light, corporate, creative)
-- [ ] Credit-based billing for image generation (per-image credits)
-- [ ] Users can iterate on generated decks (regenerate slide, adjust content)
+See `.planning/REQUIREMENTS.md` for full list (56+ requirements across 10 categories)
 
 ### Out of Scope
 
-- Real-time collaborative editing — too complex for v1, would need operational transform/CRDT
-- Native mobile app — web-first, responsive design sufficient for v1
-- Video/animation export — static presentations only for v1
-- Custom template designer — predefined themes only for v1
-- AI slide narration/voiceover — presentation generation focus, not delivery
-- Vault integrations (Obsidian, Notion, Confluence) — file upload and URL paste for v1, integrations for v2
-
-## Context
-
-- **Prior art**: Working Z4 skill (Python) that generates multi-format presentations from Z1 analyses. Uses Replicate API (Nano Banana Pro), Google Slides API, Marp CLI, Imgur for image hosting. Proven pipeline that colleagues found impressive.
-- **Existing code**: `~/repos/z-commands/scripts/z4_orchestrator.py`, `z4_google_slides.py`, `z4_image_generator.py` — can inform backend design but SaaS will be rewritten as proper service.
-- **Design research**: Bad color combos (red+green, red+blue, orange+blue saturated, neon combos), max 2-3 fonts per deck, 1 idea per slide, max 5 bullets, min 24pt body text.
-- **Market**: Prezent.ai ($16-60/mo), Beautiful.ai ($15/mo), Presentations.AI ($8-15/mo), GenPPT ($198/yr). Credit-based image generation is standard billing model.
-- **Knowledge base ingestion**: Core differentiator. Users upload their documents, system indexes them with vector embeddings, extracts relevant content for presentation topics via RAG. Not just "AI generates slides from a prompt" — it's "AI generates slides from YOUR knowledge."
-
-## Constraints
-
-- **Tech stack**: Node.js + NestJS (TypeScript) for API, Python workers for image generation — matches existing JS ecosystem and Python Z4 scripts
-- **Database**: PostgreSQL (users, billing, presentations) + Redis (job queues, caching) + pgvector or Chroma (KB embeddings)
-- **Queue**: BullMQ for async image generation jobs
-- **Auth**: JWT + bcrypt, OAuth 2.0 later
-- **Image generation**: Replicate API (Nano Banana Pro) — proven, good text rendering for schema diagrams
-- **Hosting**: Self-hosted initially, designed for cloud deployment (Docker)
-- **Budget**: Minimize external service costs — Replicate pay-per-use, Imgur free tier for images
-
-## Key Decisions
-
-| Decision | Rationale | Outcome |
-|----------|-----------|---------|
-| NestJS over FastAPI | Matches JS ecosystem, strong TypeScript typing, proven for SaaS APIs | — Pending |
-| Credit-based billing over flat rate | Industry standard, aligns costs with usage (image gen is expensive) | — Pending |
-| Knowledge base upload over vault integrations | Simpler v1 scope, file upload works universally | — Pending |
-| Design constraint engine as first-class module | Prevents ugly output — the #1 reason users abandon AI presentation tools | — Pending |
-| Nano Banana Pro over DALL-E/Midjourney | Best text rendering for schema diagrams, proven in Z4 | — Pending |
-| Marp as primary PPTX engine | Open source, markdown-native, CLI-friendly, proven in Z4 | — Pending |
-| pgvector for KB embeddings | Stays in PostgreSQL ecosystem, no separate vector DB to manage | — Pending |
+- Full WYSIWYG slide editor — chat-driven editing is the core UX
+- Real-time collaboration — v2 feature
+- Video/animation export — static presentations only
+- Custom template designer — predefined themes only
+- AI voiceover/narration — generation focus, not delivery
+- Native mobile app — responsive web sufficient
 
 ---
-*Last updated: 2026-02-14 after initialization — added KB ingestion + RAG requirements*
+*Last updated: 2026-02-14 — major pivot: added chat-driven frontend, Lovable-style UX, renamed to DeckPilot*

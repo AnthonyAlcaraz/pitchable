@@ -1,9 +1,36 @@
-# Requirements: SlideForge
+# Requirements: DeckPilot
 
 **Defined:** 2026-02-14
-**Core Value:** Turn any knowledge base into a presentation-ready deck with one click
+**Core Value:** Chat your way from knowledge base to polished deck
 
 ## v1 Requirements
+
+### Frontend Shell (FE)
+- [ ] **FE-01**: Split-screen layout — chat panel left, live slide preview right (Lovable-style)
+- [ ] **FE-02**: Responsive layout that collapses to tabbed view on mobile
+- [ ] **FE-03**: Landing page with product value prop, pricing tiers, and sign-up CTA
+- [ ] **FE-04**: Authentication pages (sign up, log in, forgot password)
+- [ ] **FE-05**: Dashboard showing user's presentations, KB documents, and credit balance
+- [ ] **FE-06**: Settings page for account management and billing
+- [ ] **FE-07**: React 18 + TypeScript + Vite + Tailwind CSS + shadcn/ui
+
+### Chat Interface (CH)
+- [ ] **CH-01**: Chat input with send button and keyboard shortcut (Enter to send, Shift+Enter for newline)
+- [ ] **CH-02**: Chat history with user messages and AI responses rendered in markdown
+- [ ] **CH-03**: AI responses stream in real-time (token-by-token via SSE or WebSocket)
+- [ ] **CH-04**: Slash commands in chat for power users (/theme, /export, /regenerate, /images, /outline)
+- [ ] **CH-05**: Chat context awareness — AI knows the current deck state and can reference specific slides
+- [ ] **CH-06**: Chat can trigger actions: generate deck, modify slides, change theme, add/remove slides, export
+- [ ] **CH-07**: Chat shows credit cost confirmation before expensive operations (image generation)
+- [ ] **CH-08**: Chat history persisted per presentation session
+
+### Live Preview (LP)
+- [ ] **LP-01**: Real-time slide preview updates as AI modifies the deck (via Socket.io)
+- [ ] **LP-02**: Slide thumbnail navigation sidebar (click to jump to any slide)
+- [ ] **LP-03**: Current slide highlighted in preview, scrolls to modified slide on chat action
+- [ ] **LP-04**: Slide count and deck title visible in preview header
+- [ ] **LP-05**: Click-to-edit on any text element in the preview (inline editing)
+- [ ] **LP-06**: Presentation mode (fullscreen slideshow) accessible from preview
 
 ### Authentication (AUTH)
 - [ ] **AUTH-01**: User can sign up with email and password (argon2 hashing)
@@ -115,6 +142,9 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
+| FE-01..07 | Phase 1 | Pending |
+| CH-01..08 | Phase 3 | Pending |
+| LP-01..06 | Phase 3 | Pending |
 | AUTH-01 | Phase 1 | Pending |
 | AUTH-02 | Phase 1 | Pending |
 | AUTH-03 | Phase 1 | Pending |
@@ -181,12 +211,12 @@
 | CB-09 | Phase 5 | Pending |
 
 **Coverage:**
-- v1 requirements: 56 total across 9 categories
-- Mapped to phases: 56
+- v1 requirements: 77 total across 12 categories (FE, CH, LP, AUTH, KB, DC, PG, IT, EX, IG, CB, INF)
+- Mapped to phases: 77
 - Unmapped: 0
 - 8 items deferred to v2
 - 8 explicit exclusions
 
 ---
 *Requirements defined: 2026-02-14*
-*Last updated: 2026-02-14 -- all 56 requirements mapped to 7 phases*
+*Last updated: 2026-02-14 -- added FE (7), CH (8), LP (6) = 21 new frontend requirements. Renamed to DeckPilot.*
