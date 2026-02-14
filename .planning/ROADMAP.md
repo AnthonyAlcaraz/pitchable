@@ -63,7 +63,7 @@ Plans:
 ### Phase 3: Chat + Generation Engine
 **Goal**: Users can chat with the AI co-pilot to generate, iterate, and refine slide decks with real-time preview updates — the core product experience
 **Depends on**: Phase 1, Phase 2
-**Requirements**: CH-01..08, LP-01..06, PG-01..12, IT-01..06
+**Requirements**: CH-01..08, LP-01..06, PG-01..14, IT-01..06
 **Success Criteria** (what must be TRUE):
   1. User types "Create a VC pitch deck about AI agents" in chat and sees an outline appear in the preview panel
   2. User approves the outline and sees slides generate one-by-one in the live preview
@@ -76,6 +76,8 @@ Plans:
   9. Credit cost is shown in chat before any credit-consuming action
   10. Content Reviewer LLM agent runs on every generated slide, auto-splitting overloaded slides
   11. Feedback Log records design violations and user corrections for continuous improvement
+  12. Every output (outline, slide, image) triggers a human validation prompt in chat — accept/edit/reject
+  13. User's 2nd deck generation for the same topic produces measurably better output than the 1st (feedback loop working)
 
 Plans:
 - [ ] 03-01: Socket.io setup for real-time communication between frontend and backend
@@ -86,7 +88,8 @@ Plans:
 - [ ] 03-06: Chat-driven iteration (modify slides, change theme, add/remove slides via chat commands)
 - [ ] 03-07: Presentation CRUD (list, view, rename, duplicate, delete) + dashboard integration
 - [ ] 03-08: Content Reviewer LLM agent — Haiku-class model validates each slide (density, concept count, hierarchy), returns PASS/NEEDS_SPLIT with restructuring instructions
-- [ ] 03-09: Presentation Feedback Log — persistent store for design violations, user corrections, and codified rules. Feeds back into generation prompts for continuous improvement
+- [ ] 03-09: Presentation Feedback Log — persistent store per user for design violations, user corrections, and codified rules
+- [ ] 03-10: Human Validation Gate + Self-Improving Loop — every output triggers accept/edit/reject in chat. Corrections stored in Feedback Log. Generation prompts inject user's top N corrections + codified rules as context, creating a per-user compounding quality loop.
 
 ### Phase 4: Core Export
 **Goal**: Users can download their generated deck as a PDF or editable PPTX file, triggered from chat or UI button
@@ -175,7 +178,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8
 |-------|---------------|--------|-----------|
 | 1. Foundation | 0/6 | Planning complete | - |
 | 2. Knowledge Base | 0/4 | Not started | - |
-| 3. Chat + Generation Engine | 0/9 | Not started | - |
+| 3. Chat + Generation Engine | 0/10 | Not started | - |
 | 4. Core Export | 0/3 | Not started | - |
 | 5. Credit System + Billing | 0/3 | Not started | - |
 | 6. Image Generation | 0/5 | Not started | - |

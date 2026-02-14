@@ -40,7 +40,9 @@ All professionals who build presentations regularly:
 1. **Knowledge Base Ingestion** — No competitor does RAG from user-uploaded documents. You present YOUR knowledge, not generic AI output.
 2. **Chat-Driven Iteration** — Like Lovable for slides. Modify any aspect through natural conversation.
 3. **Design Constraint Engine** — Algorithmic enforcement of design rules (WCAG contrast, banned combos, density limits). Not template constraints — generation-time constraints.
-4. **Transparent Credits** — Per-image credits with cost shown before every action. No opaque deductions.
+4. **Self-Improving Loop** — Every output triggers human validation (accept/edit/reject). Every correction feeds back into the Feedback Log. Every subsequent generation injects the user's corrections as context. The system gets better with every deck you build — a compounding moat that competitors cannot replicate without the same feedback architecture.
+5. **PaperBanana Image Pipeline** — 5-agent system (Retriever → Planner → Stylist → Visualizer → VLM Critic) with quality scoring and auto-regeneration. Proven in the Z4 skill across 100+ presentations.
+6. **Transparent Credits** — Per-image credits with cost shown before every action. No opaque deductions.
 
 ## Context
 
