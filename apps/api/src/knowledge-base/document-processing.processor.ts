@@ -106,22 +106,26 @@ export class DocumentProcessingProcessor extends WorkerHost {
         },
       });
 
-      // 6. Generate embeddings for all chunks
-      const storedChunks = await this.prisma.documentChunk.findMany({
-        where: { documentId },
-        orderBy: { chunkIndex: 'asc' },
-        select: { id: true, content: true },
-      });
+      // 6. Generate embeddings for all chunks (if embedding API is available)
+      if (this.embeddingService.isAvailable()) {
+        const storedChunks = await this.prisma.documentChunk.findMany({
+          where: { documentId },
+          orderBy: { chunkIndex: 'asc' },
+          select: { id: true, content: true },
+        });
 
-      const texts = storedChunks.map((c) => c.content);
-      const embeddings = await this.embeddingService.batchEmbed(texts);
+        const texts = storedChunks.map((c) => c.content);
+        const embeddings = await this.embeddingService.batchEmbed(texts);
 
-      // 7. Store embeddings via pgvector raw SQL
-      const chunkEmbeddings = storedChunks.map((chunk, i) => ({
-        chunkId: chunk.id,
-        embedding: embeddings[i],
-      }));
-      await this.vectorStore.updateChunkEmbeddings(documentId, chunkEmbeddings);
+        // 7. Store embeddings via pgvector raw SQL
+        const chunkEmbeddings = storedChunks.map((chunk, i) => ({
+          chunkId: chunk.id,
+          embedding: embeddings[i],
+        }));
+        await this.vectorStore.updateChunkEmbeddings(documentId, chunkEmbeddings);
+      } else {
+        this.logger.log(`Document ${documentId}: skipping embeddings (no OPENAI_API_KEY), keyword search will be used`);
+      }
 
       // 8. Update status to READY
       await this.prisma.document.update({

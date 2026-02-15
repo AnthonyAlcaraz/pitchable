@@ -68,6 +68,58 @@ export class VectorStoreService {
     return results;
   }
 
+  /**
+   * Keyword-based search fallback when embeddings are unavailable.
+   * Uses PostgreSQL ILIKE for simple term matching across chunk content.
+   */
+  async searchByKeywords(
+    userId: string,
+    query: string,
+    limit = 10,
+  ): Promise<SearchResult[]> {
+    // Extract meaningful words (4+ chars) as search terms
+    const terms = query
+      .toLowerCase()
+      .split(/\s+/)
+      .filter((w) => w.length >= 4)
+      .slice(0, 8);
+
+    if (terms.length === 0) return [];
+
+    // Build a WHERE clause that scores by number of matching terms
+    const likeConditions = terms
+      .map((_, i) => `CASE WHEN LOWER(dc."content") LIKE '%' || $${i + 3} || '%' THEN 1 ELSE 0 END`)
+      .join(' + ');
+
+    const query_str = `
+      SELECT
+        dc."id",
+        dc."content",
+        dc."heading",
+        dc."headingLevel",
+        dc."metadata",
+        dc."documentId",
+        d."title" as "documentTitle",
+        (${likeConditions})::float / ${terms.length}::float as "similarity"
+      FROM "DocumentChunk" dc
+      JOIN "Document" d ON d."id" = dc."documentId"
+      WHERE d."userId" = $1::uuid
+        AND d."status" = 'READY'
+        AND (${likeConditions}) > 0
+      ORDER BY (${likeConditions}) DESC
+      LIMIT $2
+    `;
+
+    const params: (string | number)[] = [userId, limit, ...terms];
+
+    const results = await this.prisma.$queryRawUnsafe<SearchResult[]>(
+      query_str,
+      ...params,
+    );
+
+    return results;
+  }
+
   async deleteDocumentEmbeddings(documentId: string): Promise<void> {
     await this.prisma.$executeRaw`
       UPDATE "DocumentChunk"

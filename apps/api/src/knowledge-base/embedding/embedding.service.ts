@@ -8,17 +8,25 @@ export class EmbeddingService {
   private readonly client: OpenAI;
   private readonly model: string;
 
+  private readonly available: boolean;
+
   constructor(config: ConfigService) {
     const openaiKey = config.get<string>('OPENAI_API_KEY');
     if (openaiKey) {
       this.client = new OpenAI({ apiKey: openaiKey });
       this.model = 'text-embedding-3-small';
+      this.available = true;
       this.logger.log('Embedding provider: OpenAI (text-embedding-3-small)');
     } else {
-      this.logger.warn('OPENAI_API_KEY not set -- KB embedding will fail. Generation still works without KB context.');
+      this.logger.warn('OPENAI_API_KEY not set -- KB will use keyword search fallback. Set OPENAI_API_KEY for vector search.');
       this.client = new OpenAI({ apiKey: 'missing' });
       this.model = 'text-embedding-3-small';
+      this.available = false;
     }
+  }
+
+  isAvailable(): boolean {
+    return this.available;
   }
 
   async embed(text: string): Promise<number[]> {

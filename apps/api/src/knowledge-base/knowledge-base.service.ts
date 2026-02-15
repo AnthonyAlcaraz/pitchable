@@ -215,8 +215,14 @@ export class KnowledgeBaseService {
       }
     }
 
-    // Fallback: existing pgvector search
-    const queryEmbedding = await this.embeddingService.embed(query);
-    return this.vectorStore.searchSimilar(userId, queryEmbedding, limit, threshold);
+    // Fallback: pgvector search (if embeddings available) or keyword search
+    if (this.embeddingService.isAvailable()) {
+      const queryEmbedding = await this.embeddingService.embed(query);
+      return this.vectorStore.searchSimilar(userId, queryEmbedding, limit, threshold);
+    }
+
+    // Final fallback: keyword-based search (no API key needed)
+    this.logger.log('Using keyword-based KB search (no OPENAI_API_KEY)');
+    return this.vectorStore.searchByKeywords(userId, query, limit);
   }
 }
