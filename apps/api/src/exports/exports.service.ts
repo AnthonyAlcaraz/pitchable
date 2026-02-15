@@ -14,6 +14,11 @@ import { PptxGenJsExporterService } from './pptxgenjs-exporter.service.js';
 import { S3Service } from '../knowledge-base/storage/s3.service.js';
 import { ExportFormat, JobStatus } from '../../generated/prisma/enums.js';
 
+/** Strip characters unsafe for Windows filenames and shell arg passing. */
+function safeFilename(title: string): string {
+  return title.replace(/[<>:"/\\|?*]/g, '').replace(/\s+/g, '-').trim().slice(0, 80);
+}
+
 @Injectable()
 export class ExportsService {
   private readonly logger = new Logger(ExportsService.name);
@@ -103,14 +108,20 @@ export class ExportsService {
 
       switch (job.format) {
         case ExportFormat.PPTX: {
-          buffer = await this.pptxGenJsExporter.exportToPptx(
+          // Marp CLI produces proven Z4-quality PPTX output
+          const pptxDir = join(this.tempDir, jobId);
+          await mkdir(pptxDir, { recursive: true });
+          const pptxPath = join(pptxDir, `${safeFilename(presentation.title)}.pptx`);
+          const pptxMarkdown = this.marpExporter.generateMarpMarkdown(
             presentation,
             slides,
             theme,
           );
+          await this.marpExporter.exportToPptx(pptxMarkdown, pptxPath);
+          buffer = await readFile(pptxPath);
           contentType =
             'application/vnd.openxmlformats-officedocument.presentationml.presentation';
-          filename = `${presentation.title}.pptx`;
+          filename = `${safeFilename(presentation.title)}.pptx`;
           break;
         }
 
@@ -118,7 +129,7 @@ export class ExportsService {
           // Marp CLI requires filesystem — write temp, read back
           const jobDir = join(this.tempDir, jobId);
           await mkdir(jobDir, { recursive: true });
-          const outputPath = join(jobDir, `${presentation.title}.pdf`);
+          const outputPath = join(jobDir, `${safeFilename(presentation.title)}.pdf`);
           const markdown = this.marpExporter.generateMarpMarkdown(
             presentation,
             slides,
@@ -127,7 +138,7 @@ export class ExportsService {
           await this.marpExporter.exportToPdf(markdown, outputPath);
           buffer = await readFile(outputPath);
           contentType = 'application/pdf';
-          filename = `${presentation.title}.pdf`;
+          filename = `${safeFilename(presentation.title)}.pdf`;
           break;
         }
 
@@ -139,7 +150,7 @@ export class ExportsService {
           );
           buffer = Buffer.from(html, 'utf-8');
           contentType = 'text/html';
-          filename = `${presentation.title}.html`;
+          filename = `${safeFilename(presentation.title)}.html`;
           break;
         }
 
@@ -226,31 +237,32 @@ export class ExportsService {
 
     switch (job.format) {
       case ExportFormat.PPTX: {
-        buffer = await this.pptxGenJsExporter.exportToPptx(
-          presentation,
-          slides,
-          theme,
-        );
+        const pptxDir = join(this.tempDir, jobId);
+        await mkdir(pptxDir, { recursive: true });
+        const pptxPath = join(pptxDir, `${safeFilename(presentation.title)}.pptx`);
+        const pptxMd = this.marpExporter.generateMarpMarkdown(presentation, slides, theme);
+        await this.marpExporter.exportToPptx(pptxMd, pptxPath);
+        buffer = await readFile(pptxPath);
         contentType = 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
-        filename = `${presentation.title}.pptx`;
+        filename = `${safeFilename(presentation.title)}.pptx`;
         break;
       }
       case ExportFormat.PDF: {
         const jobDir = join(this.tempDir, jobId);
         await mkdir(jobDir, { recursive: true });
-        const outputPath = join(jobDir, `${presentation.title}.pdf`);
+        const outputPath = join(jobDir, `${safeFilename(presentation.title)}.pdf`);
         const markdown = this.marpExporter.generateMarpMarkdown(presentation, slides, theme);
         await this.marpExporter.exportToPdf(markdown, outputPath);
         buffer = await readFile(outputPath);
         contentType = 'application/pdf';
-        filename = `${presentation.title}.pdf`;
+        filename = `${safeFilename(presentation.title)}.pdf`;
         break;
       }
       case ExportFormat.REVEAL_JS: {
         const html = this.revealJsExporter.generateRevealHtml(presentation, slides, theme);
         buffer = Buffer.from(html, 'utf-8');
         contentType = 'text/html';
-        filename = `${presentation.title}.html`;
+        filename = `${safeFilename(presentation.title)}.html`;
         break;
       }
       default:

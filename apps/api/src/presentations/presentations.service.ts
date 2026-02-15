@@ -8,6 +8,7 @@ import {
 import { PrismaService } from '../prisma/prisma.service.js';
 import { ConstraintsService } from '../constraints/constraints.service.js';
 import { ExportsService } from '../exports/exports.service.js';
+import { EmailService } from '../email/email.service.js';
 import { ContentParserService } from './content-parser.service.js';
 import { SlideStructurerService } from './slide-structurer.service.js';
 import type { SlideDefinition } from './slide-structurer.service.js';
@@ -83,6 +84,7 @@ export class PresentationsService {
     private readonly prisma: PrismaService,
     private readonly constraints: ConstraintsService,
     private readonly exportsService: ExportsService,
+    private readonly emailService: EmailService,
     private readonly contentParser: ContentParserService,
     private readonly slideStructurer: SlideStructurerService,
   ) {}
@@ -451,6 +453,8 @@ export class PresentationsService {
     presentationId: string,
     userId: string,
     formats: string[],
+    emailTo?: string,
+    userEmail?: string,
   ): Promise<Array<{ id: string; format: ExportFormat; status: JobStatus }>> {
     // Verify ownership
     const presentation = await this.prisma.presentation.findUnique({
@@ -466,7 +470,10 @@ export class PresentationsService {
       throw new ForbiddenException('You do not have access to this presentation');
     }
 
-    return this.queueExportJobs(presentationId, formats);
+    // Resolve email: "me" sends to the authenticated user's email
+    const resolvedEmail = emailTo === 'me' ? userEmail : emailTo;
+
+    return this.queueExportJobs(presentationId, formats, resolvedEmail);
   }
 
   /**
@@ -888,6 +895,7 @@ export class PresentationsService {
   private async queueExportJobs(
     presentationId: string,
     formats: string[],
+    emailTo?: string,
   ): Promise<Array<{ id: string; format: ExportFormat; status: JobStatus }>> {
     const validFormats = formats.filter(
       (f): f is ExportFormat => Object.values(ExportFormat).includes(f as ExportFormat),
@@ -898,6 +906,14 @@ export class PresentationsService {
         `No valid export formats provided. Valid formats: ${Object.values(ExportFormat).join(', ')}`,
       );
     }
+
+    // Fetch presentation metadata for email subject/body
+    const presentation = emailTo
+      ? await this.prisma.presentation.findUnique({
+          where: { id: presentationId },
+          select: { title: true, slides: { select: { id: true } } },
+        })
+      : null;
 
     const jobs: Array<{ id: string; format: ExportFormat; status: JobStatus }> = [];
 
@@ -910,10 +926,23 @@ export class PresentationsService {
         },
       });
 
-      // Fire-and-forget: trigger actual export processing
-      void this.exportsService.processExport(job.id).catch((err: unknown) => {
-        this.logger.error(`Export job ${job.id} failed: ${err instanceof Error ? err.message : String(err)}`);
-      });
+      if (emailTo && this.emailService.isConfigured && presentation) {
+        // Export + email: await the buffer and send
+        void this.processExportAndEmail(
+          job.id,
+          emailTo,
+          presentation.title,
+          presentation.slides.length,
+          format,
+        ).catch((err: unknown) => {
+          this.logger.error(`Export+email job ${job.id} failed: ${err instanceof Error ? err.message : String(err)}`);
+        });
+      } else {
+        // Fire-and-forget: trigger actual export processing
+        void this.exportsService.processExport(job.id).catch((err: unknown) => {
+          this.logger.error(`Export job ${job.id} failed: ${err instanceof Error ? err.message : String(err)}`);
+        });
+      }
 
       jobs.push({
         id: job.id,
@@ -923,9 +952,39 @@ export class PresentationsService {
     }
 
     this.logger.log(
-      `Queued ${jobs.length} export jobs for presentation ${presentationId}: ${validFormats.join(', ')}`,
+      `Queued ${jobs.length} export jobs for presentation ${presentationId}: ${validFormats.join(', ')}${emailTo ? ` (email → ${emailTo})` : ''}`,
     );
 
     return jobs;
+  }
+
+  /**
+   * Process an export job and email the result to the specified address.
+   */
+  private async processExportAndEmail(
+    jobId: string,
+    emailTo: string,
+    title: string,
+    slideCount: number,
+    format: ExportFormat,
+  ): Promise<void> {
+    const buffer = await this.exportsService.processExportAndGetBuffer(jobId);
+
+    const ext = format.toLowerCase();
+    const filename = `${title.replace(/[^a-zA-Z0-9_\- ]/g, '').slice(0, 60)}.${ext}`;
+    const html = this.emailService.buildPresentationEmailHtml(title, slideCount, ext);
+
+    const result = await this.emailService.sendEmail({
+      to: emailTo,
+      subject: `Your presentation: ${title}`,
+      html,
+      attachments: [{ filename, content: buffer.toString('base64') }],
+    });
+
+    if (result.success) {
+      this.logger.log(`Emailed export ${jobId} (${format}) to ${emailTo}`);
+    } else {
+      this.logger.error(`Failed to email export ${jobId}: ${result.error}`);
+    }
   }
 }

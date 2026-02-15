@@ -26,6 +26,10 @@ import { IsString, IsOptional, IsUUID, IsBoolean } from 'class-validator';
 class ExportRequestDto {
   @IsString({ each: true })
   formats: string[];
+
+  @IsOptional()
+  @IsString()
+  emailTo?: string; // email address or "me" to send to authenticated user's email
 }
 
 class QuickCreateDto {
@@ -202,6 +206,6 @@ export class PresentationsController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: ExportRequestDto,
   ) {
-    return this.presentationsService.queueExport(id, user.userId, dto.formats);
+    return this.presentationsService.queueExport(id, user.userId, dto.formats, dto.emailTo, user.email);
   }
 }

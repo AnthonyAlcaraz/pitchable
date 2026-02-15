@@ -9,6 +9,11 @@ import type { ThemeModel } from '../../generated/prisma/models/Theme.js';
 
 const execFileAsync = promisify(execFile);
 
+/** Convert Windows backslash paths to forward slashes for shell safety. */
+function shellSafePath(p: string): string {
+  return p.replace(/\\/g, '/');
+}
+
 interface ColorPalette {
   primary: string;
   secondary: string;
@@ -34,25 +39,40 @@ export class MarpExporterService {
     const palette = theme.colorPalette as unknown as ColorPalette;
     const sections: string[] = [];
 
-    // Marp frontmatter with Z4-quality CSS
+    // Marp frontmatter with Z4-quality CSS (matches Frontier-AI proven output)
     const frontmatter = [
       '---',
       'marp: true',
-      'theme: uncover',
+      'theme: default',
       'paginate: true',
+      `backgroundColor: ${palette.background}`,
+      `color: ${palette.text}`,
       'style: |',
       '  section {',
-      `    background-color: ${palette.background};`,
+      `    background: linear-gradient(135deg, ${palette.background} 0%, #1e1b4b 100%);`,
       `    color: ${palette.text};`,
       `    font-family: '${theme.bodyFont}', sans-serif;`,
       '    font-size: 28px;',
       '  }',
-      '  h1, h2, h3, h4, h5, h6 {',
+      '  h1 {',
       `    color: ${palette.primary};`,
       `    font-family: '${theme.headingFont}', sans-serif;`,
+      '    font-size: 1.8em;',
       '  }',
-      '  h1 { font-size: 1.8em; }',
-      '  h2 { font-size: 1.4em; }',
+      '  h2 {',
+      `    color: ${palette.secondary};`,
+      `    font-family: '${theme.headingFont}', sans-serif;`,
+      '    font-size: 1.0em;',
+      '  }',
+      '  h3 {',
+      `    color: ${palette.accent};`,
+      `    font-family: '${theme.headingFont}', sans-serif;`,
+      '    font-size: 0.95em;',
+      '  }',
+      '  p, li {',
+      '    font-size: 0.85em;',
+      `    color: ${palette.text};`,
+      '  }',
       '  strong {',
       `    color: ${palette.accent};`,
       '  }',
@@ -65,29 +85,32 @@ export class MarpExporterService {
       '  }',
       '  blockquote {',
       `    border-left: 4px solid ${palette.accent};`,
-      `    color: ${palette.secondary};`,
-      '    padding-left: 1em;',
-      '    font-style: italic;',
-      '    font-size: 0.95em;',
+      '    padding: 0.5em 1em;',
+      '    font-size: 0.85em;',
+      `    color: ${palette.text};`,
+      `    background: rgba(30, 41, 59, 0.5);`,
       '  }',
       '  table {',
       '    width: 100%;',
       '    border-collapse: collapse;',
-      '    font-size: 0.85em;',
+      '    font-size: 0.8em;',
+      `    background: rgba(15, 23, 42, 0.9);`,
       '  }',
       '  th {',
-      `    background-color: ${palette.surface};`,
+      `    background: #1e3a5f;`,
       `    color: ${palette.primary};`,
-      `    border-bottom: 2px solid ${palette.border};`,
       '    padding: 8px 12px;',
-      '    text-align: left;',
+      `    border: 1px solid ${palette.border};`,
+      '    font-weight: bold;',
       '  }',
       '  td {',
-      `    border-bottom: 1px solid ${palette.border};`,
-      '    padding: 6px 12px;',
+      `    background: ${palette.surface};`,
+      `    color: ${palette.text};`,
+      '    padding: 8px 12px;',
+      `    border: 1px solid ${palette.border};`,
       '  }',
       '  tr:nth-child(even) td {',
-      `    background-color: ${palette.surface};`,
+      `    background: ${palette.background};`,
       '  }',
       '  code {',
       `    background-color: ${palette.surface};`,
@@ -96,11 +119,12 @@ export class MarpExporterService {
       '    font-size: 0.85em;',
       '  }',
       '  .source {',
-      '    font-size: 0.5em;',
+      '    font-size: 0.55em;',
       `    color: ${palette.secondary};`,
-      '    position: absolute;',
-      '    bottom: 20px;',
       '  }',
+      `  .gold { color: ${palette.accent}; }`,
+      `  .green { color: ${palette.success}; }`,
+      `  .red { color: ${palette.error}; }`,
       '  section.lead {',
       '    text-align: center;',
       '    display: flex;',
@@ -117,6 +141,7 @@ export class MarpExporterService {
       '  ul { list-style-type: disc; }',
       '  ul ul { list-style-type: circle; }',
       '  li { margin-bottom: 0.3em; }',
+      '  img { max-height: 320px; margin: 8px auto; }',
       '---',
     ];
 
@@ -204,11 +229,13 @@ export class MarpExporterService {
     try {
       await execFileAsync('npx', [
         '@marp-team/marp-cli',
-        tempMdPath,
+        shellSafePath(tempMdPath),
         '--pptx',
+        '--allow-local-files',
+        '--no-stdin',
         '-o',
-        resolvedOutput,
-      ], { timeout: 120_000 });
+        shellSafePath(resolvedOutput),
+      ], { timeout: 300_000, shell: true });
 
       this.logger.log(`PPTX exported to ${resolvedOutput}`);
       return resolvedOutput;
@@ -234,11 +261,13 @@ export class MarpExporterService {
     try {
       await execFileAsync('npx', [
         '@marp-team/marp-cli',
-        tempMdPath,
+        shellSafePath(tempMdPath),
         '--pdf',
+        '--allow-local-files',
+        '--no-stdin',
         '-o',
-        resolvedOutput,
-      ], { timeout: 120_000 });
+        shellSafePath(resolvedOutput),
+      ], { timeout: 300_000, shell: true });
 
       this.logger.log(`PDF exported to ${resolvedOutput}`);
       return resolvedOutput;

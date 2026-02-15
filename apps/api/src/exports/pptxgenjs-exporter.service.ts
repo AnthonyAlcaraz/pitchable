@@ -214,7 +214,7 @@ export class PptxGenJsExporterService {
     }
   }
 
-  // ── TITLE Slide (AWS-cover style) ─────────────────────────
+  // ── TITLE Slide (Z4 style) ────────────────────────────────
 
   private addTitleSlide(
     pres: PptxGenJS,
@@ -224,8 +224,21 @@ export class PptxGenJsExporterService {
   ): void {
     const s = pres.addSlide({ masterName: 'PITCHABLE_ACCENT' });
 
-    // Full gradient overlay for depth (cover-style)
-    this.addGradientOverlay(s, palette);
+    // Background image at low opacity (if available) — added first so text renders on top
+    if (slide.imageUrl) {
+      try {
+        s.addImage({
+          data: slide.imageUrl,
+          x: 0,
+          y: 0,
+          w: '100%',
+          h: '100%',
+          transparency: 80,
+        });
+      } catch {
+        // Image load failed — continue without
+      }
+    }
 
     // Top accent bar spanning full width
     s.addShape('rect', {
@@ -236,38 +249,22 @@ export class PptxGenJsExporterService {
       fill: { color: hex(palette.accent) },
     });
 
-    // Background image at low opacity (if available)
-    if (slide.imageUrl) {
-      try {
-        s.addImage({
-          data: slide.imageUrl,
-          x: 0,
-          y: 0,
-          w: '100%',
-          h: '100%',
-          transparency: 85,
-        });
-      } catch {
-        // Image load failed — continue without
-      }
-    }
-
-    // Accent line separator — positioned above the title block at 50%
+    // Accent separator line below title area
     s.addShape('rect', {
       x: 0.8,
-      y: '50%',
+      y: 2.1,
       w: 2.5,
       h: 0.04,
       fill: { color: hex(palette.accent) },
     });
 
-    // Title — large, bold, left-aligned at bottom-left (AWS cover style)
+    // Title — large, bold, left-aligned at top (Z4 style)
     if (slide.title) {
       s.addText(slide.title, {
         x: 0.8,
-        y: '53%',
+        y: 0.5,
         w: '80%',
-        h: 1.4,
+        h: 1.6,
         fontSize: 44,
         fontFace: theme.headingFont,
         color: hex(palette.text),
@@ -287,10 +284,10 @@ export class PptxGenJsExporterService {
 
       s.addText(subtitleLines.join('\n'), {
         x: 0.8,
-        y: '68%',
+        y: 2.2,
         w: '80%',
-        h: 0.8,
-        fontSize: 20,
+        h: 1.2,
+        fontSize: 24,
         fontFace: theme.bodyFont,
         color: hex(palette.accent),
         align: 'left',
@@ -324,8 +321,6 @@ export class PptxGenJsExporterService {
     theme: ThemeModel,
   ): void {
     const s = pres.addSlide({ masterName: 'PITCHABLE_ACCENT' });
-
-    this.addGradientOverlay(s, palette);
 
     // Background image at low opacity
     if (slide.imageUrl) {
@@ -393,7 +388,7 @@ export class PptxGenJsExporterService {
         y: '39%',
         w: 9.33,
         maxH: '33%',
-        baseFontSize: 18,
+        baseFontSize: 20,
       });
     }
 
@@ -421,8 +416,6 @@ export class PptxGenJsExporterService {
     totalSlides: number,
   ): void {
     const s = pres.addSlide({ masterName: 'PITCHABLE_DARK' });
-
-    this.addGradientOverlay(s, palette);
 
     // Accent left border
     s.addShape('rect', {
@@ -512,8 +505,6 @@ export class PptxGenJsExporterService {
   ): void {
     const s = pres.addSlide({ masterName: 'PITCHABLE_DARK' });
 
-    this.addGradientOverlay(s, palette);
-
     // Accent line above title
     s.addShape('rect', {
       x: 0.5,
@@ -559,7 +550,7 @@ export class PptxGenJsExporterService {
           y: '82%',
           w: '92%',
           maxH: '12%',
-          baseFontSize: 12,
+          baseFontSize: 14,
         });
       }
     } else {
@@ -569,8 +560,8 @@ export class PptxGenJsExporterService {
           x: 0.8,
           y: 1.2,
           w: '85%',
-          maxH: '55%',
-          baseFontSize: 14,
+          maxH: '60%',
+          baseFontSize: 18,
         });
       }
     }
@@ -590,7 +581,7 @@ export class PptxGenJsExporterService {
   ): void {
     const s = pres.addSlide({ masterName: 'PITCHABLE_DARK' });
 
-    this.addGradientOverlay(s, palette);
+
 
     // Accent line above title
     s.addShape('rect', {
@@ -644,7 +635,7 @@ export class PptxGenJsExporterService {
 
     // Card dimensions (Z4-style: two side-by-side rounded cards)
     const cardW = 5.8;
-    const cardH = 3.8;
+    const cardH = 4.2;
     const cardY = 1.3;
     const leftX = 0.5;
     const rightX = 6.85;
@@ -710,7 +701,7 @@ export class PptxGenJsExporterService {
         y: cardY + (left.header ? 0.7 : 0.2),
         w: cardW - 0.6,
         maxH: cardH - (left.header ? 1.0 : 0.4),
-        baseFontSize: 13,
+        baseFontSize: 16,
       });
     }
 
@@ -734,7 +725,7 @@ export class PptxGenJsExporterService {
         y: cardY + (right.header ? 0.7 : 0.2),
         w: cardW - 0.6,
         maxH: cardH - (right.header ? 1.0 : 0.4),
-        baseFontSize: 13,
+        baseFontSize: 16,
       });
     }
 
@@ -752,8 +743,6 @@ export class PptxGenJsExporterService {
     totalSlides: number,
   ): void {
     const s = pres.addSlide({ masterName: 'PITCHABLE_DARK' });
-
-    this.addGradientOverlay(s, palette);
 
     const hasImage = !!slide.imageUrl;
     const contentWidth = hasImage ? '58%' : '90%';
@@ -788,8 +777,8 @@ export class PptxGenJsExporterService {
         x: 0.5,
         y: 1.2,
         w: contentWidth,
-        maxH: '52%',
-        baseFontSize: 14,
+        maxH: '60%',
+        baseFontSize: 18,
       });
     }
 
@@ -813,7 +802,7 @@ export class PptxGenJsExporterService {
   ): void {
     const s = pres.addSlide({ masterName: 'PITCHABLE_DARK' });
 
-    this.addGradientOverlay(s, palette);
+
 
     const hasImage = !!slide.imageUrl;
     const contentWidth = hasImage ? '58%' : '90%';
@@ -848,8 +837,8 @@ export class PptxGenJsExporterService {
         x: 0.5,
         y: 1.2,
         w: contentWidth,
-        maxH: '52%',
-        baseFontSize: 14,
+        maxH: '60%',
+        baseFontSize: 18,
       });
     }
 
@@ -872,8 +861,6 @@ export class PptxGenJsExporterService {
     accentColor: string,
   ): void {
     const s = pres.addSlide({ masterName: 'PITCHABLE_DARK' });
-
-    this.addGradientOverlay(s, palette);
 
     // Left accent bar (red for PROBLEM, green for SOLUTION)
     s.addShape('rect', {
@@ -916,8 +903,8 @@ export class PptxGenJsExporterService {
         x: 0.5,
         y: 1.2,
         w: contentWidth,
-        maxH: '52%',
-        baseFontSize: 14,
+        maxH: '60%',
+        baseFontSize: 18,
       });
     }
 
@@ -941,7 +928,7 @@ export class PptxGenJsExporterService {
   ): void {
     const s = pres.addSlide({ masterName: 'PITCHABLE_DARK' });
 
-    this.addGradientOverlay(s, palette);
+
 
     const hasImage = !!slide.imageUrl;
     const contentWidth = hasImage ? '58%' : '90%';
@@ -976,8 +963,8 @@ export class PptxGenJsExporterService {
         x: 0.5,
         y: 1.2,
         w: contentWidth,
-        maxH: '52%',
-        baseFontSize: 14,
+        maxH: '60%',
+        baseFontSize: 18,
       });
     }
 
@@ -992,21 +979,6 @@ export class PptxGenJsExporterService {
 
   // ── Shared Layout Helpers ────────────────────────────────
 
-  /** Adds a subtle gradient overlay shape for depth */
-  private addGradientOverlay(
-    s: PptxGenJS.Slide,
-    palette: ColorPalette,
-  ): void {
-    // Blend background toward surface for subtle depth — 8% mix
-    const blended = darken(palette.surface, 0.92);
-    s.addShape('rect', {
-      x: 0,
-      y: '85%',
-      w: '100%',
-      h: '15%',
-      fill: { color: blended },
-    });
-  }
 
   /** Adds a right-side image (standard 35% layout) */
   private addRightImage(s: PptxGenJS.Slide, slide: SlideModel): void {
@@ -1048,7 +1020,7 @@ export class PptxGenJsExporterService {
       y: '94%',
       w: 2,
       h: 0.3,
-      fontSize: 8,
+      fontSize: 9,
       fontFace: theme.bodyFont,
       color: hex(palette.border),
     });
@@ -1059,7 +1031,7 @@ export class PptxGenJsExporterService {
       y: '94%',
       w: 2,
       h: 0.3,
-      fontSize: 8,
+      fontSize: 9,
       fontFace: theme.bodyFont,
       color: hex(palette.border),
       align: 'right',
@@ -1078,8 +1050,8 @@ export class PptxGenJsExporterService {
       x: 0.8,
       y: 1.2,
       w: '85%',
-      maxH: '55%',
-      baseFontSize: 14,
+      maxH: '60%',
+      baseFontSize: 18,
     });
   }
 
@@ -1126,9 +1098,9 @@ export class PptxGenJsExporterService {
       const elements = this.parseBodyWithFormatting(text, palette, theme, opts.baseFontSize);
       if (elements.length > 0) {
         // Height estimation: lineCount * (fontSize * lineSpacing / 72)
-        // Using 2.2 multiplier to account for line spacing, paragraph spacing, and bullet indentation
+        // Using 1.8 multiplier to account for line spacing, paragraph spacing, and bullet indentation
         const lineCount = plainBuffer.filter((l) => l.trim()).length;
-        let estimatedH = Math.max(0.3, lineCount * (opts.baseFontSize * 2.2 / 72));
+        let estimatedH = Math.max(0.3, lineCount * (opts.baseFontSize * 1.8 / 72));
 
         // Clamp height to not exceed maxH boundary
         if (currentY + estimatedH > maxYLimit) {
@@ -1190,7 +1162,7 @@ export class PptxGenJsExporterService {
         if (currentY >= maxYLimit) { i++; continue; }
         const headingText = trimmed.replace(/^###\s+/, '');
         this.addH3Subheading(s, headingText, palette, theme, currentY, xPos, wPos);
-        currentY += 0.4; // H3 takes roughly 0.4 inches
+        currentY += 0.45; // H3 takes roughly 0.45 inches
         i++;
         continue;
       }
@@ -1269,7 +1241,7 @@ export class PptxGenJsExporterService {
     }
 
     // Clamp data rows to fit within maxH boundary (header row = 1 + data rows)
-    const rowHeight = 0.35;
+    const rowHeight = 0.4;
     if (maxYLimit) {
       const availableH = maxYLimit - yPos;
       const maxRows = Math.max(1, Math.floor(availableH / rowHeight) - 1); // -1 for header
@@ -1288,12 +1260,12 @@ export class PptxGenJsExporterService {
 
     // Header row — primary accent background with high-contrast text
     const headerRow: TableCell[] = headerCells.map((cell) => ({
-      text: this.parseTableCellInline(cell, palette, theme, 12, true),
+      text: this.parseTableCellInline(cell, palette, theme, 14, true),
       options: {
         fill: { color: hex(palette.primary) },
         color: hex(palette.text),
         bold: true,
-        fontSize: 12,
+        fontSize: 14,
         fontFace: theme.bodyFont,
         border: { type: 'solid', color: hex(palette.border), pt: 0.5 },
         valign: 'middle' as const,
@@ -1306,11 +1278,11 @@ export class PptxGenJsExporterService {
     dataRows.forEach((row, rowIdx) => {
       const bgColor = rowIdx % 2 === 0 ? palette.surface : palette.background;
       const dataRow: TableCell[] = row.map((cell) => ({
-        text: this.parseTableCellInline(cell, palette, theme, 11, false),
+        text: this.parseTableCellInline(cell, palette, theme, 13, false),
         options: {
           fill: { color: hex(bgColor) },
           color: hex(palette.text),
-          fontSize: 11,
+          fontSize: 13,
           fontFace: theme.bodyFont,
           border: { type: 'solid', color: hex(palette.border), pt: 0.5 },
           valign: 'middle' as const,
@@ -1407,7 +1379,7 @@ export class PptxGenJsExporterService {
       y: '88%',
       w: '92%',
       h: 0.35,
-      fontSize: 8,
+      fontSize: 10,
       fontFace: theme.bodyFont,
       color: hex(palette.secondary),
       valign: 'top',
@@ -1436,8 +1408,8 @@ export class PptxGenJsExporterService {
       x: xNum,
       y: yPos,
       w: wNum,
-      h: 0.35,
-      fontSize: 14,
+      h: 0.4,
+      fontSize: 18,
       fontFace: theme.headingFont,
       color: hex(palette.accent),
       bold: true,
