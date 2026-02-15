@@ -8,10 +8,23 @@ const LoginPage = lazy(() => import('@/pages/LoginPage'));
 const RegisterPage = lazy(() => import('@/pages/RegisterPage'));
 const ForgotPasswordPage = lazy(() => import('@/pages/ForgotPasswordPage'));
 const ResetPasswordPage = lazy(() => import('@/pages/ResetPasswordPage'));
+const CockpitPage = lazy(() => import('@/pages/CockpitPage'));
 const DashboardPage = lazy(() => import('@/pages/DashboardPage'));
 const SettingsPage = lazy(() => import('@/pages/SettingsPage'));
 const WorkspacePage = lazy(() => import('@/pages/WorkspacePage'));
 const KnowledgeBasePage = lazy(() => import('@/pages/KnowledgeBasePage'));
+const BillingPage = lazy(() => import('@/pages/BillingPage'));
+const PitchLensListPage = lazy(() => import('@/pages/PitchLensListPage'));
+const PitchLensDetailPage = lazy(() => import('@/pages/PitchLensDetailPage'));
+const PitchLensWizardPage = lazy(() => import('@/pages/PitchLensWizardPage'));
+const PitchBriefListPage = lazy(() => import('@/pages/PitchBriefListPage'));
+const PitchBriefDetailPage = lazy(() => import('@/pages/PitchBriefDetailPage'));
+const PitchBriefWizardPage = lazy(() => import('@/pages/PitchBriefWizardPage'));
+const LandingPage = lazy(() => import('@/pages/LandingPage'));
+const GalleryPage = lazy(() => import('@/pages/GalleryPage'));
+const GalleryViewerPage = lazy(() => import('@/pages/GalleryViewerPage'));
+const ApiKeysPage = lazy(() => import('@/pages/ApiKeysPage'));
+const DocsPage = lazy(() => import('@/pages/DocsPage'));
 
 function PageFallback() {
   return (
@@ -27,6 +40,10 @@ function App() {
       <Suspense fallback={<PageFallback />}>
         <Routes>
           {/* Public routes */}
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/gallery" element={<GalleryPage />} />
+          <Route path="/gallery/:id" element={<GalleryViewerPage />} />
+          <Route path="/docs" element={<DocsPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
@@ -40,9 +57,20 @@ function App() {
               </ProtectedRoute>
             }
           >
+            <Route path="/cockpit" element={<CockpitPage />} />
             <Route path="/dashboard" element={<DashboardPage />} />
-            <Route path="/knowledge-base" element={<KnowledgeBasePage />} />
+            <Route path="/pitch-briefs" element={<PitchBriefListPage />} />
+            <Route path="/pitch-briefs/new" element={<PitchBriefWizardPage />} />
+            <Route path="/pitch-briefs/:id" element={<PitchBriefDetailPage />} />
+            <Route path="/pitch-briefs/:id/edit" element={<PitchBriefWizardPage />} />
+            <Route path="/pitch-lens" element={<PitchLensListPage />} />
+            <Route path="/pitch-lens/new" element={<PitchLensWizardPage />} />
+            <Route path="/pitch-lens/:id" element={<PitchLensDetailPage />} />
+            <Route path="/pitch-lens/:id/edit" element={<PitchLensWizardPage />} />
+            <Route path="/knowledge-base" element={<Navigate to="/pitch-briefs" replace />} />
+            <Route path="/billing" element={<BillingPage />} />
             <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/settings/api-keys" element={<ApiKeysPage />} />
           </Route>
 
           {/* Protected workspace route (full-width, no sidebar) */}
@@ -55,9 +83,8 @@ function App() {
             }
           />
 
-          {/* Redirects */}
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
-          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          {/* Catch-all */}
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Suspense>
     </BrowserRouter>

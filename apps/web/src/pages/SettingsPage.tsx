@@ -1,5 +1,6 @@
+import { Link } from 'react-router-dom'
 import { useAuthStore } from '@/stores/auth.store'
-import { CreditCard, User, Shield } from 'lucide-react'
+import { CreditCard, User, Shield, Key } from 'lucide-react'
 
 export function SettingsPage() {
   const user = useAuthStore((s) => s.user)
@@ -49,9 +50,29 @@ export function SettingsPage() {
               {user?.creditBalance ?? 0} credits
             </span>
           </div>
-          <p className="mt-3 text-xs text-muted-foreground">
-            Credit purchasing coming in Phase 5.
+          <Link
+            to="/billing"
+            className="mt-3 inline-block text-sm text-primary hover:underline"
+          >
+            Manage your plan and credits &rarr;
+          </Link>
+        </section>
+
+        {/* API Keys section */}
+        <section className="rounded-lg border border-border bg-card p-6">
+          <div className="mb-4 flex items-center gap-2">
+            <Key className="h-5 w-5 text-muted-foreground" />
+            <h2 className="text-lg font-semibold text-foreground">API Keys</h2>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Manage API keys for programmatic access and MCP integration.
           </p>
+          <Link
+            to="/settings/api-keys"
+            className="mt-3 inline-block text-sm text-primary hover:underline"
+          >
+            Manage API Keys &rarr;
+          </Link>
         </section>
 
         {/* Security section */}
