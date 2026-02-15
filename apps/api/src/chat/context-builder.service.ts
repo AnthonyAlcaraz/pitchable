@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma/prisma.service.js';
 import { KnowledgeBaseService } from '../knowledge-base/knowledge-base.service.js';
 import { EdgeQuakeService } from '../knowledge-base/edgequake/edgequake.service.js';
 import { OmnisearchService } from '../knowledge-base/omnisearch.service.js';
+import { RerankerService } from '../knowledge-base/reranker.service.js';
 import { buildFeedbackInjection } from './prompts/feedback-injection.prompt.js';
 import type { FeedbackData } from './prompts/feedback-injection.prompt.js';
 import { buildPitchLensInjection } from '../pitch-lens/prompts/pitch-lens-injection.prompt.js';
@@ -18,6 +19,7 @@ export class ContextBuilderService {
     private readonly kbService: KnowledgeBaseService,
     private readonly edgequake: EdgeQuakeService,
     private readonly omnisearch: OmnisearchService,
+    private readonly reranker: RerankerService,
   ) {}
 
   async buildSystemPrompt(
@@ -95,12 +97,17 @@ export class ContextBuilderService {
     limit = 10,
   ): Promise<string> {
     try {
-      const results = await this.kbService.search(userId, query, limit, 0.3);
+      // Fetch more candidates than needed so reranker can select the best
+      const fetchLimit = this.reranker.isEnabled() ? Math.min(limit * 3, 30) : limit;
+      const results = await this.kbService.search(userId, query, fetchLimit, 0.2);
       if (results.length === 0) return '';
 
+      // Rerank using ZeroEntropy's semantic reranker (zerank-2)
+      const ranked = await this.reranker.rerank(query, results, limit, 0.1);
+
       const parts = ['\nRelevant knowledge base content:'];
-      for (const r of results) {
-        parts.push(`---\n${r.content}\n(source: ${r.documentTitle}, similarity: ${r.similarity.toFixed(2)})`);
+      for (const r of ranked) {
+        parts.push(`---\n${r.content}\n(source: ${r.documentTitle}, relevance: ${r.similarity.toFixed(2)})`);
       }
       return parts.join('\n');
     } catch (err) {

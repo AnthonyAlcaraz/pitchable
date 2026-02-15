@@ -89,6 +89,10 @@ class EnvironmentVariables {
 
   @IsOptional()
   @IsString()
+  ZEROENTROPY_API_KEY?: string;
+
+  @IsOptional()
+  @IsString()
   STRIPE_SECRET_KEY?: string;
 
   @IsOptional()
