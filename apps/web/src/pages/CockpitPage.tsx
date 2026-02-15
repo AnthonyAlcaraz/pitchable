@@ -90,7 +90,7 @@ export function CockpitPage() {
   const recentPresentations = presentations.slice(0, 6);
 
   return (
-    <div className="p-8">
+    <div className="p-4 sm:p-6 lg:p-8">
       {/* Header */}
       <div className="mb-8">
         <div className="mb-1 flex items-center gap-3">
@@ -104,7 +104,7 @@ export function CockpitPage() {
 
       {/* Composer Bar */}
       <div className="mb-8 rounded-lg border border-border bg-card p-6">
-        <div className="flex items-end gap-4">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
           <div className="flex-1">
             <label className="mb-2 block text-sm font-medium text-foreground">
               Pitch Brief
@@ -170,7 +170,7 @@ export function CockpitPage() {
 
           <button
             onClick={handleGenerate}
-            className="flex items-center gap-2 rounded-lg bg-primary px-6 py-2.5 font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+            className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-6 py-2.5 font-medium text-primary-foreground transition-colors hover:bg-primary/90 sm:w-auto"
           >
             {selectedSourceId ? (
               <>

@@ -1,33 +1,37 @@
 @import "tailwindcss";
 
 @theme {
-  --color-background: hsl(0 0% 100%);
-  --color-foreground: hsl(222.2 84% 4.9%);
-  --color-card: hsl(0 0% 100%);
-  --color-card-foreground: hsl(222.2 84% 4.9%);
-  --color-popover: hsl(0 0% 100%);
-  --color-popover-foreground: hsl(222.2 84% 4.9%);
-  --color-primary: hsl(222.2 47.4% 11.2%);
-  --color-primary-foreground: hsl(210 40% 98%);
-  --color-secondary: hsl(210 40% 96.1%);
-  --color-secondary-foreground: hsl(222.2 47.4% 11.2%);
-  --color-muted: hsl(210 40% 96.1%);
-  --color-muted-foreground: hsl(215.4 16.3% 46.9%);
-  --color-accent: hsl(210 40% 96.1%);
-  --color-accent-foreground: hsl(222.2 47.4% 11.2%);
-  --color-destructive: hsl(0 84.2% 60.2%);
-  --color-destructive-foreground: hsl(210 40% 98%);
-  --color-border: hsl(214.3 31.8% 91.4%);
-  --color-input: hsl(214.3 31.8% 91.4%);
-  --color-ring: hsl(222.2 84% 4.9%);
-  --color-sidebar-background: hsl(0 0% 98%);
-  --color-sidebar-foreground: hsl(240 5.3% 26.1%);
-  --color-sidebar-primary: hsl(240 5.9% 10%);
-  --color-sidebar-primary-foreground: hsl(0 0% 98%);
-  --color-sidebar-accent: hsl(240 4.8% 95.9%);
-  --color-sidebar-accent-foreground: hsl(240 5.9% 10%);
-  --color-sidebar-border: hsl(220 13% 91%);
-  --color-sidebar-ring: hsl(217.2 91.2% 59.8%);
+  /* ── Pitchable: Pitch (black) → able (orange) ──
+     Lovable-inspired dark neutral base with orange luminescence.
+     The entire experience flows from deep black to warm orange light. */
+
+  --color-background: hsl(0 0% 11%);        /* #1c1c1c — Lovable-matched neutral dark */
+  --color-foreground: hsl(40 30% 97%);       /* #fcfbf8 — warm off-white */
+  --color-card: hsl(0 0% 15%);              /* #272725 — elevated surface */
+  --color-card-foreground: hsl(40 30% 97%);
+  --color-popover: hsl(0 0% 15%);
+  --color-popover-foreground: hsl(40 30% 97%);
+  --color-primary: hsl(25 95% 53%);          /* #f97316 — vibrant orange */
+  --color-primary-foreground: hsl(0 0% 100%);
+  --color-secondary: hsl(0 0% 18%);          /* subtle elevated surface */
+  --color-secondary-foreground: hsl(40 10% 80%);
+  --color-muted: hsl(0 0% 18%);
+  --color-muted-foreground: hsl(0 0% 63%);   /* #a1a1a1 — neutral gray */
+  --color-accent: hsl(35 100% 60%);          /* warm amber */
+  --color-accent-foreground: hsl(0 0% 5%);
+  --color-destructive: hsl(0 84% 60%);
+  --color-destructive-foreground: hsl(0 0% 100%);
+  --color-border: hsl(0 0% 20%);            /* #333 — subtle border */
+  --color-input: hsl(0 0% 20%);
+  --color-ring: hsl(25 95% 53%);
+  --color-sidebar-background: hsl(0 0% 9%);  /* #171717 — deeper sidebar */
+  --color-sidebar-foreground: hsl(0 0% 63%);
+  --color-sidebar-primary: hsl(25 95% 53%);
+  --color-sidebar-primary-foreground: hsl(0 0% 100%);
+  --color-sidebar-accent: hsl(0 0% 18%);
+  --color-sidebar-accent-foreground: hsl(40 30% 97%);
+  --color-sidebar-border: hsl(0 0% 17%);
+  --color-sidebar-ring: hsl(25 95% 53%);
   --radius: 0.5rem;
 }
 
@@ -40,6 +44,8 @@
     margin: 0;
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
     min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
   #root {
     min-height: 100vh;

@@ -131,13 +131,14 @@ export function PreviewPanel({ presentationId }: PreviewPanelProps) {
             slides={slides}
             currentIndex={currentSlideIndex}
             onSelect={setCurrentSlide}
+            theme={presentation?.theme}
           />
 
           {/* Main slide view */}
           <div className="flex flex-1 items-center justify-center bg-muted/20 p-6">
             {currentSlide && (
               <div className="w-full max-w-2xl">
-                <EditableSlide slide={currentSlide} presentationId={presentationId!} />
+                <EditableSlide slide={currentSlide} presentationId={presentationId!} theme={presentation?.theme} />
               </div>
             )}
           </div>
@@ -151,6 +152,7 @@ export function PreviewPanel({ presentationId }: PreviewPanelProps) {
           currentIndex={currentSlideIndex}
           onNavigate={setCurrentSlide}
           onExit={handleExitFullscreen}
+          theme={presentation?.theme}
         />
       )}
     </>

@@ -1,13 +1,14 @@
 import { useEffect, useCallback } from 'react';
 import { X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { SlideRenderer } from './SlideRenderer';
-import type { SlideData } from '@/stores/presentation.store';
+import type { SlideData, ThemeData } from '@/stores/presentation.store';
 
 interface PresentationModeProps {
   slides: SlideData[];
   currentIndex: number;
   onNavigate: (index: number) => void;
   onExit: () => void;
+  theme?: ThemeData | null;
 }
 
 export function PresentationMode({
@@ -15,6 +16,7 @@ export function PresentationMode({
   currentIndex,
   onNavigate,
   onExit,
+  theme,
 }: PresentationModeProps) {
   const currentSlide = slides[currentIndex];
 
@@ -105,7 +107,7 @@ export function PresentationMode({
 
       {/* Main slide */}
       <div className="w-full max-w-5xl px-8">
-        <SlideRenderer slide={currentSlide} scale={2} />
+        <SlideRenderer slide={currentSlide} theme={theme} scale={2} />
       </div>
     </div>
   );

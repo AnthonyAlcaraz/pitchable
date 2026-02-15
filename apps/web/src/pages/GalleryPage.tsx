@@ -17,6 +17,7 @@ export function GalleryPage() {
   const [presentations, setPresentations] = useState<GalleryPresentation[]>([]);
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState('');
+  const [sort, setSort] = useState<'recent' | 'trending'>('recent');
   const [page, setPage] = useState(1);
   const [pageCount, setPageCount] = useState(1);
   const [total, setTotal] = useState(0);
@@ -25,7 +26,7 @@ export function GalleryPage() {
   const fetchGallery = useCallback(async () => {
     setIsLoading(true);
     try {
-      const params = new URLSearchParams({ page: String(page), limit: '12' });
+      const params = new URLSearchParams({ page: String(page), limit: '12', sort });
       if (search) params.set('search', search);
       if (typeFilter) params.set('type', typeFilter);
       const res = await fetch(`/gallery/presentations?${params}`);
@@ -38,7 +39,7 @@ export function GalleryPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [page, search, typeFilter]);
+  }, [page, search, typeFilter, sort]);
 
   useEffect(() => {
     fetchGallery();
@@ -47,37 +48,54 @@ export function GalleryPage() {
   // Reset to page 1 when filters change
   useEffect(() => {
     setPage(1);
-  }, [search, typeFilter]);
+  }, [search, typeFilter, sort]);
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-background">
       <GalleryNav />
 
       <div className="mx-auto max-w-6xl px-6 py-10">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="mb-1 text-3xl font-bold text-slate-900">Public Gallery</h1>
-          <p className="text-slate-500">
+          <h1 className="mb-1 text-3xl font-bold text-foreground">Public Gallery</h1>
+          <p className="text-muted-foreground">
             Browse {total > 0 ? `${total} ` : ''}community presentations and use them as templates
           </p>
+        </div>
+
+        {/* Sort toggle */}
+        <div className="mb-6 flex gap-1 rounded-lg bg-card p-1">
+          {(['recent', 'trending'] as const).map((s) => (
+            <button
+              key={s}
+              onClick={() => setSort(s)}
+              className={`flex-1 rounded-md px-4 py-2 text-sm font-medium transition-colors ${
+                sort === s
+                  ? 'bg-orange-500 text-white'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              {s === 'recent' ? 'Recent' : 'Trending'}
+            </button>
+          ))}
         </div>
 
         {/* Filters */}
         <div className="mb-8 flex flex-col gap-4 sm:flex-row">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <input
               type="text"
               placeholder="Search presentations..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full rounded-lg border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-100"
+              className="w-full rounded-lg border border-border bg-card py-2.5 pl-10 pr-4 text-sm text-foreground placeholder:text-muted-foreground focus:border-orange-500/50 focus:outline-none focus:ring-2 focus:ring-orange-500/20"
             />
           </div>
           <select
             value={typeFilter}
             onChange={(e) => setTypeFilter(e.target.value)}
-            className="rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 focus:border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-100"
+            className="rounded-lg border border-border bg-card px-4 py-2.5 text-sm text-foreground focus:border-orange-500/50 focus:outline-none focus:ring-2 focus:ring-orange-500/20"
           >
             {TYPE_OPTIONS.map((opt) => (
               <option key={opt.value} value={opt.value}>
@@ -90,7 +108,7 @@ export function GalleryPage() {
         {/* Grid */}
         {isLoading ? (
           <div className="flex justify-center py-20">
-            <div className="h-8 w-8 animate-spin rounded-full border-2 border-blue-600 border-t-transparent" />
+            <div className="h-8 w-8 animate-spin rounded-full border-2 border-orange-500 border-t-transparent" />
           </div>
         ) : presentations.length > 0 ? (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -99,10 +117,10 @@ export function GalleryPage() {
             ))}
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-200 py-20">
-            <Layers className="mb-4 h-12 w-12 text-slate-300" />
-            <p className="mb-1 text-lg font-medium text-slate-400">No presentations found</p>
-            <p className="text-sm text-slate-400">
+          <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-border py-20">
+            <Layers className="mb-4 h-12 w-12 text-muted-foreground/30" />
+            <p className="mb-1 text-lg font-medium text-muted-foreground">No presentations found</p>
+            <p className="text-sm text-muted-foreground">
               {search || typeFilter
                 ? 'Try adjusting your search or filters'
                 : 'Be the first to share a presentation'}

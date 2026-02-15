@@ -22,7 +22,10 @@ export class ImgurService {
   private readonly uploadUrl = 'https://api.imgur.com/3/image';
 
   constructor(private configService: ConfigService) {
-    this.clientId = this.configService.getOrThrow<string>('IMGUR_CLIENT_ID');
+    this.clientId = this.configService.get<string>('IMGUR_CLIENT_ID') ?? '';
+    if (!this.clientId) {
+      this.logger.warn('IMGUR_CLIENT_ID not set — image uploads to Imgur will fail at runtime');
+    }
   }
 
   async uploadFromUrl(imageUrl: string, title?: string): Promise<string> {

@@ -21,10 +21,10 @@ const TYPE_LABELS: Record<string, string> = {
 };
 
 const STATUS_COLORS: Record<string, string> = {
-  DRAFT: 'bg-amber-500/10 text-amber-600',
-  PROCESSING: 'bg-blue-500/10 text-blue-600',
-  COMPLETED: 'bg-emerald-500/10 text-emerald-600',
-  FAILED: 'bg-red-500/10 text-red-600',
+  DRAFT: 'bg-amber-500/10 text-amber-400',
+  PROCESSING: 'bg-orange-500/10 text-orange-400',
+  COMPLETED: 'bg-emerald-500/10 text-emerald-400',
+  FAILED: 'bg-red-500/10 text-red-400',
 };
 
 export function PresentationCard({
@@ -83,7 +83,7 @@ export function PresentationCard({
         )}
 
         {/* Meta */}
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
           <span
             className={cn(
               'rounded-full px-2 py-0.5 text-[10px] font-medium',

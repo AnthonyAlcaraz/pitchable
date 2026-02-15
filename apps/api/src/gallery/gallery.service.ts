@@ -77,7 +77,7 @@ export class GalleryService {
       include: {
         slides: { orderBy: { slideNumber: 'asc' } },
         user: { select: { name: true } },
-        theme: { select: { displayName: true, primaryColor: true } },
+        theme: { select: { id: true, name: true, displayName: true, primaryColor: true, colorPalette: true, headingFont: true, bodyFont: true } },
         pitchLens: { select: { name: true, audienceType: true, pitchGoal: true } },
       },
     });
@@ -93,8 +93,13 @@ export class GalleryService {
       presentationType: presentation.presentationType,
       authorName: presentation.user.name,
       theme: {
+        id: presentation.theme.id,
+        name: presentation.theme.name,
         displayName: presentation.theme.displayName,
         primaryColor: presentation.theme.primaryColor,
+        colorPalette: presentation.theme.colorPalette as Record<string, string>,
+        headingFont: presentation.theme.headingFont,
+        bodyFont: presentation.theme.bodyFont,
       },
       pitchLens: presentation.pitchLens
         ? {

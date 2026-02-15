@@ -103,8 +103,8 @@ export function BillingPage() {
   const currentTier = user?.tier ?? 'FREE';
 
   return (
-    <div className="p-8">
-      <div className="mb-8 flex items-center justify-between">
+    <div className="p-4 sm:p-6 lg:p-8">
+      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Billing</h1>
           <p className="mt-1 text-sm text-muted-foreground">

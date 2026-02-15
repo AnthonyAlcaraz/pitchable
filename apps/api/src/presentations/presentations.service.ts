@@ -31,6 +31,14 @@ export interface PresentationWithSlides {
   presentationType: PresentationType;
   status: PresentationStatus;
   themeId: string;
+  theme?: {
+    id: string;
+    name: string;
+    displayName: string;
+    colorPalette: Record<string, string>;
+    headingFont: string;
+    bodyFont: string;
+  } | null;
   imageCount: number;
   userId: string;
   createdAt: Date;
@@ -59,7 +67,7 @@ export interface ImageJobResult {
 // ── Constants ───────────────────────────────────────────────
 
 /** Default theme name used when no themeId is provided. */
-const DEFAULT_THEME_NAME = 'dark-professional';
+const DEFAULT_THEME_NAME = 'pitchable-dark';
 
 /** Default presentation type when none specified. */
 const DEFAULT_PRESENTATION_TYPE = PresentationType.STANDARD;
@@ -85,8 +93,12 @@ export class PresentationsService {
     userId: string,
     dto: CreatePresentationDto,
   ): Promise<PresentationWithSlides> {
-    // 1. Resolve theme
+    // 1. Resolve theme and fetch palette
     const themeId = await this.resolveThemeId(dto.themeId);
+    const theme = await this.prisma.theme.findUnique({ where: { id: themeId } });
+    const themeColors = theme?.colorPalette
+      ? { ...(theme.colorPalette as { primary: string; secondary: string; accent: string; background: string; text: string }), headingFont: theme.headingFont, bodyFont: theme.bodyFont }
+      : undefined;
 
     // 2. Parse content into structured sections
     const parsed = this.contentParser.parseContent(dto.content);
@@ -106,7 +118,7 @@ export class PresentationsService {
     );
 
     // 4. Validate each slide against density constraints and auto-fix
-    slideDefinitions = this.validateAndFixSlides(slideDefinitions);
+    slideDefinitions = this.validateAndFixSlides(slideDefinitions, themeColors);
 
     // 5. Create presentation + slides in a transaction
     const presentation = await this.prisma.$transaction(async (tx) => {
@@ -246,6 +258,7 @@ export class PresentationsService {
         slides: {
           orderBy: { slideNumber: 'asc' },
         },
+        theme: true,
       },
     });
 
@@ -259,6 +272,16 @@ export class PresentationsService {
 
     return {
       ...presentation,
+      theme: presentation.theme
+        ? {
+            id: presentation.theme.id,
+            name: presentation.theme.name,
+            displayName: presentation.theme.displayName,
+            colorPalette: presentation.theme.colorPalette as Record<string, string>,
+            headingFont: presentation.theme.headingFont,
+            bodyFont: presentation.theme.bodyFont,
+          }
+        : null,
       slides: presentation.slides.map((s) => ({
         id: s.id,
         slideNumber: s.slideNumber,
@@ -753,7 +776,10 @@ export class PresentationsService {
    * Validate each slide definition against density constraints.
    * Auto-fixes violations by splitting dense slides.
    */
-  private validateAndFixSlides(slides: SlideDefinition[]): SlideDefinition[] {
+  private validateAndFixSlides(
+    slides: SlideDefinition[],
+    themeColors?: { primary: string; secondary: string; accent: string; background: string; text: string; headingFont?: string; bodyFont?: string },
+  ): SlideDefinition[] {
     const fixedSlides: SlideDefinition[] = [];
 
     for (const slide of slides) {
@@ -768,14 +794,14 @@ export class PresentationsService {
         // Use constraints service auto-fix
         const fixResult = this.constraints.autoFixSlide(slideContent, {
           palette: {
-            primary: '#60a5fa',
-            secondary: '#94a3b8',
-            accent: '#fbbf24',
-            background: '#0f172a',
-            text: '#e2e8f0',
+            primary: themeColors?.primary ?? '#f97316',
+            secondary: themeColors?.secondary ?? '#a1a1a1',
+            accent: themeColors?.accent ?? '#fbbf24',
+            background: themeColors?.background ?? '#1c1c1c',
+            text: themeColors?.text ?? '#fcfbf8',
           },
-          headingFont: 'Inter',
-          bodyFont: 'Roboto',
+          headingFont: themeColors?.headingFont ?? 'Montserrat',
+          bodyFont: themeColors?.bodyFont ?? 'Inter',
         });
 
         if (fixResult.fixed && fixResult.slides.length > 1) {

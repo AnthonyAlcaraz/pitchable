@@ -107,7 +107,7 @@ export function ValidationPrompt({ slide, onAccept, onEdit, onReject }: Validati
           <div className="w-px bg-border" />
           <button
             onClick={() => setIsEditing(true)}
-            className="flex flex-1 items-center justify-center gap-1.5 py-2 text-xs font-medium text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-950/20"
+            className="flex flex-1 items-center justify-center gap-1.5 py-2 text-xs font-medium text-orange-400 hover:bg-orange-500/10"
           >
             <Pencil className="h-3.5 w-3.5" />
             Edit

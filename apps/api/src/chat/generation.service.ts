@@ -231,7 +231,10 @@ export class GenerationService {
     // 1. Resolve theme
     const themeId = await this.resolveThemeId(config.themeId);
     const theme = await this.prisma.theme.findUnique({ where: { id: themeId } });
-    const themeName = theme?.displayName ?? 'dark-professional';
+    const themeName = theme?.displayName ?? 'Pitchable Dark';
+    const themeColors = theme?.colorPalette
+      ? { ...(theme.colorPalette as { primary: string; secondary: string; accent: string; background: string; text: string }), headingFont: theme.headingFont, bodyFont: theme.bodyFont }
+      : undefined;
 
     // 2. Get KB context for slide generation (scoped to brief if linked)
     const presForBrief = await this.prisma.presentation.findUnique({
@@ -276,6 +279,7 @@ export class GenerationService {
       themeName,
       kbContext,
       pitchLensContext,
+      themeColors,
     ) + feedbackBlock;
 
     // Track offset when NEEDS_SPLIT inserts extra slides
@@ -305,7 +309,7 @@ export class GenerationService {
       );
 
       // Validate density and auto-fix
-      const validated = this.validateSlideContent(slideContent, outlineSlide);
+      const validated = this.validateSlideContent(slideContent, outlineSlide, themeColors);
 
       // Save to DB
       const slide = await this.prisma.slide.create({
@@ -560,13 +564,17 @@ export class GenerationService {
       pitchLensContext = buildPitchLensInjection({ ...presentation.pitchLens, framework });
     }
 
-    const themeName = presentation.theme?.displayName ?? 'dark-professional';
+    const themeName = presentation.theme?.displayName ?? 'Pitchable Dark';
+    const rewriteThemeColors = presentation.theme?.colorPalette
+      ? { ...(presentation.theme.colorPalette as { primary: string; secondary: string; accent: string; background: string; text: string }), headingFont: presentation.theme.headingFont, bodyFont: presentation.theme.bodyFont }
+      : undefined;
     const feedbackBlock = await this.contextBuilder.buildFeedbackBlock(userId);
     const slideSystemPrompt = buildSlideGenerationSystemPrompt(
       presentation.presentationType,
       themeName,
       kbContext,
       pitchLensContext,
+      rewriteThemeColors,
     ) + feedbackBlock;
 
     const priorSlides: Array<{ title: string; body: string }> = [];
@@ -586,7 +594,7 @@ export class GenerationService {
       };
 
       const raw = await this.generateSlideContent(slideSystemPrompt, outlineSlide, priorSlides);
-      const validated = this.validateSlideContent(raw, outlineSlide);
+      const validated = this.validateSlideContent(raw, outlineSlide, rewriteThemeColors);
 
       // Update slide in-place
       await this.prisma.slide.update({
@@ -678,6 +686,7 @@ export class GenerationService {
   private validateSlideContent(
     content: GeneratedSlideContent,
     outlineSlide: OutlineSlide,
+    themeColors?: { primary: string; secondary: string; accent: string; background: string; text: string; headingFont?: string; bodyFont?: string },
   ): GeneratedSlideContent {
     const slideContent: SlideContent = {
       title: content.title || outlineSlide.title,
@@ -690,14 +699,14 @@ export class GenerationService {
       // Auto-fix: truncate body to fit constraints
       const fixResult = this.constraints.autoFixSlide(slideContent, {
         palette: {
-          primary: '#60a5fa',
-          secondary: '#94a3b8',
-          accent: '#fbbf24',
-          background: '#0f172a',
-          text: '#e2e8f0',
+          primary: themeColors?.primary ?? '#f97316',
+          secondary: themeColors?.secondary ?? '#a1a1a1',
+          accent: themeColors?.accent ?? '#fbbf24',
+          background: themeColors?.background ?? '#1c1c1c',
+          text: themeColors?.text ?? '#fcfbf8',
         },
-        headingFont: 'Inter',
-        bodyFont: 'Roboto',
+        headingFont: themeColors?.headingFont ?? 'Montserrat',
+        bodyFont: themeColors?.bodyFont ?? 'Inter',
       });
 
       if (fixResult.fixed && fixResult.slides.length > 0) {
@@ -739,7 +748,7 @@ export class GenerationService {
     }
 
     const defaultTheme = await this.prisma.theme.findUnique({
-      where: { name: 'dark-professional' },
+      where: { name: 'pitchable-dark' },
     });
     if (defaultTheme) return defaultTheme.id;
 

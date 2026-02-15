@@ -28,11 +28,47 @@ export default defineConfig({
         target: 'http://localhost:3000',
         changeOrigin: true,
       },
+      '/presentations': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+      },
+      '/chat': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+      },
       '/themes': {
         target: 'http://localhost:3000',
         changeOrigin: true,
       },
       '/constraints': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+      },
+      '/credits': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+      },
+      '/billing/': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+      },
+      '/exports': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+      },
+      '/images': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+      },
+      '/knowledge-base': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+      },
+      '/pitch-briefs': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+      },
+      '/pitch-lens': {
         target: 'http://localhost:3000',
         changeOrigin: true,
       },
@@ -48,7 +84,11 @@ export default defineConfig({
         target: 'http://localhost:3000',
         changeOrigin: true,
       },
-      '/gallery': {
+      '/gallery/presentations': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+      },
+      '/gallery/stats': {
         target: 'http://localhost:3000',
         changeOrigin: true,
       },
@@ -56,9 +96,14 @@ export default defineConfig({
         target: 'http://localhost:3000',
         changeOrigin: true,
       },
-      '/analytics': {
+      '/analytics/': {
         target: 'http://localhost:3000',
         changeOrigin: true,
+      },
+      '/socket.io': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+        ws: true,
       },
     },
   },

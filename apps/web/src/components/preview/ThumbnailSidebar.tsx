@@ -1,14 +1,15 @@
 import { cn } from '@/lib/utils';
 import { SlideRenderer } from './SlideRenderer';
-import type { SlideData } from '@/stores/presentation.store';
+import type { SlideData, ThemeData } from '@/stores/presentation.store';
 
 interface ThumbnailSidebarProps {
   slides: SlideData[];
   currentIndex: number;
   onSelect: (index: number) => void;
+  theme?: ThemeData | null;
 }
 
-export function ThumbnailSidebar({ slides, currentIndex, onSelect }: ThumbnailSidebarProps) {
+export function ThumbnailSidebar({ slides, currentIndex, onSelect, theme }: ThumbnailSidebarProps) {
   if (slides.length === 0) return null;
 
   return (
@@ -24,7 +25,7 @@ export function ThumbnailSidebar({ slides, currentIndex, onSelect }: ThumbnailSi
               : 'border-border hover:border-primary/50',
           )}
         >
-          <SlideRenderer slide={slide} scale={0.25} />
+          <SlideRenderer slide={slide} theme={theme} scale={0.25} />
           <span
             className={cn(
               'absolute bottom-0.5 right-1 text-[8px] font-medium',

@@ -1,8 +1,24 @@
 import { cn } from '@/lib/utils';
-import type { SlideData } from '@/stores/presentation.store';
+import type { SlideData, ThemeData } from '@/stores/presentation.store';
+
+/** Convert theme colorPalette to CSS custom property overrides for scoped theming */
+export function themeToStyleVars(theme?: ThemeData | null): React.CSSProperties | undefined {
+  if (!theme?.colorPalette) return undefined;
+  const p = theme.colorPalette;
+  return {
+    '--color-card': p.surface ?? p.background,
+    '--color-card-foreground': p.text,
+    '--color-primary': p.primary,
+    '--color-foreground': p.text,
+    '--color-muted-foreground': p.secondary,
+    '--color-border': p.border ?? p.secondary,
+    '--color-background': p.background,
+  } as React.CSSProperties;
+}
 
 interface SlideRendererProps {
   slide: SlideData;
+  theme?: ThemeData | null;
   className?: string;
   scale?: number;
   onClick?: () => void;
@@ -12,9 +28,10 @@ const SLIDE_ASPECT_RATIO = 16 / 9;
 
 /**
  * Renders a single slide with theme-aware styling.
- * Aspect ratio locked at 16:9.
+ * Aspect ratio locked at 16:9. When a theme is passed, CSS custom properties
+ * are scoped to the slide container so Tailwind tokens resolve to theme colors.
  */
-export function SlideRenderer({ slide, className, scale = 1, onClick }: SlideRendererProps) {
+export function SlideRenderer({ slide, theme, className, scale = 1, onClick }: SlideRendererProps) {
   const isTitle = slide.slideType === 'TITLE';
   const isCTA = slide.slideType === 'CTA';
   const isQuote = slide.slideType === 'QUOTE';
@@ -33,6 +50,7 @@ export function SlideRenderer({ slide, className, scale = 1, onClick }: SlideRen
       style={{
         aspectRatio: `${SLIDE_ASPECT_RATIO}`,
         fontSize: `${scale * 100}%`,
+        ...themeToStyleVars(theme),
       }}
       onClick={onClick}
     >

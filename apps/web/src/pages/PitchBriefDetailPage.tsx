@@ -12,7 +12,7 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 const ENTITY_COLORS: Record<string, string> = {
-  PERSON: 'bg-blue-500/10 text-blue-500',
+  PERSON: 'bg-orange-500/10 text-orange-400',
   ORGANIZATION: 'bg-amber-500/10 text-amber-500',
   CONCEPT: 'bg-green-500/10 text-green-500',
   TECHNOLOGY: 'bg-purple-500/10 text-purple-500',
@@ -363,7 +363,7 @@ export function PitchBriefDetailPage() {
                     <div>
                       <h4 className="font-medium text-foreground mb-1">{lens.name}</h4>
                       <div className="flex gap-2">
-                        <span className="text-xs px-2 py-1 rounded-full bg-blue-500/10 text-blue-500">
+                        <span className="text-xs px-2 py-1 rounded-full bg-orange-500/10 text-orange-400">
                           {lens.audience}
                         </span>
                         <span className="text-xs px-2 py-1 rounded-full bg-green-500/10 text-green-500">

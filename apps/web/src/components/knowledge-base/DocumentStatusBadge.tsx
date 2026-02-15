@@ -1,11 +1,11 @@
 import { cn } from '@/lib/utils';
 
 const STATUS_CONFIG = {
-  UPLOADED: { label: 'Uploaded', className: 'bg-blue-100 text-blue-700' },
-  PARSING: { label: 'Parsing', className: 'bg-yellow-100 text-yellow-700 animate-pulse' },
-  EMBEDDING: { label: 'Embedding', className: 'bg-purple-100 text-purple-700 animate-pulse' },
-  READY: { label: 'Ready', className: 'bg-green-100 text-green-700' },
-  ERROR: { label: 'Error', className: 'bg-red-100 text-red-700' },
+  UPLOADED: { label: 'Uploaded', className: 'bg-orange-500/10 text-orange-400' },
+  PARSING: { label: 'Parsing', className: 'bg-yellow-500/10 text-yellow-400 animate-pulse' },
+  EMBEDDING: { label: 'Embedding', className: 'bg-purple-500/10 text-purple-400 animate-pulse' },
+  READY: { label: 'Ready', className: 'bg-green-500/10 text-green-400' },
+  ERROR: { label: 'Error', className: 'bg-red-500/10 text-red-400' },
 } as const;
 
 type DocumentStatus = keyof typeof STATUS_CONFIG;

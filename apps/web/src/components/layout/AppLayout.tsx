@@ -4,6 +4,7 @@ import { useAuthStore } from '@/stores/auth.store';
 import {
   Layers,
   Gauge,
+  BarChart3,
   BookOpen,
   Settings,
   LogOut,
@@ -18,6 +19,7 @@ import { cn } from '@/lib/utils';
 
 const NAV_ITEMS = [
   { path: '/cockpit', label: 'Cockpit', icon: Gauge },
+  { path: '/analytics', label: 'Analytics', icon: BarChart3 },
   { path: '/pitch-briefs', label: 'Pitch Briefs', icon: BookOpen },
   { path: '/pitch-lens', label: 'Pitch Lens', icon: Focus },
   { path: '/billing', label: 'Billing', icon: CreditCard },
@@ -41,16 +43,16 @@ export function AppLayout() {
       {/* Mobile overlay */}
       {mobileOpen && (
         <div
-          className="fixed inset-0 z-40 bg-black/50 md:hidden"
+          className="fixed inset-0 z-40 bg-black/60 md:hidden"
           onClick={() => setMobileOpen(false)}
           role="presentation"
         />
       )}
 
-      {/* Sidebar */}
+      {/* Sidebar — deeper than page background */}
       <aside
         className={cn(
-          'fixed inset-y-0 left-0 z-50 flex flex-col border-r border-border bg-card transition-all duration-200 md:static',
+          'fixed inset-y-0 left-0 z-50 flex flex-col border-r border-border bg-sidebar-background transition-all duration-200 md:static',
           collapsed ? 'md:w-16' : 'md:w-56',
           mobileOpen ? 'w-56 translate-x-0' : '-translate-x-full md:translate-x-0',
         )}
@@ -58,7 +60,7 @@ export function AppLayout() {
         {/* Logo */}
         <div className="flex h-14 items-center justify-between border-b border-border px-4">
           <div className="flex items-center gap-2">
-            <Layers className="h-6 w-6 shrink-0 text-primary" />
+            <Layers className="h-6 w-6 shrink-0 text-orange-500" />
             {!collapsed && (
               <span className="text-lg font-semibold text-foreground">
                 Pitchable
@@ -67,7 +69,7 @@ export function AppLayout() {
           </div>
           <button
             onClick={() => setMobileOpen(false)}
-            className="rounded-md p-1 hover:bg-accent md:hidden"
+            className="rounded-md p-1 hover:bg-sidebar-accent md:hidden"
             aria-label="Close sidebar"
           >
             <X className="h-5 w-5" />
@@ -86,8 +88,8 @@ export function AppLayout() {
                 className={cn(
                   'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
                   isActive
-                    ? 'bg-primary/10 text-primary'
-                    : 'text-muted-foreground hover:bg-accent hover:text-foreground',
+                    ? 'bg-orange-500/10 text-orange-400'
+                    : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-foreground',
                 )}
               >
                 <item.icon className="h-4 w-4 shrink-0" />
@@ -101,7 +103,7 @@ export function AppLayout() {
         <div className="border-t border-border p-2">
           {!collapsed && user && (
             <div className="mb-2 flex items-center gap-2 rounded-md px-3 py-2">
-              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-medium text-primary">
+              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-orange-500/10 text-xs font-medium text-orange-400">
                 {user.name.charAt(0).toUpperCase()}
               </div>
               <div className="min-w-0 flex-1">
@@ -126,7 +128,7 @@ export function AppLayout() {
 
           <button
             onClick={() => setCollapsed(!collapsed)}
-            className="mt-1 hidden w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground md:flex"
+            className="mt-1 hidden w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-foreground md:flex"
           >
             {collapsed ? (
               <ChevronRight className="h-4 w-4 shrink-0" />
@@ -146,12 +148,12 @@ export function AppLayout() {
         <header className="flex h-14 items-center gap-3 border-b border-border px-4 md:hidden">
           <button
             onClick={() => setMobileOpen(true)}
-            className="rounded-md p-1.5 hover:bg-accent"
+            className="rounded-md p-1.5 hover:bg-card"
             aria-label="Open sidebar"
           >
             <Menu className="h-5 w-5" />
           </button>
-          <Layers className="h-5 w-5 text-primary" />
+          <Layers className="h-5 w-5 text-orange-500" />
           <span className="text-sm font-semibold text-foreground">Pitchable</span>
         </header>
 

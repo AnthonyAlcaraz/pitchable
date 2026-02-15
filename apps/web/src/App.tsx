@@ -25,11 +25,12 @@ const GalleryPage = lazy(() => import('@/pages/GalleryPage'));
 const GalleryViewerPage = lazy(() => import('@/pages/GalleryViewerPage'));
 const ApiKeysPage = lazy(() => import('@/pages/ApiKeysPage'));
 const DocsPage = lazy(() => import('@/pages/DocsPage'));
+const AnalyticsPage = lazy(() => import('@/pages/AnalyticsPage'));
 
 function PageFallback() {
   return (
     <div className="flex h-screen items-center justify-center">
-      <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-300 border-t-blue-600" />
+      <div className="h-8 w-8 animate-spin rounded-full border-4 border-border border-t-orange-500" />
     </div>
   );
 }
@@ -58,6 +59,7 @@ function App() {
             }
           >
             <Route path="/cockpit" element={<CockpitPage />} />
+            <Route path="/analytics" element={<AnalyticsPage />} />
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/pitch-briefs" element={<PitchBriefListPage />} />
             <Route path="/pitch-briefs/new" element={<PitchBriefWizardPage />} />

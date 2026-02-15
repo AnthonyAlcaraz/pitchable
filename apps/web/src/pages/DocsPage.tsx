@@ -3,10 +3,10 @@ import { ArrowLeft, Key, Code, Cpu, CreditCard, Zap, Shield } from 'lucide-react
 
 export function DocsPage() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 text-gray-100">
-      <nav className="border-b border-white/10 px-6 py-4">
+    <div className="min-h-screen bg-background text-foreground">
+      <nav className="border-b border-border px-6 py-4">
         <div className="mx-auto flex max-w-4xl items-center gap-4">
-          <Link to="/" className="flex items-center gap-2 text-sm text-gray-400 hover:text-white">
+          <Link to="/" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
             <ArrowLeft className="h-4 w-4" />
             Back to Pitchable
           </Link>
@@ -15,19 +15,19 @@ export function DocsPage() {
 
       <div className="mx-auto max-w-4xl px-6 py-12">
         <h1 className="mb-2 text-3xl font-bold">Developer Documentation</h1>
-        <p className="mb-12 text-gray-400">
+        <p className="mb-12 text-muted-foreground">
           Programmatic access to Pitchable via REST API and MCP (Model Context Protocol)
         </p>
 
         {/* Authentication */}
         <section className="mb-12">
           <div className="mb-4 flex items-center gap-2">
-            <Key className="h-5 w-5 text-blue-400" />
+            <Key className="h-5 w-5 text-orange-400" />
             <h2 className="text-xl font-semibold">Authentication</h2>
           </div>
-          <p className="mb-4 text-sm text-gray-400">
+          <p className="mb-4 text-sm text-muted-foreground">
             All API requests require an API key. Create one in{' '}
-            <Link to="/settings/api-keys" className="text-blue-400 hover:underline">Settings &rarr; API Keys</Link>.
+            <Link to="/settings/api-keys" className="text-orange-400 hover:underline">Settings &rarr; API Keys</Link>.
           </p>
           <pre className="overflow-x-auto rounded-lg bg-black/40 p-4 text-sm">
 {`# Via x-api-key header (recommended)
@@ -46,7 +46,7 @@ curl -H "Authorization: Bearer pk_your_key_here" \\
             <Code className="h-5 w-5 text-green-400" />
             <h2 className="text-xl font-semibold">REST API</h2>
           </div>
-          <p className="mb-4 text-sm text-gray-400">Base URL: <code className="text-gray-300">https://app.pitchable.ai/api/v1</code></p>
+          <p className="mb-4 text-sm text-muted-foreground">Base URL: <code className="text-foreground/80">https://app.pitchable.ai/api/v1</code></p>
 
           <div className="space-y-3">
             {[
@@ -60,13 +60,13 @@ curl -H "Authorization: Bearer pk_your_key_here" \\
               { method: 'GET', path: '/lenses', scope: 'presentations:read', desc: 'List Pitch Lenses' },
               { method: 'GET', path: '/credits/balance', scope: 'presentations:read', desc: 'Check credit balance' },
             ].map((ep) => (
-              <div key={ep.path + ep.method} className="flex items-center gap-3 rounded-lg bg-white/5 px-4 py-3">
-                <span className={`w-16 rounded text-center text-xs font-bold ${ep.method === 'GET' ? 'bg-blue-500/20 text-blue-400' : ep.method === 'POST' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
+              <div key={ep.path + ep.method} className="flex items-center gap-3 rounded-lg bg-card px-4 py-3">
+                <span className={`w-16 rounded text-center text-xs font-bold ${ep.method === 'GET' ? 'bg-orange-500/20 text-orange-400' : ep.method === 'POST' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
                   {ep.method}
                 </span>
-                <code className="flex-1 text-sm text-gray-300">{ep.path}</code>
-                <span className="rounded-full bg-white/10 px-2 py-0.5 text-xs text-gray-400">{ep.scope}</span>
-                <span className="text-xs text-gray-500">{ep.desc}</span>
+                <code className="flex-1 text-sm text-foreground/80">{ep.path}</code>
+                <span className="rounded-full bg-white/10 px-2 py-0.5 text-xs text-muted-foreground">{ep.scope}</span>
+                <span className="text-xs text-muted-foreground/70">{ep.desc}</span>
               </div>
             ))}
           </div>
@@ -92,12 +92,12 @@ curl -H "Authorization: Bearer pk_your_key_here" \\
             <Cpu className="h-5 w-5 text-purple-400" />
             <h2 className="text-xl font-semibold">MCP (Model Context Protocol)</h2>
           </div>
-          <p className="mb-4 text-sm text-gray-400">
+          <p className="mb-4 text-sm text-muted-foreground">
             Connect Pitchable to any AI agent that supports MCP — Claude Code, Cursor, Windsurf, and more.
           </p>
 
           <h3 className="mb-2 text-base font-semibold">Claude Code</h3>
-          <p className="mb-2 text-xs text-gray-400">Add to <code>.claude/mcp.json</code>:</p>
+          <p className="mb-2 text-xs text-muted-foreground">Add to <code>.claude/mcp.json</code>:</p>
           <pre className="mb-6 overflow-x-auto rounded-lg bg-black/40 p-4 text-sm">
 {`{
   "mcpServers": {
@@ -113,7 +113,7 @@ curl -H "Authorization: Bearer pk_your_key_here" \\
           </pre>
 
           <h3 className="mb-2 text-base font-semibold">Cursor</h3>
-          <p className="mb-2 text-xs text-gray-400">Add to <code>.cursor/mcp.json</code>:</p>
+          <p className="mb-2 text-xs text-muted-foreground">Add to <code>.cursor/mcp.json</code>:</p>
           <pre className="mb-6 overflow-x-auto rounded-lg bg-black/40 p-4 text-sm">
 {`{
   "mcpServers": {
@@ -140,10 +140,10 @@ curl -H "Authorization: Bearer pk_your_key_here" \\
               { name: 'list_lenses', desc: 'List your Pitch Lenses (strategy profiles)', icon: String.fromCodePoint(0x1F50D) },
               { name: 'check_credits', desc: 'Check credit balance and cost table', icon: String.fromCodePoint(0x1F4B3) },
             ].map((tool) => (
-              <div key={tool.name} className="flex items-center gap-3 rounded-lg bg-white/5 px-4 py-3">
+              <div key={tool.name} className="flex items-center gap-3 rounded-lg bg-card px-4 py-3">
                 <span className="text-lg">{tool.icon}</span>
                 <code className="text-sm font-medium text-purple-300">{tool.name}</code>
-                <span className="text-xs text-gray-400">{tool.desc}</span>
+                <span className="text-xs text-muted-foreground">{tool.desc}</span>
               </div>
             ))}
           </div>
@@ -155,15 +155,15 @@ curl -H "Authorization: Bearer pk_your_key_here" \\
             <CreditCard className="h-5 w-5 text-yellow-400" />
             <h2 className="text-xl font-semibold">Credit Costs</h2>
           </div>
-          <div className="overflow-hidden rounded-lg border border-white/10">
+          <div className="overflow-hidden rounded-lg border border-border">
             <table className="w-full text-sm">
-              <thead className="bg-white/5">
+              <thead className="bg-card">
                 <tr>
-                  <th className="px-4 py-2 text-left font-medium text-gray-400">Operation</th>
-                  <th className="px-4 py-2 text-right font-medium text-gray-400">Cost</th>
+                  <th className="px-4 py-2 text-left font-medium text-muted-foreground">Operation</th>
+                  <th className="px-4 py-2 text-right font-medium text-muted-foreground">Cost</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-white/5">
+              <tbody className="divide-y divide-border">
                 <tr><td className="px-4 py-2">Presentation generation</td><td className="px-4 py-2 text-right font-mono">3 credits</td></tr>
                 <tr><td className="px-4 py-2">Image generation (per image)</td><td className="px-4 py-2 text-right font-mono">1 credit</td></tr>
                 <tr><td className="px-4 py-2">Export (PPTX, PDF, HTML)</td><td className="px-4 py-2 text-right font-mono">Free</td></tr>
@@ -179,15 +179,15 @@ curl -H "Authorization: Bearer pk_your_key_here" \\
             <Zap className="h-5 w-5 text-orange-400" />
             <h2 className="text-xl font-semibold">Rate Limits</h2>
           </div>
-          <div className="overflow-hidden rounded-lg border border-white/10">
+          <div className="overflow-hidden rounded-lg border border-border">
             <table className="w-full text-sm">
-              <thead className="bg-white/5">
+              <thead className="bg-card">
                 <tr>
-                  <th className="px-4 py-2 text-left font-medium text-gray-400">Tier</th>
-                  <th className="px-4 py-2 text-right font-medium text-gray-400">Requests / min</th>
+                  <th className="px-4 py-2 text-left font-medium text-muted-foreground">Tier</th>
+                  <th className="px-4 py-2 text-right font-medium text-muted-foreground">Requests / min</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-white/5">
+              <tbody className="divide-y divide-border">
                 <tr><td className="px-4 py-2">Free</td><td className="px-4 py-2 text-right font-mono">20</td></tr>
                 <tr><td className="px-4 py-2">Starter</td><td className="px-4 py-2 text-right font-mono">60</td></tr>
                 <tr><td className="px-4 py-2">Pro</td><td className="px-4 py-2 text-right font-mono">120</td></tr>
@@ -200,22 +200,22 @@ curl -H "Authorization: Bearer pk_your_key_here" \\
         {/* Scopes */}
         <section>
           <div className="mb-4 flex items-center gap-2">
-            <Shield className="h-5 w-5 text-cyan-400" />
+            <Shield className="h-5 w-5 text-orange-400" />
             <h2 className="text-xl font-semibold">Scopes Reference</h2>
           </div>
-          <div className="overflow-hidden rounded-lg border border-white/10">
+          <div className="overflow-hidden rounded-lg border border-border">
             <table className="w-full text-sm">
-              <thead className="bg-white/5">
+              <thead className="bg-card">
                 <tr>
-                  <th className="px-4 py-2 text-left font-medium text-gray-400">Scope</th>
-                  <th className="px-4 py-2 text-left font-medium text-gray-400">Allows</th>
+                  <th className="px-4 py-2 text-left font-medium text-muted-foreground">Scope</th>
+                  <th className="px-4 py-2 text-left font-medium text-muted-foreground">Allows</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-white/5">
-                <tr><td className="px-4 py-2 font-mono text-cyan-300">presentations:read</td><td className="px-4 py-2">List/get presentations, briefs, lenses, credits</td></tr>
-                <tr><td className="px-4 py-2 font-mono text-cyan-300">presentations:write</td><td className="px-4 py-2">Create, delete, fork presentations</td></tr>
-                <tr><td className="px-4 py-2 font-mono text-cyan-300">generation</td><td className="px-4 py-2">Generate presentations (costs credits)</td></tr>
-                <tr><td className="px-4 py-2 font-mono text-cyan-300">export</td><td className="px-4 py-2">Export to PPTX, PDF, Reveal.js HTML</td></tr>
+              <tbody className="divide-y divide-border">
+                <tr><td className="px-4 py-2 font-mono text-orange-300">presentations:read</td><td className="px-4 py-2">List/get presentations, briefs, lenses, credits</td></tr>
+                <tr><td className="px-4 py-2 font-mono text-orange-300">presentations:write</td><td className="px-4 py-2">Create, delete, fork presentations</td></tr>
+                <tr><td className="px-4 py-2 font-mono text-orange-300">generation</td><td className="px-4 py-2">Generate presentations (costs credits)</td></tr>
+                <tr><td className="px-4 py-2 font-mono text-orange-300">export</td><td className="px-4 py-2">Export to PPTX, PDF, Reveal.js HTML</td></tr>
               </tbody>
             </table>
           </div>

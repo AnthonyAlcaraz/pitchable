@@ -6,7 +6,7 @@ class EnvironmentVariables {
   DATABASE_URL!: string;
 
   @IsString()
-  JWT_SECRET!: string;
+  JWT_ACCESS_SECRET!: string;
 
   @IsString()
   JWT_REFRESH_SECRET!: string;

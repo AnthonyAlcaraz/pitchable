@@ -3,17 +3,19 @@ import { cn } from '@/lib/utils';
 import { EditableText } from './EditableText';
 import { api } from '@/lib/api';
 import { usePresentationStore } from '@/stores/presentation.store';
-import type { SlideData } from '@/stores/presentation.store';
+import type { SlideData, ThemeData } from '@/stores/presentation.store';
+import { themeToStyleVars } from './SlideRenderer';
 
 interface EditableSlideProps {
   slide: SlideData;
   presentationId: string;
+  theme?: ThemeData | null;
   className?: string;
 }
 
 const SLIDE_ASPECT_RATIO = 16 / 9;
 
-export function EditableSlide({ slide, presentationId, className }: EditableSlideProps) {
+export function EditableSlide({ slide, presentationId, theme, className }: EditableSlideProps) {
   const updateSlide = usePresentationStore((s) => s.updateSlide);
 
   const isTitle = slide.slideType === 'TITLE';
@@ -51,7 +53,7 @@ export function EditableSlide({ slide, presentationId, className }: EditableSlid
         'relative overflow-hidden rounded-lg border border-border bg-card shadow-sm',
         className,
       )}
-      style={{ aspectRatio: `${SLIDE_ASPECT_RATIO}` }}
+      style={{ aspectRatio: `${SLIDE_ASPECT_RATIO}`, ...themeToStyleVars(theme) }}
     >
       <div className="flex h-full flex-col p-[6%]">
         {/* Slide type badge */}

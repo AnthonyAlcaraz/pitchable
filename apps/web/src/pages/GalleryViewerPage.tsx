@@ -10,6 +10,7 @@ import {
   GitFork,
   Layers,
   Focus,
+  Eye,
 } from 'lucide-react';
 
 const TYPE_LABELS: Record<string, string> = {
@@ -28,15 +29,27 @@ interface PublicSlide {
   imageUrl: string | null;
 }
 
+interface PublicTheme {
+  id: string;
+  name: string;
+  displayName: string;
+  primaryColor: string;
+  colorPalette: Record<string, string>;
+  headingFont: string;
+  bodyFont: string;
+}
+
 interface PublicPresentation {
   id: string;
   title: string;
   description: string | null;
   presentationType: string;
   authorName: string;
-  theme: { displayName: string; primaryColor: string };
+  theme: PublicTheme;
   pitchLens: { name: string; audienceType: string; pitchGoal: string } | null;
   slides: PublicSlide[];
+  viewCount?: number;
+  forkCount?: number;
 }
 
 export function GalleryViewerPage() {
@@ -57,7 +70,11 @@ export function GalleryViewerPage() {
         if (!r.ok) throw new Error('Not found');
         return r.json();
       })
-      .then(setPresentation)
+      .then((data) => {
+        setPresentation(data);
+        // Fire-and-forget view tracking
+        fetch(`/analytics/view/${id}`, { method: 'POST' }).catch(() => {});
+      })
       .catch(() => setError('Presentation not found'))
       .finally(() => setIsLoading(false));
   }, [id]);
@@ -103,10 +120,10 @@ export function GalleryViewerPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-slate-50">
+      <div className="min-h-screen bg-background">
         <GalleryNav />
         <div className="flex justify-center py-32">
-          <div className="h-10 w-10 animate-spin rounded-full border-3 border-blue-600 border-t-transparent" />
+          <div className="h-10 w-10 animate-spin rounded-full border-3 border-orange-500 border-t-transparent" />
         </div>
       </div>
     );
@@ -114,12 +131,12 @@ export function GalleryViewerPage() {
 
   if (error || !presentation) {
     return (
-      <div className="min-h-screen bg-slate-50">
+      <div className="min-h-screen bg-background">
         <GalleryNav />
         <div className="flex flex-col items-center justify-center py-32">
-          <Layers className="mb-4 h-12 w-12 text-slate-300" />
-          <p className="mb-4 text-lg text-slate-500">{error ?? 'Presentation not found'}</p>
-          <Link to="/gallery" className="text-sm font-medium text-blue-600 hover:text-blue-700">
+          <Layers className="mb-4 h-12 w-12 text-muted-foreground" />
+          <p className="mb-4 text-lg text-muted-foreground">{error ?? 'Presentation not found'}</p>
+          <Link to="/gallery" className="text-sm font-medium text-orange-400 hover:text-orange-300">
             Back to Gallery
           </Link>
         </div>
@@ -144,45 +161,57 @@ export function GalleryViewerPage() {
     : null;
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-background">
       <GalleryNav />
 
-      <div className="mx-auto max-w-5xl px-6 py-8">
+      <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6 sm:py-8">
         {/* Back link */}
         <Link
           to="/gallery"
-          className="mb-6 inline-flex items-center gap-1 text-sm text-slate-500 transition-colors hover:text-slate-900"
+          className="mb-6 inline-flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-orange-400"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
           Back to Gallery
         </Link>
 
         {/* Header */}
-        <div className="mb-8 flex items-start justify-between">
+        <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <h1 className="mb-2 text-2xl font-bold text-slate-900">{presentation.title}</h1>
-            <div className="flex flex-wrap items-center gap-3 text-sm text-slate-500">
+            <h1 className="mb-2 text-xl font-bold text-foreground sm:text-2xl">{presentation.title}</h1>
+            <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
               <span>by {presentation.authorName}</span>
-              <span className="rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-semibold text-blue-600">
+              <span className="rounded-full bg-orange-500/10 px-2.5 py-0.5 text-xs font-semibold text-orange-400">
                 {TYPE_LABELS[presentation.presentationType] ?? presentation.presentationType}
               </span>
               <span>{presentation.slides.length} slides</span>
+              {presentation.viewCount !== undefined && presentation.viewCount > 0 && (
+                <span className="flex items-center gap-1">
+                  <Eye className="h-3 w-3" />
+                  {presentation.viewCount}
+                </span>
+              )}
+              {presentation.forkCount !== undefined && presentation.forkCount > 0 && (
+                <span className="flex items-center gap-1">
+                  <GitFork className="h-3 w-3" />
+                  {presentation.forkCount}
+                </span>
+              )}
               {presentation.pitchLens && (
-                <span className="flex items-center gap-1 rounded-full bg-purple-50 px-2.5 py-0.5 text-xs font-semibold text-purple-600">
+                <span className="flex items-center gap-1 rounded-full bg-amber-500/10 px-2.5 py-0.5 text-xs font-semibold text-amber-400">
                   <Focus className="h-3 w-3" />
                   {presentation.pitchLens.name}
                 </span>
               )}
             </div>
             {presentation.description && (
-              <p className="mt-3 max-w-2xl text-sm text-slate-500">{presentation.description}</p>
+              <p className="mt-3 max-w-2xl text-sm text-muted-foreground">{presentation.description}</p>
             )}
           </div>
 
           <button
             onClick={handleUseTemplate}
             disabled={isForking}
-            className="flex items-center gap-2 rounded-xl bg-blue-600 px-6 py-3 font-semibold text-white shadow-md shadow-blue-600/20 transition-all hover:bg-blue-500 disabled:opacity-60"
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-orange-500 px-6 py-3 font-semibold text-white shadow-md shadow-orange-500/20 transition-all hover:bg-orange-400 disabled:opacity-60 sm:w-auto"
           >
             {isForking ? (
               <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
@@ -196,7 +225,7 @@ export function GalleryViewerPage() {
         {/* Main slide viewer */}
         {slideData && (
           <div className="relative">
-            <SlideRenderer slide={slideData} scale={1} className="w-full" />
+            <SlideRenderer slide={slideData} theme={presentation.theme} scale={1} className="w-full" />
 
             {/* Navigation arrows */}
             {presentation.slides.length > 1 && (
@@ -204,16 +233,16 @@ export function GalleryViewerPage() {
                 <button
                   onClick={handlePrev}
                   disabled={currentSlide === 0}
-                  className="absolute left-4 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 shadow-md transition-all hover:bg-white disabled:opacity-30"
+                  className="absolute left-2 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/60 shadow-md transition-all hover:bg-black/80 disabled:opacity-30 sm:left-4"
                 >
-                  <ChevronLeft className="h-5 w-5 text-slate-700" />
+                  <ChevronLeft className="h-5 w-5 text-white" />
                 </button>
                 <button
                   onClick={handleNext}
                   disabled={currentSlide === presentation.slides.length - 1}
-                  className="absolute right-4 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 shadow-md transition-all hover:bg-white disabled:opacity-30"
+                  className="absolute right-2 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/60 shadow-md transition-all hover:bg-black/80 disabled:opacity-30 sm:right-4"
                 >
-                  <ChevronRight className="h-5 w-5 text-slate-700" />
+                  <ChevronRight className="h-5 w-5 text-white" />
                 </button>
               </>
             )}
@@ -221,7 +250,7 @@ export function GalleryViewerPage() {
         )}
 
         {/* Slide counter */}
-        <div className="mt-4 text-center text-sm text-slate-500">
+        <div className="mt-4 text-center text-sm text-muted-foreground">
           Slide {currentSlide + 1} of {presentation.slides.length}
         </div>
 
@@ -243,14 +272,14 @@ export function GalleryViewerPage() {
               return (
                 <div
                   key={s.id}
-                  className={`w-48 flex-shrink-0 cursor-pointer rounded-lg transition-all ${
+                  className={`w-32 flex-shrink-0 cursor-pointer rounded-lg transition-all sm:w-48 ${
                     i === currentSlide
-                      ? 'ring-2 ring-blue-500 ring-offset-2'
+                      ? 'ring-2 ring-orange-500 ring-offset-2 ring-offset-background'
                       : 'opacity-60 hover:opacity-100'
                   }`}
                   onClick={() => setCurrentSlide(i)}
                 >
-                  <SlideRenderer slide={thumbData} scale={0.35} />
+                  <SlideRenderer slide={thumbData} theme={presentation.theme} scale={0.35} />
                 </div>
               );
             })}

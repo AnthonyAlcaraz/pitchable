@@ -13,6 +13,15 @@ export interface SlideData {
   createdAt: string;
 }
 
+export interface ThemeData {
+  id: string;
+  name: string;
+  displayName: string;
+  colorPalette: Record<string, string>;
+  headingFont: string;
+  bodyFont: string;
+}
+
 export interface PresentationData {
   id: string;
   title: string;
@@ -20,6 +29,7 @@ export interface PresentationData {
   presentationType: string;
   status: string;
   themeId: string;
+  theme?: ThemeData | null;
   imageCount: number;
   createdAt: string;
   updatedAt: string;

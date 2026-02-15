@@ -151,7 +151,7 @@ export class SyncGenerationService {
 
       // 9. Get theme name for slide generation prompts
       const theme = await this.prisma.theme.findUnique({ where: { id: themeId } });
-      const themeName = theme?.displayName ?? 'dark-professional';
+      const themeName = theme?.displayName ?? 'Pitchable Dark';
 
       // 10. Generate slides sequentially
       const priorSlides: Array<{ title: string; body: string }> = [];
@@ -240,7 +240,7 @@ export class SyncGenerationService {
       if (exists) return exists.id;
     }
     const defaultTheme = await this.prisma.theme.findFirst({
-      where: { name: 'dark-professional' },
+      where: { name: 'pitchable-dark' },
     });
     if (!defaultTheme) {
       const any = await this.prisma.theme.findFirst();
