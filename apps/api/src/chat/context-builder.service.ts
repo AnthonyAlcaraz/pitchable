@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { KnowledgeBaseService } from '../knowledge-base/knowledge-base.service.js';
 import { EdgeQuakeService } from '../knowledge-base/edgequake/edgequake.service.js';
+import { OmnisearchService } from '../knowledge-base/omnisearch.service.js';
 import { buildFeedbackInjection } from './prompts/feedback-injection.prompt.js';
 import type { FeedbackData } from './prompts/feedback-injection.prompt.js';
 import { buildPitchLensInjection } from '../pitch-lens/prompts/pitch-lens-injection.prompt.js';
@@ -16,6 +17,7 @@ export class ContextBuilderService {
     private readonly prisma: PrismaService,
     private readonly kbService: KnowledgeBaseService,
     private readonly edgequake: EdgeQuakeService,
+    private readonly omnisearch: OmnisearchService,
   ) {}
 
   async buildSystemPrompt(
@@ -150,6 +152,80 @@ export class ContextBuilderService {
       this.logger.warn(`Brief context retrieval failed, falling back to global KB: ${err}`);
       return this.retrieveKbContext(userId, query, limit);
     }
+  }
+
+  /**
+   * Retrieve Omnisearch vault context for a query.
+   * Runs multiple keyword searches sequentially (Omnisearch is single-threaded).
+   */
+  async retrieveOmnisearchContext(
+    query: string,
+    limit = 5,
+  ): Promise<string> {
+    if (!this.omnisearch.isEnabled) return '';
+
+    try {
+      // Extract key terms for multi-query search (Z4 pattern)
+      const keywords = this.extractSearchKeywords(query);
+      const queries = [query, ...keywords].slice(0, 4);
+
+      const results = await this.omnisearch.multiSearch(queries, Math.ceil(limit / queries.length));
+      return this.omnisearch.formatAsContext(results.slice(0, limit));
+    } catch (err) {
+      this.logger.warn(`Omnisearch retrieval failed: ${err}`);
+      return '';
+    }
+  }
+
+  /**
+   * Retrieve enriched context: KB (pgvector) + Omnisearch (vault).
+   * Falls back gracefully if either source is unavailable.
+   * Mirrors Z4's vault search → evidence database pattern.
+   */
+  async retrieveEnrichedContext(
+    userId: string,
+    query: string,
+    kbLimit = 5,
+    omnisearchLimit = 5,
+  ): Promise<string> {
+    const [kbContext, vaultContext] = await Promise.all([
+      this.retrieveKbContext(userId, query, kbLimit),
+      this.retrieveOmnisearchContext(query, omnisearchLimit),
+    ]);
+
+    const parts: string[] = [];
+    if (kbContext) parts.push(kbContext);
+    if (vaultContext) parts.push(vaultContext);
+    return parts.join('\n');
+  }
+
+  /**
+   * Extract key search terms from a query string.
+   * Removes common filler words, returns top concept phrases.
+   */
+  private extractSearchKeywords(query: string): string[] {
+    const stopWords = new Set([
+      'the', 'a', 'an', 'is', 'are', 'was', 'were', 'of', 'and', 'or',
+      'but', 'in', 'on', 'at', 'to', 'for', 'with', 'by', 'from', 'about',
+      'that', 'this', 'these', 'those', 'be', 'been', 'has', 'have', 'had',
+      'do', 'does', 'did', 'will', 'would', 'should', 'could', 'may', 'might',
+      'not', 'no', 'so', 'if', 'then', 'than', 'when', 'how', 'what', 'which',
+      'slide', 'slides', 'presentation', 'content', 'create', 'make', 'add',
+    ]);
+
+    const words = query
+      .replace(/[^\w\s-]/g, '')
+      .split(/\s+/)
+      .filter((w) => w.length > 2 && !stopWords.has(w.toLowerCase()));
+
+    // Build 2-3 word phrase queries from consecutive significant words
+    const phrases: string[] = [];
+    for (let i = 0; i < words.length - 1; i += 2) {
+      const phrase = words.slice(i, i + 3).join(' ');
+      if (phrase.length > 5) phrases.push(phrase);
+    }
+
+    return phrases.slice(0, 3);
   }
 
   async buildChatHistory(

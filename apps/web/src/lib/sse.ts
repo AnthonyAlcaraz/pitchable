@@ -1,5 +1,5 @@
 export interface SseEvent {
-  type: 'token' | 'done' | 'error' | 'action';
+  type: 'token' | 'done' | 'error' | 'action' | 'thinking' | 'progress';
   content: string;
   metadata?: Record<string, unknown>;
 }

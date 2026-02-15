@@ -191,4 +191,20 @@ export class EventsGateway
       .to(`presentation:${event.presentationId}`)
       .emit('generation:progress', event);
   }
+
+  emitImageGenerated(event: {
+    presentationId: string;
+    slideId: string;
+    imageUrl: string;
+  }): void {
+    this.server
+      .to(`presentation:${event.presentationId}`)
+      .emit('image:generated', event);
+  }
+
+  emitImagesComplete(event: { presentationId: string }): void {
+    this.server
+      .to(`presentation:${event.presentationId}`)
+      .emit('images:complete', event);
+  }
 }

@@ -1,4 +1,4 @@
-import { IsString, MinLength, IsOptional, IsUUID } from 'class-validator';
+import { IsString, MinLength, IsOptional, IsUUID, IsEmail } from 'class-validator';
 
 export class GenerateDto {
   @IsString()
@@ -25,6 +25,16 @@ export class GenerateDto {
 export class ExportDto {
   @IsString()
   format!: string; // 'PPTX' | 'PDF' | 'REVEAL_JS'
+}
+
+export class EmailDto {
+  @IsOptional()
+  @IsString()
+  format?: string; // 'PDF' | 'PPTX'
+
+  @IsOptional()
+  @IsEmail()
+  email?: string;
 }
 
 export class ForkDto {

@@ -7,6 +7,7 @@ import { IntentClassifierService } from './intent-classifier.service.js';
 import { SlideModifierService } from './slide-modifier.service.js';
 import { ValidationGateService } from './validation-gate.service.js';
 import { ExportsService } from '../exports/exports.service.js';
+import { EmailService } from '../email/email.service.js';
 import { ExportFormat } from '../../generated/prisma/enums.js';
 import type { GenerationConfig } from './generation.service.js';
 import {
@@ -16,7 +17,7 @@ import {
 import type { LlmMessage } from './llm.service.js';
 
 export interface ChatStreamEvent {
-  type: 'token' | 'done' | 'error' | 'action';
+  type: 'token' | 'done' | 'error' | 'action' | 'thinking' | 'progress';
   content: string;
   metadata?: Record<string, unknown>;
 }
@@ -37,6 +38,7 @@ export class ChatService {
     private readonly slideModifier: SlideModifierService,
     private readonly validationGate: ValidationGateService,
     private readonly exportsService: ExportsService,
+    private readonly emailService: EmailService,
   ) {}
 
   async *handleMessage(
@@ -110,12 +112,19 @@ export class ChatService {
         switch (intent.intent) {
           case 'modify_slide': {
             if (intent.slideNumber) {
-              yield { type: 'token', content: `Modifying slide ${intent.slideNumber}...\n` };
+              yield { type: 'thinking', content: 'Analyzing your request...' };
+              yield { type: 'progress', content: `Reading slide ${intent.slideNumber}`, metadata: { step: 'read_slide', status: 'running' } };
+              yield { type: 'progress', content: `Reading slide ${intent.slideNumber}`, metadata: { step: 'read_slide', status: 'complete' } };
+              yield { type: 'progress', content: 'Generating updated content', metadata: { step: 'llm_modify', status: 'running' } };
               const result = await this.slideModifier.modifySlide(
+                userId,
                 presentationId,
                 intent.slideNumber,
                 intent.instruction ?? content,
               );
+              yield { type: 'progress', content: 'Generating updated content', metadata: { step: 'llm_modify', status: 'complete' } };
+              yield { type: 'progress', content: 'Saving changes', metadata: { step: 'save', status: 'running' } };
+              yield { type: 'progress', content: 'Saving changes', metadata: { step: 'save', status: 'complete' } };
               yield { type: 'token', content: result.message };
               yield { type: 'done', content: '' };
               await this.persistAssistantMessage(presentationId, result.message);
@@ -125,12 +134,19 @@ export class ChatService {
           }
           case 'add_slide': {
             const afterSlide = intent.slideNumber ?? slideCount;
-            yield { type: 'token', content: `Adding a new slide after slide ${afterSlide}...\n` };
-            const result = await this.slideModifier.addBlankSlide(
+            yield { type: 'thinking', content: 'Planning new slide...' };
+            yield { type: 'progress', content: 'Analyzing deck structure', metadata: { step: 'analyze', status: 'running' } };
+            yield { type: 'progress', content: 'Analyzing deck structure', metadata: { step: 'analyze', status: 'complete' } };
+            yield { type: 'progress', content: `Generating slide after position ${afterSlide}`, metadata: { step: 'llm_add', status: 'running' } };
+            const result = await this.slideModifier.addSlideWithContent(
+              userId,
               presentationId,
               afterSlide,
-              intent.instruction,
+              intent.instruction ?? content,
             );
+            yield { type: 'progress', content: `Generating slide after position ${afterSlide}`, metadata: { step: 'llm_add', status: 'complete' } };
+            yield { type: 'progress', content: 'Inserting into deck', metadata: { step: 'insert', status: 'running' } };
+            yield { type: 'progress', content: 'Inserting into deck', metadata: { step: 'insert', status: 'complete' } };
             yield { type: 'token', content: result.message };
             yield { type: 'done', content: '' };
             await this.persistAssistantMessage(presentationId, result.message);
@@ -138,11 +154,15 @@ export class ChatService {
           }
           case 'delete_slide': {
             if (intent.slideNumber) {
-              yield { type: 'token', content: `Deleting slide ${intent.slideNumber}...\n` };
+              yield { type: 'thinking', content: 'Processing deletion...' };
+              yield { type: 'progress', content: `Removing slide ${intent.slideNumber}`, metadata: { step: 'delete', status: 'running' } };
               const result = await this.slideModifier.deleteSlide(
                 presentationId,
                 intent.slideNumber,
               );
+              yield { type: 'progress', content: `Removing slide ${intent.slideNumber}`, metadata: { step: 'delete', status: 'complete' } };
+              yield { type: 'progress', content: 'Renumbering slides', metadata: { step: 'renumber', status: 'running' } };
+              yield { type: 'progress', content: 'Renumbering slides', metadata: { step: 'renumber', status: 'complete' } };
               yield { type: 'token', content: result.message };
               yield { type: 'done', content: '' };
               await this.persistAssistantMessage(presentationId, result.message);
@@ -152,12 +172,19 @@ export class ChatService {
           }
           case 'regenerate_slide': {
             if (intent.slideNumber) {
-              yield { type: 'token', content: `Regenerating slide ${intent.slideNumber}...\n` };
+              yield { type: 'thinking', content: 'Planning regeneration...' };
+              yield { type: 'progress', content: `Reading slide ${intent.slideNumber}`, metadata: { step: 'read_slide', status: 'running' } };
+              yield { type: 'progress', content: `Reading slide ${intent.slideNumber}`, metadata: { step: 'read_slide', status: 'complete' } };
+              yield { type: 'progress', content: 'Regenerating content from scratch', metadata: { step: 'llm_regen', status: 'running' } };
               const result = await this.slideModifier.modifySlide(
+                userId,
                 presentationId,
                 intent.slideNumber,
-                'Completely regenerate this slide with fresh content while keeping the same topic.',
+                'Completely regenerate this slide with fresh content while keeping the same topic. Use rich type-specific formatting with **bold** on key terms.',
               );
+              yield { type: 'progress', content: 'Regenerating content from scratch', metadata: { step: 'llm_regen', status: 'complete' } };
+              yield { type: 'progress', content: 'Saving changes', metadata: { step: 'save', status: 'running' } };
+              yield { type: 'progress', content: 'Saving changes', metadata: { step: 'save', status: 'complete' } };
               yield { type: 'token', content: result.message };
               yield { type: 'done', content: '' };
               await this.persistAssistantMessage(presentationId, result.message);
@@ -197,6 +224,9 @@ export class ChatService {
     presentationId: string,
     content: string,
   ): AsyncGenerator<ChatStreamEvent> {
+    yield { type: 'thinking', content: 'Thinking...' };
+
+    yield { type: 'progress', content: 'Building context', metadata: { step: 'context', status: 'running' } };
     const systemPrompt = await this.contextBuilder.buildSystemPrompt(
       userId,
       presentationId,
@@ -212,6 +242,7 @@ export class ChatService {
       presentationId,
       20,
     );
+    yield { type: 'progress', content: 'Building context', metadata: { step: 'context', status: 'complete' } };
 
     const messages: LlmMessage[] = [
       {
@@ -221,6 +252,7 @@ export class ChatService {
       ...history,
     ];
 
+    yield { type: 'progress', content: 'Generating response', metadata: { step: 'llm_stream', status: 'running' } };
     let fullResponse = '';
     for await (const chunk of this.llm.streamChat(messages, LlmModel.SONNET)) {
       if (chunk.done) {
@@ -332,6 +364,10 @@ export class ChatService {
         }
         break;
       }
+      case 'email': {
+        yield* this.handleEmailCommand(userId, presentationId, args);
+        break;
+      }
       case 'rewrite': {
         yield* this.generation.rewriteSlides(userId, presentationId);
         break;
@@ -357,6 +393,92 @@ export class ChatService {
         yield { type: 'done', content: '' };
         break;
       }
+    }
+  }
+
+  private async *handleEmailCommand(
+    userId: string,
+    presentationId: string,
+    args: string[],
+  ): AsyncGenerator<ChatStreamEvent> {
+    if (!this.emailService.isConfigured) {
+      const msg = 'Email is not configured. Set RESEND_API_KEY to enable email delivery.';
+      yield { type: 'token', content: msg };
+      yield { type: 'done', content: '' };
+      await this.persistAssistantMessage(presentationId, msg);
+      return;
+    }
+
+    // Parse args: /email [format] [email-address]
+    const formatArg = (args[0] || 'pdf').toUpperCase();
+    const format = formatArg === 'PPTX' ? ExportFormat.PPTX : ExportFormat.PDF;
+    const formatLabel = format === ExportFormat.PPTX ? 'PPTX' : 'PDF';
+
+    // Get email: from args or user's registered email
+    let emailAddress = args[1] || '';
+    if (!emailAddress) {
+      const user = await this.prisma.user.findUnique({
+        where: { id: userId },
+        select: { email: true },
+      });
+      emailAddress = user?.email ?? '';
+    }
+
+    if (!emailAddress) {
+      const msg = 'No email address found. Usage: `/email pdf user@example.com`';
+      yield { type: 'token', content: msg };
+      yield { type: 'done', content: '' };
+      await this.persistAssistantMessage(presentationId, msg);
+      return;
+    }
+
+    yield { type: 'token', content: `Exporting ${formatLabel} and emailing to **${emailAddress}**...\n` };
+
+    try {
+      // 1. Generate export
+      const job = await this.exportsService.createExportJob(presentationId, format);
+      const exportBuffer = await this.exportsService.processExportAndGetBuffer(job.id);
+
+      // 2. Get presentation info for email subject
+      const presentation = await this.prisma.presentation.findUnique({
+        where: { id: presentationId },
+        select: { title: true, _count: { select: { slides: true } } },
+      });
+
+      const title = presentation?.title ?? 'Presentation';
+      const slideCount = presentation?._count?.slides ?? 0;
+
+      // 3. Build email
+      const html = this.emailService.buildPresentationEmailHtml(title, slideCount, formatLabel);
+      const filename = `${title.replace(/[^a-zA-Z0-9 -]/g, '').trim()}.${formatLabel.toLowerCase()}`;
+
+      // 4. Send
+      const result = await this.emailService.sendEmail({
+        to: emailAddress,
+        subject: `Pitchable: ${title}`,
+        html,
+        attachments: exportBuffer
+          ? [{ filename, content: exportBuffer.toString('base64') }]
+          : undefined,
+      });
+
+      if (result.success) {
+        const msg = `Sent **${title}** as ${formatLabel} to **${emailAddress}**`;
+        yield { type: 'token', content: msg };
+        yield { type: 'done', content: '' };
+        await this.persistAssistantMessage(presentationId, msg);
+      } else {
+        const msg = `Email failed: ${result.error}`;
+        yield { type: 'token', content: msg };
+        yield { type: 'done', content: '' };
+        await this.persistAssistantMessage(presentationId, msg);
+      }
+    } catch (error: unknown) {
+      const errMsg = error instanceof Error ? error.message : 'Email export failed';
+      const msg = `Email failed: ${errMsg}`;
+      yield { type: 'token', content: msg };
+      yield { type: 'done', content: '' };
+      await this.persistAssistantMessage(presentationId, msg);
     }
   }
 

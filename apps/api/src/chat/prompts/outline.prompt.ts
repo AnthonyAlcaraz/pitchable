@@ -24,16 +24,28 @@ CONSTRAINTS:
 - Between ${slideRange.min} and ${slideRange.max} slides total
 - Each slide must have 3-6 bullet points maximum
 - Each bullet point must be under 15 words
+- Each bullet should be a specific claim or data point, not a generic topic label
+- If the knowledge base provides a relevant statistic, include the exact number in the bullet
 - Slide 1 must be type TITLE
 - Last slide must be type CTA
 - 1 key concept per slide
 
-AVAILABLE SLIDE TYPES:
-TITLE, PROBLEM, SOLUTION, ARCHITECTURE, PROCESS, COMPARISON, DATA_METRICS, CTA, CONTENT, QUOTE
+AVAILABLE SLIDE TYPES (choose the type that best matches the content):
+TITLE — Opening slide with tagline subtitle
+PROBLEM — Pain points with cost/impact metrics (red accent bar)
+SOLUTION — Capabilities mapped to problem points (green accent bar)
+DATA_METRICS — Slides dominated by numbers, KPIs, or financial data (auto-highlights $X, X%, Xx)
+PROCESS — Step-by-step workflows or timelines (numbered steps in accent color)
+COMPARISON — Before/after, us-vs-them, or option A vs B (two-column layout)
+ARCHITECTURE — System diagrams or technical components (image-focused)
+QUOTE — Notable quote from a person or source (decorative italic)
+CTA — Call to action with concrete next steps
+CONTENT — General content that doesn't fit other types
 
 ${pitchLensContext ? pitchLensContext : `PRESENTATION TYPE GUIDANCE:\n${getTypeGuidance(presentationType)}`}
 
-${kbContext ? `KNOWLEDGE BASE CONTEXT (use this to enrich the outline):\n${kbContext}` : ''}
+${kbContext ? `KNOWLEDGE BASE CONTEXT (ground your outline in this verified content — pull specific facts, data points, and claims):
+${kbContext}` : ''}
 
 OUTPUT FORMAT:
 Respond with valid JSON matching this schema:

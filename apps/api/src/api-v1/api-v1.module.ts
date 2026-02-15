@@ -8,6 +8,8 @@ import { ConstraintsModule } from '../constraints/constraints.module.js';
 import { ExportsModule } from '../exports/exports.module.js';
 import { PitchBriefModule } from '../pitch-brief/pitch-brief.module.js';
 import { PitchLensModule } from '../pitch-lens/pitch-lens.module.js';
+import { ImagesModule } from '../images/images.module.js';
+import { EmailModule } from '../email/email.module.js';
 import { ApiV1Controller } from './api-v1.controller.js';
 import { SyncGenerationService } from './sync-generation.service.js';
 
@@ -22,6 +24,8 @@ import { SyncGenerationService } from './sync-generation.service.js';
     ExportsModule,
     PitchBriefModule,
     PitchLensModule,
+    ImagesModule,
+    EmailModule,
   ],
   controllers: [ApiV1Controller],
   providers: [SyncGenerationService],

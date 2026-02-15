@@ -7,6 +7,8 @@ import { ContentReviewerService } from '../chat/content-reviewer.service.js';
 import { TierEnforcementService } from '../credits/tier-enforcement.service.js';
 import { CreditsService } from '../credits/credits.service.js';
 import { DECK_GENERATION_COST } from '../credits/tier-config.js';
+import { ImagesService } from '../images/images.service.js';
+import { NanoBananaService } from '../images/nano-banana.service.js';
 import {
   buildOutlineSystemPrompt,
   buildOutlineUserPrompt,
@@ -48,6 +50,8 @@ export class SyncGenerationService {
     private readonly contentReviewer: ContentReviewerService,
     private readonly tierEnforcement: TierEnforcementService,
     private readonly credits: CreditsService,
+    private readonly imagesService: ImagesService,
+    private readonly nanoBanana: NanoBananaService,
   ) {}
 
   /**
@@ -210,6 +214,17 @@ export class SyncGenerationService {
         CreditReason.API_GENERATION,
         presentation.id,
       );
+
+      // 11b. Auto-generate images (non-blocking)
+      if (this.nanoBanana.isConfigured) {
+        this.imagesService
+          .queueBatchGeneration(presentation.id, userId)
+          .catch((err) =>
+            this.logger.warn(
+              `Auto image generation failed: ${err instanceof Error ? err.message : 'unknown'}`,
+            ),
+          );
+      }
 
       // 12. Return full presentation with slides and theme
       return this.prisma.presentation.findUnique({

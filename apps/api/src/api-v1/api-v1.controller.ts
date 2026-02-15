@@ -20,8 +20,9 @@ import { ExportsService } from '../exports/exports.service.js';
 import { PitchBriefService } from '../pitch-brief/pitch-brief.service.js';
 import { PitchLensService } from '../pitch-lens/pitch-lens.service.js';
 import { SyncGenerationService } from './sync-generation.service.js';
+import { EmailService } from '../email/email.service.js';
 import { ExportFormat } from '../../generated/prisma/enums.js';
-import { GenerateDto, ExportDto, ForkDto } from './dto/generate.dto.js';
+import { GenerateDto, ExportDto, ForkDto, EmailDto } from './dto/generate.dto.js';
 
 @Controller('api/v1')
 @UseGuards(ApiKeyGuard)
@@ -33,6 +34,7 @@ export class ApiV1Controller {
     private readonly exportsService: ExportsService,
     private readonly pitchBriefService: PitchBriefService,
     private readonly pitchLensService: PitchLensService,
+    private readonly emailService: EmailService,
   ) {}
 
   // -- Presentations --------------------------------------------------
@@ -95,7 +97,53 @@ export class ApiV1Controller {
     // Verify ownership first
     await this.presentationsService.findOne(id, user.userId);
     const format = dto.format as ExportFormat;
-    return this.exportsService.createExportJob(id, format);
+    const job = await this.exportsService.createExportJob(id, format);
+    // Process synchronously so the job is ready for download
+    await this.exportsService.processExport(job.id);
+    return this.exportsService.getExportStatus(job.id);
+  }
+
+  // -- Email ----------------------------------------------------------
+
+  @Post('presentations/:id/email')
+  @RequireScopes('export')
+  @HttpCode(HttpStatus.OK)
+  async emailPresentation(
+    @CurrentUser() user: RequestUser,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: EmailDto,
+  ) {
+    // Verify ownership
+    const presentation = await this.presentationsService.findOne(id, user.userId);
+
+    const format = (dto.format?.toUpperCase() === 'PPTX'
+      ? ExportFormat.PPTX
+      : ExportFormat.PDF) as ExportFormat;
+    const formatLabel = format === ExportFormat.PPTX ? 'PPTX' : 'PDF';
+
+    // Get email address
+    const emailAddress = dto.email || user.email;
+    if (!emailAddress) {
+      return { sent: false, error: 'No email address provided or found on user account' };
+    }
+
+    // Generate export buffer
+    const job = await this.exportsService.createExportJob(id, format);
+    const buffer = await this.exportsService.processExportAndGetBuffer(job.id);
+
+    const title = presentation.title || 'Presentation';
+    const slideCount = presentation.slides?.length ?? 0;
+    const html = this.emailService.buildPresentationEmailHtml(title, slideCount, formatLabel);
+    const filename = `${title.replace(/[^a-zA-Z0-9 -]/g, '').trim()}.${formatLabel.toLowerCase()}`;
+
+    const result = await this.emailService.sendEmail({
+      to: emailAddress,
+      subject: `Pitchable: ${title}`,
+      html,
+      attachments: [{ filename, content: buffer.toString('base64') }],
+    });
+
+    return { sent: result.success, to: emailAddress, error: result.error };
   }
 
   // -- Briefs & Lenses ------------------------------------------------

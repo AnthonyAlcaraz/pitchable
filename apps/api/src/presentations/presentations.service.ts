@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { ConstraintsService } from '../constraints/constraints.service.js';
+import { ExportsService } from '../exports/exports.service.js';
 import { ContentParserService } from './content-parser.service.js';
 import { SlideStructurerService } from './slide-structurer.service.js';
 import type { SlideDefinition } from './slide-structurer.service.js';
@@ -81,6 +82,7 @@ export class PresentationsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly constraints: ConstraintsService,
+    private readonly exportsService: ExportsService,
     private readonly contentParser: ContentParserService,
     private readonly slideStructurer: SlideStructurerService,
   ) {}
@@ -906,6 +908,11 @@ export class PresentationsService {
           format,
           status: JobStatus.QUEUED,
         },
+      });
+
+      // Fire-and-forget: trigger actual export processing
+      void this.exportsService.processExport(job.id).catch((err: unknown) => {
+        this.logger.error(`Export job ${job.id} failed: ${err instanceof Error ? err.message : String(err)}`);
       });
 
       jobs.push({

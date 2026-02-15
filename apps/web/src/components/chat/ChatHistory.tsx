@@ -1,11 +1,14 @@
 import { useEffect, useRef } from 'react';
 import { ChatMessage } from './ChatMessage.js';
-import type { ChatMessage as ChatMessageType, PendingValidation } from '../../stores/chat.store.js';
+import { AgentActivity } from './AgentActivity.js';
+import type { ChatMessage as ChatMessageType, PendingValidation, AgentStep } from '../../stores/chat.store.js';
 
 interface ChatHistoryProps {
   messages: ChatMessageType[];
   streamingContent: string;
   isStreaming: boolean;
+  thinkingText: string | null;
+  agentSteps: AgentStep[];
   pendingValidations?: PendingValidation[];
   presentationId?: string;
   onAcceptSlide?: (slideId: string) => void;
@@ -17,6 +20,8 @@ export function ChatHistory({
   messages,
   streamingContent,
   isStreaming,
+  thinkingText,
+  agentSteps,
   pendingValidations,
   presentationId,
   onAcceptSlide,
@@ -31,7 +36,7 @@ export function ChatHistory({
     if (!userScrolled.current) {
       bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [messages, streamingContent, pendingValidations]);
+  }, [messages, streamingContent, pendingValidations, thinkingText, agentSteps]);
 
   const handleScroll = () => {
     const el = containerRef.current;
@@ -80,6 +85,14 @@ export function ChatHistory({
           />
         );
       })}
+
+      {isStreaming && (thinkingText || agentSteps.length > 0) && (
+        <AgentActivity
+          thinkingText={thinkingText}
+          steps={agentSteps}
+          streamingContent={streamingContent}
+        />
+      )}
 
       {isStreaming && streamingContent && (
         <ChatMessage

@@ -35,12 +35,12 @@ export interface SplitResult {
 
 // ── Constants ───────────────────────────────────────────────
 
-export const MAX_WORDS_PER_BULLET = 10;
+export const MAX_WORDS_PER_BULLET = 18;
 
 export const DENSITY_LIMITS: Readonly<DensityLimits> = {
   maxBulletsPerSlide: 6,
   maxTableRows: 6,
-  maxWordsPerSlide: 80,
+  maxWordsPerSlide: 110,
   maxConceptsPerSlide: 1,
   maxNestedListDepth: 1,
 };
@@ -49,11 +49,13 @@ export const DENSITY_LIMITS: Readonly<DensityLimits> = {
 
 function countBullets(body: string): number {
   const lines = body.split('\n');
-  return lines.filter((line) => /^\s*[-*]\s/.test(line)).length;
+  return lines.filter((line) => /^\s*[-*]\s/.test(line) || /^\s*\d+[.)]\s/.test(line)).length;
 }
 
 function countWords(text: string): number {
-  const stripped = text.replace(/[^\w\s]/g, ' ').trim();
+  // Strip markdown bold/italic markers before counting so **bold** doesn't inflate count
+  const noMarkdown = text.replace(/\*{1,2}/g, '');
+  const stripped = noMarkdown.replace(/[^\w\s]/g, ' ').trim();
   if (stripped.length === 0) return 0;
   return stripped.split(/\s+/).length;
 }
@@ -108,11 +110,11 @@ export function validateSlideContent(slide: SlideContent): DensityValidationResu
     );
   }
 
-  // Words per bullet
+  // Words per bullet (includes numbered steps)
   const lines = slide.body.split('\n');
-  const bulletLines = lines.filter((line) => /^\s*[-*]\s/.test(line));
+  const bulletLines = lines.filter((line) => /^\s*[-*]\s/.test(line) || /^\s*\d+[.)]\s/.test(line));
   for (const bullet of bulletLines) {
-    const text = bullet.replace(/^\s*[-*]\s/, '');
+    const text = bullet.replace(/^\s*[-*]\s/, '').replace(/^\s*\d+[.)]\s/, '');
     const wordCount = countWords(text);
     if (wordCount > MAX_WORDS_PER_BULLET) {
       violations.push(

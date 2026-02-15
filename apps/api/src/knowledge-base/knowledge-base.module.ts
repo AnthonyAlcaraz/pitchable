@@ -14,6 +14,7 @@ import { UrlParser } from './parsers/url.parser.js';
 import { EmbeddingService } from './embedding/embedding.service.js';
 import { VectorStoreService } from './embedding/vector-store.service.js';
 import { EdgeQuakeService } from './edgequake/edgequake.service.js';
+import { OmnisearchService } from './omnisearch.service.js';
 
 @Module({
   imports: [
@@ -34,7 +35,8 @@ import { EdgeQuakeService } from './edgequake/edgequake.service.js';
     EmbeddingService,
     VectorStoreService,
     EdgeQuakeService,
+    OmnisearchService,
   ],
-  exports: [KnowledgeBaseService, S3Service, EmbeddingService, VectorStoreService, EdgeQuakeService],
+  exports: [KnowledgeBaseService, S3Service, EmbeddingService, VectorStoreService, EdgeQuakeService, OmnisearchService],
 })
 export class KnowledgeBaseModule {}

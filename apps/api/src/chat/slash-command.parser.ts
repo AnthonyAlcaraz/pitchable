@@ -11,6 +11,7 @@ const VALID_COMMANDS = [
   'regenerate',
   'rewrite',
   'images',
+  'email',
   'help',
   'auto-approve',
 ] as const;
@@ -42,6 +43,7 @@ export function getAvailableCommands(): {
   return [
     { command: '/theme', description: 'Change presentation theme (e.g. /theme pitchable-dark)' },
     { command: '/export', description: 'Export presentation (e.g. /export pptx)' },
+    { command: '/email', description: 'Email presentation as PDF or PPTX (e.g. /email pdf, /email pptx user@example.com)' },
     { command: '/outline', description: 'Regenerate the outline' },
     { command: '/regenerate', description: 'Regenerate a slide (e.g. /regenerate slide 3)' },
     { command: '/images', description: 'Generate images for slides (e.g. /images 6)' },

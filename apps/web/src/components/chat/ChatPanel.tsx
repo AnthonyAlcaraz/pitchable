@@ -15,6 +15,8 @@ export function ChatPanel({ presentationId, briefId, lensId }: ChatPanelProps) {
     messages,
     streamingContent,
     isStreaming,
+    thinkingText,
+    agentSteps,
     isLoading,
     error,
     pendingValidations,
@@ -97,6 +99,8 @@ export function ChatPanel({ presentationId, briefId, lensId }: ChatPanelProps) {
         messages={messages}
         streamingContent={streamingContent}
         isStreaming={isStreaming}
+        thinkingText={thinkingText}
+        agentSteps={agentSteps}
         pendingValidations={pendingValidations}
         presentationId={presentationId}
         onAcceptSlide={handleAcceptSlide}

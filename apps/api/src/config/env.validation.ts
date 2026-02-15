@@ -57,7 +57,15 @@ class EnvironmentVariables {
 
   @IsOptional()
   @IsString()
-  GEMINI_API_KEY?: string;
+  REPLICATE_API_TOKEN?: string;
+
+  @IsOptional()
+  @IsString()
+  IMGUR_CLIENT_ID?: string;
+
+  @IsOptional()
+  @IsString()
+  RESEND_API_KEY?: string;
 
   @IsOptional()
   @IsString()
@@ -70,6 +78,14 @@ class EnvironmentVariables {
   @IsOptional()
   @IsString()
   EDGEQUAKE_API_KEY?: string;
+
+  @IsOptional()
+  @IsString()
+  OMNISEARCH_ENABLED?: string = 'true';
+
+  @IsOptional()
+  @IsString()
+  OMNISEARCH_PORT?: string = '27123';
 
   @IsOptional()
   @IsString()

@@ -117,12 +117,10 @@ export class LlmService {
   }
 
   /**
-   * Complete with JSON instruction + prefill + parse + validate + retry on failure.
+   * Complete with JSON instruction + parse + validate + retry on failure.
    *
-   * Anthropic doesn't have a native JSON mode. Instead we:
-   * 1. Append "respond with valid JSON only" to the system prompt
-   * 2. Prefill the assistant response with '{' to force JSON output
-   * 3. Prepend '{' to the response text before parsing
+   * Claude Opus 4.6 does not support assistant message prefill.
+   * Instead we rely on strong system prompt instruction for JSON output.
    *
    * @param messages - Chat messages
    * @param model - Model to use (use LlmModel.OPUS/SONNET/HAIKU for cost routing)
@@ -141,28 +139,26 @@ export class LlmService {
 
     // Append JSON instruction to system prompt
     const jsonSystem = system
-      ? system + '\n\nYou MUST respond with valid JSON only. No markdown, no explanation, just the JSON object.'
-      : 'You MUST respond with valid JSON only. No markdown, no explanation, just the JSON object.';
+      ? system + '\n\nIMPORTANT: You MUST respond with valid JSON only. No markdown fences, no explanation, no text before or after the JSON. Output ONLY a single JSON object.'
+      : 'You MUST respond with valid JSON only. No markdown fences, no explanation, no text before or after the JSON. Output ONLY a single JSON object.';
 
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
       try {
-        // Prefill with '{' to force JSON output
-        const prefillMessages = [
-          ...nonSystem,
-          { role: 'assistant' as const, content: '{' },
-        ];
-
         const result = await this.anthropic.messages.create({
           model: model ?? this.defaultModel,
           max_tokens: 4096,
           system: jsonSystem,
-          messages: prefillMessages,
+          messages: nonSystem,
         });
 
         const textBlock = result.content.find((block) => block.type === 'text');
-        const rawContent = textBlock?.text ?? '';
-        // Prepend the '{' we used as prefill
-        const content = '{' + rawContent;
+        const rawContent = (textBlock?.text ?? '').trim();
+
+        // Strip markdown fences if present (```json ... ```)
+        const content = rawContent
+          .replace(/^```(?:json)?\s*\n?/i, '')
+          .replace(/\n?```\s*$/, '')
+          .trim();
 
         let parsed: unknown;
         try {
@@ -170,7 +166,7 @@ export class LlmService {
         } catch (parseErr) {
           const msg = parseErr instanceof Error ? parseErr.message : 'JSON parse failed';
           this.logger.warn(
-            `JSON parse failed (attempt ${attempt + 1}/${maxRetries + 1}): ${msg}`,
+            `JSON parse failed (attempt ${attempt + 1}/${maxRetries + 1}): ${msg}\nRaw: ${content.substring(0, 200)}`,
           );
           lastError = new Error(`LLM returned invalid JSON: ${msg}`);
 
@@ -178,10 +174,10 @@ export class LlmService {
             // Retry with a nudge to fix the JSON
             nonSystem = [
               ...nonSystem,
-              { role: 'assistant' as const, content },
+              { role: 'assistant' as const, content: rawContent },
               {
                 role: 'user' as const,
-                content: 'Your previous response was not valid JSON. Please respond with valid JSON only.',
+                content: 'Your previous response was not valid JSON. Please respond with ONLY a valid JSON object. No markdown fences, no explanation.',
               },
             ];
             continue;
@@ -200,7 +196,7 @@ export class LlmService {
             if (attempt < maxRetries) {
               nonSystem = [
                 ...nonSystem,
-                { role: 'assistant' as const, content },
+                { role: 'assistant' as const, content: rawContent },
                 {
                   role: 'user' as const,
                   content: 'Your previous JSON response had missing or incorrect fields. Please ensure all required fields are present with correct types.',

@@ -181,6 +181,98 @@ export class ExportsService {
     }
   }
 
+  /**
+   * Process an export and return the buffer directly (for email attachments).
+   * Also uploads to S3 like processExport().
+   */
+  async processExportAndGetBuffer(jobId: string): Promise<Buffer> {
+    const job = await this.prisma.exportJob.findUnique({
+      where: { id: jobId },
+    });
+
+    if (!job) {
+      throw new NotFoundException(`Export job "${jobId}" not found`);
+    }
+
+    await this.prisma.exportJob.update({
+      where: { id: jobId },
+      data: { status: JobStatus.PROCESSING },
+    });
+
+    const presentation = await this.prisma.presentation.findUnique({
+      where: { id: job.presentationId },
+    });
+
+    if (!presentation) {
+      throw new Error(`Presentation "${job.presentationId}" not found`);
+    }
+
+    const slides = await this.prisma.slide.findMany({
+      where: { presentationId: job.presentationId },
+      orderBy: { slideNumber: 'asc' },
+    });
+
+    const theme = await this.prisma.theme.findUnique({
+      where: { id: presentation.themeId },
+    });
+
+    if (!theme) {
+      throw new Error(`Theme "${presentation.themeId}" not found`);
+    }
+
+    let buffer: Buffer;
+    let contentType: string;
+    let filename: string;
+
+    switch (job.format) {
+      case ExportFormat.PPTX: {
+        buffer = await this.pptxGenJsExporter.exportToPptx(
+          presentation,
+          slides,
+          theme,
+        );
+        contentType = 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
+        filename = `${presentation.title}.pptx`;
+        break;
+      }
+      case ExportFormat.PDF: {
+        const jobDir = join(this.tempDir, jobId);
+        await mkdir(jobDir, { recursive: true });
+        const outputPath = join(jobDir, `${presentation.title}.pdf`);
+        const markdown = this.marpExporter.generateMarpMarkdown(presentation, slides, theme);
+        await this.marpExporter.exportToPdf(markdown, outputPath);
+        buffer = await readFile(outputPath);
+        contentType = 'application/pdf';
+        filename = `${presentation.title}.pdf`;
+        break;
+      }
+      case ExportFormat.REVEAL_JS: {
+        const html = this.revealJsExporter.generateRevealHtml(presentation, slides, theme);
+        buffer = Buffer.from(html, 'utf-8');
+        contentType = 'text/html';
+        filename = `${presentation.title}.html`;
+        break;
+      }
+      default:
+        throw new Error(`Unsupported export format: ${job.format}`);
+    }
+
+    // Upload to S3
+    const s3Key = `exports/${jobId}/${filename}`;
+    await this.s3.upload(s3Key, buffer, contentType);
+
+    await this.prisma.exportJob.update({
+      where: { id: jobId },
+      data: {
+        status: JobStatus.COMPLETED,
+        fileUrl: s3Key,
+        completedAt: new Date(),
+      },
+    });
+
+    return buffer;
+  }
+
   async getSignedDownloadUrl(
     jobId: string,
   ): Promise<{ url: string; filename: string }> {

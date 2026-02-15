@@ -3,6 +3,8 @@ import { BullModule } from '@nestjs/bullmq';
 import { ConfigModule } from '@nestjs/config';
 import { PrismaModule } from '../prisma/prisma.module.js';
 import { CreditsModule } from '../credits/credits.module.js';
+import { EventsModule } from '../events/events.module.js';
+import { KnowledgeBaseModule } from '../knowledge-base/knowledge-base.module.js';
 import { ImagePromptBuilderService } from './image-prompt-builder.service.js';
 import { NanoBananaService } from './nano-banana.service.js';
 import { ImgurService } from './imgur.service.js';
@@ -15,6 +17,8 @@ import { ImagesController } from './images.controller.js';
     PrismaModule,
     ConfigModule,
     CreditsModule,
+    EventsModule,
+    KnowledgeBaseModule,
     BullModule.registerQueue({ name: 'image-generation' }),
   ],
   controllers: [ImagesController],
@@ -25,6 +29,6 @@ import { ImagesController } from './images.controller.js';
     ImageGenerationProcessor,
     ImagesService,
   ],
-  exports: [ImagesService, ImagePromptBuilderService],
+  exports: [ImagesService, ImagePromptBuilderService, NanoBananaService],
 })
 export class ImagesModule {}

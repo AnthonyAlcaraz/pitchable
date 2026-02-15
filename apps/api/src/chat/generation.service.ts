@@ -10,6 +10,8 @@ import { ValidationGateService } from './validation-gate.service.js';
 import { TierEnforcementService } from '../credits/tier-enforcement.service.js';
 import { CreditsService } from '../credits/credits.service.js';
 import { DECK_GENERATION_COST } from '../credits/tier-config.js';
+import { ImagesService } from '../images/images.service.js';
+import { NanoBananaService } from '../images/nano-banana.service.js';
 import {
   buildOutlineSystemPrompt,
   buildOutlineUserPrompt,
@@ -43,6 +45,7 @@ export interface GenerationConfig {
   pitchLensId?: string;
   minSlides?: number;
   maxSlides?: number;
+  autoGenerateImages?: boolean;
 }
 
 // ── Service ─────────────────────────────────────────────────
@@ -68,6 +71,8 @@ export class GenerationService {
     private readonly validationGate: ValidationGateService,
     private readonly tierEnforcement: TierEnforcementService,
     private readonly credits: CreditsService,
+    private readonly imagesService: ImagesService,
+    private readonly nanoBanana: NanoBananaService,
   ) {}
 
   /**
@@ -102,16 +107,19 @@ export class GenerationService {
       }
     }
 
-    // 1. RAG retrieval (scoped to brief if linked, otherwise global)
+    // 1. RAG retrieval: KB (pgvector) + Omnisearch (vault) enrichment
+    yield { type: 'thinking', content: 'Planning your presentation...' };
+    yield { type: 'progress', content: 'Retrieving relevant content', metadata: { step: 'rag', status: 'running' } };
     const kbContext = presWithContext?.briefId
       ? await this.contextBuilder.retrieveBriefContext(userId, presWithContext.briefId, config.topic, 8)
-      : await this.contextBuilder.retrieveKbContext(userId, config.topic, 8);
+      : await this.contextBuilder.retrieveEnrichedContext(userId, config.topic, 5, 5);
+    yield { type: 'progress', content: 'Retrieving relevant content', metadata: { step: 'rag', status: 'complete' } };
 
     // 2. Generate outline via LLM (JSON mode)
     const systemPrompt = buildOutlineSystemPrompt(presType, range, kbContext, pitchLensContext);
     const userPrompt = buildOutlineUserPrompt(config.topic);
 
-    yield { type: 'token', content: 'Generating outline' };
+    yield { type: 'progress', content: 'Generating outline structure', metadata: { step: 'outline_llm', status: 'running' } };
 
     let outline: GeneratedOutline;
     try {
@@ -130,6 +138,7 @@ export class GenerationService {
       yield { type: 'error', content: `Failed to generate outline: ${msg}` };
       return;
     }
+    yield { type: 'progress', content: 'Generating outline structure', metadata: { step: 'outline_llm', status: 'complete' } };
 
     // Validate outline has slides
     if (!outline.slides || outline.slides.length === 0) {
@@ -141,7 +150,6 @@ export class GenerationService {
     this.pendingOutlines.set(presentationId, { outline, config });
 
     // 4. Stream outline as readable markdown
-    yield { type: 'token', content: `...\n\n` };
     yield { type: 'token', content: `## ${outline.title}\n\n` };
 
     for (const slide of outline.slides) {
@@ -226,24 +234,28 @@ export class GenerationService {
       return;
     }
 
-    yield { type: 'token', content: `Generating **${outline.title}** — ${outline.slides.length} slides...\n\n` };
+    yield { type: 'thinking', content: 'Preparing to generate your deck...' };
 
     // 1. Resolve theme
+    yield { type: 'progress', content: 'Resolving theme', metadata: { step: 'theme', status: 'running' } };
     const themeId = await this.resolveThemeId(config.themeId);
     const theme = await this.prisma.theme.findUnique({ where: { id: themeId } });
     const themeName = theme?.displayName ?? 'Pitchable Dark';
     const themeColors = theme?.colorPalette
       ? { ...(theme.colorPalette as { primary: string; secondary: string; accent: string; background: string; text: string }), headingFont: theme.headingFont, bodyFont: theme.bodyFont }
       : undefined;
+    yield { type: 'progress', content: 'Resolving theme', metadata: { step: 'theme', status: 'complete' } };
 
-    // 2. Get KB context for slide generation (scoped to brief if linked)
+    // 2. Get KB + Omnisearch context for slide generation (scoped to brief if linked)
+    yield { type: 'progress', content: 'Building knowledge context', metadata: { step: 'kb_context', status: 'running' } };
     const presForBrief = await this.prisma.presentation.findUnique({
       where: { id: presentationId },
       select: { briefId: true },
     });
     const kbContext = presForBrief?.briefId
       ? await this.contextBuilder.retrieveBriefContext(userId, presForBrief.briefId, config.topic, 8)
-      : await this.contextBuilder.retrieveKbContext(userId, config.topic, 8);
+      : await this.contextBuilder.retrieveEnrichedContext(userId, config.topic, 5, 5);
+    yield { type: 'progress', content: 'Building knowledge context', metadata: { step: 'kb_context', status: 'complete' } };
 
     // 3. Update presentation metadata
     const presType = config.presentationType as PresentationType ?? PresentationType.STANDARD;
@@ -290,8 +302,15 @@ export class GenerationService {
       const actualSlideNumber = outlineSlide.slideNumber + slideNumberOffset;
 
       yield {
-        type: 'token',
-        content: `Generating slide ${outlineSlide.slideNumber}/${outline.slides.length}: **${outlineSlide.title}**...\n`,
+        type: 'progress',
+        content: `Generating slide ${outlineSlide.slideNumber}/${outline.slides.length}: ${outlineSlide.title}`,
+        metadata: {
+          step: 'generate_slide',
+          status: 'running',
+          current: outlineSlide.slideNumber,
+          total: outline.slides.length,
+          label: outlineSlide.title,
+        },
       };
 
       // Emit progress via WebSocket
@@ -472,6 +491,19 @@ export class GenerationService {
           },
         };
       }
+
+      // Mark slide as complete in progress
+      yield {
+        type: 'progress',
+        content: `Generating slide ${outlineSlide.slideNumber}/${outline.slides.length}: ${outlineSlide.title}`,
+        metadata: {
+          step: 'generate_slide',
+          status: 'complete',
+          current: outlineSlide.slideNumber,
+          total: outline.slides.length,
+          label: outlineSlide.title,
+        },
+      };
     }
 
     // 6. Mark presentation as completed and increment deck count
@@ -490,6 +522,22 @@ export class GenerationService {
       type: 'token',
       content: `\n**Done!** Generated ${totalSlides} slides for "${outline.title}"${slideNumberOffset > 0 ? ` (${slideNumberOffset} auto-split)` : ''}. You can now:\n- Click any slide to edit inline\n- Ask me to modify specific slides ("make slide 3 more concise")\n- Use /theme to change the visual style\n- Use /export to download\n`,
     };
+
+    // 7. Auto-generate images (non-blocking) if configured
+    const shouldGenerateImages = config.autoGenerateImages !== false && this.nanoBanana.isConfigured;
+    if (shouldGenerateImages) {
+      try {
+        const imageJobs = await this.imagesService.queueBatchGeneration(presentationId, userId);
+        if (imageJobs.length > 0) {
+          yield {
+            type: 'token',
+            content: `\nGenerating **${imageJobs.length} images** in the background... Your slides will update as images complete.\n`,
+          };
+        }
+      } catch (imgErr) {
+        this.logger.warn(`Auto image generation failed: ${imgErr instanceof Error ? imgErr.message : 'unknown'}`);
+      }
+    }
 
     // Persist assistant message
     await this.prisma.chatMessage.create({
@@ -553,10 +601,10 @@ export class GenerationService {
       data: { status: PresentationStatus.PROCESSING },
     });
 
-    // Build context
+    // Build context: KB + Omnisearch vault enrichment
     const kbContext = presentation.briefId
       ? await this.contextBuilder.retrieveBriefContext(userId, presentation.briefId, presentation.title, 8)
-      : await this.contextBuilder.retrieveKbContext(userId, presentation.title, 8);
+      : await this.contextBuilder.retrieveEnrichedContext(userId, presentation.title, 5, 5);
 
     let pitchLensContext: string | undefined;
     if (presentation.pitchLens) {
@@ -630,10 +678,40 @@ export class GenerationService {
     // Deduct credits
     await this.credits.deductCredits(userId, DECK_GENERATION_COST, CreditReason.DECK_GENERATION, presentationId);
 
-    yield {
-      type: 'token',
-      content: `\n**Rewrite complete!** All ${presentation.slides.length} slides have been updated with the current Brief/Lens context. Slide titles and structure were preserved.\n`,
-    };
+    // Clear all existing images so batch generation regenerates them
+    await this.prisma.slide.updateMany({
+      where: { presentationId },
+      data: { imageUrl: null },
+    });
+
+    // Queue batch image generation if configured
+    if (this.nanoBanana.isConfigured) {
+      try {
+        const imageJobs = await this.imagesService.queueBatchGeneration(presentationId, userId);
+        if (imageJobs.length > 0) {
+          yield {
+            type: 'token',
+            content: `\n**Rewrite complete!** All ${presentation.slides.length} slides updated. Generating **${imageJobs.length} images** in the background...\n`,
+          };
+        } else {
+          yield {
+            type: 'token',
+            content: `\n**Rewrite complete!** All ${presentation.slides.length} slides have been updated with the current Brief/Lens context.\n`,
+          };
+        }
+      } catch (imgErr) {
+        this.logger.warn(`Image generation after rewrite failed: ${imgErr instanceof Error ? imgErr.message : 'unknown'}`);
+        yield {
+          type: 'token',
+          content: `\n**Rewrite complete!** All ${presentation.slides.length} slides updated. Image generation skipped.\n`,
+        };
+      }
+    } else {
+      yield {
+        type: 'token',
+        content: `\n**Rewrite complete!** All ${presentation.slides.length} slides have been updated with the current Brief/Lens context.\n`,
+      };
+    }
 
     await this.prisma.chatMessage.create({
       data: {

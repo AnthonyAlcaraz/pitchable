@@ -32,6 +32,7 @@ export class ImagesService {
     slideId: string,
     prompt: { prompt: string; negativePrompt: string },
     userId: string,
+    delayMs = 0,
   ): Promise<ImageJobModel> {
     // Create ImageJob in DB
     const imageJob = await this.prisma.imageJob.create({
@@ -42,17 +43,25 @@ export class ImagesService {
       },
     });
 
-    // Add job to BullMQ queue
-    await this.imageQueue.add('generate', {
-      imageJobId: imageJob.id,
-      slideId,
-      prompt: prompt.prompt,
-      negativePrompt: prompt.negativePrompt,
-      userId,
-    });
+    // Add job to BullMQ queue with delay + retry backoff (Replicate: 6 req/min limit)
+    await this.imageQueue.add(
+      'generate',
+      {
+        imageJobId: imageJob.id,
+        slideId,
+        prompt: prompt.prompt,
+        negativePrompt: prompt.negativePrompt,
+        userId,
+      },
+      {
+        ...(delayMs > 0 ? { delay: delayMs } : {}),
+        attempts: 3,
+        backoff: { type: 'exponential', delay: 15_000 },
+      },
+    );
 
     this.logger.log(
-      `Queued image generation job ${imageJob.id} for slide ${slideId}`,
+      `Queued image generation job ${imageJob.id} for slide ${slideId}${delayMs > 0 ? ` (delay: ${delayMs}ms)` : ''}`,
     );
 
     return imageJob;
@@ -86,6 +95,9 @@ export class ImagesService {
     };
 
     const imageJobs: ImageJobModel[] = [];
+    // Stagger jobs by 12s each to avoid Replicate API rate limits (6 req/min)
+    const STAGGER_MS = 12_000;
+    let jobIndex = 0;
 
     for (const slide of presentation.slides) {
       // Skip slides that already have an image
@@ -107,7 +119,9 @@ export class ImagesService {
         slide.id,
         prompt,
         userId,
+        jobIndex * STAGGER_MS,
       );
+      jobIndex++;
 
       // Store the prompt on the slide for reference
       await this.prisma.slide.update({

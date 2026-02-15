@@ -25,6 +25,7 @@ import { ApiKeysModule } from './api-keys/api-keys.module.js';
 import { ApiV1Module } from './api-v1/api-v1.module.js';
 import { McpModule } from './mcp/mcp.module.js';
 import { AnalyticsModule } from './analytics/analytics.module.js';
+import { EmailModule } from './email/email.module.js';
 import { validate } from './config/env.validation.js';
 
 @Module({
@@ -60,6 +61,7 @@ import { validate } from './config/env.validation.js';
     ApiV1Module,
     McpModule,
     AnalyticsModule,
+    EmailModule,
     HealthModule,
   ],
   controllers: [AppController],

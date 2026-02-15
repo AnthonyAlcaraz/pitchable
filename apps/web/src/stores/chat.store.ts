@@ -27,10 +27,23 @@ export interface PendingCreditConfirmation {
   currentBalance: number;
 }
 
+export interface AgentStep {
+  id: string;
+  content: string;
+  status: 'running' | 'complete' | 'error';
+  current?: number;
+  total?: number;
+  label?: string;
+  startedAt: number;
+  completedAt?: number;
+}
+
 interface ChatState {
   messages: ChatMessage[];
   isStreaming: boolean;
   streamingContent: string;
+  thinkingText: string | null;
+  agentSteps: AgentStep[];
   isLoading: boolean;
   error: string | null;
   pendingValidations: PendingValidation[];
@@ -60,6 +73,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
   messages: [],
   isStreaming: false,
   streamingContent: '',
+  thinkingText: null,
+  agentSteps: [],
   isLoading: false,
   error: null,
   pendingValidations: [],
@@ -101,6 +116,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
       messages: [...state.messages, userMsg],
       isStreaming: true,
       streamingContent: '',
+      thinkingText: null,
+      agentSteps: [],
       error: null,
     }));
 
@@ -150,10 +167,59 @@ export const useChatStore = create<ChatState>((set, get) => ({
               document.body.removeChild(a);
             }
           }
+        } else if (event.type === 'thinking') {
+          set({ thinkingText: event.content });
+        } else if (event.type === 'progress') {
+          const meta = event.metadata as Record<string, unknown> | undefined;
+          const stepId = (meta?.step as string) ?? crypto.randomUUID();
+          const status = (meta?.status as 'running' | 'complete' | 'error') ?? 'running';
+          set((state) => {
+            const existing = state.agentSteps.find((s) => s.id === stepId);
+            if (existing) {
+              return {
+                thinkingText: null,
+                agentSteps: state.agentSteps.map((s) =>
+                  s.id === stepId
+                    ? {
+                        ...s,
+                        content: event.content,
+                        status,
+                        current: (meta?.current as number) ?? s.current,
+                        total: (meta?.total as number) ?? s.total,
+                        label: (meta?.label as string) ?? s.label,
+                        completedAt: status === 'complete' && !s.completedAt ? Date.now() : s.completedAt,
+                      }
+                    : s,
+                ),
+              };
+            }
+            return {
+              thinkingText: null,
+              agentSteps: [
+                ...state.agentSteps,
+                {
+                  id: stepId,
+                  content: event.content,
+                  status,
+                  current: meta?.current as number | undefined,
+                  total: meta?.total as number | undefined,
+                  label: meta?.label as string | undefined,
+                  startedAt: Date.now(),
+                  completedAt: status === 'complete' ? Date.now() : undefined,
+                },
+              ],
+            };
+          });
         } else if (event.type === 'error') {
-          set({ error: event.content, isStreaming: false });
+          set({ error: event.content, isStreaming: false, thinkingText: null, agentSteps: [] });
           return;
         } else if (event.type === 'done') {
+          // Mark any remaining running steps as complete
+          set((state) => ({
+            agentSteps: state.agentSteps.map((s) =>
+              s.status === 'running' ? { ...s, status: 'complete' as const, completedAt: Date.now() } : s,
+            ),
+          }));
           break;
         }
       }
@@ -172,15 +238,19 @@ export const useChatStore = create<ChatState>((set, get) => ({
           messages: [...state.messages, assistantMsg],
           isStreaming: false,
           streamingContent: '',
+          thinkingText: null,
+          agentSteps: [],
         }));
       } else {
-        set({ isStreaming: false, streamingContent: '' });
+        set({ isStreaming: false, streamingContent: '', thinkingText: null, agentSteps: [] });
       }
     } catch (err) {
       set({
         error: err instanceof Error ? err.message : 'Stream failed',
         isStreaming: false,
         streamingContent: '',
+        thinkingText: null,
+        agentSteps: [],
       });
     }
   },
