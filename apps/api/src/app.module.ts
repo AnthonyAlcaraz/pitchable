@@ -24,6 +24,7 @@ import { GalleryModule } from './gallery/gallery.module.js';
 import { ApiKeysModule } from './api-keys/api-keys.module.js';
 import { ApiV1Module } from './api-v1/api-v1.module.js';
 import { McpModule } from './mcp/mcp.module.js';
+import { AnalyticsModule } from './analytics/analytics.module.js';
 import { validate } from './config/env.validation.js';
 
 @Module({
@@ -58,6 +59,7 @@ import { validate } from './config/env.validation.js';
     ApiKeysModule,
     ApiV1Module,
     McpModule,
+    AnalyticsModule,
     HealthModule,
   ],
   controllers: [AppController],
