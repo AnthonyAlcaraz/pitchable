@@ -26,6 +26,13 @@ Thumbs.db
 # Testing
 coverage/
 
+# Export temp files
+apps/api/exports/
+
+# Standalone scripts (not part of app)
+*.py
+omnisearch-to-kb.js
+
 # Misc
 *.log
 npm-debug.log*
