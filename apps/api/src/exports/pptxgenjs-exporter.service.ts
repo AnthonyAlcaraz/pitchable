@@ -315,7 +315,7 @@ export class PptxGenJsExporterService {
     if (slide.speakerNotes) s.addNotes(slide.speakerNotes);
   }
 
-  // ── CTA Slide ────────────────────────────────────────────
+  // ── CTA Slide (Z4-style centered with accent) ───────────
 
   private addCTASlide(
     pres: PptxGenJS,
@@ -343,32 +343,70 @@ export class PptxGenJsExporterService {
       }
     }
 
-    // Title — large accent color, centered
+    // Accent line at top
+    s.addShape('rect', {
+      x: 0,
+      y: 0,
+      w: '100%',
+      h: 0.06,
+      fill: { color: hex(palette.accent) },
+    });
+
+    // Title — large, bold, centered
     if (slide.title) {
       s.addText(slide.title, {
         x: 0.8,
-        y: '25%',
+        y: '15%',
         w: '85%',
-        h: 1.2,
+        h: 1.0,
         fontSize: 36,
         fontFace: theme.headingFont,
-        color: hex(palette.accent),
+        color: hex(palette.text),
         bold: true,
         align: 'center',
         valign: 'middle',
       });
     }
 
-    // Body — use rich body parser for CTA slides too
+    // Body — centered card with surface background
     if (slide.body) {
+      // Card background
+      s.addShape('roundRect', {
+        x: 1.5,
+        y: '38%',
+        w: 10.33,
+        h: '45%',
+        fill: { color: hex(palette.surface) },
+        rectRadius: 0.15,
+      });
+      // Cyan accent bar on card
+      s.addShape('rect', {
+        x: 1.5,
+        y: '38%',
+        w: 10.33,
+        h: 0.06,
+        fill: { color: hex(palette.accent) },
+      });
+
       this.parseRichBody(s, slide.body, palette, theme, {
-        x: 1.2,
-        y: '50%',
-        w: '78%',
-        maxH: '35%',
+        x: 2.0,
+        y: '42%',
+        w: 9.33,
+        maxH: '38%',
         baseFontSize: 18,
       });
     }
+
+    // Footer CTA text
+    s.addText('Pitchable', {
+      x: 0.5,
+      y: '90%',
+      w: 3,
+      h: 0.35,
+      fontSize: 10,
+      fontFace: theme.bodyFont,
+      color: hex(palette.border),
+    });
 
     if (slide.speakerNotes) s.addNotes(slide.speakerNotes);
   }
@@ -386,60 +424,77 @@ export class PptxGenJsExporterService {
 
     this.addGradientOverlay(s, palette);
 
-    // Gold left border accent
+    // Accent left border
     s.addShape('rect', {
-      x: 0.6,
-      y: '15%',
+      x: 0.8,
+      y: '20%',
       w: 0.06,
-      h: '60%',
+      h: '55%',
       fill: { color: hex(palette.accent) },
     });
 
     // Large opening quote mark
     s.addText('\u201c', {
-      x: 0.9,
-      y: '12%',
-      w: 0.8,
-      h: 0.8,
-      fontSize: 72,
+      x: 1.2,
+      y: '15%',
+      w: 1.0,
+      h: 1.0,
+      fontSize: 80,
       fontFace: theme.headingFont,
-      color: hex(palette.accent),
-      transparency: 40,
+      color: hex(palette.primary),
+      transparency: 50,
     });
 
-    // Title as quote heading
+    // Title as quote context/heading
     if (slide.title) {
       s.addText(slide.title, {
-        x: 1.0,
-        y: '18%',
-        w: '78%',
+        x: 1.2,
+        y: '22%',
+        w: '75%',
         h: 0.6,
-        fontSize: 24,
+        fontSize: 22,
         fontFace: theme.headingFont,
         color: hex(palette.accent),
         bold: true,
-        italic: true,
       });
     }
 
-    // Body as quote text — centered, larger
+    // Body as quote text
     if (slide.body) {
       const lines = slide.body.split('\n').filter((l) => l.trim());
-      const quoteText = lines.map((l) => l.replace(/^[-*]\s+/, '').trim()).join('\n');
+      // Separate attribution line (starts with *— or — or *)
+      const attrIdx = lines.findIndex((l) => /^\*?—/.test(l.trim()) || /^\*—/.test(l.trim()));
+      const quoteLines = attrIdx > -1 ? lines.slice(0, attrIdx) : lines;
+      const attrLine = attrIdx > -1 ? lines[attrIdx].replace(/^\*|\*$/g, '').trim() : '';
+
+      const quoteText = quoteLines.map((l) => l.replace(/^[-*]\s+/, '').trim()).join('\n');
 
       s.addText(quoteText, {
-        x: 1.0,
-        y: '32%',
-        w: '78%',
-        h: '40%',
-        fontSize: 18,
+        x: 1.2,
+        y: '35%',
+        w: '75%',
+        h: '30%',
+        fontSize: 20,
         fontFace: theme.bodyFont,
         color: hex(palette.text),
         italic: true,
         valign: 'top',
-        paraSpaceBefore: 4,
-        paraSpaceAfter: 4,
+        lineSpacingMultiple: 1.4,
       });
+
+      // Attribution
+      if (attrLine) {
+        s.addText(attrLine, {
+          x: 1.2,
+          y: '68%',
+          w: '75%',
+          h: 0.4,
+          fontSize: 14,
+          fontFace: theme.bodyFont,
+          color: hex(palette.secondary),
+          italic: true,
+        });
+      }
     }
 
     this.addFooter(s, slide.slideNumber, totalSlides, palette, theme);
@@ -459,18 +514,26 @@ export class PptxGenJsExporterService {
 
     this.addGradientOverlay(s, palette);
 
-    // Centered title
+    // Accent line above title
+    s.addShape('rect', {
+      x: 0.5,
+      y: 0.25,
+      w: 1.5,
+      h: 0.04,
+      fill: { color: hex(palette.primary) },
+    });
+
+    // Title
     if (slide.title) {
       s.addText(slide.title, {
         x: 0.5,
-        y: 0.3,
+        y: 0.4,
         w: '92%',
         h: 0.7,
-        fontSize: 26,
+        fontSize: 28,
         fontFace: theme.headingFont,
         color: hex(palette.text),
         bold: true,
-        align: 'center',
       });
     }
 
@@ -516,7 +579,7 @@ export class PptxGenJsExporterService {
     if (slide.speakerNotes) s.addNotes(slide.speakerNotes);
   }
 
-  // ── COMPARISON Slide ─────────────────────────────────────
+  // ── COMPARISON Slide (Z4-style cards) ───────────────────
 
   private addComparisonSlide(
     pres: PptxGenJS,
@@ -529,53 +592,151 @@ export class PptxGenJsExporterService {
 
     this.addGradientOverlay(s, palette);
 
-    // Centered title spanning full width
+    // Accent line above title
+    s.addShape('rect', {
+      x: 0.5,
+      y: 0.25,
+      w: 1.5,
+      h: 0.04,
+      fill: { color: hex(palette.primary) },
+    });
+
+    // Title
     if (slide.title) {
       s.addText(slide.title, {
         x: 0.5,
-        y: 0.3,
+        y: 0.4,
         w: '92%',
         h: 0.7,
-        fontSize: 26,
+        fontSize: 28,
         fontFace: theme.headingFont,
         color: hex(palette.text),
         bold: true,
-        align: 'center',
       });
     }
 
-    // Split body into two columns — use rich body parser for each
-    const bodyLines = (slide.body ?? '').split('\n').filter((l) => l.trim());
-    const midpoint = Math.ceil(bodyLines.length / 2);
-    const leftBody = bodyLines.slice(0, midpoint).join('\n');
-    const rightBody = bodyLines.slice(midpoint).join('\n');
+    // Split body into two columns — detect blank-line separator or midpoint
+    const bodyLines = (slide.body ?? '').split('\n');
+    const blankIdx = bodyLines.findIndex((l, i) => i > 0 && !l.trim() && i < bodyLines.length - 1);
+    let leftLines: string[];
+    let rightLines: string[];
+    if (blankIdx > 0) {
+      leftLines = bodyLines.slice(0, blankIdx).filter((l) => l.trim());
+      rightLines = bodyLines.slice(blankIdx + 1).filter((l) => l.trim());
+    } else {
+      const filtered = bodyLines.filter((l) => l.trim());
+      const mid = Math.ceil(filtered.length / 2);
+      leftLines = filtered.slice(0, mid);
+      rightLines = filtered.slice(mid);
+    }
 
-    // Left column
-    this.parseRichBody(s, leftBody, palette, theme, {
-      x: 0.5,
-      y: 1.3,
-      w: '44%',
-      maxH: '58%',
-      baseFontSize: 14,
+    // Extract card headers from **bold header** lines
+    const extractHeader = (lines: string[]): { header: string; content: string[] } => {
+      if (lines.length > 0 && /^\*\*(.+?)\*\*$/.test(lines[0].trim())) {
+        const match = lines[0].trim().match(/^\*\*(.+?)\*\*$/);
+        return { header: match ? match[1] : '', content: lines.slice(1) };
+      }
+      return { header: '', content: lines };
+    };
+
+    const left = extractHeader(leftLines);
+    const right = extractHeader(rightLines);
+
+    // Card dimensions (Z4-style: two side-by-side rounded cards)
+    const cardW = 5.8;
+    const cardH = 4.5;
+    const cardY = 1.3;
+    const leftX = 0.5;
+    const rightX = 6.85;
+    const gap = 0.3;
+
+    // Determine accent colors — left=error (red) for problems, right=success (green) for solutions
+    const leftAccent = palette.error;
+    const rightAccent = palette.success;
+
+    // Left card background
+    s.addShape('roundRect', {
+      x: leftX,
+      y: cardY,
+      w: cardW,
+      h: cardH,
+      fill: { color: hex(palette.surface) },
+      rectRadius: 0.1,
     });
-
-    // Vertical divider line
+    // Left card accent bar (top)
     s.addShape('rect', {
-      x: '49.5%',
-      y: 1.3,
-      w: 0.02,
-      h: '55%',
-      fill: { color: hex(palette.border) },
+      x: leftX,
+      y: cardY,
+      w: cardW,
+      h: 0.06,
+      fill: { color: hex(leftAccent) },
     });
 
-    // Right column
-    this.parseRichBody(s, rightBody, palette, theme, {
-      x: '52%',
-      y: 1.3,
-      w: '44%',
-      maxH: '58%',
-      baseFontSize: 14,
+    // Right card background
+    s.addShape('roundRect', {
+      x: rightX,
+      y: cardY,
+      w: cardW,
+      h: cardH,
+      fill: { color: hex(palette.surface) },
+      rectRadius: 0.1,
     });
+    // Right card accent bar (top)
+    s.addShape('rect', {
+      x: rightX,
+      y: cardY,
+      w: cardW,
+      h: 0.06,
+      fill: { color: hex(rightAccent) },
+    });
+
+    // Left card header
+    if (left.header) {
+      s.addText(left.header, {
+        x: leftX + 0.3,
+        y: cardY + 0.2,
+        w: cardW - 0.6,
+        h: 0.4,
+        fontSize: 16,
+        fontFace: theme.headingFont,
+        color: hex(palette.accent),
+        bold: true,
+      });
+    }
+    // Left card content
+    if (left.content.length > 0) {
+      this.parseRichBody(s, left.content.join('\n'), palette, theme, {
+        x: leftX + 0.3,
+        y: cardY + (left.header ? 0.7 : 0.2),
+        w: cardW - 0.6,
+        maxH: cardH - (left.header ? 1.0 : 0.4),
+        baseFontSize: 13,
+      });
+    }
+
+    // Right card header
+    if (right.header) {
+      s.addText(right.header, {
+        x: rightX + 0.3,
+        y: cardY + 0.2,
+        w: cardW - 0.6,
+        h: 0.4,
+        fontSize: 16,
+        fontFace: theme.headingFont,
+        color: hex(palette.accent),
+        bold: true,
+      });
+    }
+    // Right card content
+    if (right.content.length > 0) {
+      this.parseRichBody(s, right.content.join('\n'), palette, theme, {
+        x: rightX + 0.3,
+        y: cardY + (right.header ? 0.7 : 0.2),
+        w: cardW - 0.6,
+        maxH: cardH - (right.header ? 1.0 : 0.4),
+        baseFontSize: 13,
+      });
+    }
 
     this.addFooter(s, slide.slideNumber, totalSlides, palette, theme);
     if (slide.speakerNotes) s.addNotes(slide.speakerNotes);
@@ -723,6 +884,15 @@ export class PptxGenJsExporterService {
       fill: { color: hex(accentColor) },
     });
 
+    // Accent line above title (matching the accent bar color)
+    s.addShape('rect', {
+      x: 0.5,
+      y: 0.25,
+      w: 1.5,
+      h: 0.04,
+      fill: { color: hex(accentColor) },
+    });
+
     const hasImage = !!slide.imageUrl;
     const contentWidth = hasImage ? '55%' : '85%';
 
@@ -730,7 +900,7 @@ export class PptxGenJsExporterService {
     if (slide.title) {
       s.addText(slide.title, {
         x: 0.5,
-        y: 0.3,
+        y: 0.4,
         w: contentWidth,
         h: 0.7,
         fontSize: 28,
