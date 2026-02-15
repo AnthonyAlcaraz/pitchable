@@ -16,8 +16,8 @@ export interface LlmStreamChunk {
 /** Optional schema validator function. Returns null if valid, error message if invalid. */
 export type JsonValidator<T> = (data: unknown) => data is T;
 
-/** Default timeout for LLM calls (30 seconds). */
-const DEFAULT_TIMEOUT_MS = 30_000;
+/** Default timeout for LLM calls (120 seconds — Opus needs more time for rich content). */
+const DEFAULT_TIMEOUT_MS = 120_000;
 
 /**
  * Model routing for cost optimization.
