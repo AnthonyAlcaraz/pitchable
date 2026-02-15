@@ -28,6 +28,7 @@ import {
   validateSlideContent,
   suggestSplit,
   DENSITY_LIMITS,
+  type DensityLimits,
   type SlideContent,
   type DensityValidationResult,
   type SplitResult,
@@ -141,8 +142,8 @@ export class ConstraintsService {
   /**
    * Validate content density for a single slide.
    */
-  validateDensity(slide: SlideContent): DensityValidationResult {
-    return validateSlideContent(slide);
+  validateDensity(slide: SlideContent, limits?: DensityLimits): DensityValidationResult {
+    return validateSlideContent(slide, limits);
   }
 
   /**

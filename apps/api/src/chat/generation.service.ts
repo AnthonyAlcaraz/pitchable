@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Inject, forwardRef } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { LlmService, LlmModel } from './llm.service.js';
 import { ContextBuilderService } from './context-builder.service.js';
@@ -12,6 +12,7 @@ import { CreditsService } from '../credits/credits.service.js';
 import { DECK_GENERATION_COST } from '../credits/tier-config.js';
 import { ImagesService } from '../images/images.service.js';
 import { NanoBananaService } from '../images/nano-banana.service.js';
+import { PitchLensAgentService } from '../pitch-lens/pitch-lens-agent.service.js';
 import {
   buildOutlineSystemPrompt,
   buildOutlineUserPrompt,
@@ -24,6 +25,7 @@ import {
 import { DEFAULT_SLIDE_RANGES } from './dto/generation-config.dto.js';
 import { getFrameworkConfig } from '../pitch-lens/frameworks/story-frameworks.config.js';
 import { buildPitchLensInjection } from '../pitch-lens/prompts/pitch-lens-injection.prompt.js';
+import { getImageFrequencyForTheme } from '../themes/themes.service.js';
 import {
   PresentationType,
   PresentationStatus,
@@ -73,6 +75,8 @@ export class GenerationService {
     private readonly credits: CreditsService,
     private readonly imagesService: ImagesService,
     private readonly nanoBanana: NanoBananaService,
+    @Inject(forwardRef(() => PitchLensAgentService))
+    private readonly pitchLensAgent: PitchLensAgentService,
   ) {}
 
   /**
@@ -104,6 +108,42 @@ export class GenerationService {
       if (!config.minSlides && !config.maxSlides && framework) {
         range.min = framework.idealSlideRange.min;
         range.max = framework.idealSlideRange.max;
+      }
+    }
+
+    // 0b. Auto-infer Pitch Lens if none linked (agentic narrative strategy)
+    if (!presWithContext?.pitchLens && presWithContext?.briefId) {
+      try {
+        yield { type: 'thinking', content: 'Analyzing your content to find the best narrative strategy...' };
+        const inference = await this.pitchLensAgent.inferFromBrief(
+          userId, presWithContext.briefId, config.topic,
+        );
+        const lensId = await this.pitchLensAgent.createLensFromInference(
+          userId, presentationId, config.topic, inference,
+        );
+        // Link lens to presentation
+        await this.prisma.presentation.update({
+          where: { id: presentationId },
+          data: { pitchLensId: lensId },
+        });
+        // Build injection from inferred lens
+        const inferredLens = await this.prisma.pitchLens.findUnique({ where: { id: lensId } });
+        if (inferredLens) {
+          const framework = getFrameworkConfig(inferredLens.selectedFramework);
+          pitchLensContext = buildPitchLensInjection({ ...inferredLens, framework });
+          if (!config.minSlides && !config.maxSlides && framework) {
+            range.min = framework.idealSlideRange.min;
+            range.max = framework.idealSlideRange.max;
+          }
+        }
+        yield {
+          type: 'lens_inferred',
+          content: `Narrative strategy: **${inference.recommendedLens.selectedFramework}** — ${inference.recommendedLens.reasoning}`,
+          metadata: inference as unknown as Record<string, unknown>,
+        };
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : 'Unknown error';
+        this.logger.warn(`Auto lens inference failed, continuing without: ${msg}`);
       }
     }
 
@@ -284,19 +324,37 @@ export class GenerationService {
       pitchLensContext = buildPitchLensInjection({ ...presWithLens.pitchLens, framework });
     }
 
+    // 4c. Extract density + image layout from Pitch Lens
+    const densityOverrides = presWithLens?.pitchLens ? {
+      maxBullets: presWithLens.pitchLens.maxBulletsPerSlide ?? undefined,
+      maxWords: presWithLens.pitchLens.maxWordsPerSlide ?? undefined,
+    } : undefined;
+    const imageLayoutInstruction = presWithLens?.pitchLens?.imageLayout === 'BACKGROUND'
+      ? 'Place images as full-slide backgrounds at 15% opacity. Do not use side-panel images.'
+      : undefined;
+
     // 5. Build slide system prompt with user feedback injection
     const feedbackBlock = await this.contextBuilder.buildFeedbackBlock(userId);
+    const imageFreqInstruction = theme ? getImageFrequencyForTheme(theme.name) : undefined;
     const slideSystemPrompt = buildSlideGenerationSystemPrompt(
       config.presentationType,
       themeName,
       kbContext,
       pitchLensContext,
       themeColors,
+      imageFreqInstruction,
+      densityOverrides,
+      imageLayoutInstruction,
     ) + feedbackBlock;
 
     // Track offset when NEEDS_SPLIT inserts extra slides
     let slideNumberOffset = 0;
     const generatedSlides: Array<{ title: string; body: string }> = [];
+    // Split budget: cap total slides at maxSlides (or outline.slides.length + 25% headroom)
+    const maxTotalSlides = Math.min(
+      config.maxSlides ?? DEFAULT_SLIDE_RANGES[config.presentationType || 'STANDARD']?.max ?? 16,
+      Math.ceil(outline.slides.length * 1.25),
+    );
 
     for (const outlineSlide of outline.slides) {
       const actualSlideNumber = outlineSlide.slideNumber + slideNumberOffset;
@@ -404,14 +462,25 @@ export class GenerationService {
           }
         }
 
-        // Handle NEEDS_SPLIT: insert additional split slides
-        if (review.verdict === 'NEEDS_SPLIT' && review.suggestedSplits && review.suggestedSplits.length > 1) {
+        // Handle NEEDS_SPLIT: insert additional split slides (with budget guard)
+        const currentTotal = outline.slides.length + slideNumberOffset;
+        const splitCount = review.suggestedSplits?.length ?? 0;
+        const splitBudgetExhausted = currentTotal + splitCount - 1 > maxTotalSlides;
+        // Cap splits at 2 parts max (even if reviewer suggests more)
+        const cappedSplits = review.suggestedSplits?.slice(0, 2);
+
+        if (
+          review.verdict === 'NEEDS_SPLIT'
+          && cappedSplits
+          && cappedSplits.length > 1
+          && !splitBudgetExhausted
+        ) {
           this.logger.log(
-            `Slide ${actualSlideNumber} needs split into ${review.suggestedSplits.length} slides`,
+            `Slide ${actualSlideNumber} split into ${cappedSplits.length} slides (budget: ${currentTotal + cappedSplits.length - 1}/${maxTotalSlides})`,
           );
 
           // Update the original slide with the first split's content
-          const firstSplit = review.suggestedSplits[0];
+          const firstSplit = cappedSplits[0];
           await this.prisma.slide.update({
             where: { id: slide.id },
             data: {
@@ -431,11 +500,11 @@ export class GenerationService {
             body: firstSplit.body,
           };
 
-          // Insert remaining splits as new slides
-          for (let si = 1; si < review.suggestedSplits.length; si++) {
+          // Insert remaining splits as new slides (max 1 additional)
+          for (let si = 1; si < cappedSplits.length; si++) {
             slideNumberOffset++;
             const splitNum = actualSlideNumber + si;
-            const splitData = review.suggestedSplits[si];
+            const splitData = cappedSplits[si];
 
             const splitSlide = await this.prisma.slide.create({
               data: {
@@ -471,6 +540,10 @@ export class GenerationService {
               content: `  Auto-split: created slide ${splitNum} — "${splitData.title}"\n`,
             };
           }
+        } else if (review.verdict === 'NEEDS_SPLIT' && splitBudgetExhausted) {
+          this.logger.log(
+            `Slide ${actualSlideNumber} split skipped — budget exhausted (${currentTotal}/${maxTotalSlides})`,
+          );
         }
       } catch {
         // Content review failed — treat as passed
@@ -626,17 +699,30 @@ export class GenerationService {
       pitchLensContext = buildPitchLensInjection({ ...presentation.pitchLens, framework });
     }
 
+    // Extract density + image layout from Pitch Lens (rewrite path)
+    const rewriteDensity = presentation.pitchLens ? {
+      maxBullets: presentation.pitchLens.maxBulletsPerSlide ?? undefined,
+      maxWords: presentation.pitchLens.maxWordsPerSlide ?? undefined,
+    } : undefined;
+    const rewriteImageLayout = presentation.pitchLens?.imageLayout === 'BACKGROUND'
+      ? 'Place images as full-slide backgrounds at 15% opacity. Do not use side-panel images.'
+      : undefined;
+
     const themeName = presentation.theme?.displayName ?? 'Pitchable Dark';
     const rewriteThemeColors = presentation.theme?.colorPalette
       ? { ...(presentation.theme.colorPalette as { primary: string; secondary: string; accent: string; background: string; text: string }), headingFont: presentation.theme.headingFont, bodyFont: presentation.theme.bodyFont }
       : undefined;
     const feedbackBlock = await this.contextBuilder.buildFeedbackBlock(userId);
+    const rewriteImgFreq = presentation.theme ? getImageFrequencyForTheme(presentation.theme.name) : undefined;
     const slideSystemPrompt = buildSlideGenerationSystemPrompt(
       presentation.presentationType,
       themeName,
       kbContext,
       pitchLensContext,
       rewriteThemeColors,
+      rewriteImgFreq,
+      rewriteDensity,
+      rewriteImageLayout,
     ) + feedbackBlock;
 
     const priorSlides: Array<{ title: string; body: string }> = [];

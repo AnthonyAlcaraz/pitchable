@@ -5,6 +5,12 @@ import PptxGenJS from 'pptxgenjs';
 import type { PresentationModel } from '../../generated/prisma/models/Presentation.js';
 import type { SlideModel } from '../../generated/prisma/models/Slide.js';
 import type { ThemeModel } from '../../generated/prisma/models/Theme.js';
+import {
+  getPptxDecorations,
+  getSlideAccentColor,
+  type ColorPalette as VisualColorPalette,
+  getSlideBackground,
+} from './slide-visual-theme.js';
 
 // ── Types ──────────────────────────────────────────────────
 
@@ -69,6 +75,7 @@ function pctToInchesX(pct: string | number): number {
 @Injectable()
 export class PptxGenJsExporterService {
   private readonly logger = new Logger(PptxGenJsExporterService.name);
+  private isMcKinseyTheme = false;
 
   async exportToPptx(
     presentation: PresentationModel,
@@ -76,6 +83,7 @@ export class PptxGenJsExporterService {
     theme: ThemeModel,
   ): Promise<Buffer> {
     const palette = theme.colorPalette as unknown as ColorPalette;
+    this.isMcKinseyTheme = theme.name === 'mckinsey-executive';
     const pres = new PptxGenJS();
 
     pres.title = presentation.title;
@@ -92,6 +100,18 @@ export class PptxGenJsExporterService {
       title: 'PITCHABLE_ACCENT',
       background: { color: darken(palette.background, 0.15) },
     });
+
+    // McKinsey-specific masters
+    if (this.isMcKinseyTheme) {
+      pres.defineSlideMaster({
+        title: 'MCKINSEY_CONTENT',
+        background: { color: 'FFFFFF' },
+      });
+      pres.defineSlideMaster({
+        title: 'MCKINSEY_DIVIDER',
+        background: { color: '051C2C' },
+      });
+    }
 
     const sortedSlides = [...slides].sort(
       (a, b) => a.slideNumber - b.slideNumber,
@@ -165,6 +185,45 @@ export class PptxGenJsExporterService {
     });
   }
 
+  // ── Background Decoration ────────────────────────────────
+
+  private applyBackgroundDecoration(
+    s: PptxGenJS.Slide,
+    slide: SlideModel,
+    palette: ColorPalette,
+  ): void {
+    if (this.isMcKinseyTheme) return;
+    const decorations = getPptxDecorations(
+      slide.slideType,
+      slide.slideNumber,
+      palette as unknown as VisualColorPalette,
+    );
+    for (const d of decorations) {
+      if (d.type === 'ellipse') {
+        s.addShape('ellipse' as PptxGenJS.ShapeType, {
+          x: d.x, y: d.y, w: d.w, h: d.h,
+          fill: d.fill ? { color: d.fill.color, transparency: d.fill.transparency } : undefined,
+        });
+      } else if (d.type === 'triangle') {
+        s.addShape('triangle' as PptxGenJS.ShapeType, {
+          x: d.x, y: d.y, w: d.w, h: d.h,
+          fill: d.fill ? { color: d.fill.color, transparency: d.fill.transparency } : undefined,
+          rotate: d.rotate ?? 0,
+        });
+      } else if (d.type === 'rect') {
+        s.addShape('rect' as PptxGenJS.ShapeType, {
+          x: d.x, y: d.y, w: d.w, h: d.h,
+          fill: d.fill ? { color: d.fill.color, transparency: d.fill.transparency } : undefined,
+        });
+      } else if (d.type === 'line') {
+        s.addShape('line' as PptxGenJS.ShapeType, {
+          x: d.x, y: d.y, w: d.w, h: d.h,
+          line: d.line ? { color: d.line.color, width: d.line.width, transparency: d.line.transparency } : undefined,
+        });
+      }
+    }
+  }
+
   // ── Slide Router ─────────────────────────────────────────
 
   private addSlide(
@@ -179,6 +238,22 @@ export class PptxGenJsExporterService {
     const cachedSlide = imageCache.has(slide.id)
       ? { ...slide, imageUrl: imageCache.get(slide.id)! }
       : slide;
+
+    // Compute per-slide accent color for color variation
+    const slideAccent = getSlideAccentColor(
+      slide.slideNumber,
+      palette as unknown as VisualColorPalette,
+    );
+
+    // McKinsey routing: TITLE/CTA → navy divider, all others → clean 5-zone content
+    if (this.isMcKinseyTheme) {
+      if (slide.slideType === 'TITLE' || slide.slideType === 'CTA') {
+        this.addMcKinseySectionDivider(pres, cachedSlide, palette, theme);
+      } else {
+        this.addMcKinseyContentSlide(pres, cachedSlide, palette, theme, totalSlides);
+      }
+      return;
+    }
 
     switch (slide.slideType) {
       case 'TITLE':
@@ -214,6 +289,133 @@ export class PptxGenJsExporterService {
     }
   }
 
+  // ── McKinsey Section Divider (navy bg, white centered text) ──
+
+  private addMcKinseySectionDivider(
+    pres: PptxGenJS,
+    slide: SlideModel,
+    palette: ColorPalette,
+    theme: ThemeModel,
+  ): void {
+    // Resolve background variant (light pool for McKinsey white bg)
+    const _bgVariant = getSlideBackground(slide.slideType, slide.slideNumber, palette.background);
+    const s = pres.addSlide({ masterName: 'MCKINSEY_DIVIDER' });
+
+    // Title — large, centered, white Georgia text on navy
+    if (slide.title) {
+      s.addText(slide.title, {
+        x: 1.0,
+        y: '25%',
+        w: '85%',
+        h: 1.8,
+        fontSize: 40,
+        fontFace: theme.headingFont,
+        color: 'FFFFFF',
+        bold: true,
+        align: 'center',
+        valign: 'middle',
+      });
+    }
+
+    // Subtitle from body — lighter white, below title
+    if (slide.body) {
+      const subtitleLines = slide.body
+        .split('\n')
+        .filter((l) => l.trim())
+        .slice(0, 3)
+        .map((l) => l.replace(/^[-*]\s+/, '').replace(/\*\*/g, '').trim());
+
+      s.addText(subtitleLines.join('\n'), {
+        x: 1.5,
+        y: '55%',
+        w: '80%',
+        h: 1.0,
+        fontSize: 20,
+        fontFace: theme.bodyFont,
+        color: 'C0C0C0',
+        align: 'center',
+        valign: 'top',
+        lineSpacingMultiple: 1.4,
+      });
+    }
+
+    if (slide.speakerNotes) s.addNotes(slide.speakerNotes);
+  }
+
+  // ── McKinsey Content Slide (5-zone layout) ─────────────────
+
+  private addMcKinseyContentSlide(
+    pres: PptxGenJS,
+    slide: SlideModel,
+    palette: ColorPalette,
+    theme: ThemeModel,
+    totalSlides: number,
+  ): void {
+    // Resolve background variant (light pool for McKinsey white bg)
+    const _bgVariant = getSlideBackground(slide.slideType, slide.slideNumber, palette.background);
+    const s = pres.addSlide({ masterName: 'MCKINSEY_CONTENT' });
+
+    // Zone 1: Thin blue accent header bar (top)
+    s.addShape('rect', {
+      x: 0,
+      y: 0,
+      w: '100%',
+      h: 0.06,
+      fill: { color: '2251FF' },
+    });
+
+    // Zone 2: Action title — Georgia Bold, dark navy
+    if (slide.title) {
+      s.addText(slide.title, {
+        x: 0.6,
+        y: 0.25,
+        w: '90%',
+        h: 1.0,
+        fontSize: 28,
+        fontFace: theme.headingFont,
+        color: '051C2C',
+        bold: true,
+        align: 'left',
+        valign: 'top',
+      });
+    }
+
+    // Zone 3: Short blue separator rule
+    s.addShape('rect', {
+      x: 0.6,
+      y: 1.30,
+      w: 0.8,
+      h: 0.03,
+      fill: { color: '2251FF' },
+    });
+
+    // Zone 4: Body content — Arial, dark text
+    if (slide.body) {
+      this.parseRichBody(s, slide.body, palette, theme, {
+        x: 0.6,
+        y: 1.50,
+        w: '90%',
+        maxH: '58%',
+        baseFontSize: 16,
+      });
+    }
+
+    // Zone 5: Source + footer
+    // Page number right-aligned, gray
+    s.addText(`${slide.slideNumber}`, {
+      x: '88%',
+      y: '93%',
+      w: 1.0,
+      h: 0.3,
+      fontSize: 9,
+      fontFace: theme.bodyFont,
+      color: 'A0A0A0',
+      align: 'right',
+    });
+
+    if (slide.speakerNotes) s.addNotes(slide.speakerNotes);
+  }
+
   // ── TITLE Slide (Z4 style) ────────────────────────────────
 
   private addTitleSlide(
@@ -223,6 +425,8 @@ export class PptxGenJsExporterService {
     theme: ThemeModel,
   ): void {
     const s = pres.addSlide({ masterName: 'PITCHABLE_ACCENT' });
+
+    this.applyBackgroundDecoration(s, slide, palette);
 
     // Background image at low opacity (if available) — added first so text renders on top
     if (slide.imageUrl) {
@@ -322,6 +526,8 @@ export class PptxGenJsExporterService {
   ): void {
     const s = pres.addSlide({ masterName: 'PITCHABLE_ACCENT' });
 
+    this.applyBackgroundDecoration(s, slide, palette);
+
     // Background image at low opacity
     if (slide.imageUrl) {
       try {
@@ -417,6 +623,8 @@ export class PptxGenJsExporterService {
   ): void {
     const s = pres.addSlide({ masterName: 'PITCHABLE_DARK' });
 
+    this.applyBackgroundDecoration(s, slide, palette);
+
     // Accent left border
     s.addShape('rect', {
       x: 0.8,
@@ -505,6 +713,8 @@ export class PptxGenJsExporterService {
   ): void {
     const s = pres.addSlide({ masterName: 'PITCHABLE_DARK' });
 
+    this.applyBackgroundDecoration(s, slide, palette);
+
     // Accent line above title
     s.addShape('rect', {
       x: 0.5,
@@ -580,6 +790,8 @@ export class PptxGenJsExporterService {
     totalSlides: number,
   ): void {
     const s = pres.addSlide({ masterName: 'PITCHABLE_DARK' });
+
+    this.applyBackgroundDecoration(s, slide, palette);
 
 
 
@@ -744,6 +956,8 @@ export class PptxGenJsExporterService {
   ): void {
     const s = pres.addSlide({ masterName: 'PITCHABLE_DARK' });
 
+    this.applyBackgroundDecoration(s, slide, palette);
+
     const hasImage = !!slide.imageUrl;
     const contentWidth = hasImage ? '58%' : '90%';
 
@@ -801,6 +1015,8 @@ export class PptxGenJsExporterService {
     totalSlides: number,
   ): void {
     const s = pres.addSlide({ masterName: 'PITCHABLE_DARK' });
+
+    this.applyBackgroundDecoration(s, slide, palette);
 
 
 
@@ -861,6 +1077,8 @@ export class PptxGenJsExporterService {
     accentColor: string,
   ): void {
     const s = pres.addSlide({ masterName: 'PITCHABLE_DARK' });
+
+    this.applyBackgroundDecoration(s, slide, palette);
 
     // Left accent bar (red for PROBLEM, green for SOLUTION)
     s.addShape('rect', {
@@ -927,6 +1145,8 @@ export class PptxGenJsExporterService {
     totalSlides: number,
   ): void {
     const s = pres.addSlide({ masterName: 'PITCHABLE_DARK' });
+
+    this.applyBackgroundDecoration(s, slide, palette);
 
 
 
@@ -1258,33 +1478,51 @@ export class PptxGenJsExporterService {
     type TableCell = { text: PptxGenJS.TextProps[]; options: Record<string, unknown> };
     const tableRows: TableCell[][] = [];
 
-    // Header row — primary accent background with high-contrast text
+    // McKinsey: navy header + white text, horizontal-only borders
+    // Standard: primary bg header, full grid borders
+    const isMcK = this.isMcKinseyTheme;
     const headerRow: TableCell[] = headerCells.map((cell) => ({
       text: this.parseTableCellInline(cell, palette, theme, 14, true),
       options: {
-        fill: { color: hex(palette.primary) },
-        color: hex(palette.text),
+        fill: { color: isMcK ? '051C2C' : hex(palette.primary) },
+        color: isMcK ? 'FFFFFF' : hex(palette.text),
         bold: true,
         fontSize: 14,
         fontFace: theme.bodyFont,
-        border: { type: 'solid', color: hex(palette.border), pt: 0.5 },
+        border: isMcK
+          ? [
+              { type: 'solid', color: '051C2C', pt: 1 },
+              { type: 'none', color: 'FFFFFF', pt: 0 },
+              { type: 'solid', color: 'E5E5E5', pt: 0.5 },
+              { type: 'none', color: 'FFFFFF', pt: 0 },
+            ]
+          : { type: 'solid', color: hex(palette.border), pt: 0.5 },
         valign: 'middle' as const,
         margin: [4, 6, 4, 6],
       },
     }));
     tableRows.push(headerRow);
 
-    // Data rows with alternating backgrounds
+    // Data rows — McKinsey: alternating white/F5F5F5, horizontal borders only
     dataRows.forEach((row, rowIdx) => {
-      const bgColor = rowIdx % 2 === 0 ? palette.surface : palette.background;
+      const bgColor = isMcK
+        ? (rowIdx % 2 === 0 ? 'FFFFFF' : 'F5F5F5')
+        : hex(rowIdx % 2 === 0 ? palette.surface : palette.background);
       const dataRow: TableCell[] = row.map((cell) => ({
         text: this.parseTableCellInline(cell, palette, theme, 13, false),
         options: {
-          fill: { color: hex(bgColor) },
-          color: hex(palette.text),
+          fill: { color: bgColor },
+          color: isMcK ? '222222' : hex(palette.text),
           fontSize: 13,
           fontFace: theme.bodyFont,
-          border: { type: 'solid', color: hex(palette.border), pt: 0.5 },
+          border: isMcK
+            ? [
+                { type: 'none', color: 'FFFFFF', pt: 0 },
+                { type: 'none', color: 'FFFFFF', pt: 0 },
+                { type: 'solid', color: 'E5E5E5', pt: 0.5 },
+                { type: 'none', color: 'FFFFFF', pt: 0 },
+              ]
+            : { type: 'solid', color: hex(palette.border), pt: 0.5 },
           valign: 'middle' as const,
           margin: [4, 6, 4, 6],
         },
@@ -1301,7 +1539,9 @@ export class PptxGenJsExporterService {
       w: wNum,
       colW: Array(colCount).fill(colW),
       rowH: rowHeight,
-      border: { type: 'solid', color: hex(palette.border), pt: 0.5 },
+      border: isMcK
+        ? { type: 'none', color: 'FFFFFF', pt: 0 }
+        : { type: 'solid', color: hex(palette.border), pt: 0.5 },
       autoPage: false,
     });
 
@@ -1709,3 +1949,4 @@ export class PptxGenJsExporterService {
     return elements;
   }
 }
+

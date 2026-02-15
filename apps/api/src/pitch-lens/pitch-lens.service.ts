@@ -5,10 +5,13 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { ThemesService } from '../themes/themes.service.js';
 import type { CreatePitchLensDto } from './dto/create-pitch-lens.dto.js';
 import type { UpdatePitchLensDto } from './dto/update-pitch-lens.dto.js';
 import type { RecommendFrameworksDto } from './dto/recommend-frameworks.dto.js';
+import type { RecommendThemesDto } from './dto/recommend-themes.dto.js';
 import { recommendFrameworks } from './frameworks/framework-recommender.js';
+import { recommendThemes } from './frameworks/theme-recommender.js';
 import {
   getFrameworkConfig,
   getAllFrameworks,
@@ -19,7 +22,10 @@ import type { StoryFrameworkConfig } from './frameworks/story-frameworks.config.
 export class PitchLensService {
   private readonly logger = new Logger(PitchLensService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly themesService: ThemesService,
+  ) {}
 
   async create(userId: string, dto: CreatePitchLensDto) {
     // If this is set as default, unset any existing default
@@ -167,6 +173,16 @@ export class PitchLensService {
       dto.pitchGoal,
       dto.companyStage,
       dto.technicalLevel,
+    );
+  }
+
+  getThemeRecommendations(dto: RecommendThemesDto) {
+    const themes = this.themesService.getAllThemeMeta();
+    return recommendThemes(
+      themes,
+      dto.audienceType,
+      dto.pitchGoal,
+      dto.selectedFramework,
     );
   }
 

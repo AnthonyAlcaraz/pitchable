@@ -3,6 +3,9 @@ import {
   IsEnum,
   IsOptional,
   IsBoolean,
+  IsInt,
+  Min,
+  Max,
   MaxLength,
 } from 'class-validator';
 import {
@@ -12,6 +15,7 @@ import {
   CompanyStage,
   TechnicalLevel,
   StoryFramework,
+  ImageLayout,
 } from '../../../generated/prisma/enums.js';
 
 export class UpdatePitchLensDto {
@@ -58,6 +62,28 @@ export class UpdatePitchLensDto {
   @IsString()
   @MaxLength(1000)
   customGuidance?: string;
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Max(20)
+  imageFrequency?: number;
+
+  @IsOptional()
+  @IsEnum(ImageLayout)
+  imageLayout?: ImageLayout;
+
+  @IsOptional()
+  @IsInt()
+  @Min(2)
+  @Max(6)
+  maxBulletsPerSlide?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(30)
+  @Max(120)
+  maxWordsPerSlide?: number;
 
   @IsOptional()
   @IsBoolean()

@@ -102,6 +102,16 @@ export class ExportsService {
         );
       }
 
+      // Fetch image layout from PitchLens if linked
+      let imageLayout: string | undefined;
+      if (presentation.pitchLensId) {
+        const lens = await this.prisma.pitchLens.findUnique({
+          where: { id: presentation.pitchLensId },
+          select: { imageLayout: true },
+        });
+        imageLayout = lens?.imageLayout ?? undefined;
+      }
+
       let buffer: Buffer;
       let contentType: string;
       let filename: string;
@@ -116,6 +126,7 @@ export class ExportsService {
             presentation,
             slides,
             theme,
+            imageLayout,
           );
           await this.marpExporter.exportToPptx(pptxMarkdown, pptxPath);
           buffer = await readFile(pptxPath);
@@ -134,6 +145,7 @@ export class ExportsService {
             presentation,
             slides,
             theme,
+            imageLayout,
           );
           await this.marpExporter.exportToPdf(markdown, outputPath);
           buffer = await readFile(outputPath);
@@ -238,6 +250,16 @@ export class ExportsService {
       throw new Error(`Theme "${presentation.themeId}" not found`);
     }
 
+    // Fetch image layout from PitchLens if linked
+    let imageLayout: string | undefined;
+    if (presentation.pitchLensId) {
+      const lens = await this.prisma.pitchLens.findUnique({
+        where: { id: presentation.pitchLensId },
+        select: { imageLayout: true },
+      });
+      imageLayout = lens?.imageLayout ?? undefined;
+    }
+
     let buffer: Buffer;
     let contentType: string;
     let filename: string;
@@ -247,7 +269,7 @@ export class ExportsService {
         const pptxDir = join(this.tempDir, jobId);
         await mkdir(pptxDir, { recursive: true });
         const pptxPath = join(pptxDir, `${safeFilename(presentation.title)}.pptx`);
-        const pptxMd = this.marpExporter.generateMarpMarkdown(presentation, slides, theme);
+        const pptxMd = this.marpExporter.generateMarpMarkdown(presentation, slides, theme, imageLayout);
         await this.marpExporter.exportToPptx(pptxMd, pptxPath);
         buffer = await readFile(pptxPath);
         contentType = 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
@@ -258,7 +280,7 @@ export class ExportsService {
         const jobDir = join(this.tempDir, jobId);
         await mkdir(jobDir, { recursive: true });
         const outputPath = join(jobDir, `${safeFilename(presentation.title)}.pdf`);
-        const markdown = this.marpExporter.generateMarpMarkdown(presentation, slides, theme);
+        const markdown = this.marpExporter.generateMarpMarkdown(presentation, slides, theme, imageLayout);
         await this.marpExporter.exportToPdf(markdown, outputPath);
         buffer = await readFile(outputPath);
         contentType = 'application/pdf';

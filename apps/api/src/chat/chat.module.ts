@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { ChatController } from './chat.controller.js';
 import { ChatService } from './chat.service.js';
 import { LlmService } from './llm.service.js';
@@ -19,7 +19,7 @@ import { ImagesModule } from '../images/images.module.js';
 import { EmailModule } from '../email/email.module.js';
 
 @Module({
-  imports: [PrismaModule, KnowledgeBaseModule, ConstraintsModule, ExportsModule, CreditsModule, PitchLensModule, ImagesModule, EmailModule],
+  imports: [PrismaModule, KnowledgeBaseModule, ConstraintsModule, ExportsModule, CreditsModule, forwardRef(() => PitchLensModule), ImagesModule, EmailModule],
   controllers: [ChatController],
   providers: [
     ChatService,

@@ -46,6 +46,14 @@ export const ALLOWED_FONTS: readonly string[] = [
   'Nunito Sans',
   'Work Sans',
   'DM Sans',
+  'Georgia',
+  'Arial',
+  'Source Serif Pro',
+  'Playfair Display',
+  'Raleway',
+  'Helvetica',
+  'Garamond',
+  'Libre Baskerville',
 ] as const;
 
 export const BANNED_FONTS: readonly string[] = [
@@ -92,6 +100,21 @@ const HUMANIST_SANS_FONTS = new Set([
   'Source Sans Pro',
   'Work Sans',
 ]);
+
+/**
+ * Serif fonts — always pair well with any sans-serif (excellent contrast).
+ */
+const SERIF_FONTS = new Set(['Georgia', 'Source Serif Pro', 'Playfair Display', 'Garamond', 'Libre Baskerville']);
+
+/**
+ * System sans-serif fonts (not Google Fonts).
+ */
+const SYSTEM_SANS_FONTS = new Set(['Arial', 'Helvetica']);
+
+/**
+ * Display/decorative sans-serif — geometric but with distinctive character.
+ */
+const DISPLAY_SANS_FONTS = new Set(['Raleway']);
 
 // ── Helpers ─────────────────────────────────────────────────
 
@@ -144,6 +167,18 @@ function findClosestFont(font: string): string | undefined {
 }
 
 function areSameCategory(font1: string, font2: string): boolean {
+  // Serif + sans-serif is always a good pairing (maximum typographic contrast)
+  if (SERIF_FONTS.has(font1) || SERIF_FONTS.has(font2)) {
+    return false;
+  }
+  // Display sans + any other sans is fine (distinctive enough)
+  if (DISPLAY_SANS_FONTS.has(font1) || DISPLAY_SANS_FONTS.has(font2)) {
+    return false;
+  }
+  // System sans (Arial, Helvetica) pair well with geometric sans
+  if (SYSTEM_SANS_FONTS.has(font1) || SYSTEM_SANS_FONTS.has(font2)) {
+    return false;
+  }
   if (GEOMETRIC_SANS_FONTS.has(font1) && GEOMETRIC_SANS_FONTS.has(font2)) {
     return true;
   }

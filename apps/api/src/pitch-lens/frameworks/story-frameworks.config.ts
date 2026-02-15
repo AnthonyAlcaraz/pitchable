@@ -219,7 +219,17 @@ Ordering options:
 - S-C-R (standard): Use when the audience is unlikely to accept the resolution immediately. Build up the case.
 - R-S-C (answer-first): Use when the audience will mostly accept the resolution. Lead with it for efficiency.
 
-Keep Situation and Complication concise. The Resolution section should be 60-70% of all slides.`,
+Keep Situation and Complication concise. The Resolution section should be 60-70% of all slides.
+
+ACTION TITLE RULE (MANDATORY for McKinsey SCR):
+Every slide title MUST be a complete sentence: subject + verb + object, max 15 words.
+The title IS the slide's takeaway — not a topic label.
+BAD: "Market Opportunity"  GOOD: "The addressable market will reach $12B by 2028"
+BAD: "Key Findings"  GOOD: "Three operational gaps cost enterprises $8.2M annually"
+BAD: "Revenue Overview"  GOOD: "Revenue grew 23% driven by enterprise AI adoption"
+
+SOURCE LINE: Every data slide MUST end body text with "Source: [Name], [Year]"
+EXHIBIT NUMBERING: For 3+ data slides, prefix table descriptions with "Exhibit N:" sequentially.`,
     slideStructure: [
       'Title / Executive Summary',
       'Situation (Context)',

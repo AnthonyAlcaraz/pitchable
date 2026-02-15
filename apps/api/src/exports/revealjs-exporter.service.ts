@@ -2,6 +2,12 @@ import { Injectable } from '@nestjs/common';
 import type { PresentationModel } from '../../generated/prisma/models/Presentation.js';
 import type { SlideModel } from '../../generated/prisma/models/Slide.js';
 import type { ThemeModel } from '../../generated/prisma/models/Theme.js';
+import {
+  getSlideBackground,
+  generateRevealBackgroundCSS,
+  generateRevealAccentRotationCSS,
+  generateRevealMcKinseyCSS,
+} from './slide-visual-theme.js';
 
 interface ColorPalette {
   primary: string;
@@ -16,6 +22,30 @@ interface ColorPalette {
   error: string;
 }
 
+function darkenHex(color: string, amount: number): string {
+  const c = color.replace('#', '');
+  const r = Math.max(0, Math.floor(parseInt(c.slice(0, 2), 16) * (1 - amount)));
+  const g = Math.max(0, Math.floor(parseInt(c.slice(2, 4), 16) * (1 - amount)));
+  const b = Math.max(0, Math.floor(parseInt(c.slice(4, 6), 16) * (1 - amount)));
+  return '#' + ((r << 16) | (g << 8) | b).toString(16).padStart(6, '0');
+}
+
+function lightenHex(color: string, amount: number): string {
+  const c = color.replace('#', '');
+  const r = Math.min(255, Math.floor(parseInt(c.slice(0, 2), 16) + (255 - parseInt(c.slice(0, 2), 16)) * amount));
+  const g = Math.min(255, Math.floor(parseInt(c.slice(2, 4), 16) + (255 - parseInt(c.slice(2, 4), 16)) * amount));
+  const b = Math.min(255, Math.floor(parseInt(c.slice(4, 6), 16) + (255 - parseInt(c.slice(4, 6), 16)) * amount));
+  return '#' + ((r << 16) | (g << 8) | b).toString(16).padStart(6, '0');
+}
+
+function isDarkBg(bg: string): boolean {
+  const c = bg.replace('#', '');
+  const r = parseInt(c.slice(0, 2), 16);
+  const g = parseInt(c.slice(2, 4), 16);
+  const b = parseInt(c.slice(4, 6), 16);
+  return (0.299 * r + 0.587 * g + 0.114 * b) < 128;
+}
+
 @Injectable()
 export class RevealJsExporterService {
   generateRevealHtml(
@@ -24,6 +54,9 @@ export class RevealJsExporterService {
     theme: ThemeModel,
   ): string {
     const palette = theme.colorPalette as unknown as ColorPalette;
+    const bg = palette.background;
+    const gradientEnd = isDarkBg(bg) ? darkenHex(bg, 0.15) : lightenHex(bg, 0.05);
+    const isMcKinsey = theme.name === 'mckinsey-executive';
     const sortedSlides = [...slides].sort(
       (a, b) => a.slideNumber - b.slideNumber,
     );
@@ -47,8 +80,8 @@ export class RevealJsExporterService {
       --r-heading-color: ${palette.primary};
       --r-link-color: ${palette.accent};
       --r-link-color-hover: ${palette.secondary};
-      --r-heading-font: '${theme.headingFont}', sans-serif;
-      --r-main-font: '${theme.bodyFont}', sans-serif;
+      --r-heading-font: ${isMcKinsey ? "'Georgia', serif" : `'${theme.headingFont}', sans-serif`};
+      --r-main-font: ${isMcKinsey ? "'Arial', sans-serif" : `'${theme.bodyFont}', sans-serif`};
     }
     .reveal {
       font-family: var(--r-main-font);
@@ -100,6 +133,10 @@ export class RevealJsExporterService {
     .slide-content-with-image {
       width: 60%;
     }
+    /* Per-slide background variants */
+${isMcKinsey ? generateRevealMcKinseyCSS(palette) : generateRevealBackgroundCSS(palette, bg, gradientEnd)}
+    /* Accent color rotation on bold text */
+${isMcKinsey ? '' : generateRevealAccentRotationCSS(palette.accent, palette.primary, palette.success, palette.secondary)}
   </style>
 </head>
 <body>
@@ -123,10 +160,11 @@ ${slideSections}
   private buildSlideSection(slide: SlideModel, palette: ColorPalette): string {
     const hasImage = !!slide.imageUrl;
     const contentClass = hasImage ? ' class="slide-content-with-image"' : '';
+    const bgVariant = getSlideBackground(slide.slideType, slide.slideNumber, palette.background);
     const lines: string[] = [];
 
     lines.push(
-      `      <section data-background-color="${palette.background}">`,
+      `      <section data-background-color="${palette.background}" class="${bgVariant.className}">`,
     );
 
     if (hasImage) {

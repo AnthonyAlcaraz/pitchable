@@ -152,6 +152,11 @@ enum StoryFramework {
   TALK_LIKE_TED
 }
 
+enum ImageLayout {
+  BACKGROUND
+  RIGHT
+}
+
 enum BriefStatus {
   EMPTY
   PROCESSING
@@ -450,6 +455,9 @@ model PitchLens {
   customGuidance      String?        @db.Text
   preferredSlideRange Json?
   imageFrequency      Int            @default(4) // 1 image every N slides (0 = no images)
+  imageLayout         ImageLayout    @default(RIGHT)
+  maxBulletsPerSlide  Int?
+  maxWordsPerSlide    Int?
   isDefault           Boolean        @default(false)
   isPublic            Boolean        @default(false)
   createdAt           DateTime       @default(now())

@@ -23,8 +23,8 @@ export function buildOutlineSystemPrompt(
 Your goal is to create a dense, data-rich, visually varied deck like a top-tier analyst briefing.
 
 CONSTRAINTS:
-- Between ${slideRange.min} and ${slideRange.max} slides total
-- Each slide must have 3-6 bullet points maximum
+- Between ${slideRange.min} and ${slideRange.max} slides total (HARD LIMIT — do not exceed ${slideRange.max})
+- Each slide must have 3-5 bullet points maximum
 - Each bullet should be a specific claim, data point, or source-backed assertion — NOT a generic topic label
 - Include exact numbers, percentages, currency values, and named sources in bullets whenever available
 - If the knowledge base provides a relevant statistic, include the exact number in the bullet
@@ -32,6 +32,24 @@ CONSTRAINTS:
 - Last slide must be type CTA
 - 1 key concept per slide
 - Vary slide types for visual interest — avoid consecutive slides of the same type
+- ZERO REPETITION — each slide must cover a genuinely different topic. Never have 2 slides about the same concept (e.g. don't have both "The Data Problem" and "Data Fragmentation Crisis" — these are the same topic).
+
+SLIDE TITLE RULES:
+- Every title (except TITLE and CTA) MUST be a complete sentence with a subject, verb, and object
+- BAD: "Market Opportunity" — topic label, not a title
+- BAD: "Key Challenges" — generic, says nothing specific
+- GOOD: "Enterprise AI spending will reach $55B by 2027"
+- GOOD: "Manual data prep consumes 68% of analyst time"
+- The title IS the slide's takeaway. If someone reads only titles, they should understand the full story.
+
+DAVID PHILLIPS PRESENTATION PRINCIPLES (mandatory):
+- ONE MESSAGE per slide. Never combine two distinct ideas on one slide.
+- MAX 6 OBJECTS per slide (each text block, image, table, icon counts as 1). More slides with less content beats fewer slides with more.
+- NO FULL SENTENCES on slides — use short phrases (max 8 words per bullet). Detail goes in speaker notes.
+- OPEN WITH A HOOK — slide 2 should be a surprising fact, customer story, or provocation (not an agenda).
+- DATA WRAPPED IN NARRATIVE — embed statistics inside a story arc. Facts in stories = 22x better retention.
+- Each bullet must be a SPECIFIC claim with a number, not a topic label.
+- SIZE = IMPORTANCE — the key figure or takeaway must be the largest element, not the slide title.
 
 AVAILABLE SLIDE TYPES (choose the type that best matches the content — see rendering details):
 TITLE — Opening slide: tagline subtitle, author info. Use for the opening hook.

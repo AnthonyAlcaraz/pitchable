@@ -6,6 +6,20 @@ import { promisify } from 'util';
 import type { PresentationModel } from '../../generated/prisma/models/Presentation.js';
 import type { SlideModel } from '../../generated/prisma/models/Slide.js';
 import type { ThemeModel } from '../../generated/prisma/models/Theme.js';
+import {
+  hexToRgb,
+  luminance,
+  contrastRatio,
+} from '../constraints/index.js';
+import {
+  getSlideBackground,
+  generateMarpBackgroundCSS,
+  generateMarpAccentRotationCSS,
+  generateLeadEnhancementCSS,
+  generateMarpMcKinseyCSS,
+  generateMarpMcKinseyTableCSS,
+  generateMarpMcKinseyLeadCSS,
+} from './slide-visual-theme.js';
 
 const execFileAsync = promisify(execFile);
 
@@ -13,6 +27,62 @@ const execFileAsync = promisify(execFile);
 function shellSafePath(p: string): string {
   return p.replace(/\\/g, '/');
 }
+
+// ── Color contrast helpers ──────────────────────────────────
+
+/** Convert RGB components (0-255) back to hex string. */
+function rgbToHex(r: number, g: number, b: number): string {
+  const clamp = (v: number) => Math.max(0, Math.min(255, Math.round(v)));
+  return `#${clamp(r).toString(16).padStart(2, '0')}${clamp(g).toString(16).padStart(2, '0')}${clamp(b).toString(16).padStart(2, '0')}`;
+}
+
+/** Lighten a hex color by a fraction (0-1). */
+function lightenColor(hex: string, amount: number): string {
+  const { r, g, b } = hexToRgb(hex);
+  return rgbToHex(
+    r + (255 - r) * amount,
+    g + (255 - g) * amount,
+    b + (255 - b) * amount,
+  );
+}
+
+/** Darken a hex color by a fraction (0-1). */
+function darkenColor(hex: string, amount: number): string {
+  const { r, g, b } = hexToRgb(hex);
+  return rgbToHex(r * (1 - amount), g * (1 - amount), b * (1 - amount));
+}
+
+/** True if the background is dark (luminance < 0.18). */
+function isDarkBackground(bg: string): boolean {
+  return luminance(bg) < 0.18;
+}
+
+/**
+ * Adjust foreground color until it meets minRatio contrast against background.
+ * Lightens on dark backgrounds, darkens on light backgrounds.
+ * Returns the adjusted color (or the original if already passing).
+ */
+function ensureContrast(fg: string, bg: string, minRatio: number): string {
+  let ratio = contrastRatio(fg, bg);
+  if (ratio >= minRatio) return fg;
+
+  const lighten = isDarkBackground(bg);
+  let adjusted = fg;
+  // Progressively adjust in 5% steps up to 20 iterations
+  for (let step = 0.05; step <= 1.0 && ratio < minRatio; step += 0.05) {
+    adjusted = lighten ? lightenColor(fg, step) : darkenColor(fg, step);
+    ratio = contrastRatio(adjusted, bg);
+  }
+  return adjusted;
+}
+
+/** Convert hex to hex+alpha suffix (e.g. #0f172a + 0.9 → #0f172ae6). */
+function hexWithAlpha(hex: string, alpha: number): string {
+  const alphaHex = Math.round(alpha * 255).toString(16).padStart(2, '0');
+  return `${hex}${alphaHex}`;
+}
+
+// ── Palette interface ───────────────────────────────────────
 
 interface ColorPalette {
   primary: string;
@@ -35,107 +105,159 @@ export class MarpExporterService {
     presentation: PresentationModel,
     slides: SlideModel[],
     theme: ThemeModel,
+    imageLayout?: string,
   ): string {
     const palette = theme.colorPalette as unknown as ColorPalette;
     const sections: string[] = [];
+    const isMcKinsey = theme.name === 'mckinsey-executive';
 
-    // Marp frontmatter with Z4-quality CSS (matches Frontier-AI proven output)
+    // ── Contrast-safe color computation ───────────────────
+    const bg = palette.background;
+    const safeText = ensureContrast(palette.text, bg, 7.0);
+    const safePrimary = ensureContrast(palette.primary, bg, 4.5);
+    const safeAccent = ensureContrast(palette.accent, bg, 4.5);
+    const safeSecondary = ensureContrast(palette.secondary, bg, 4.5);
+    const safeSuccess = ensureContrast(palette.success, bg, 4.5);
+    const safeError = ensureContrast(palette.error, bg, 4.5);
+
+    // Table header background: surface-like, darkened from background
+    const tableHeaderBg = isDarkBackground(bg)
+      ? lightenColor(bg, 0.12)
+      : darkenColor(bg, 0.06);
+    const safeThText = ensureContrast(safePrimary, tableHeaderBg, 4.5);
+
+    // Table cell text must be readable against surface
+    const safeTdText = ensureContrast(palette.text, palette.surface, 7.0);
+
+    // Gradient end: derived from background, not hardcoded
+    const gradientEnd = isDarkBackground(bg)
+      ? darkenColor(bg, 0.15)
+      : lightenColor(bg, 0.05);
+
+    // Blockquote and table backgrounds with transparency (hex+alpha)
+    const blockquoteBg = hexWithAlpha(palette.surface, 0.5);
+    const tableBg = hexWithAlpha(bg, 0.9);
+
+    // McKinsey uses serif heading + sans-serif body; fallback stacks differ
+    const headingFontStack = isMcKinsey
+      ? `'${theme.headingFont}', serif`
+      : `'${theme.headingFont}', sans-serif`;
+    const bodyFontStack = isMcKinsey
+      ? `'${theme.bodyFont}', sans-serif`
+      : `'${theme.bodyFont}', sans-serif`;
+
+    // Marp frontmatter with contrast-validated, theme-aware CSS
     const frontmatter = [
       '---',
       'marp: true',
       'theme: default',
       'paginate: true',
-      `backgroundColor: ${palette.background}`,
-      `color: ${palette.text}`,
+      `backgroundColor: ${bg}`,
+      `color: ${safeText}`,
       'style: |',
       '  section {',
-      `    background: linear-gradient(135deg, ${palette.background} 0%, #1e1b4b 100%);`,
-      `    color: ${palette.text};`,
-      `    font-family: '${theme.bodyFont}', sans-serif;`,
-      '    font-size: 28px;',
+      `    color: ${safeText};`,
+      `    font-family: ${bodyFontStack};`,
+      `    font-size: ${isMcKinsey ? '26px' : '28px'};`,
       '  }',
       '  h1 {',
-      `    color: ${palette.primary};`,
-      `    font-family: '${theme.headingFont}', sans-serif;`,
-      '    font-size: 1.8em;',
+      `    color: ${safePrimary};`,
+      `    font-family: ${headingFontStack};`,
+      `    font-size: ${isMcKinsey ? '2.0em' : '1.8em'};`,
       '  }',
       '  h2 {',
-      `    color: ${palette.secondary};`,
-      `    font-family: '${theme.headingFont}', sans-serif;`,
+      `    color: ${safeText};`,
+      `    font-family: ${headingFontStack};`,
       '    font-size: 1.0em;',
       '  }',
       '  h3 {',
-      `    color: ${palette.accent};`,
-      `    font-family: '${theme.headingFont}', sans-serif;`,
+      `    color: ${safeAccent};`,
+      `    font-family: ${headingFontStack};`,
       '    font-size: 0.95em;',
       '  }',
       '  p, li {',
       '    font-size: 0.85em;',
-      `    color: ${palette.text};`,
+      `    color: ${safeText};`,
       '  }',
       '  strong {',
-      `    color: ${palette.accent};`,
+      `    color: ${isMcKinsey ? safePrimary : safeAccent};`,
       '  }',
       '  em {',
-      `    color: ${palette.secondary};`,
+      `    color: ${safeSecondary};`,
       '  }',
       '  a {',
-      `    color: ${palette.accent};`,
+      `    color: ${safeAccent};`,
       '    text-decoration: none;',
       '  }',
-      '  blockquote {',
-      `    border-left: 4px solid ${palette.accent};`,
-      '    padding: 0.5em 1em;',
-      '    font-size: 0.85em;',
-      `    color: ${palette.text};`,
-      `    background: rgba(30, 41, 59, 0.5);`,
-      '  }',
-      '  table {',
-      '    width: 100%;',
-      '    border-collapse: collapse;',
-      '    font-size: 0.8em;',
-      `    background: rgba(15, 23, 42, 0.9);`,
-      '  }',
-      '  th {',
-      `    background: #1e3a5f;`,
-      `    color: ${palette.primary};`,
-      '    padding: 8px 12px;',
-      `    border: 1px solid ${palette.border};`,
-      '    font-weight: bold;',
-      '  }',
-      '  td {',
-      `    background: ${palette.surface};`,
-      `    color: ${palette.text};`,
-      '    padding: 8px 12px;',
-      `    border: 1px solid ${palette.border};`,
-      '  }',
-      '  tr:nth-child(even) td {',
-      `    background: ${palette.background};`,
-      '  }',
+    ];
+
+    // Table + blockquote CSS: McKinsey gets clean horizontal-only borders
+    if (isMcKinsey) {
+      frontmatter.push(generateMarpMcKinseyTableCSS(palette));
+    } else {
+      frontmatter.push(
+        '  blockquote {',
+        `    border-left: 4px solid ${safeAccent};`,
+        '    padding: 0.5em 1em;',
+        '    font-size: 0.85em;',
+        `    color: ${safeText};`,
+        `    background: ${blockquoteBg};`,
+        '  }',
+        '  table {',
+        '    width: 100%;',
+        '    border-collapse: collapse;',
+        '    font-size: 0.8em;',
+        `    background: ${tableBg};`,
+        '  }',
+        '  th {',
+        `    background: ${tableHeaderBg};`,
+        `    color: ${safeThText};`,
+        '    padding: 8px 12px;',
+        `    border: 1px solid ${palette.border};`,
+        '    font-weight: bold;',
+        '  }',
+        '  td {',
+        `    background: ${palette.surface};`,
+        `    color: ${safeTdText};`,
+        '    padding: 8px 12px;',
+        `    border: 1px solid ${palette.border};`,
+        '  }',
+        '  tr:nth-child(even) td {',
+        `    background: ${bg};`,
+        '  }',
+      );
+    }
+
+    frontmatter.push(
       '  code {',
       `    background-color: ${palette.surface};`,
       '    padding: 0.2em 0.4em;',
-      '    border-radius: 4px;',
+      `    border-radius: ${isMcKinsey ? '2px' : '4px'};`,
       '    font-size: 0.85em;',
       '  }',
       '  .source {',
-      '    font-size: 0.55em;',
-      `    color: ${palette.secondary};`,
+      `    font-size: ${isMcKinsey ? '0.45em' : '0.55em'};`,
+      `    color: ${isMcKinsey ? '#A0A0A0' : safeSecondary};`,
       '  }',
-      `  .gold { color: ${palette.accent}; }`,
-      `  .green { color: ${palette.success}; }`,
-      `  .red { color: ${palette.error}; }`,
-      '  section.lead {',
-      '    text-align: center;',
-      '    display: flex;',
-      '    flex-direction: column;',
-      '    justify-content: center;',
-      '  }',
-      '  section.lead h1 {',
-      '    font-size: 2.2em;',
-      '  }',
+      `  .gold { color: ${safeAccent}; }`,
+      `  .green { color: ${safeSuccess}; }`,
+      `  .red { color: ${safeError}; }`,
+    );
+
+    // Background variants + accent rotation + lead styling (theme-conditional)
+    if (isMcKinsey) {
+      frontmatter.push(generateMarpMcKinseyCSS(palette));
+      // No accent rotation — McKinsey uses uniform navy bold
+      frontmatter.push(generateMarpMcKinseyLeadCSS(palette));
+    } else {
+      frontmatter.push(generateMarpBackgroundCSS(palette, bg, gradientEnd));
+      frontmatter.push(generateMarpAccentRotationCSS(safeAccent, safePrimary, safeSuccess, safeSecondary));
+      frontmatter.push(generateLeadEnhancementCSS(safeAccent));
+    }
+
+    frontmatter.push(
       '  section::after {',
-      `    color: ${palette.border};`,
+      `    color: ${isMcKinsey ? '#A0A0A0' : palette.border};`,
       '    font-size: 0.6em;',
       '  }',
       '  ul { list-style-type: disc; }',
@@ -143,7 +265,7 @@ export class MarpExporterService {
       '  li { margin-bottom: 0.3em; }',
       '  img { max-height: 320px; margin: 8px auto; }',
       '---',
-    ];
+    );
 
     sections.push(frontmatter.join('\n'));
 
@@ -152,20 +274,29 @@ export class MarpExporterService {
     );
 
     for (const slide of sortedSlides) {
-      sections.push(this.buildSlideMarkdown(slide));
+      sections.push(this.buildSlideMarkdown(slide, bg, imageLayout));
     }
 
     return sections.join('\n\n---\n\n');
   }
 
-  private buildSlideMarkdown(slide: SlideModel): string {
+  private buildSlideMarkdown(slide: SlideModel, bgColor?: string, imageLayout?: string): string {
     const lines: string[] = [];
     const type = slide.slideType;
+    const bgVariant = getSlideBackground(type, slide.slideNumber, bgColor);
 
-    // Slide-type-specific Marp directives
+    // Per-slide background + type-specific Marp directives
     if (type === 'TITLE' || type === 'CTA') {
-      lines.push('<!-- _class: lead -->');
+      lines.push(`<!-- _class: lead ${bgVariant.className} -->`);
       lines.push('<!-- _paginate: false -->');
+      // Override Marp's global backgroundColor for divider slides
+      if (bgVariant.className === 'bg-section-divider') {
+        lines.push('<!-- _backgroundColor: #051C2C -->');
+        lines.push('<!-- _color: #FFFFFF -->');
+      }
+      lines.push('');
+    } else {
+      lines.push(`<!-- _class: ${bgVariant.className} -->`);
       lines.push('');
     }
 
@@ -175,16 +306,16 @@ export class MarpExporterService {
       lines.push('');
     }
 
-    // Image placement — varies by slide type
+    // Image placement — varies by slide type and imageLayout setting
     if (slide.imageUrl) {
       if (type === 'TITLE' || type === 'CTA') {
-        // Full background image at low opacity for hero slides
+        // Always background for hero slides regardless of setting
         lines.push(`![bg opacity:0.15](${slide.imageUrl})`);
-      } else if (type === 'ARCHITECTURE') {
-        // Full-width image below title
-        lines.push(`![w:90%](${slide.imageUrl})`);
+      } else if (imageLayout === 'BACKGROUND') {
+        // User chose background layout for all slides
+        lines.push(`![bg opacity:0.15](${slide.imageUrl})`);
       } else {
-        // Standard right-side image
+        // Default: right-side image (35% width)
         lines.push(`![bg right:35%](${slide.imageUrl})`);
       }
       lines.push('');

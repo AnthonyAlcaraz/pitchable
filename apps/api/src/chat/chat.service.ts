@@ -17,7 +17,7 @@ import {
 import type { LlmMessage } from './llm.service.js';
 
 export interface ChatStreamEvent {
-  type: 'token' | 'done' | 'error' | 'action' | 'thinking' | 'progress';
+  type: 'token' | 'done' | 'error' | 'action' | 'thinking' | 'progress' | 'lens_inferred';
   content: string;
   metadata?: Record<string, unknown>;
 }
@@ -384,6 +384,10 @@ export class ChatService {
         await this.persistAssistantMessage(presentationId, msg);
         break;
       }
+      case 'config': {
+        yield* this.handleConfigCommand(presentationId, args);
+        break;
+      }
       default: {
         yield {
           type: 'action',
@@ -394,6 +398,100 @@ export class ChatService {
         break;
       }
     }
+  }
+
+  private async *handleConfigCommand(
+    presentationId: string,
+    args: string[],
+  ): AsyncGenerator<ChatStreamEvent> {
+    const [setting, ...valueArgs] = args;
+    const value = valueArgs.join(' ');
+
+    const pres = await this.prisma.presentation.findUnique({
+      where: { id: presentationId },
+      include: { pitchLens: true },
+    });
+
+    if (!pres?.pitchLensId || !pres.pitchLens) {
+      const msg = 'No Pitch Lens linked to this presentation. Create one first or generate with /outline.';
+      yield { type: 'token', content: msg };
+      yield { type: 'done', content: '' };
+      await this.persistAssistantMessage(presentationId, msg);
+      return;
+    }
+
+    if (!setting) {
+      // Show current config
+      const lens = pres.pitchLens;
+      const msg = [
+        '**Current configuration:**',
+        `- **Bullets per slide**: ${lens.maxBulletsPerSlide ?? '4 (default)'}`,
+        `- **Words per slide**: ${lens.maxWordsPerSlide ?? '60 (default)'}`,
+        `- **Image layout**: ${lens.imageLayout ?? 'RIGHT'}`,
+        `- **Image frequency**: 1 per ${lens.imageFrequency} slides`,
+        '',
+        'Use `/config bullets 3`, `/config words 50`, `/config images background`, `/config frequency 6` to change.',
+      ].join('\n');
+      yield { type: 'token', content: msg };
+      yield { type: 'done', content: '' };
+      await this.persistAssistantMessage(presentationId, msg);
+      return;
+    }
+
+    let msg = '';
+    const lensId = pres.pitchLensId;
+
+    switch (setting.toLowerCase()) {
+      case 'bullets': {
+        const n = parseInt(value, 10);
+        if (isNaN(n) || n < 2 || n > 6) {
+          msg = 'Invalid value. Use `/config bullets <2-6>`.';
+          break;
+        }
+        await this.prisma.pitchLens.update({ where: { id: lensId }, data: { maxBulletsPerSlide: n } });
+        msg = `Max bullets per slide set to **${n}**. Will apply on next /regenerate or /rewrite.`;
+        break;
+      }
+      case 'words': {
+        const n = parseInt(value, 10);
+        if (isNaN(n) || n < 30 || n > 120) {
+          msg = 'Invalid value. Use `/config words <30-120>`.';
+          break;
+        }
+        await this.prisma.pitchLens.update({ where: { id: lensId }, data: { maxWordsPerSlide: n } });
+        msg = `Max words per slide set to **${n}**. Will apply on next /regenerate or /rewrite.`;
+        break;
+      }
+      case 'images': {
+        const layout = value.toUpperCase();
+        if (layout !== 'BACKGROUND' && layout !== 'RIGHT') {
+          msg = 'Invalid value. Use `/config images background` or `/config images right`.';
+          break;
+        }
+        await this.prisma.pitchLens.update({
+          where: { id: lensId },
+          data: { imageLayout: layout as 'BACKGROUND' | 'RIGHT' },
+        });
+        msg = `Image layout set to **${layout.toLowerCase()}**. Will apply on next export.`;
+        break;
+      }
+      case 'frequency': {
+        const n = parseInt(value, 10);
+        if (isNaN(n) || n < 0 || n > 20) {
+          msg = 'Invalid value. Use `/config frequency <0-20>` (0 = no images).';
+          break;
+        }
+        await this.prisma.pitchLens.update({ where: { id: lensId }, data: { imageFrequency: n } });
+        msg = `Image frequency set to **1 per ${n} slides**. Will apply on next /regenerate.`;
+        break;
+      }
+      default:
+        msg = `Unknown setting "${setting}". Available: bullets, words, images, frequency. Use \`/config\` to see current values.`;
+    }
+
+    yield { type: 'token', content: msg };
+    yield { type: 'done', content: '' };
+    await this.persistAssistantMessage(presentationId, msg);
   }
 
   private async *handleEmailCommand(

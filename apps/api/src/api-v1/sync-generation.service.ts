@@ -21,6 +21,7 @@ import {
 import { DEFAULT_SLIDE_RANGES } from '../chat/dto/generation-config.dto.js';
 import { getFrameworkConfig } from '../pitch-lens/frameworks/story-frameworks.config.js';
 import { buildPitchLensInjection } from '../pitch-lens/prompts/pitch-lens-injection.prompt.js';
+import { getImageFrequencyForTheme } from '../themes/themes.service.js';
 import {
   PresentationType,
   PresentationStatus,
@@ -100,6 +101,8 @@ export class SyncGenerationService {
       };
 
       let pitchLensContext: string | undefined;
+      let syncDensityOverrides: { maxBullets?: number; maxWords?: number } | undefined;
+      let syncImageLayoutInstruction: string | undefined;
       if (input.pitchLensId) {
         const lens = await this.prisma.pitchLens.findUnique({
           where: { id: input.pitchLensId },
@@ -110,6 +113,13 @@ export class SyncGenerationService {
           if (framework) {
             range.min = framework.idealSlideRange.min;
             range.max = framework.idealSlideRange.max;
+          }
+          syncDensityOverrides = {
+            maxBullets: lens.maxBulletsPerSlide ?? undefined,
+            maxWords: lens.maxWordsPerSlide ?? undefined,
+          };
+          if (lens.imageLayout === 'BACKGROUND') {
+            syncImageLayoutInstruction = 'Place images as full-slide backgrounds at 15% opacity. Do not use side-panel images.';
           }
         }
       }
@@ -163,11 +173,16 @@ export class SyncGenerationService {
       for (let i = 0; i < outline.slides.length; i++) {
         const outlineSlide = outline.slides[i];
 
+        const syncImgFreq = theme ? getImageFrequencyForTheme(theme.name) : undefined;
         const slideSystemPrompt = buildSlideGenerationSystemPrompt(
           presType,
           themeName,
           kbContext,
           pitchLensContext,
+          undefined,
+          syncImgFreq,
+          syncDensityOverrides,
+          syncImageLayoutInstruction,
         );
         const slideUserPrompt = buildSlideGenerationUserPrompt(
           outlineSlide.slideNumber,

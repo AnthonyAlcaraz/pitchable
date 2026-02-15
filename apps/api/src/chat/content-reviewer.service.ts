@@ -2,8 +2,10 @@ import { Injectable, Logger } from '@nestjs/common';
 import { LlmService, LlmModel } from './llm.service.js';
 import {
   CONTENT_REVIEWER_SYSTEM_PROMPT,
+  buildContentReviewerPrompt,
 } from './prompts/content-reviewer.prompt.js';
 import type { ReviewResult } from './prompts/content-reviewer.prompt.js';
+import type { DensityLimits } from '../constraints/density-validator.js';
 import { isValidReviewResult } from './validators.js';
 
 interface SlideInput {
@@ -22,7 +24,7 @@ export class ContentReviewerService {
   /**
    * Review a single slide for quality.
    */
-  async reviewSlide(slide: SlideInput): Promise<ReviewResult> {
+  async reviewSlide(slide: SlideInput, customLimits?: DensityLimits): Promise<ReviewResult> {
     const slideDescription = `Title: ${slide.title}
 Type: ${slide.slideType}
 Body:
@@ -32,7 +34,7 @@ Speaker Notes: ${slide.speakerNotes}`;
     try {
       const result = await this.llm.completeJson<ReviewResult>(
         [
-          { role: 'system', content: CONTENT_REVIEWER_SYSTEM_PROMPT },
+          { role: 'system', content: customLimits ? buildContentReviewerPrompt(customLimits) : CONTENT_REVIEWER_SYSTEM_PROMPT },
           { role: 'user', content: `Review this slide:\n\n${slideDescription}` },
         ],
         LlmModel.HAIKU,

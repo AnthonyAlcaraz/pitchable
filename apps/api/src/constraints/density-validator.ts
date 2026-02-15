@@ -38,9 +38,9 @@ export interface SplitResult {
 export const MAX_WORDS_PER_BULLET = 15;
 
 export const DENSITY_LIMITS: Readonly<DensityLimits> = {
-  maxBulletsPerSlide: 5,
-  maxTableRows: 5,
-  maxWordsPerSlide: 80,
+  maxBulletsPerSlide: 4,
+  maxTableRows: 4,
+  maxWordsPerSlide: 60,
   maxConceptsPerSlide: 1,
   maxNestedListDepth: 1,
 };
@@ -117,18 +117,18 @@ function chunkBullets(bullets: string[], chunkSize: number): string[][] {
  * Validate slide content against density limits.
  * Returns actionable violations and suggestions for each one.
  */
-export function validateSlideContent(slide: SlideContent): DensityValidationResult {
+export function validateSlideContent(slide: SlideContent, limits: DensityLimits = DENSITY_LIMITS): DensityValidationResult {
   const violations: string[] = [];
   const suggestions: string[] = [];
 
   // Bullet count
   const bulletCount = countBullets(slide.body);
-  if (bulletCount > DENSITY_LIMITS.maxBulletsPerSlide) {
+  if (bulletCount > limits.maxBulletsPerSlide) {
     violations.push(
-      `Slide has ${bulletCount} bullets (max ${DENSITY_LIMITS.maxBulletsPerSlide}).`,
+      `Slide has ${bulletCount} bullets (max ${limits.maxBulletsPerSlide}).`,
     );
     suggestions.push(
-      `Split into ${Math.ceil(bulletCount / DENSITY_LIMITS.maxBulletsPerSlide)} slides with ${DENSITY_LIMITS.maxBulletsPerSlide} bullets each, or consolidate related points.`,
+      `Split into ${Math.ceil(bulletCount / limits.maxBulletsPerSlide)} slides with ${limits.maxBulletsPerSlide} bullets each, or consolidate related points.`,
     );
   }
 
@@ -148,9 +148,9 @@ export function validateSlideContent(slide: SlideContent): DensityValidationResu
 
   // Word count
   const totalWords = countWords(slide.title) + countWords(slide.body);
-  if (totalWords > DENSITY_LIMITS.maxWordsPerSlide) {
+  if (totalWords > limits.maxWordsPerSlide) {
     violations.push(
-      `Slide has ${totalWords} words (max ${DENSITY_LIMITS.maxWordsPerSlide}).`,
+      `Slide has ${totalWords} words (max ${limits.maxWordsPerSlide}).`,
     );
     suggestions.push(
       `Reduce text to key phrases. Move detailed content to speaker notes or a handout.`,
@@ -165,20 +165,20 @@ export function validateSlideContent(slide: SlideContent): DensityValidationResu
   const tableRowCount = slide.tableRows ?? (detectedTableRows > 0 ? detectedTableRows - 1 : 0); // subtract header
   const hasTable = slide.hasTable ?? detectedTableRows > 0;
 
-  if (hasTable && tableRowCount > DENSITY_LIMITS.maxTableRows) {
+  if (hasTable && tableRowCount > limits.maxTableRows) {
     violations.push(
-      `Table has ${tableRowCount} rows (max ${DENSITY_LIMITS.maxTableRows}).`,
+      `Table has ${tableRowCount} rows (max ${limits.maxTableRows}).`,
     );
     suggestions.push(
-      `Split the table across multiple slides, or show only the top ${DENSITY_LIMITS.maxTableRows} rows with a "full data in appendix" note.`,
+      `Split the table across multiple slides, or show only the top ${limits.maxTableRows} rows with a "full data in appendix" note.`,
     );
   }
 
   // Nesting depth
   const nestingDepth = getMaxNestingDepth(slide.body);
-  if (nestingDepth > DENSITY_LIMITS.maxNestedListDepth) {
+  if (nestingDepth > limits.maxNestedListDepth) {
     violations.push(
-      `List nesting depth is ${nestingDepth} (max ${DENSITY_LIMITS.maxNestedListDepth}).`,
+      `List nesting depth is ${nestingDepth} (max ${limits.maxNestedListDepth}).`,
     );
     suggestions.push(
       `Flatten nested lists. Promote sub-items to their own top-level bullets or move them to a separate slide.`,
@@ -197,7 +197,7 @@ export function validateSlideContent(slide: SlideContent): DensityValidationResu
  * Splits by bullet points when over the limit, distributing
  * evenly across new slides.
  */
-export function suggestSplit(slide: SlideContent): SplitResult {
+export function suggestSplit(slide: SlideContent, limits: DensityLimits = DENSITY_LIMITS): SplitResult {
   const bulletLines: string[] = [];
   const nonBulletLines: string[] = [];
 
@@ -210,8 +210,8 @@ export function suggestSplit(slide: SlideContent): SplitResult {
   }
 
   const totalWords = countWords(slide.title) + countWords(slide.body);
-  const tooManyBullets = bulletLines.length > DENSITY_LIMITS.maxBulletsPerSlide;
-  const tooManyWords = totalWords > DENSITY_LIMITS.maxWordsPerSlide;
+  const tooManyBullets = bulletLines.length > limits.maxBulletsPerSlide;
+  const tooManyWords = totalWords > limits.maxWordsPerSlide;
 
   if (!tooManyBullets && !tooManyWords) {
     return {
@@ -222,7 +222,7 @@ export function suggestSplit(slide: SlideContent): SplitResult {
 
   // If we have bullets to split on, chunk them
   if (bulletLines.length > 0) {
-    const chunks = chunkBullets(bulletLines, DENSITY_LIMITS.maxBulletsPerSlide);
+    const chunks = chunkBullets(bulletLines, limits.maxBulletsPerSlide);
     const preamble = nonBulletLines.length > 0
       ? nonBulletLines.join('\n') + '\n'
       : '';
