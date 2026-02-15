@@ -27,7 +27,7 @@ const DEFAULT_TIMEOUT_MS = 30_000;
  * HAIKU  — Fast/cheap: intent classification, content review ($0.80/$4 per MTok)
  */
 export const LlmModel = {
-  OPUS: 'claude-opus-4-20250514',
+  OPUS: 'claude-opus-4-6',
   SONNET: 'claude-sonnet-4-5-20250929',
   HAIKU: 'claude-haiku-4-5-20251001',
 } as const;

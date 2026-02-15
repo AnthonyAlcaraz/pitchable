@@ -53,7 +53,7 @@ class EnvironmentVariables {
 
   @IsOptional()
   @IsString()
-  ANTHROPIC_MODEL?: string = 'claude-opus-4-20250514';
+  ANTHROPIC_MODEL?: string = 'claude-opus-4-6';
 
   @IsOptional()
   @IsString()
