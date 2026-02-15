@@ -48,6 +48,7 @@ export class S3Service implements OnModuleInit {
         Body: body,
         ContentType: contentType,
       }),
+      { abortSignal: AbortSignal.timeout(10_000) },
     );
     return key;
   }

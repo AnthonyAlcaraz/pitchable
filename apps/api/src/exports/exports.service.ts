@@ -158,21 +158,28 @@ export class ExportsService {
           throw new Error(`Unsupported export format: ${job.format}`);
       }
 
-      // Upload to S3
+      // Upload to S3 (non-blocking — export still succeeds if S3 is down)
       const s3Key = `exports/${jobId}/${filename}`;
-      await this.s3.upload(s3Key, buffer, contentType);
+      let fileUrl = s3Key;
+      try {
+        await this.s3.upload(s3Key, buffer, contentType);
+      } catch (s3Err: unknown) {
+        const s3Msg = s3Err instanceof Error ? s3Err.message : String(s3Err);
+        this.logger.warn(`S3 upload skipped for job ${jobId}: ${s3Msg}`);
+        fileUrl = `local://${s3Key}`;
+      }
 
       await this.prisma.exportJob.update({
         where: { id: jobId },
         data: {
           status: JobStatus.COMPLETED,
-          fileUrl: s3Key,
+          fileUrl,
           completedAt: new Date(),
         },
       });
 
       this.logger.log(
-        `Export job ${jobId} completed: ${job.format} -> s3://${s3Key}`,
+        `Export job ${jobId} completed: ${job.format} -> ${fileUrl}`,
       );
     } catch (error: unknown) {
       const message =
@@ -269,15 +276,22 @@ export class ExportsService {
         throw new Error(`Unsupported export format: ${job.format}`);
     }
 
-    // Upload to S3
+    // Upload to S3 (non-blocking — export still succeeds if S3 is down)
     const s3Key = `exports/${jobId}/${filename}`;
-    await this.s3.upload(s3Key, buffer, contentType);
+    let fileUrl = s3Key;
+    try {
+      await this.s3.upload(s3Key, buffer, contentType);
+    } catch (s3Err: unknown) {
+      const s3Msg = s3Err instanceof Error ? s3Err.message : String(s3Err);
+      this.logger.warn(`S3 upload skipped for job ${jobId}: ${s3Msg}`);
+      fileUrl = `local://${s3Key}`;
+    }
 
     await this.prisma.exportJob.update({
       where: { id: jobId },
       data: {
         status: JobStatus.COMPLETED,
-        fileUrl: s3Key,
+        fileUrl,
         completedAt: new Date(),
       },
     });
