@@ -11,6 +11,7 @@ import { ImgurService } from './imgur.service.js';
 import { ImageGenerationProcessor } from './image-generation.processor.js';
 import { ImagesService } from './images.service.js';
 import { ImagesController } from './images.controller.js';
+import { ImageCriticService } from './image-critic.service.js';
 
 @Module({
   imports: [
@@ -25,10 +26,11 @@ import { ImagesController } from './images.controller.js';
   providers: [
     ImagePromptBuilderService,
     NanoBananaService,
+    ImageCriticService,
     ImgurService,
     ImageGenerationProcessor,
     ImagesService,
   ],
-  exports: [ImagesService, ImagePromptBuilderService, NanoBananaService],
+  exports: [ImagesService, ImagePromptBuilderService, NanoBananaService, ImageCriticService],
 })
 export class ImagesModule {}

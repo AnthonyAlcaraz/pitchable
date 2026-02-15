@@ -4,6 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import { Job } from 'bullmq';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { NanoBananaService } from './nano-banana.service.js';
+import { ImageCriticService, type CriticEvaluation } from './image-critic.service.js';
 import { ImgurService } from './imgur.service.js';
 import { S3Service } from '../knowledge-base/storage/s3.service.js';
 import { CreditsService } from '../credits/credits.service.js';
@@ -30,6 +31,7 @@ export class ImageGenerationProcessor extends WorkerHost {
   constructor(
     private readonly prisma: PrismaService,
     private readonly nanoBanana: NanoBananaService,
+    private readonly critic: ImageCriticService,
     private readonly imgur: ImgurService,
     private readonly s3: S3Service,
     private readonly credits: CreditsService,
@@ -54,24 +56,87 @@ export class ImageGenerationProcessor extends WorkerHost {
         data: { status: JobStatus.PROCESSING },
       });
 
-      // 2. Generate image via Replicate Imagen 3 (NanoBanana)
-      const { base64, mimeType } = await this.nanoBanana.generateImage(
-        prompt,
-        negativePrompt,
-      );
+      // 2. Load slide context for critic evaluation
+      const slideData = await this.prisma.slide.findUnique({
+        where: { id: slideId },
+        select: { title: true, body: true, slideType: true },
+      });
 
-      // 3. Upload image — try S3/MinIO first (no external key needed), fall back to Imgur
+      // 3. PaperBanana Critic Loop: Generate → Evaluate → Refine (up to N rounds)
+      const maxRounds = this.critic.isEnabled() ? this.critic.getMaxRounds() : 1;
+      let currentPrompt = prompt;
+      let bestBase64 = '';
+      let bestMimeType = '';
+      let bestScore = 0;
+      let bestEval: CriticEvaluation | null = null;
+      let accepted = false;
+
+      for (let round = 1; round <= maxRounds; round++) {
+        // Generate image via Replicate Imagen 3 (NanoBanana)
+        const { base64, mimeType } = await this.nanoBanana.generateImage(
+          currentPrompt,
+          negativePrompt,
+        );
+
+        // Evaluate with PaperBanana Critic
+        const evaluation = await this.critic.evaluate(
+          base64,
+          mimeType,
+          slideData?.title ?? '',
+          slideData?.body ?? '',
+          slideData?.slideType ?? 'CONTENT',
+        );
+
+        this.logger.log(
+          `Image critic round ${round}/${maxRounds}: avg=${evaluation.averageScore.toFixed(1)} ` +
+          `[F:${evaluation.scores.faithfulness} R:${evaluation.scores.readability} ` +
+          `C:${evaluation.scores.conciseness} A:${evaluation.scores.aesthetics}] ` +
+          `${evaluation.accepted ? 'ACCEPTED' : 'REJECTED'}`,
+        );
+
+        // Track best result across all rounds
+        if (evaluation.averageScore > bestScore) {
+          bestScore = evaluation.averageScore;
+          bestBase64 = base64;
+          bestMimeType = mimeType;
+          bestEval = evaluation;
+        }
+
+        if (evaluation.accepted) {
+          bestBase64 = base64;
+          bestMimeType = mimeType;
+          bestEval = evaluation;
+          accepted = true;
+          break;
+        }
+
+        // Refine prompt for next round
+        if (round < maxRounds && evaluation.refinements.length > 0) {
+          currentPrompt = this.critic.refinePrompt(currentPrompt, evaluation.refinements);
+          this.logger.log(
+            `Refining prompt for round ${round + 1}: ${evaluation.refinements.join('; ')}`,
+          );
+        }
+      }
+
+      if (!accepted && maxRounds > 1) {
+        this.logger.log(
+          `Using best-scored image (avg: ${bestScore.toFixed(1)}) after ${maxRounds} rounds`,
+        );
+      }
+
+      // 4. Upload best image — try S3/MinIO first, fall back to Imgur
       let imageUrl: string;
       try {
-        imageUrl = await this.uploadToS3(slideId, base64, mimeType);
+        imageUrl = await this.uploadToS3(slideId, bestBase64, bestMimeType);
         this.logger.log(`Image uploaded to S3: ${imageUrl}`);
       } catch (s3Err) {
         this.logger.warn(`S3 upload failed, trying Imgur: ${s3Err instanceof Error ? s3Err.message : 'unknown'}`);
-        imageUrl = await this.imgur.uploadFromBase64(base64, `slide-${slideId}`);
+        imageUrl = await this.imgur.uploadFromBase64(bestBase64, `slide-${slideId}`);
         this.logger.log(`Image uploaded to Imgur: ${imageUrl}`);
       }
 
-      // 4. Update ImageJob with results
+      // 5. Update ImageJob with results + critic metrics
       await this.prisma.imageJob.update({
         where: { id: imageJobId },
         data: {
@@ -82,33 +147,36 @@ export class ImageGenerationProcessor extends WorkerHost {
         },
       });
 
-      // 5. Update Slide.imageUrl
+      // 6. Update Slide.imageUrl
       const slide = await this.prisma.slide.update({
         where: { id: slideId },
         data: { imageUrl },
         select: { presentationId: true },
       });
 
-      // 6. Deduct 1 credit from user
+      // 7. Deduct credits (1 per generation attempt)
+      const creditsUsed = Math.min(maxRounds, accepted ? 1 : maxRounds);
       await this.credits.deductCredits(
         userId,
-        1,
+        creditsUsed,
         CreditReason.IMAGE_GENERATION,
         imageJobId,
       );
 
-      // 7. Emit WebSocket event for real-time UI update
+      // 8. Emit WebSocket event for real-time UI update
       this.events.emitImageGenerated({
         presentationId: slide.presentationId,
         slideId,
         imageUrl,
       });
 
-      // 8. Check if all images for this presentation are done
+      // 9. Check if all images for this presentation are done
       await this.checkAllImagesComplete(slide.presentationId);
 
       this.logger.log(
-        `Image job ${imageJobId} completed successfully: ${imageUrl}`,
+        `Image job ${imageJobId} completed: ${imageUrl} ` +
+        `(critic: avg=${bestEval?.averageScore.toFixed(1) ?? 'N/A'}, ` +
+        `accepted=${accepted})`,
       );
     } catch (error) {
       const errorMessage =
