@@ -6,9 +6,11 @@ import { ChatInput } from './ChatInput.js';
 
 interface ChatPanelProps {
   presentationId: string | undefined;
+  briefId?: string;
+  lensId?: string;
 }
 
-export function ChatPanel({ presentationId }: ChatPanelProps) {
+export function ChatPanel({ presentationId, briefId, lensId }: ChatPanelProps) {
   const {
     messages,
     streamingContent,

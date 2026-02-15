@@ -1,9 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { KnowledgeBaseService } from '../knowledge-base/knowledge-base.service.js';
+import { EdgeQuakeService } from '../knowledge-base/edgequake/edgequake.service.js';
 import { buildFeedbackInjection } from './prompts/feedback-injection.prompt.js';
 import type { FeedbackData } from './prompts/feedback-injection.prompt.js';
-import type { ChatCompletionMessageParam } from 'openai/resources/chat/completions.js';
+import { buildPitchLensInjection } from '../pitch-lens/prompts/pitch-lens-injection.prompt.js';
+import { getFrameworkConfig } from '../pitch-lens/frameworks/story-frameworks.config.js';
+import type { LlmMessage } from './llm.service.js';
 
 @Injectable()
 export class ContextBuilderService {
@@ -12,6 +15,7 @@ export class ContextBuilderService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly kbService: KnowledgeBaseService,
+    private readonly edgequake: EdgeQuakeService,
   ) {}
 
   async buildSystemPrompt(
@@ -21,9 +25,14 @@ export class ContextBuilderService {
     const parts: string[] = [];
 
     parts.push(
-      'You are Pitchable, an AI presentation co-pilot. You help users create, iterate, and refine slide decks through conversation.',
+      'You are Pitchable, an AI presentation co-pilot. You ONLY help users create, iterate, and refine slide decks through conversation.',
       'You generate structured slide content following strict design constraints: max 6 bullet points per slide, max 80 words per slide, 1 key concept per slide.',
       'Always respond concisely and actionably.',
+      '',
+      'CRITICAL SCOPE RULE: You exclusively help with presentation tasks — creating decks, editing slides, structuring content, choosing themes, and presentation best practices.',
+      'If a user asks anything unrelated to presentations (coding, math, general knowledge, personal advice, creative writing, translation, etc.), respond ONLY with:',
+      '"I\'m focused on helping you build great presentations. What would you like to work on for your deck?"',
+      'Never act as a general-purpose assistant. Never answer off-topic questions even if you know the answer.',
     );
 
     // Deck state context
@@ -32,6 +41,7 @@ export class ContextBuilderService {
       include: {
         slides: { orderBy: { slideNumber: 'asc' }, select: { slideNumber: true, title: true, slideType: true, body: true } },
         theme: { select: { name: true, displayName: true } },
+        pitchLens: true,
       },
     });
 
@@ -52,6 +62,16 @@ export class ContextBuilderService {
       } else {
         parts.push('\nNo slides yet. The user may ask to generate an outline or create slides.');
       }
+    }
+
+    // Pitch Lens injection (storytelling framework, tone, audience guidance)
+    if (presentation?.pitchLens) {
+      const framework = getFrameworkConfig(presentation.pitchLens.selectedFramework);
+      const lensBlock = buildPitchLensInjection({
+        ...presentation.pitchLens,
+        framework,
+      });
+      parts.push(lensBlock);
     }
 
     // Feedback injection (user preferences from past corrections + codified rules)
@@ -87,10 +107,55 @@ export class ContextBuilderService {
     }
   }
 
+  /**
+   * Retrieve KB context scoped to a specific Pitch Brief's EdgeQuake workspace.
+   */
+  async retrieveBriefContext(
+    userId: string,
+    briefId: string,
+    query: string,
+    limit = 10,
+  ): Promise<string> {
+    try {
+      const brief = await this.prisma.pitchBrief.findUnique({
+        where: { id: briefId },
+        select: { edgequakeWorkspaceId: true },
+      });
+      if (!brief?.edgequakeWorkspaceId || !this.edgequake.isEnabled()) {
+        return this.retrieveKbContext(userId, query, limit);
+      }
+
+      const mapping = await this.prisma.edgeQuakeMapping.findUnique({
+        where: { userId },
+      });
+      if (!mapping) {
+        return this.retrieveKbContext(userId, query, limit);
+      }
+
+      const result = await this.edgequake.query(
+        mapping.tenantId,
+        brief.edgequakeWorkspaceId,
+        query,
+        'hybrid',
+      );
+
+      if (!result.sources || result.sources.length === 0) return '';
+
+      const parts = ['\nRelevant knowledge base content (from Pitch Brief):'];
+      for (const s of result.sources.slice(0, limit)) {
+        parts.push(`---\n${s.content}\n(score: ${s.score.toFixed(2)})`);
+      }
+      return parts.join('\n');
+    } catch (err) {
+      this.logger.warn(`Brief context retrieval failed, falling back to global KB: ${err}`);
+      return this.retrieveKbContext(userId, query, limit);
+    }
+  }
+
   async buildChatHistory(
     presentationId: string,
     limit = 20,
-  ): Promise<ChatCompletionMessageParam[]> {
+  ): Promise<LlmMessage[]> {
     const messages = await this.prisma.chatMessage.findMany({
       where: { presentationId },
       orderBy: { createdAt: 'asc' },

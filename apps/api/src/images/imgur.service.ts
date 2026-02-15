@@ -42,6 +42,48 @@ export class ImgurService {
     return this.uploadFromBuffer(buffer, title);
   }
 
+  async uploadFromBase64(base64: string, title?: string): Promise<string> {
+    const sizeKb = Math.round((base64.length * 3) / 4 / 1024);
+    this.logger.log(`Uploading base64 image to Imgur (${sizeKb} KB)`);
+
+    const body: Record<string, string> = {
+      image: base64,
+      type: 'base64',
+    };
+
+    if (title) {
+      body.title = title;
+    }
+
+    const response = await fetch(this.uploadUrl, {
+      method: 'POST',
+      headers: {
+        Authorization: `Client-ID ${this.clientId}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (!response.ok) {
+      const errorBody = await response.text();
+      this.logger.error(
+        `Imgur upload failed: ${response.status} ${errorBody}`,
+      );
+      throw new Error(
+        `Imgur API error ${response.status}: ${errorBody}`,
+      );
+    }
+
+    const data = (await response.json()) as ImgurUploadResponse;
+
+    if (!data.success) {
+      throw new Error(`Imgur upload returned success=false (status ${data.status})`);
+    }
+
+    this.logger.log(`Image uploaded to Imgur: ${data.data.link}`);
+    return data.data.link;
+  }
+
   async uploadFromBuffer(buffer: Buffer, title?: string): Promise<string> {
     const base64Data = buffer.toString('base64');
 

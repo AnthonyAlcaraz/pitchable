@@ -49,7 +49,15 @@ class EnvironmentVariables {
 
   @IsOptional()
   @IsString()
-  OPENAI_CHAT_MODEL?: string = 'gpt-4o';
+  ANTHROPIC_API_KEY?: string;
+
+  @IsOptional()
+  @IsString()
+  ANTHROPIC_MODEL?: string = 'claude-opus-4-6-20250219';
+
+  @IsOptional()
+  @IsString()
+  GEMINI_API_KEY?: string;
 
   @IsOptional()
   @IsString()
@@ -62,6 +70,26 @@ class EnvironmentVariables {
   @IsOptional()
   @IsString()
   EDGEQUAKE_API_KEY?: string;
+
+  @IsOptional()
+  @IsString()
+  STRIPE_SECRET_KEY?: string;
+
+  @IsOptional()
+  @IsString()
+  STRIPE_WEBHOOK_SECRET?: string;
+
+  @IsOptional()
+  @IsString()
+  STRIPE_STARTER_PRICE_ID?: string;
+
+  @IsOptional()
+  @IsString()
+  STRIPE_PRO_PRICE_ID?: string;
+
+  @IsOptional()
+  @IsString()
+  FRONTEND_URL?: string = 'http://localhost:5173';
 }
 
 export function validate(config: Record<string, unknown>): EnvironmentVariables {

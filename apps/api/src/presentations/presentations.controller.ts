@@ -17,14 +17,30 @@ import { PresentationsService } from './presentations.service.js';
 import { CreatePresentationDto } from './dto/create-presentation.dto.js';
 import { UpdateSlideDto } from './dto/update-slide.dto.js';
 import { RenamePresentationDto } from './dto/rename-presentation.dto.js';
+import { ForkPresentationDto } from './dto/fork-presentation.dto.js';
 
 // ── Export Request DTO ──────────────────────────────────────
 
-import { IsString } from 'class-validator';
+import { IsString, IsOptional, IsUUID, IsBoolean } from 'class-validator';
 
 class ExportRequestDto {
   @IsString({ each: true })
   formats: string[];
+}
+
+class QuickCreateDto {
+  @IsOptional()
+  @IsUUID()
+  briefId?: string;
+
+  @IsOptional()
+  @IsUUID()
+  pitchLensId?: string;
+}
+
+class VisibilityDto {
+  @IsBoolean()
+  isPublic: boolean;
 }
 
 // ── Controller ──────────────────────────────────────────────
@@ -45,6 +61,19 @@ export class PresentationsController {
     @Body() dto: CreatePresentationDto,
   ) {
     return this.presentationsService.create(user.userId, dto);
+  }
+
+  /**
+   * POST /presentations/quick-create
+   * Create a blank DRAFT presentation, optionally linked to a brief and/or lens.
+   */
+  @Post('quick-create')
+  @HttpCode(HttpStatus.CREATED)
+  async quickCreate(
+    @CurrentUser() user: RequestUser,
+    @Body() dto: QuickCreateDto,
+  ) {
+    return this.presentationsService.quickCreate(user.userId, dto);
   }
 
   /**
@@ -82,6 +111,19 @@ export class PresentationsController {
   }
 
   /**
+   * PATCH /presentations/:id/visibility
+   * Toggle public visibility of a presentation.
+   */
+  @Patch(':id/visibility')
+  async setVisibility(
+    @CurrentUser() user: RequestUser,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: VisibilityDto,
+  ) {
+    return this.presentationsService.setVisibility(id, user.userId, dto.isPublic);
+  }
+
+  /**
    * POST /presentations/:id/duplicate
    * Duplicate a presentation with all slides.
    */
@@ -92,6 +134,20 @@ export class PresentationsController {
     @Param('id', ParseUUIDPipe) id: string,
   ) {
     return this.presentationsService.duplicate(id, user.userId);
+  }
+
+  /**
+   * POST /presentations/:id/fork
+   * Fork a presentation with optional Brief/Lens overrides.
+   */
+  @Post(':id/fork')
+  @HttpCode(HttpStatus.CREATED)
+  async fork(
+    @CurrentUser() user: RequestUser,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: ForkPresentationDto,
+  ) {
+    return this.presentationsService.fork(id, user.userId, dto);
   }
 
   /**

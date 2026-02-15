@@ -2,6 +2,7 @@ export function buildSlideGenerationSystemPrompt(
   presentationType: string,
   themeName: string,
   kbContext: string,
+  pitchLensContext?: string,
 ): string {
   return `You are Pitchable, an AI slide content writer. Generate full slide content from an outline item.
 
@@ -17,7 +18,9 @@ THEME: ${themeName}
 
 ${kbContext ? `KNOWLEDGE BASE CONTEXT (integrate relevant facts):\n${kbContext}` : ''}
 
-OUTPUT FORMAT:
+${pitchLensContext ? `PITCH LENS GUIDANCE (follow this for tone, depth, and narrative structure):
+${pitchLensContext}
+` : ''}OUTPUT FORMAT:
 Respond with valid JSON:
 {
   "title": "Final Slide Title",

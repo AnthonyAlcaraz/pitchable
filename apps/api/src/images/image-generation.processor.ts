@@ -2,7 +2,7 @@ import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
 import { PrismaService } from '../prisma/prisma.service.js';
-import { ReplicateService } from './replicate.service.js';
+import { NanoBananaService } from './nano-banana.service.js';
 import { ImgurService } from './imgur.service.js';
 import { CreditsService } from '../credits/credits.service.js';
 import { JobStatus, CreditReason } from '../../generated/prisma/enums.js';
@@ -25,7 +25,7 @@ export class ImageGenerationProcessor extends WorkerHost {
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly replicate: ReplicateService,
+    private readonly nanoBanana: NanoBananaService,
     private readonly imgur: ImgurService,
     private readonly credits: CreditsService,
   ) {
@@ -46,15 +46,15 @@ export class ImageGenerationProcessor extends WorkerHost {
         data: { status: JobStatus.PROCESSING },
       });
 
-      // 2. Generate image via Replicate
-      const resultUrl = await this.replicate.generateImage(
+      // 2. Generate image via Gemini (NanoBanana)
+      const { base64 } = await this.nanoBanana.generateImage(
         prompt,
         negativePrompt,
       );
 
-      // 3. Upload to Imgur for permanent hosting
-      const imgurUrl = await this.imgur.uploadFromUrl(
-        resultUrl,
+      // 3. Upload base64 to Imgur for permanent hosting
+      const imgurUrl = await this.imgur.uploadFromBase64(
+        base64,
         `slide-${slideId}`,
       );
 
@@ -62,7 +62,7 @@ export class ImageGenerationProcessor extends WorkerHost {
       await this.prisma.imageJob.update({
         where: { id: imageJobId },
         data: {
-          resultUrl,
+          resultUrl: null,
           imgurUrl,
           status: JobStatus.COMPLETED,
           completedAt: new Date(),

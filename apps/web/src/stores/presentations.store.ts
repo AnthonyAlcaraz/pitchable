@@ -11,6 +11,11 @@ export interface PresentationListItem {
   createdAt: string;
   updatedAt: string;
   slideCount: number;
+  briefId: string | null;
+  briefName: string | null;
+  pitchLensId: string | null;
+  pitchLensName: string | null;
+  isPublic: boolean;
 }
 
 interface PresentationsState {
@@ -22,6 +27,8 @@ interface PresentationsState {
   deletePresentation: (id: string) => Promise<void>;
   duplicatePresentation: (id: string) => Promise<void>;
   renamePresentation: (id: string, title: string) => Promise<void>;
+  forkPresentation: (id: string, overrides?: { briefId?: string; pitchLensId?: string; title?: string }) => Promise<string | null>;
+  toggleVisibility: (id: string, isPublic: boolean) => Promise<void>;
   clearError: () => void;
 }
 
@@ -75,6 +82,33 @@ export const usePresentationsStore = create<PresentationsState>((set, get) => ({
       }));
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Failed to rename';
+      set({ error: msg });
+    }
+  },
+
+  async forkPresentation(id: string, overrides?: { briefId?: string; pitchLensId?: string; title?: string }) {
+    try {
+      const forked = await api.post<{ id: string }>(`/presentations/${id}/fork`, overrides ?? {});
+      // Reload to pick up the new presentation
+      get().loadPresentations();
+      return forked.id;
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Failed to fork';
+      set({ error: msg });
+      return null;
+    }
+  },
+
+  async toggleVisibility(id: string, isPublic: boolean) {
+    try {
+      await api.patch(`/presentations/${id}/visibility`, { isPublic });
+      set((state) => ({
+        presentations: state.presentations.map((p) =>
+          p.id === id ? { ...p, isPublic } : p,
+        ),
+      }));
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Failed to update visibility';
       set({ error: msg });
     }
   },

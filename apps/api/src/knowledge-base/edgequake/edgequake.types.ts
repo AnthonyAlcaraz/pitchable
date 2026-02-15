@@ -45,3 +45,37 @@ export interface EdgeQuakeHealthResponse {
   status: string;
   version?: string;
 }
+
+export interface EdgeQuakeGraphData {
+  nodes: EdgeQuakeGraphNode[];
+  edges: EdgeQuakeGraphEdge[];
+  total_nodes: number;
+  total_edges: number;
+  is_truncated: boolean;
+}
+
+export interface EdgeQuakeGraphNode {
+  id: string;
+  label: string;
+  node_type: string;
+  description: string;
+  degree: number;
+  properties: Record<string, unknown>;
+}
+
+export interface EdgeQuakeGraphEdge {
+  source: string;
+  target: string;
+  edge_type: string;
+  weight: number;
+  properties: Record<string, unknown>;
+}
+
+export interface EdgeQuakeGraphStats {
+  total_nodes: number;
+  total_edges: number;
+  node_types: Record<string, number>;
+  edge_types: Record<string, number>;
+  avg_degree: number;
+  density: number;
+}

@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { LlmService } from './llm.service.js';
+import { LlmService, LlmModel } from './llm.service.js';
 import {
   CONTENT_REVIEWER_SYSTEM_PROMPT,
 } from './prompts/content-reviewer.prompt.js';
@@ -20,8 +20,7 @@ export class ContentReviewerService {
   constructor(private readonly llm: LlmService) {}
 
   /**
-   * Review a single slide for quality. Uses a cheap, fast model (gpt-4o-mini).
-   * Cost: ~$0.001 per slide.
+   * Review a single slide for quality.
    */
   async reviewSlide(slide: SlideInput): Promise<ReviewResult> {
     const slideDescription = `Title: ${slide.title}
@@ -36,7 +35,7 @@ Speaker Notes: ${slide.speakerNotes}`;
           { role: 'system', content: CONTENT_REVIEWER_SYSTEM_PROMPT },
           { role: 'user', content: `Review this slide:\n\n${slideDescription}` },
         ],
-        'gpt-4o-mini',
+        LlmModel.HAIKU,
         isValidReviewResult,
         2,
       );

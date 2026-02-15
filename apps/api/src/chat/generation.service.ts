@@ -1,12 +1,15 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
-import { LlmService } from './llm.service.js';
+import { LlmService, LlmModel } from './llm.service.js';
 import { ContextBuilderService } from './context-builder.service.js';
 import { ConstraintsService } from '../constraints/constraints.service.js';
 import { EventsGateway } from '../events/events.gateway.js';
 import { ContentReviewerService } from './content-reviewer.service.js';
 import { FeedbackLogService } from './feedback-log.service.js';
 import { ValidationGateService } from './validation-gate.service.js';
+import { TierEnforcementService } from '../credits/tier-enforcement.service.js';
+import { CreditsService } from '../credits/credits.service.js';
+import { DECK_GENERATION_COST } from '../credits/tier-config.js';
 import {
   buildOutlineSystemPrompt,
   buildOutlineUserPrompt,
@@ -17,10 +20,13 @@ import {
   buildSlideGenerationUserPrompt,
 } from './prompts/slide-generation.prompt.js';
 import { DEFAULT_SLIDE_RANGES } from './dto/generation-config.dto.js';
+import { getFrameworkConfig } from '../pitch-lens/frameworks/story-frameworks.config.js';
+import { buildPitchLensInjection } from '../pitch-lens/prompts/pitch-lens-injection.prompt.js';
 import {
   PresentationType,
   PresentationStatus,
   SlideType,
+  CreditReason,
 } from '../../generated/prisma/enums.js';
 import type { SlideContent } from '../constraints/density-validator.js';
 import { TtlMap } from '../common/ttl-map.js';
@@ -34,6 +40,7 @@ export interface GenerationConfig {
   topic: string;
   presentationType: string;
   themeId?: string;
+  pitchLensId?: string;
   minSlides?: number;
   maxSlides?: number;
 }
@@ -59,6 +66,8 @@ export class GenerationService {
     private readonly contentReviewer: ContentReviewerService,
     private readonly feedbackLog: FeedbackLogService,
     private readonly validationGate: ValidationGateService,
+    private readonly tierEnforcement: TierEnforcementService,
+    private readonly credits: CreditsService,
   ) {}
 
   /**
@@ -77,15 +86,29 @@ export class GenerationService {
       max: config.maxSlides ?? DEFAULT_SLIDE_RANGES[presType]?.max ?? 16,
     };
 
-    // 1. RAG retrieval
-    const kbContext = await this.contextBuilder.retrieveKbContext(
-      userId,
-      config.topic,
-      8,
-    );
+    // 0. Fetch Pitch Lens + Brief context (if presentation is linked)
+    let pitchLensContext: string | undefined;
+    const presWithContext = await this.prisma.presentation.findUnique({
+      where: { id: presentationId },
+      include: { pitchLens: true, brief: true },
+    });
+    if (presWithContext?.pitchLens) {
+      const framework = getFrameworkConfig(presWithContext.pitchLens.selectedFramework);
+      pitchLensContext = buildPitchLensInjection({ ...presWithContext.pitchLens, framework });
+      // Use framework's ideal slide range if user didn't specify custom range
+      if (!config.minSlides && !config.maxSlides && framework) {
+        range.min = framework.idealSlideRange.min;
+        range.max = framework.idealSlideRange.max;
+      }
+    }
+
+    // 1. RAG retrieval (scoped to brief if linked, otherwise global)
+    const kbContext = presWithContext?.briefId
+      ? await this.contextBuilder.retrieveBriefContext(userId, presWithContext.briefId, config.topic, 8)
+      : await this.contextBuilder.retrieveKbContext(userId, config.topic, 8);
 
     // 2. Generate outline via LLM (JSON mode)
-    const systemPrompt = buildOutlineSystemPrompt(presType, range, kbContext);
+    const systemPrompt = buildOutlineSystemPrompt(presType, range, kbContext, pitchLensContext);
     const userPrompt = buildOutlineUserPrompt(config.topic);
 
     yield { type: 'token', content: 'Generating outline' };
@@ -97,7 +120,7 @@ export class GenerationService {
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt },
         ],
-        undefined,
+        LlmModel.SONNET,
         isValidOutline,
         2,
       );
@@ -189,6 +212,20 @@ export class GenerationService {
     const { outline, config } = pending;
     this.pendingOutlines.delete(presentationId);
 
+    // Tier enforcement: check monthly deck limit
+    const deckCheck = await this.tierEnforcement.canCreateDeck(userId);
+    if (!deckCheck.allowed) {
+      yield { type: 'error', content: deckCheck.reason ?? 'Monthly deck limit reached. Upgrade your plan for more.' };
+      return;
+    }
+
+    // Credit check: deck generation costs credits (covers LLM costs)
+    const user = await this.prisma.user.findUnique({ where: { id: userId }, select: { creditBalance: true } });
+    if ((user?.creditBalance ?? 0) < DECK_GENERATION_COST) {
+      yield { type: 'error', content: `Not enough credits. Deck generation costs ${DECK_GENERATION_COST} credits. You have ${user?.creditBalance ?? 0}. Upgrade your plan or purchase credits.` };
+      return;
+    }
+
     yield { type: 'token', content: `Generating **${outline.title}** — ${outline.slides.length} slides...\n\n` };
 
     // 1. Resolve theme
@@ -196,12 +233,14 @@ export class GenerationService {
     const theme = await this.prisma.theme.findUnique({ where: { id: themeId } });
     const themeName = theme?.displayName ?? 'dark-professional';
 
-    // 2. Get KB context for slide generation
-    const kbContext = await this.contextBuilder.retrieveKbContext(
-      userId,
-      config.topic,
-      8,
-    );
+    // 2. Get KB context for slide generation (scoped to brief if linked)
+    const presForBrief = await this.prisma.presentation.findUnique({
+      where: { id: presentationId },
+      select: { briefId: true },
+    });
+    const kbContext = presForBrief?.briefId
+      ? await this.contextBuilder.retrieveBriefContext(userId, presForBrief.briefId, config.topic, 8)
+      : await this.contextBuilder.retrieveKbContext(userId, config.topic, 8);
 
     // 3. Update presentation metadata
     const presType = config.presentationType as PresentationType ?? PresentationType.STANDARD;
@@ -219,12 +258,24 @@ export class GenerationService {
     // 4. Delete existing slides (in case of regeneration)
     await this.prisma.slide.deleteMany({ where: { presentationId } });
 
+    // 4b. Fetch Pitch Lens context for slide generation
+    let pitchLensContext: string | undefined;
+    const presWithLens = await this.prisma.presentation.findUnique({
+      where: { id: presentationId },
+      include: { pitchLens: true },
+    });
+    if (presWithLens?.pitchLens) {
+      const framework = getFrameworkConfig(presWithLens.pitchLens.selectedFramework);
+      pitchLensContext = buildPitchLensInjection({ ...presWithLens.pitchLens, framework });
+    }
+
     // 5. Build slide system prompt with user feedback injection
     const feedbackBlock = await this.contextBuilder.buildFeedbackBlock(userId);
     const slideSystemPrompt = buildSlideGenerationSystemPrompt(
       config.presentationType,
       themeName,
       kbContext,
+      pitchLensContext,
     ) + feedbackBlock;
 
     // Track offset when NEEDS_SPLIT inserts extra slides
@@ -419,11 +470,16 @@ export class GenerationService {
       }
     }
 
-    // 6. Mark presentation as completed
+    // 6. Mark presentation as completed and increment deck count
     await this.prisma.presentation.update({
       where: { id: presentationId },
       data: { status: PresentationStatus.COMPLETED },
     });
+
+    await this.tierEnforcement.incrementDeckCount(userId);
+
+    // Deduct deck generation credits (covers Opus 4.6 LLM costs)
+    await this.credits.deductCredits(userId, DECK_GENERATION_COST, CreditReason.DECK_GENERATION, presentationId);
 
     const totalSlides = outline.slides.length + slideNumberOffset;
     yield {
@@ -437,6 +493,145 @@ export class GenerationService {
         presentationId,
         role: 'assistant',
         content: `Generated ${totalSlides} slides for "${outline.title}".`,
+        messageType: 'text',
+      },
+    });
+
+    yield { type: 'done', content: '' };
+  }
+
+  /**
+   * Rewrite all existing slides in-place using the current Brief + Lens context.
+   * Preserves the slide structure (titles, order, types) but regenerates body content.
+   */
+  async *rewriteSlides(
+    userId: string,
+    presentationId: string,
+  ): AsyncGenerator<ChatStreamEvent> {
+    // Load presentation with slides, brief, and lens
+    const presentation = await this.prisma.presentation.findUnique({
+      where: { id: presentationId },
+      include: {
+        slides: { orderBy: { slideNumber: 'asc' } },
+        pitchLens: true,
+        brief: true,
+        theme: true,
+      },
+    });
+
+    if (!presentation) {
+      yield { type: 'error', content: 'Presentation not found.' };
+      return;
+    }
+
+    if (presentation.userId !== userId) {
+      yield { type: 'error', content: 'Access denied.' };
+      return;
+    }
+
+    if (presentation.slides.length === 0) {
+      yield { type: 'error', content: 'No slides to rewrite. Generate a deck first.' };
+      return;
+    }
+
+    // Credit check
+    const user = await this.prisma.user.findUnique({ where: { id: userId }, select: { creditBalance: true } });
+    if ((user?.creditBalance ?? 0) < DECK_GENERATION_COST) {
+      yield { type: 'error', content: `Not enough credits. Rewrite costs ${DECK_GENERATION_COST} credits. You have ${user?.creditBalance ?? 0}.` };
+      return;
+    }
+
+    yield { type: 'token', content: `Rewriting **${presentation.slides.length} slides** with current Brief/Lens context...\n\n` };
+
+    // Mark as processing
+    await this.prisma.presentation.update({
+      where: { id: presentationId },
+      data: { status: PresentationStatus.PROCESSING },
+    });
+
+    // Build context
+    const kbContext = presentation.briefId
+      ? await this.contextBuilder.retrieveBriefContext(userId, presentation.briefId, presentation.title, 8)
+      : await this.contextBuilder.retrieveKbContext(userId, presentation.title, 8);
+
+    let pitchLensContext: string | undefined;
+    if (presentation.pitchLens) {
+      const framework = getFrameworkConfig(presentation.pitchLens.selectedFramework);
+      pitchLensContext = buildPitchLensInjection({ ...presentation.pitchLens, framework });
+    }
+
+    const themeName = presentation.theme?.displayName ?? 'dark-professional';
+    const feedbackBlock = await this.contextBuilder.buildFeedbackBlock(userId);
+    const slideSystemPrompt = buildSlideGenerationSystemPrompt(
+      presentation.presentationType,
+      themeName,
+      kbContext,
+      pitchLensContext,
+    ) + feedbackBlock;
+
+    const priorSlides: Array<{ title: string; body: string }> = [];
+
+    for (const slide of presentation.slides) {
+      yield {
+        type: 'token',
+        content: `Rewriting slide ${slide.slideNumber}: **${slide.title}**... `,
+      };
+
+      // Build an OutlineSlide-like object from the existing slide
+      const outlineSlide: OutlineSlide = {
+        slideNumber: slide.slideNumber,
+        title: slide.title,
+        bulletPoints: slide.body.split('\n').filter((l) => l.trim()),
+        slideType: slide.slideType,
+      };
+
+      const raw = await this.generateSlideContent(slideSystemPrompt, outlineSlide, priorSlides);
+      const validated = this.validateSlideContent(raw, outlineSlide);
+
+      // Update slide in-place
+      await this.prisma.slide.update({
+        where: { id: slide.id },
+        data: {
+          body: validated.body,
+          speakerNotes: validated.speakerNotes,
+          imagePrompt: validated.imagePromptHint,
+        },
+      });
+
+      this.events.emitSlideUpdated({
+        presentationId,
+        slideId: slide.id,
+        data: {
+          body: validated.body,
+          speakerNotes: validated.speakerNotes,
+          imagePrompt: validated.imagePromptHint,
+        },
+      });
+
+      priorSlides.push({ title: validated.title, body: validated.body });
+
+      yield { type: 'token', content: 'done\n' };
+    }
+
+    // Mark as completed
+    await this.prisma.presentation.update({
+      where: { id: presentationId },
+      data: { status: PresentationStatus.COMPLETED },
+    });
+
+    // Deduct credits
+    await this.credits.deductCredits(userId, DECK_GENERATION_COST, CreditReason.DECK_GENERATION, presentationId);
+
+    yield {
+      type: 'token',
+      content: `\n**Rewrite complete!** All ${presentation.slides.length} slides have been updated with the current Brief/Lens context. Slide titles and structure were preserved.\n`,
+    };
+
+    await this.prisma.chatMessage.create({
+      data: {
+        presentationId,
+        role: 'assistant',
+        content: `Rewrote ${presentation.slides.length} slides with updated Brief/Lens context.`,
         messageType: 'text',
       },
     });
@@ -465,7 +660,7 @@ export class GenerationService {
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt },
         ],
-        undefined,
+        LlmModel.OPUS,
         isValidSlideContent,
         2,
       );

@@ -6,6 +6,10 @@ import type {
   EdgeQuakeDocument,
   EdgeQuakeQueryResult,
   EdgeQuakeHealthResponse,
+  EdgeQuakeGraphData,
+  EdgeQuakeGraphStats,
+  EdgeQuakeEntity,
+  EdgeQuakeSource,
 } from './edgequake.types.js';
 
 @Injectable()
@@ -80,7 +84,9 @@ export class EdgeQuakeService {
     mimeType: string,
   ): Promise<EdgeQuakeDocument> {
     const formData = new FormData();
-    const blob = new Blob([new Uint8Array(fileBuffer) as BlobPart], { type: mimeType });
+    const blob = new Blob([new Uint8Array(fileBuffer) as BlobPart], {
+      type: mimeType,
+    });
     formData.append('file', blob, filename);
 
     const headers: Record<string, string> = {
@@ -138,6 +144,107 @@ export class EdgeQuakeService {
     );
   }
 
+  async createWorkspace(
+    tenantId: string,
+    name: string,
+  ): Promise<EdgeQuakeWorkspace> {
+    return this.request<EdgeQuakeWorkspace>(
+      'POST',
+      '/api/v1/workspaces',
+      { name },
+      { 'X-Tenant-ID': tenantId },
+    );
+  }
+
+  async deleteWorkspace(tenantId: string, workspaceId: string): Promise<void> {
+    await this.request<unknown>(
+      'DELETE',
+      `/api/v1/workspaces/${workspaceId}`,
+      undefined,
+      { 'X-Tenant-ID': tenantId },
+    );
+  }
+
+  async listWorkspaces(tenantId: string): Promise<EdgeQuakeWorkspace[]> {
+    const result = await this.request<{ workspaces?: EdgeQuakeWorkspace[] }>(
+      'GET',
+      '/api/v1/workspaces',
+      undefined,
+      { 'X-Tenant-ID': tenantId },
+    );
+    return result.workspaces ?? [];
+  }
+
+  async getGraph(
+    tenantId: string,
+    workspaceId: string,
+    opts?: { startNode?: string; depth?: number; maxNodes?: number },
+  ): Promise<EdgeQuakeGraphData> {
+    const params = new URLSearchParams();
+    if (opts?.startNode) params.set('start_node', opts.startNode);
+    if (opts?.depth) params.set('depth', String(opts.depth));
+    if (opts?.maxNodes) params.set('max_nodes', String(opts.maxNodes));
+    const qs = params.toString();
+    return this.request<EdgeQuakeGraphData>(
+      'GET',
+      `/api/v1/graph${qs ? `?${qs}` : ''}`,
+      undefined,
+      { 'X-Tenant-ID': tenantId, 'X-Workspace-ID': workspaceId },
+    );
+  }
+
+  async getGraphStats(
+    tenantId: string,
+    workspaceId: string,
+  ): Promise<EdgeQuakeGraphStats> {
+    return this.request<EdgeQuakeGraphStats>(
+      'GET',
+      '/api/v1/graph/stats',
+      undefined,
+      { 'X-Tenant-ID': tenantId, 'X-Workspace-ID': workspaceId },
+    );
+  }
+
+  async getEntities(
+    tenantId: string,
+    workspaceId: string,
+    opts?: { type?: string; limit?: number },
+  ): Promise<EdgeQuakeEntity[]> {
+    const params = new URLSearchParams();
+    if (opts?.type) params.set('type', opts.type);
+    if (opts?.limit) params.set('limit', String(opts.limit));
+    const qs = params.toString();
+    const result = await this.request<{ entities?: EdgeQuakeEntity[] }>(
+      'GET',
+      `/api/v1/graph/entities${qs ? `?${qs}` : ''}`,
+      undefined,
+      { 'X-Tenant-ID': tenantId, 'X-Workspace-ID': workspaceId },
+    );
+    return result.entities ?? [];
+  }
+
+  async queryMultipleWorkspaces(
+    tenantId: string,
+    workspaceIds: string[],
+    queryText: string,
+    mode = 'hybrid',
+  ): Promise<EdgeQuakeQueryResult> {
+    // Query each workspace and merge results, sorted by score
+    const allSources: EdgeQuakeSource[] = [];
+    let bestAnswer = '';
+    for (const wsId of workspaceIds) {
+      try {
+        const result = await this.query(tenantId, wsId, queryText, mode);
+        allSources.push(...result.sources);
+        if (!bestAnswer && result.answer) bestAnswer = result.answer;
+      } catch {
+        // Skip failed workspaces
+      }
+    }
+    allSources.sort((a, b) => b.score - a.score);
+    return { answer: bestAnswer, sources: allSources };
+  }
+
   private async request<T>(
     method: string,
     path: string,
@@ -160,7 +267,9 @@ export class EdgeQuakeService {
 
     if (!res.ok) {
       const text = await res.text();
-      throw new Error(`EdgeQuake ${method} ${path} failed (${res.status}): ${text}`);
+      throw new Error(
+        `EdgeQuake ${method} ${path} failed (${res.status}): ${text}`,
+      );
     }
 
     const contentType = res.headers.get('content-type') ?? '';

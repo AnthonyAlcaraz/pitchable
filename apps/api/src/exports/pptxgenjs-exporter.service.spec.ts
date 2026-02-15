@@ -257,13 +257,13 @@ describe('PptxGenJsExporterService', () => {
       const callOrder: number[] = [];
       mockAddSlide.mockImplementation(() => {
         return {
-          addText: (...args: any[]) => {
+          addText: jest.fn((...args: any[]) => {
             if (typeof args[0] === 'string') {
               callOrder.push(
                 args[0] === 'First' ? 1 : args[0] === 'Second' ? 2 : 3,
               );
             }
-          },
+          }),
           addImage: jest.fn(),
           addNotes: jest.fn(),
         };

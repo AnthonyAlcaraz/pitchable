@@ -17,6 +17,13 @@ import { HealthModule } from './health/health.module.js';
 import { KnowledgeBaseModule } from './knowledge-base/knowledge-base.module.js';
 import { EventsModule } from './events/events.module.js';
 import { ChatModule } from './chat/chat.module.js';
+import { BillingModule } from './billing/billing.module.js';
+import { PitchLensModule } from './pitch-lens/pitch-lens.module.js';
+import { PitchBriefModule } from './pitch-brief/pitch-brief.module.js';
+import { GalleryModule } from './gallery/gallery.module.js';
+import { ApiKeysModule } from './api-keys/api-keys.module.js';
+import { ApiV1Module } from './api-v1/api-v1.module.js';
+import { McpModule } from './mcp/mcp.module.js';
 import { validate } from './config/env.validation.js';
 
 @Module({
@@ -44,6 +51,13 @@ import { validate } from './config/env.validation.js';
     KnowledgeBaseModule,
     EventsModule,
     ChatModule,
+    BillingModule,
+    PitchLensModule,
+    PitchBriefModule,
+    GalleryModule,
+    ApiKeysModule,
+    ApiV1Module,
+    McpModule,
     HealthModule,
   ],
   controllers: [AppController],

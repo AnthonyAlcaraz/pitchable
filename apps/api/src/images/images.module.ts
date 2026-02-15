@@ -4,7 +4,7 @@ import { ConfigModule } from '@nestjs/config';
 import { PrismaModule } from '../prisma/prisma.module.js';
 import { CreditsModule } from '../credits/credits.module.js';
 import { ImagePromptBuilderService } from './image-prompt-builder.service.js';
-import { ReplicateService } from './replicate.service.js';
+import { NanoBananaService } from './nano-banana.service.js';
 import { ImgurService } from './imgur.service.js';
 import { ImageGenerationProcessor } from './image-generation.processor.js';
 import { ImagesService } from './images.service.js';
@@ -20,7 +20,7 @@ import { ImagesController } from './images.controller.js';
   controllers: [ImagesController],
   providers: [
     ImagePromptBuilderService,
-    ReplicateService,
+    NanoBananaService,
     ImgurService,
     ImageGenerationProcessor,
     ImagesService,

@@ -13,9 +13,11 @@ import { PrismaModule } from '../prisma/prisma.module.js';
 import { KnowledgeBaseModule } from '../knowledge-base/knowledge-base.module.js';
 import { ConstraintsModule } from '../constraints/constraints.module.js';
 import { ExportsModule } from '../exports/exports.module.js';
+import { CreditsModule } from '../credits/credits.module.js';
+import { PitchLensModule } from '../pitch-lens/pitch-lens.module.js';
 
 @Module({
-  imports: [PrismaModule, KnowledgeBaseModule, ConstraintsModule, ExportsModule],
+  imports: [PrismaModule, KnowledgeBaseModule, ConstraintsModule, ExportsModule, CreditsModule, PitchLensModule],
   controllers: [ChatController],
   providers: [
     ChatService,

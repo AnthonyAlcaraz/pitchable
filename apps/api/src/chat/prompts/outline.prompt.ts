@@ -16,6 +16,7 @@ export function buildOutlineSystemPrompt(
   presentationType: string,
   slideRange: { min: number; max: number },
   kbContext: string,
+  pitchLensContext?: string,
 ): string {
   return `You are Pitchable, an AI presentation architect. Generate a structured outline for a ${presentationType} presentation.
 
@@ -30,8 +31,7 @@ CONSTRAINTS:
 AVAILABLE SLIDE TYPES:
 TITLE, PROBLEM, SOLUTION, ARCHITECTURE, PROCESS, COMPARISON, DATA_METRICS, CTA, CONTENT, QUOTE
 
-PRESENTATION TYPE GUIDANCE:
-${getTypeGuidance(presentationType)}
+${pitchLensContext ? pitchLensContext : `PRESENTATION TYPE GUIDANCE:\n${getTypeGuidance(presentationType)}`}
 
 ${kbContext ? `KNOWLEDGE BASE CONTEXT (use this to enrich the outline):\n${kbContext}` : ''}
 

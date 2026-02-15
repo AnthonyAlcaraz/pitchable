@@ -8,6 +8,8 @@ interface PresentationGridProps {
   onDelete: (id: string) => void;
   onDuplicate: (id: string) => void;
   onRename: (id: string, title: string) => void;
+  onFork?: (id: string) => void;
+  onToggleVisibility?: (id: string, isPublic: boolean) => void;
 }
 
 export function PresentationGrid({
@@ -15,6 +17,8 @@ export function PresentationGrid({
   onDelete,
   onDuplicate,
   onRename,
+  onFork,
+  onToggleVisibility,
 }: PresentationGridProps) {
   if (presentations.length === 0) {
     return (
@@ -59,6 +63,8 @@ export function PresentationGrid({
           onDelete={onDelete}
           onDuplicate={onDuplicate}
           onRename={onRename}
+          onFork={onFork}
+          onToggleVisibility={onToggleVisibility}
         />
       ))}
     </div>

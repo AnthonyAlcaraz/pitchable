@@ -22,6 +22,7 @@ enum UserRole {
 
 enum UserTier {
   FREE
+  STARTER
   PRO
   ENTERPRISE
 }
@@ -56,9 +57,12 @@ enum SlideType {
 enum CreditReason {
   PURCHASE
   IMAGE_GENERATION
+  DECK_GENERATION
   DECK_EXPORT
   MONTHLY_ALLOWANCE
   ADMIN_GRANT
+  SUBSCRIPTION_RENEWAL
+  API_GENERATION
 }
 
 enum ExportFormat {
@@ -89,6 +93,72 @@ enum DocumentSourceType {
   URL
 }
 
+// ─── Pitch Lens Enums ────────────────────────────────────────────────────────
+
+enum AudienceType {
+  INVESTORS
+  CUSTOMERS
+  EXECUTIVES
+  TEAM
+  CONFERENCE
+  BOARD
+  TECHNICAL
+}
+
+enum PitchGoal {
+  RAISE_FUNDING
+  SELL_PRODUCT
+  GET_BUYIN
+  EDUCATE
+  INSPIRE
+  REPORT_RESULTS
+}
+
+enum ToneStyle {
+  FORMAL
+  CONVERSATIONAL
+  BOLD
+  INSPIRATIONAL
+  ANALYTICAL
+  STORYTELLING
+}
+
+enum CompanyStage {
+  IDEA
+  MVP
+  GROWTH
+  ENTERPRISE
+}
+
+enum TechnicalLevel {
+  NON_TECHNICAL
+  SEMI_TECHNICAL
+  TECHNICAL
+  HIGHLY_TECHNICAL
+}
+
+enum StoryFramework {
+  HEROS_JOURNEY
+  MINTO_PYRAMID
+  RESONATE
+  PAS
+  BAB
+  STAR
+  PIXAR_PITCH
+  MCKINSEY_SCR
+  POPP
+  KAWASAKI_10_20_30
+  WHAT_SO_WHAT_NOW_WHAT
+  TALK_LIKE_TED
+}
+
+enum BriefStatus {
+  EMPTY
+  PROCESSING
+  READY
+  ERROR
+}
+
 // ─── Models ──────────────────────────────────────────────────────────────────
 
 model User {
@@ -100,6 +170,12 @@ model User {
   creditBalance    Int      @default(0)
   tier             UserTier @default(FREE)
   refreshTokenHash String?
+  stripeCustomerId String?  @unique
+  decksThisMonth   Int      @default(0)
+  monthResetAt     DateTime @default(now())
+  registrationIp   String?
+  lastLoginIp      String?
+  lastLoginAt      DateTime?
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
@@ -108,6 +184,11 @@ model User {
   documents          Document[]
   edgequakeMapping   EdgeQuakeMapping?
   feedbackEntries    FeedbackEntry[]
+  subscription       Subscription?
+  creditReservations CreditReservation[]
+  pitchLenses        PitchLens[]
+  pitchBriefs        PitchBrief[]
+  apiKeys            ApiKey[]
 
   @@index([email])
 }
@@ -121,18 +202,31 @@ model Presentation {
   status           PresentationStatus @default(DRAFT)
   themeId          String             @db.Uuid
   imageCount       Int                @default(0)
+  pitchLensId      String?            @db.Uuid
+  briefId          String?            @db.Uuid
+  forkedFromId     String?            @db.Uuid
+  isPublic         Boolean            @default(false)
+  publishedAt      DateTime?
   userId           String             @db.Uuid
   createdAt        DateTime           @default(now())
   updatedAt        DateTime           @updatedAt
 
-  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  theme      Theme       @relation(fields: [themeId], references: [id])
+  user       User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  theme      Theme          @relation(fields: [themeId], references: [id])
+  pitchLens  PitchLens?     @relation(fields: [pitchLensId], references: [id], onDelete: SetNull)
+  brief      PitchBrief?    @relation(fields: [briefId], references: [id], onDelete: SetNull)
+  forkedFrom Presentation?  @relation("PresentationFork", fields: [forkedFromId], references: [id], onDelete: SetNull)
+  forks      Presentation[] @relation("PresentationFork")
   slides       Slide[]
   exportJobs   ExportJob[]
   chatMessages ChatMessage[]
 
   @@index([userId])
   @@index([status])
+  @@index([pitchLensId])
+  @@index([briefId])
+  @@index([forkedFromId])
+  @@index([isPublic, status])
 }
 
 model Slide {
@@ -187,6 +281,37 @@ model CreditTransaction {
   @@index([userId])
 }
 
+model Subscription {
+  id                   String    @id @default(uuid()) @db.Uuid
+  userId               String    @unique @db.Uuid
+  stripeSubscriptionId String?   @unique
+  tier                 UserTier  @default(FREE)
+  status               String    @default("active") // active, canceled, past_due
+  currentPeriodStart   DateTime?
+  currentPeriodEnd     DateTime?
+  cancelAtPeriodEnd    Boolean   @default(false)
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model CreditReservation {
+  id          String    @id @default(uuid()) @db.Uuid
+  userId      String    @db.Uuid
+  amount      Int
+  reason      CreditReason
+  referenceId String?
+  status      String    @default("reserved") // reserved, committed, released
+  expiresAt   DateTime
+  createdAt   DateTime  @default(now())
+  resolvedAt  DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, status])
+}
+
 model ExportJob {
   id             String       @id @default(uuid()) @db.Uuid
   presentationId String       @db.Uuid
@@ -236,11 +361,15 @@ model Document {
   createdAt    DateTime           @default(now())
   updatedAt    DateTime           @updatedAt
 
+  briefId      String?            @db.Uuid
+
   user   User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  brief  PitchBrief?     @relation(fields: [briefId], references: [id], onDelete: SetNull)
   chunks DocumentChunk[]
 
   @@index([userId])
   @@index([status])
+  @@index([briefId])
 }
 
 model EdgeQuakeMapping {
@@ -299,4 +428,97 @@ model FeedbackEntry {
 
   @@index([userId])
   @@index([userId, type])
+}
+
+model PitchLens {
+  id                  String         @id @default(uuid()) @db.Uuid
+  userId              String         @db.Uuid
+  name                String
+  description         String?        @db.Text
+  audienceType        AudienceType
+  pitchGoal           PitchGoal
+  industry            String
+  companyStage        CompanyStage
+  toneStyle           ToneStyle
+  technicalLevel      TechnicalLevel
+  selectedFramework   StoryFramework
+  frameworkOverridden Boolean        @default(false)
+  customGuidance      String?        @db.Text
+  preferredSlideRange Json?
+  isDefault           Boolean        @default(false)
+  isPublic            Boolean        @default(false)
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  presentations Presentation[]
+  briefLenses   BriefLens[]
+
+  @@index([userId])
+  @@index([userId, isDefault])
+  @@index([isPublic])
+}
+
+
+model PitchBrief {
+  id                   String      @id @default(uuid()) @db.Uuid
+  userId               String      @db.Uuid
+  name                 String
+  description          String?     @db.Text
+  edgequakeWorkspaceId String?
+  documentCount        Int         @default(0)
+  entityCount          Int         @default(0)
+  status               BriefStatus @default(EMPTY)
+  createdAt            DateTime    @default(now())
+  updatedAt            DateTime    @updatedAt
+
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  documents     Document[]
+  briefLenses   BriefLens[]
+  presentations Presentation[]
+
+  @@index([userId])
+}
+
+model BriefLens {
+  id        String   @id @default(uuid()) @db.Uuid
+  briefId   String   @db.Uuid
+  lensId    String   @db.Uuid
+  createdAt DateTime @default(now())
+
+  brief PitchBrief @relation(fields: [briefId], references: [id], onDelete: Cascade)
+  lens  PitchLens  @relation(fields: [lensId], references: [id], onDelete: Cascade)
+
+  @@unique([briefId, lensId])
+  @@index([briefId])
+  @@index([lensId])
+}
+
+model RegistrationIpLog {
+  id        String   @id @default(uuid()) @db.Uuid
+  ip        String
+  userId    String   @db.Uuid
+  createdAt DateTime @default(now())
+
+  @@index([ip])
+  @@index([ip, createdAt])
+}
+
+model ApiKey {
+  id         String    @id @default(uuid()) @db.Uuid
+  userId     String    @db.Uuid
+  name       String
+  keyHash    String    @unique
+  keyPrefix  String
+  scopes     String[]
+  rateLimit  Int       @default(60)
+  lastUsedAt DateTime?
+  expiresAt  DateTime?
+  isRevoked  Boolean   @default(false)
+  createdAt  DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([keyPrefix])
+  @@index([userId])
 }

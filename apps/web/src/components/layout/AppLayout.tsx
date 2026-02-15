@@ -3,7 +3,7 @@ import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/stores/auth.store';
 import {
   Layers,
-  LayoutDashboard,
+  Gauge,
   BookOpen,
   Settings,
   LogOut,
@@ -12,12 +12,15 @@ import {
   CreditCard,
   Menu,
   X,
+  Focus,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const NAV_ITEMS = [
-  { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { path: '/knowledge-base', label: 'Knowledge Base', icon: BookOpen },
+  { path: '/cockpit', label: 'Cockpit', icon: Gauge },
+  { path: '/pitch-briefs', label: 'Pitch Briefs', icon: BookOpen },
+  { path: '/pitch-lens', label: 'Pitch Lens', icon: Focus },
+  { path: '/billing', label: 'Billing', icon: CreditCard },
   { path: '/settings', label: 'Settings', icon: Settings },
 ] as const;
 
@@ -74,7 +77,7 @@ export function AppLayout() {
         {/* Navigation */}
         <nav className="flex-1 space-y-1 p-2">
           {NAV_ITEMS.map((item) => {
-            const isActive = location.pathname === item.path;
+            const isActive = location.pathname === item.path || location.pathname.startsWith(item.path + '/');
             return (
               <Link
                 key={item.path}

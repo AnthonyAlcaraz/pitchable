@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
-import { LlmService } from './llm.service.js';
+import { LlmService, LlmModel } from './llm.service.js';
 import { ContextBuilderService } from './context-builder.service.js';
 import { GenerationService } from './generation.service.js';
 import { IntentClassifierService } from './intent-classifier.service.js';
@@ -13,13 +13,16 @@ import {
   parseSlashCommand,
   getAvailableCommands,
 } from './slash-command.parser.js';
-import type { ChatCompletionMessageParam } from 'openai/resources/chat/completions.js';
+import type { LlmMessage } from './llm.service.js';
 
 export interface ChatStreamEvent {
   type: 'token' | 'done' | 'error' | 'action';
   content: string;
   metadata?: Record<string, unknown>;
 }
+
+const OFF_TOPIC_RESPONSE =
+  "I'm focused on helping you build great presentations. What would you like to work on for your deck?";
 
 @Injectable()
 export class ChatService {
@@ -88,12 +91,20 @@ export class ChatService {
       return;
     }
 
-    // Check if presentation has slides for intent classification
+    // Classify intent (works with or without slides)
     const slideCount = await this.prisma.slide.count({ where: { presentationId } });
+    const intent = await this.intentClassifier.classify(content, slideCount > 0);
+
+    // Block off-topic messages regardless of slide state
+    if (intent.intent === 'off_topic' && intent.confidence >= 0.6) {
+      yield { type: 'token', content: OFF_TOPIC_RESPONSE };
+      yield { type: 'done', content: '' };
+      await this.persistAssistantMessage(presentationId, OFF_TOPIC_RESPONSE);
+      return;
+    }
 
     if (slideCount > 0) {
-      // Use intent classifier for slide-level operations
-      const intent = await this.intentClassifier.classify(content, true);
+      // Use classified intent for slide-level operations
 
       if (intent.confidence >= 0.7) {
         switch (intent.intent) {
@@ -163,9 +174,18 @@ export class ChatService {
             yield { type: 'done', content: '' };
             return;
           }
+          // off_topic is already handled above before the slideCount check
           // generate_outline and general_chat fall through to default behavior
         }
       }
+    }
+
+    // Fast off-topic check before spending tokens on LLM streaming
+    if (this.isObviouslyOffTopic(content)) {
+      yield { type: 'token', content: OFF_TOPIC_RESPONSE };
+      yield { type: 'done', content: '' };
+      await this.persistAssistantMessage(presentationId, OFF_TOPIC_RESPONSE);
+      return;
     }
 
     // Regular chat — build context and stream LLM response
@@ -193,7 +213,7 @@ export class ChatService {
       20,
     );
 
-    const messages: ChatCompletionMessageParam[] = [
+    const messages: LlmMessage[] = [
       {
         role: 'system',
         content: systemPrompt + kbContext,
@@ -202,7 +222,7 @@ export class ChatService {
     ];
 
     let fullResponse = '';
-    for await (const chunk of this.llm.streamChat(messages)) {
+    for await (const chunk of this.llm.streamChat(messages, LlmModel.SONNET)) {
       if (chunk.done) {
         yield { type: 'done', content: '' };
         break;
@@ -312,6 +332,10 @@ export class ChatService {
         }
         break;
       }
+      case 'rewrite': {
+        yield* this.generation.rewriteSlides(userId, presentationId);
+        break;
+      }
       case 'auto-approve': {
         const setting = args[0]?.toLowerCase();
         const enabled = setting !== 'off' && setting !== 'false' && setting !== 'disable';
@@ -376,6 +400,42 @@ export class ChatService {
     }
 
     return { topic: content, presentationType };
+  }
+
+  /**
+   * Fast keyword-based off-topic detector. Blocks obvious abuse without any LLM call.
+   * Only catches clear non-presentation queries. Ambiguous messages pass through
+   * to the LLM classifier which has the `off_topic` intent.
+   */
+  private isObviouslyOffTopic(content: string): boolean {
+    const lower = content.toLowerCase().trim();
+
+    // Very short messages like "hi" or "hey" are fine — could be conversation starters
+    if (lower.length < 10) return false;
+
+    // Allow anything that mentions slides/deck/presentation keywords
+    const presentationKeywords = [
+      'slide', 'deck', 'presentation', 'pitch', 'outline', 'bullet',
+      'theme', 'export', 'pptx', 'pdf', 'keynote', 'powerpoint',
+      'speaker note', 'title slide', 'agenda', 'content slide',
+    ];
+    if (presentationKeywords.some((kw) => lower.includes(kw))) return false;
+
+    // Block clear off-topic patterns
+    const offTopicPatterns = [
+      /write (?:me )?(?:a |an )?(?:poem|story|essay|song|email|letter|code|script|function)/,
+      /(?:translate|convert) .+ (?:to|into) .+/,
+      /(?:what|who|when|where|how|why) (?:is|are|was|were|did|does|do|can|could|would|will|has|have) (?!.*(?:slide|deck|present|pitch|bullet|theme))/,
+      /(?:solve|calculate|compute|evaluate) /,
+      /(?:explain|define|summarize) (?!.*(?:slide|deck|present|pitch))/,
+      /(?:tell me|give me) (?:a joke|a recipe|a story|about yourself)/,
+      /(?:help me with|assist with) (?:my |the )?(?:homework|code|coding|programming|math|essay|exam)/,
+      /(?:python|javascript|typescript|java|sql|html|css|react|node|rust|go) /,
+      /(?:recipe|cook|bake|ingredients) /,
+      /(?:play|sing|draw|paint) (?!.*slide)/,
+    ];
+
+    return offTopicPatterns.some((pattern) => pattern.test(lower));
   }
 
   private async persistAssistantMessage(presentationId: string, content: string): Promise<void> {

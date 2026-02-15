@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { MoreVertical, Copy, Trash2, Pencil, Layers } from 'lucide-react';
+import { MoreVertical, Copy, Trash2, Pencil, Layers, GitFork, BookOpen, Focus, Globe, GlobeLock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { PresentationListItem } from '@/stores/presentations.store';
 
@@ -9,6 +9,8 @@ interface PresentationCardProps {
   onDelete: (id: string) => void;
   onDuplicate: (id: string) => void;
   onRename: (id: string, title: string) => void;
+  onFork?: (id: string) => void;
+  onToggleVisibility?: (id: string, isPublic: boolean) => void;
 }
 
 const TYPE_LABELS: Record<string, string> = {
@@ -30,6 +32,8 @@ export function PresentationCard({
   onDelete,
   onDuplicate,
   onRename,
+  onFork,
+  onToggleVisibility,
 }: PresentationCardProps) {
   const [showMenu, setShowMenu] = useState(false);
   const [isRenaming, setIsRenaming] = useState(false);
@@ -94,6 +98,18 @@ export function PresentationCard({
           <span className="text-xs text-muted-foreground">
             {presentation.slideCount} slides
           </span>
+          {presentation.briefName && (
+            <span className="flex items-center gap-1 text-xs text-muted-foreground">
+              <BookOpen className="h-3 w-3" />
+              {presentation.briefName}
+            </span>
+          )}
+          {presentation.pitchLensName && (
+            <span className="flex items-center gap-1 text-xs text-muted-foreground">
+              <Focus className="h-3 w-3" />
+              {presentation.pitchLensName}
+            </span>
+          )}
         </div>
 
         <p className="mt-2 text-xs text-muted-foreground">{formattedDate}</p>
@@ -138,6 +154,34 @@ export function PresentationCard({
               >
                 <Copy className="h-3.5 w-3.5" /> Duplicate
               </button>
+              {onFork && (
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    onFork(presentation.id);
+                    setShowMenu(false);
+                  }}
+                  className="flex w-full items-center gap-2 px-3 py-1.5 text-xs text-foreground hover:bg-accent"
+                >
+                  <GitFork className="h-3.5 w-3.5" /> Reuse
+                </button>
+              )}
+              {onToggleVisibility && presentation.status === 'COMPLETED' && (
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    onToggleVisibility(presentation.id, !presentation.isPublic);
+                    setShowMenu(false);
+                  }}
+                  className="flex w-full items-center gap-2 px-3 py-1.5 text-xs text-foreground hover:bg-accent"
+                >
+                  {presentation.isPublic ? (
+                    <><GlobeLock className="h-3.5 w-3.5" /> Remove from Gallery</>
+                  ) : (
+                    <><Globe className="h-3.5 w-3.5" /> Share to Gallery</>
+                  )}
+                </button>
+              )}
               <button
                 onClick={(e) => {
                   e.preventDefault();

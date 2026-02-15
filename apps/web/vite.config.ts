@@ -44,6 +44,18 @@ export default defineConfig({
         target: 'http://localhost:3000',
         changeOrigin: true,
       },
+      '/api-keys': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+      },
+      '/gallery': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+      },
+      '/mcp': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+      },
     },
   },
 })

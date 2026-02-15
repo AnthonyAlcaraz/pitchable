@@ -202,12 +202,19 @@ export class PresentationsService {
     createdAt: Date;
     updatedAt: Date;
     slideCount: number;
+    briefId: string | null;
+    briefName: string | null;
+    pitchLensId: string | null;
+    pitchLensName: string | null;
+    isPublic: boolean;
   }>> {
     const presentations = await this.prisma.presentation.findMany({
       where: { userId },
       orderBy: { createdAt: 'desc' },
       include: {
         _count: { select: { slides: true } },
+        brief: { select: { id: true, name: true } },
+        pitchLens: { select: { id: true, name: true } },
       },
     });
 
@@ -221,6 +228,11 @@ export class PresentationsService {
       createdAt: p.createdAt,
       updatedAt: p.updatedAt,
       slideCount: p._count.slides,
+      briefId: p.brief?.id ?? null,
+      briefName: p.brief?.name ?? null,
+      pitchLensId: p.pitchLens?.id ?? null,
+      pitchLensName: p.pitchLens?.name ?? null,
+      isPublic: p.isPublic,
     }));
   }
 
@@ -474,6 +486,45 @@ export class PresentationsService {
   }
 
   /**
+   * Toggle public visibility of a presentation.
+   * Only COMPLETED presentations can be made public.
+   */
+  async setVisibility(
+    id: string,
+    userId: string,
+    isPublic: boolean,
+  ): Promise<{ id: string; isPublic: boolean; publishedAt: Date | null }> {
+    const presentation = await this.prisma.presentation.findUnique({
+      where: { id },
+    });
+
+    if (!presentation) {
+      throw new NotFoundException(`Presentation with id "${id}" not found`);
+    }
+
+    if (presentation.userId !== userId) {
+      throw new ForbiddenException('You do not have access to this presentation');
+    }
+
+    if (isPublic && presentation.status !== PresentationStatus.COMPLETED) {
+      throw new BadRequestException('Only completed presentations can be made public');
+    }
+
+    const updated = await this.prisma.presentation.update({
+      where: { id },
+      data: {
+        isPublic,
+        publishedAt: isPublic ? new Date() : null,
+      },
+      select: { id: true, isPublic: true, publishedAt: true },
+    });
+
+    this.logger.log(`Set visibility of presentation ${id} to ${isPublic ? 'public' : 'private'}`);
+
+    return updated;
+  }
+
+  /**
    * Duplicate a presentation with all its slides.
    */
   async duplicate(
@@ -502,7 +553,117 @@ export class PresentationsService {
           presentationType: original.presentationType,
           status: PresentationStatus.COMPLETED,
           themeId: original.themeId,
+          imageCount: original.imageCount,
+          briefId: original.briefId,
+          pitchLensId: original.pitchLensId,
+          forkedFromId: original.id,
+          userId,
+        },
+      });
+
+      const slideData = original.slides.map((s) => ({
+        presentationId: pres.id,
+        slideNumber: s.slideNumber,
+        title: s.title,
+        body: s.body,
+        speakerNotes: s.speakerNotes,
+        slideType: s.slideType,
+        imagePrompt: s.imagePrompt,
+        imageUrl: s.imageUrl,
+        imageLocalPath: s.imageLocalPath,
+      }));
+
+      await tx.slide.createMany({ data: slideData });
+
+      return tx.presentation.findUniqueOrThrow({
+        where: { id: pres.id },
+        include: { slides: { orderBy: { slideNumber: 'asc' } } },
+      });
+    });
+
+    this.logger.log(`Duplicated presentation ${id} → ${duplicated.id} for user ${userId}`);
+
+    return {
+      ...duplicated,
+      slides: duplicated.slides.map((s) => ({
+        id: s.id,
+        slideNumber: s.slideNumber,
+        title: s.title,
+        body: s.body,
+        speakerNotes: s.speakerNotes,
+        slideType: s.slideType,
+        imageUrl: s.imageUrl,
+        imagePrompt: s.imagePrompt,
+        createdAt: s.createdAt,
+      })),
+    };
+  }
+
+  /**
+   * Quick-create a blank DRAFT presentation, optionally linked to a brief and/or lens.
+   * Used by the Pitch Cockpit's Composer Bar.
+   */
+  async quickCreate(
+    userId: string,
+    opts?: { briefId?: string; pitchLensId?: string },
+  ): Promise<{ id: string }> {
+    const themeId = await this.resolveThemeId(undefined);
+    const pres = await this.prisma.presentation.create({
+      data: {
+        title: 'Untitled',
+        sourceContent: '',
+        presentationType: PresentationType.STANDARD,
+        status: PresentationStatus.DRAFT,
+        themeId,
+        imageCount: 0,
+        userId,
+        briefId: opts?.briefId ?? null,
+        pitchLensId: opts?.pitchLensId ?? null,
+      },
+    });
+    this.logger.log(
+      `Quick-created presentation ${pres.id} for user ${userId}` +
+      (opts?.briefId ? ` (brief: ${opts.briefId})` : '') +
+      (opts?.pitchLensId ? ` (lens: ${opts.pitchLensId})` : ''),
+    );
+    return { id: pres.id };
+  }
+
+  /**
+   * Fork a presentation — copy slide structure with optional Brief/Lens overrides.
+   * Sets status to DRAFT so content can be regenerated with new context.
+   */
+  async fork(
+    id: string,
+    userId: string,
+    overrides?: { briefId?: string | null; pitchLensId?: string | null; title?: string },
+  ): Promise<PresentationWithSlides> {
+    const original = await this.prisma.presentation.findUnique({
+      where: { id },
+      include: { slides: { orderBy: { slideNumber: 'asc' } } },
+    });
+
+    if (!original) {
+      throw new NotFoundException(`Presentation with id "${id}" not found`);
+    }
+
+    if (original.userId !== userId) {
+      throw new ForbiddenException('You do not have access to this presentation');
+    }
+
+    const forked = await this.prisma.$transaction(async (tx) => {
+      const pres = await tx.presentation.create({
+        data: {
+          title: overrides?.title ?? `${original.title} (reused)`,
+          description: original.description,
+          sourceContent: original.sourceContent,
+          presentationType: original.presentationType,
+          status: PresentationStatus.DRAFT,
+          themeId: original.themeId,
           imageCount: 0,
+          briefId: overrides?.briefId !== undefined ? overrides.briefId : original.briefId,
+          pitchLensId: overrides?.pitchLensId !== undefined ? overrides.pitchLensId : original.pitchLensId,
+          forkedFromId: original.id,
           userId,
         },
       });
@@ -525,11 +686,15 @@ export class PresentationsService {
       });
     });
 
-    this.logger.log(`Duplicated presentation ${id} → ${duplicated.id} for user ${userId}`);
+    this.logger.log(
+      `Forked presentation ${id} → ${forked.id} for user ${userId}` +
+      (overrides?.briefId ? ` (brief: ${overrides.briefId})` : '') +
+      (overrides?.pitchLensId ? ` (lens: ${overrides.pitchLensId})` : ''),
+    );
 
     return {
-      ...duplicated,
-      slides: duplicated.slides.map((s) => ({
+      ...forked,
+      slides: forked.slides.map((s) => ({
         id: s.id,
         slideNumber: s.slideNumber,
         title: s.title,

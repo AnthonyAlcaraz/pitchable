@@ -1,7 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import OpenAI from 'openai';
-import type { ChatCompletionMessageParam } from 'openai/resources/chat/completions.js';
+import Anthropic from '@anthropic-ai/sdk';
+
+/** Shared message type for all LLM interactions. */
+export interface LlmMessage {
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+}
 
 export interface LlmStreamChunk {
   content: string;
@@ -14,78 +19,150 @@ export type JsonValidator<T> = (data: unknown) => data is T;
 /** Default timeout for LLM calls (30 seconds). */
 const DEFAULT_TIMEOUT_MS = 30_000;
 
+/**
+ * Model routing for cost optimization.
+ *
+ * OPUS   — Quality-critical: slide content generation ($5/$25 per MTok)
+ * SONNET — Mid-tier: outline gen, chat, slide modification ($3/$15 per MTok)
+ * HAIKU  — Fast/cheap: intent classification, content review ($0.80/$4 per MTok)
+ */
+export const LlmModel = {
+  OPUS: 'claude-opus-4-6-20250219',
+  SONNET: 'claude-sonnet-4-5-20250929',
+  HAIKU: 'claude-haiku-4-5-20251001',
+} as const;
+
+export type LlmModelId = (typeof LlmModel)[keyof typeof LlmModel];
+
 @Injectable()
 export class LlmService {
   private readonly logger = new Logger(LlmService.name);
-  private readonly openai: OpenAI;
+  private readonly anthropic: Anthropic;
   private readonly defaultModel: string;
 
   constructor(configService: ConfigService) {
-    this.openai = new OpenAI({
-      apiKey: configService.get<string>('OPENAI_API_KEY'),
+    this.anthropic = new Anthropic({
+      apiKey: configService.get<string>('ANTHROPIC_API_KEY'),
       timeout: DEFAULT_TIMEOUT_MS,
     });
     this.defaultModel = configService.get<string>(
-      'OPENAI_CHAT_MODEL',
-      'gpt-4o',
+      'ANTHROPIC_MODEL',
+      LlmModel.OPUS,
     );
   }
 
+  /**
+   * Extract system message(s) and non-system messages from the input array.
+   * Anthropic takes `system` as a top-level parameter, not as a message role.
+   */
+  private separateSystemMessages(
+    messages: LlmMessage[],
+  ): { system: string; messages: Array<{ role: 'user' | 'assistant'; content: string }> } {
+    const systemParts: string[] = [];
+    const nonSystem: Array<{ role: 'user' | 'assistant'; content: string }> = [];
+
+    for (const msg of messages) {
+      if (msg.role === 'system') {
+        systemParts.push(msg.content);
+      } else {
+        nonSystem.push({ role: msg.role, content: msg.content });
+      }
+    }
+
+    return {
+      system: systemParts.join('\n\n'),
+      messages: nonSystem,
+    };
+  }
+
   async *streamChat(
-    messages: ChatCompletionMessageParam[],
+    messages: LlmMessage[],
     model?: string,
   ): AsyncGenerator<LlmStreamChunk> {
-    const stream = await this.openai.chat.completions.create({
+    const { system, messages: nonSystem } = this.separateSystemMessages(messages);
+
+    const stream = this.anthropic.messages.stream({
       model: model ?? this.defaultModel,
-      messages,
-      stream: true,
+      max_tokens: 4096,
+      ...(system ? { system } : {}),
+      messages: nonSystem,
     });
 
-    for await (const chunk of stream) {
-      const delta = chunk.choices[0]?.delta?.content;
-      if (delta) {
-        yield { content: delta, done: false };
+    for await (const event of stream) {
+      if (
+        event.type === 'content_block_delta' &&
+        event.delta.type === 'text_delta'
+      ) {
+        yield { content: event.delta.text, done: false };
       }
     }
     yield { content: '', done: true };
   }
 
   async complete(
-    messages: ChatCompletionMessageParam[],
+    messages: LlmMessage[],
     model?: string,
   ): Promise<string> {
-    const result = await this.openai.chat.completions.create({
+    const { system, messages: nonSystem } = this.separateSystemMessages(messages);
+
+    const result = await this.anthropic.messages.create({
       model: model ?? this.defaultModel,
-      messages,
+      max_tokens: 4096,
+      ...(system ? { system } : {}),
+      messages: nonSystem,
     });
-    return result.choices[0]?.message?.content ?? '';
+
+    const textBlock = result.content.find((block) => block.type === 'text');
+    return textBlock?.text ?? '';
   }
 
   /**
-   * Complete with JSON mode + parse + validate + retry on failure.
+   * Complete with JSON instruction + prefill + parse + validate + retry on failure.
+   *
+   * Anthropic doesn't have a native JSON mode. Instead we:
+   * 1. Append "respond with valid JSON only" to the system prompt
+   * 2. Prefill the assistant response with '{' to force JSON output
+   * 3. Prepend '{' to the response text before parsing
    *
    * @param messages - Chat messages
-   * @param model - Optional model override
+   * @param model - Model to use (use LlmModel.OPUS/SONNET/HAIKU for cost routing)
    * @param validator - Optional type guard to validate the parsed structure
    * @param maxRetries - Number of retries on parse/validation failure (default: 1)
    */
   async completeJson<T>(
-    messages: ChatCompletionMessageParam[],
+    messages: LlmMessage[],
     model?: string,
     validator?: JsonValidator<T>,
     maxRetries = 1,
   ): Promise<T> {
     let lastError: Error | null = null;
+    // Build a mutable copy of non-system messages for retry nudges
+    let { system, messages: nonSystem } = this.separateSystemMessages(messages);
+
+    // Append JSON instruction to system prompt
+    const jsonSystem = system
+      ? system + '\n\nYou MUST respond with valid JSON only. No markdown, no explanation, just the JSON object.'
+      : 'You MUST respond with valid JSON only. No markdown, no explanation, just the JSON object.';
 
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
       try {
-        const result = await this.openai.chat.completions.create({
+        // Prefill with '{' to force JSON output
+        const prefillMessages = [
+          ...nonSystem,
+          { role: 'assistant' as const, content: '{' },
+        ];
+
+        const result = await this.anthropic.messages.create({
           model: model ?? this.defaultModel,
-          messages,
-          response_format: { type: 'json_object' },
+          max_tokens: 4096,
+          system: jsonSystem,
+          messages: prefillMessages,
         });
 
-        const content = result.choices[0]?.message?.content ?? '{}';
+        const textBlock = result.content.find((block) => block.type === 'text');
+        const rawContent = textBlock?.text ?? '';
+        // Prepend the '{' we used as prefill
+        const content = '{' + rawContent;
 
         let parsed: unknown;
         try {
@@ -99,11 +176,11 @@ export class LlmService {
 
           if (attempt < maxRetries) {
             // Retry with a nudge to fix the JSON
-            messages = [
-              ...messages,
-              { role: 'assistant', content },
+            nonSystem = [
+              ...nonSystem,
+              { role: 'assistant' as const, content },
               {
-                role: 'user',
+                role: 'user' as const,
                 content: 'Your previous response was not valid JSON. Please respond with valid JSON only.',
               },
             ];
@@ -121,11 +198,11 @@ export class LlmService {
             lastError = new Error('LLM response failed structural validation');
 
             if (attempt < maxRetries) {
-              messages = [
-                ...messages,
-                { role: 'assistant', content },
+              nonSystem = [
+                ...nonSystem,
+                { role: 'assistant' as const, content },
                 {
-                  role: 'user',
+                  role: 'user' as const,
                   content: 'Your previous JSON response had missing or incorrect fields. Please ensure all required fields are present with correct types.',
                 },
               ];
@@ -140,7 +217,7 @@ export class LlmService {
         // If it's our own validation error being re-thrown, handle above
         if (err === lastError) throw err;
 
-        // OpenAI API error (timeout, rate limit, etc.)
+        // Anthropic API error (timeout, rate limit, etc.)
         const msg = err instanceof Error ? err.message : 'Unknown LLM error';
         this.logger.error(
           `LLM API call failed (attempt ${attempt + 1}/${maxRetries + 1}): ${msg}`,

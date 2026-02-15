@@ -8,6 +8,7 @@ import { ConfigService } from '@nestjs/config';
 import * as argon2 from 'argon2';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { UserRole, UserTier } from '../../generated/prisma/enums.js';
+import { FREE_SIGNUP_CREDITS } from '../credits/tier-config.js';
 
 export interface UserDto {
   id: string;
@@ -41,6 +42,7 @@ export class AuthService {
     email: string,
     password: string,
     name: string,
+    ip: string,
   ): Promise<AuthResponse> {
     const existing = await this.prisma.user.findUnique({
       where: { email },
@@ -59,8 +61,14 @@ export class AuthService {
         name,
         role: UserRole.USER,
         tier: UserTier.FREE,
-        creditBalance: 0,
+        creditBalance: FREE_SIGNUP_CREDITS,
+        registrationIp: ip,
       },
+    });
+
+    // Log registration IP for abuse tracking
+    await this.prisma.registrationIpLog.create({
+      data: { ip, userId: user.id },
     });
 
     const userDto = this.toUserDto(user);
@@ -91,9 +99,15 @@ export class AuthService {
     return this.toUserDto(user);
   }
 
-  async login(user: UserDto): Promise<AuthResponse> {
+  async login(user: UserDto, ip?: string): Promise<AuthResponse> {
     const tokens = await this.generateTokens(user.id, user.email, user.role);
-    await this.updateRefreshTokenHash(user.id, tokens.refreshToken);
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        refreshTokenHash: await argon2.hash(tokens.refreshToken),
+        ...(ip ? { lastLoginIp: ip, lastLoginAt: new Date() } : {}),
+      },
+    });
     return { tokens, user };
   }
 

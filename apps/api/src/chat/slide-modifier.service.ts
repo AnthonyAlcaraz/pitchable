@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
-import { LlmService } from './llm.service.js';
+import { LlmService, LlmModel } from './llm.service.js';
 import { ConstraintsService } from '../constraints/constraints.service.js';
 import { EventsGateway } from '../events/events.gateway.js';
 import type { SlideContent } from '../constraints/density-validator.js';
@@ -61,7 +61,7 @@ export class SlideModifierService {
             content: `Current slide:\n${currentContent}\n\nInstruction: ${instruction}`,
           },
         ],
-        undefined,
+        LlmModel.SONNET,
         isValidModifiedSlideContent,
         2,
       );

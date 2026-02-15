@@ -9,6 +9,7 @@ const VALID_COMMANDS = [
   'export',
   'outline',
   'regenerate',
+  'rewrite',
   'images',
   'help',
   'auto-approve',
@@ -44,6 +45,7 @@ export function getAvailableCommands(): {
     { command: '/outline', description: 'Regenerate the outline' },
     { command: '/regenerate', description: 'Regenerate a slide (e.g. /regenerate slide 3)' },
     { command: '/images', description: 'Generate images for slides (e.g. /images 6)' },
+    { command: '/rewrite', description: 'Rewrite all slides using the current Brief context (keeps structure)' },
     { command: '/help', description: 'Show available commands' },
     { command: '/auto-approve', description: 'Toggle auto-approve for generated slides (e.g. /auto-approve off)' },
   ];

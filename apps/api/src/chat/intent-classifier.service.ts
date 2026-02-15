@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { LlmService } from './llm.service.js';
+import { LlmService, LlmModel } from './llm.service.js';
 
 export type IntentType =
   | 'modify_slide'
@@ -9,7 +9,8 @@ export type IntentType =
   | 'change_theme'
   | 'regenerate_slide'
   | 'generate_outline'
-  | 'general_chat';
+  | 'general_chat'
+  | 'off_topic';
 
 export interface ClassifiedIntent {
   intent: IntentType;
@@ -27,7 +28,10 @@ const CLASSIFICATION_PROMPT = `You are an intent classifier for a presentation b
 - change_theme: User wants to change the visual theme (e.g., "use a dark theme", "make it more corporate")
 - regenerate_slide: User wants to completely regenerate a slide (e.g., "redo slide 2", "start over on slide 5")
 - generate_outline: User wants to create a new presentation (e.g., "create a deck about X")
-- general_chat: General conversation, questions, or anything that doesn't fit above
+- general_chat: Presentation-related questions or conversation (e.g., "how many slides should a pitch deck have?", "what's a good structure for a keynote?")
+- off_topic: ANYTHING not related to presentations, slides, or decks (e.g., coding, math, recipes, personal advice, general knowledge, translations, creative writing, jokes)
+
+IMPORTANT: Use "off_topic" aggressively for anything that is NOT about creating, editing, or discussing presentations. When in doubt between general_chat and off_topic, choose off_topic.
 
 Respond with valid JSON:
 {
@@ -55,7 +59,7 @@ export class IntentClassifierService {
             content: `Presentation has slides: ${hasSlides ? 'yes' : 'no (empty deck)'}.\nUser message: "${message}"`,
           },
         ],
-        'gpt-4o-mini',
+        LlmModel.HAIKU,
       );
 
       return {

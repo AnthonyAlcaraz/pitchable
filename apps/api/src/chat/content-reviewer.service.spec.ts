@@ -65,7 +65,7 @@ describe('ContentReviewerService', () => {
       expect(result.suggestedSplits).toHaveLength(2);
     });
 
-    it('should call LLM with gpt-4o-mini model', async () => {
+    it('should call LLM with Haiku model for cost efficiency', async () => {
       llm.completeJson.mockResolvedValue({
         verdict: 'PASS',
         score: 1.0,
@@ -81,7 +81,7 @@ describe('ContentReviewerService', () => {
 
       expect(llm.completeJson).toHaveBeenCalledWith(
         expect.any(Array),
-        'gpt-4o-mini',
+        'claude-haiku-4-5-20251001',
         expect.any(Function), // isValidReviewResult validator
         2, // maxRetries
       );

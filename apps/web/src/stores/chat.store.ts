@@ -21,6 +21,12 @@ export interface PendingValidation {
   reviewPassed: boolean;
 }
 
+export interface PendingCreditConfirmation {
+  imageCount: number;
+  creditCost: number;
+  currentBalance: number;
+}
+
 interface ChatState {
   messages: ChatMessage[];
   isStreaming: boolean;
@@ -28,6 +34,7 @@ interface ChatState {
   isLoading: boolean;
   error: string | null;
   pendingValidations: PendingValidation[];
+  pendingCreditConfirmation: PendingCreditConfirmation | null;
 
   loadHistory: (presentationId: string) => Promise<void>;
   sendMessage: (presentationId: string, content: string) => Promise<void>;
@@ -56,6 +63,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
   isLoading: false,
   error: null,
   pendingValidations: [],
+  pendingCreditConfirmation: null,
 
   loadHistory: async (presentationId: string) => {
     set({ isLoading: true, error: null });
@@ -123,6 +131,14 @@ export const useChatStore = create<ChatState>((set, get) => ({
             set((state) => ({
               pendingValidations: [...state.pendingValidations, validation],
             }));
+          } else if (metadata?.action === 'credit_confirmation') {
+            set({
+              pendingCreditConfirmation: {
+                imageCount: metadata.imageCount as number,
+                creditCost: metadata.creditCost as number,
+                currentBalance: metadata.currentBalance as number,
+              },
+            });
           } else if (metadata?.action === 'export_ready') {
             const downloadUrl = metadata.downloadUrl as string;
             if (downloadUrl) {
@@ -204,6 +220,6 @@ export const useChatStore = create<ChatState>((set, get) => ({
     await get().sendMessage(presentationId, 'reject');
   },
 
-  clearMessages: () => set({ messages: [], streamingContent: '', pendingValidations: [] }),
+  clearMessages: () => set({ messages: [], streamingContent: '', pendingValidations: [], pendingCreditConfirmation: null }),
   clearError: () => set({ error: null }),
 }));

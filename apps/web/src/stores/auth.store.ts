@@ -40,6 +40,7 @@ interface AuthState {
   resetPassword: (token: string, newPassword: string) => Promise<void>;
   clearError: () => void;
   fetchProfile: () => Promise<void>;
+  refreshCreditBalance: () => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -180,6 +181,17 @@ export const useAuthStore = create<AuthState>()(
             refreshToken: null,
             isAuthenticated: false,
           });
+        }
+      },
+
+      refreshCreditBalance: async () => {
+        try {
+          const { balance } = await api.get<{ balance: number }>('/credits/balance');
+          set((s) => ({
+            user: s.user ? { ...s.user, creditBalance: balance } : null,
+          }));
+        } catch {
+          // Silently fail — balance will refresh on next page load
         }
       },
     }),

@@ -1,22 +1,25 @@
-import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft, Layers } from 'lucide-react';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
+import { ArrowLeft, Layers, BookOpen, Focus } from 'lucide-react';
 import { SplitScreen } from '@/components/layout/SplitScreen';
 import { ChatPanel } from '@/components/chat/ChatPanel';
 import { PreviewPanel } from '@/components/preview/PreviewPanel';
 
 export function WorkspacePage() {
   const { id } = useParams<{ id: string }>();
+  const [searchParams] = useSearchParams();
+  const briefId = searchParams.get('briefId');
+  const lensId = searchParams.get('lensId');
 
   return (
     <div className="flex h-screen flex-col">
       {/* Minimal top bar */}
       <header className="flex h-12 items-center gap-3 border-b border-border px-4">
         <Link
-          to="/dashboard"
+          to="/cockpit"
           className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
         >
           <ArrowLeft className="h-4 w-4" />
-          Dashboard
+          Cockpit
         </Link>
         <div className="h-5 w-px bg-border" />
         <div className="flex items-center gap-2">
@@ -25,12 +28,36 @@ export function WorkspacePage() {
             {id === 'new' ? 'New Presentation' : `Presentation ${id ?? ''}`}
           </span>
         </div>
+        {briefId && (
+          <>
+            <div className="h-5 w-px bg-border" />
+            <Link
+              to={`/pitch-briefs/${briefId}`}
+              className="flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary hover:bg-primary/20"
+            >
+              <BookOpen className="h-3 w-3" />
+              Brief
+            </Link>
+          </>
+        )}
+        {lensId && (
+          <>
+            {!briefId && <div className="h-5 w-px bg-border" />}
+            <Link
+              to={`/pitch-lens/${lensId}`}
+              className="flex items-center gap-1.5 rounded-full bg-accent px-2.5 py-1 text-xs font-medium text-accent-foreground hover:bg-accent/80"
+            >
+              <Focus className="h-3 w-3" />
+              Lens
+            </Link>
+          </>
+        )}
       </header>
 
       {/* Split-screen workspace */}
       <div className="flex-1">
         <SplitScreen
-          leftPanel={<ChatPanel presentationId={id} />}
+          leftPanel={<ChatPanel presentationId={id} briefId={briefId ?? undefined} lensId={lensId ?? undefined} />}
           rightPanel={<PreviewPanel presentationId={id} />}
         />
       </div>
