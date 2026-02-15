@@ -35,12 +35,12 @@ export interface SplitResult {
 
 // ── Constants ───────────────────────────────────────────────
 
-export const MAX_WORDS_PER_BULLET = 20;
+export const MAX_WORDS_PER_BULLET = 15;
 
 export const DENSITY_LIMITS: Readonly<DensityLimits> = {
-  maxBulletsPerSlide: 6,
-  maxTableRows: 7,
-  maxWordsPerSlide: 160,
+  maxBulletsPerSlide: 5,
+  maxTableRows: 5,
+  maxWordsPerSlide: 80,
   maxConceptsPerSlide: 1,
   maxNestedListDepth: 1,
 };

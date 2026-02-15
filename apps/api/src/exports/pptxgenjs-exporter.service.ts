@@ -287,7 +287,7 @@ export class PptxGenJsExporterService {
 
       s.addText(subtitleLines.join('\n'), {
         x: 0.8,
-        y: '72%',
+        y: '68%',
         w: '80%',
         h: 0.8,
         fontSize: 20,
@@ -373,16 +373,16 @@ export class PptxGenJsExporterService {
       // Card background
       s.addShape('roundRect', {
         x: 1.5,
-        y: '38%',
+        y: '35%',
         w: 10.33,
-        h: '45%',
+        h: '40%',
         fill: { color: hex(palette.surface) },
         rectRadius: 0.15,
       });
       // Cyan accent bar on card
       s.addShape('rect', {
         x: 1.5,
-        y: '38%',
+        y: '35%',
         w: 10.33,
         h: 0.06,
         fill: { color: hex(palette.accent) },
@@ -390,9 +390,9 @@ export class PptxGenJsExporterService {
 
       this.parseRichBody(s, slide.body, palette, theme, {
         x: 2.0,
-        y: '42%',
+        y: '39%',
         w: 9.33,
-        maxH: '38%',
+        maxH: '33%',
         baseFontSize: 18,
       });
     }
@@ -569,8 +569,8 @@ export class PptxGenJsExporterService {
           x: 0.8,
           y: 1.2,
           w: '85%',
-          maxH: '68%',
-          baseFontSize: 16,
+          maxH: '55%',
+          baseFontSize: 14,
         });
       }
     }
@@ -644,7 +644,7 @@ export class PptxGenJsExporterService {
 
     // Card dimensions (Z4-style: two side-by-side rounded cards)
     const cardW = 5.8;
-    const cardH = 4.5;
+    const cardH = 3.8;
     const cardY = 1.3;
     const leftX = 0.5;
     const rightX = 6.85;
@@ -788,8 +788,8 @@ export class PptxGenJsExporterService {
         x: 0.5,
         y: 1.2,
         w: contentWidth,
-        maxH: '62%',
-        baseFontSize: 16,
+        maxH: '52%',
+        baseFontSize: 14,
       });
     }
 
@@ -848,8 +848,8 @@ export class PptxGenJsExporterService {
         x: 0.5,
         y: 1.2,
         w: contentWidth,
-        maxH: '62%',
-        baseFontSize: 16,
+        maxH: '52%',
+        baseFontSize: 14,
       });
     }
 
@@ -916,8 +916,8 @@ export class PptxGenJsExporterService {
         x: 0.5,
         y: 1.2,
         w: contentWidth,
-        maxH: '62%',
-        baseFontSize: 16,
+        maxH: '52%',
+        baseFontSize: 14,
       });
     }
 
@@ -976,8 +976,8 @@ export class PptxGenJsExporterService {
         x: 0.5,
         y: 1.2,
         w: contentWidth,
-        maxH: '62%',
-        baseFontSize: 16,
+        maxH: '52%',
+        baseFontSize: 14,
       });
     }
 
@@ -1078,8 +1078,8 @@ export class PptxGenJsExporterService {
       x: 0.8,
       y: 1.2,
       w: '85%',
-      maxH: '68%',
-      baseFontSize: 16,
+      maxH: '55%',
+      baseFontSize: 14,
     });
   }
 
@@ -1112,18 +1112,28 @@ export class PptxGenJsExporterService {
     let currentY = pctToInchesY(opts.y);
     const xPos = pctToInchesX(opts.x);
     const wPos = pctToInchesX(opts.w);
+    const maxYLimit = pctToInchesY(opts.y) + pctToInchesY(opts.maxH);
 
     // Accumulator for plain text lines that will be batched into a single addText
     let plainBuffer: string[] = [];
 
     const flushPlainBuffer = (): void => {
       if (plainBuffer.length === 0) return;
+      // Stop adding elements if we've hit the maxH boundary
+      if (currentY >= maxYLimit) { plainBuffer = []; return; }
+
       const text = plainBuffer.join('\n');
       const elements = this.parseBodyWithFormatting(text, palette, theme, opts.baseFontSize);
       if (elements.length > 0) {
-        // Estimate height: roughly lineCount * (fontSize * 1.5 / 72) inches
+        // Height estimation: lineCount * (fontSize * lineSpacing / 72)
+        // Using 2.2 multiplier to account for line spacing, paragraph spacing, and bullet indentation
         const lineCount = plainBuffer.filter((l) => l.trim()).length;
-        const estimatedH = Math.max(0.3, lineCount * (opts.baseFontSize * 1.6 / 72));
+        let estimatedH = Math.max(0.3, lineCount * (opts.baseFontSize * 2.2 / 72));
+
+        // Clamp height to not exceed maxH boundary
+        if (currentY + estimatedH > maxYLimit) {
+          estimatedH = Math.max(0.3, maxYLimit - currentY);
+        }
 
         s.addText(elements, {
           x: xPos,
@@ -1149,12 +1159,13 @@ export class PptxGenJsExporterService {
       // ── Markdown table detection ──
       if (this.isTableLine(trimmed)) {
         flushPlainBuffer();
+        if (currentY >= maxYLimit) { i++; continue; }
         const tableLines: string[] = [];
         while (i < lines.length && this.isTableLine(lines[i].trim())) {
           tableLines.push(lines[i].trim());
           i++;
         }
-        const tableH = this.addTable(s, tableLines, palette, theme, currentY, wPos, xPos);
+        const tableH = this.addTable(s, tableLines, palette, theme, currentY, wPos, xPos, maxYLimit);
         currentY = tableH;
         continue;
       }
@@ -1162,7 +1173,7 @@ export class PptxGenJsExporterService {
       // ── Source citation ──
       if (/^sources?:/i.test(trimmed)) {
         flushPlainBuffer();
-        // Collect the source line plus any continuation lines
+        // Source citation always renders at fixed position, no overflow check needed
         let sourceLine = trimmed;
         i++;
         while (i < lines.length && lines[i].trim() && !this.isTableLine(lines[i].trim()) && !/^###\s/.test(lines[i].trim()) && !/^>\s/.test(lines[i].trim())) {
@@ -1176,6 +1187,7 @@ export class PptxGenJsExporterService {
       // ── H3 subheading ──
       if (/^###\s+/.test(trimmed)) {
         flushPlainBuffer();
+        if (currentY >= maxYLimit) { i++; continue; }
         const headingText = trimmed.replace(/^###\s+/, '');
         this.addH3Subheading(s, headingText, palette, theme, currentY, xPos, wPos);
         currentY += 0.4; // H3 takes roughly 0.4 inches
@@ -1186,6 +1198,7 @@ export class PptxGenJsExporterService {
       // ── Blockquote ──
       if (/^>\s+/.test(trimmed)) {
         flushPlainBuffer();
+        if (currentY >= maxYLimit) { i++; continue; }
         const quoteLines: string[] = [];
         while (i < lines.length && /^>\s+/.test(lines[i].trim())) {
           quoteLines.push(lines[i].trim().replace(/^>\s+/, ''));
@@ -1229,6 +1242,7 @@ export class PptxGenJsExporterService {
     yPos: number,
     width: number | string,
     xPos: number | string,
+    maxYLimit?: number,
   ): number {
     if (tableLines.length === 0) return yPos;
 
@@ -1245,13 +1259,23 @@ export class PptxGenJsExporterService {
     const colCount = headerCells.length;
 
     // Collect data rows (skip separator row)
-    const dataRows: string[][] = [];
+    let dataRows: string[][] = [];
     for (let i = 1; i < tableLines.length; i++) {
       if (this.isTableSeparator(tableLines[i])) continue;
       const cells = parseCells(tableLines[i]);
       // Pad/trim to match column count
       while (cells.length < colCount) cells.push('');
       dataRows.push(cells.slice(0, colCount));
+    }
+
+    // Clamp data rows to fit within maxH boundary (header row = 1 + data rows)
+    const rowHeight = 0.35;
+    if (maxYLimit) {
+      const availableH = maxYLimit - yPos;
+      const maxRows = Math.max(1, Math.floor(availableH / rowHeight) - 1); // -1 for header
+      if (dataRows.length > maxRows) {
+        dataRows = dataRows.slice(0, maxRows);
+      }
     }
 
     const wNum = typeof width === 'number' ? width : pctToInchesX(width);
@@ -1297,7 +1321,6 @@ export class PptxGenJsExporterService {
     });
 
     // Calculate table height: header + data rows
-    const rowHeight = 0.35;
     const tableHeight = rowHeight * tableRows.length;
 
     s.addTable(tableRows as PptxGenJS.TableRow[], {

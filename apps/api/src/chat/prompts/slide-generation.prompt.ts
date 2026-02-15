@@ -58,23 +58,25 @@ CONTENT PHILOSOPHY:
 Tables are the PRIMARY data container. Use tables for any structured data: comparisons, metrics, features, timelines, rankings, specifications. Bullet lists are secondary — use bullets only for short qualitative points that lack columnar structure.
 
 UNIVERSAL FORMATTING RULES:
-- Max 150 words body. 1 key concept per slide.
-- Tables: max 6 rows, 2-4 columns. Always include a header row and separator (|---|---|).
-- Bullets: max 5 if used. Prefer tables over bullets for any data with 2+ attributes.
+- Max 80 words body. 1 key concept per slide. Less text = more impact.
+- Tables: max 5 rows, 2-3 columns. Always include a header row and separator (|---|---|).
+- Bullets: max 4 if used. Each bullet max 12 words. Prefer tables over bullets for structured data.
 - **Bold** on key terms, company names, dollar amounts, and percentages.
 - Every data slide MUST end with a Sources line: "Sources: Source1, Source2, Source3"
-- Use ### subheadings for the slide's key insight or takeaway statement.
-- Lead with a 1-2 sentence context paragraph BEFORE the table or data.
-- Speaker notes: 2-4 sentences expanding on the slide content for the presenter.
+- Use ### subheadings for the slide's key insight or takeaway (max 10 words).
+- Lead with 1 short sentence (max 20 words) BEFORE the table or bullets.
+- Speaker notes: 2-4 sentences expanding on the slide content for the presenter (put detail HERE, not on the slide).
 - Image prompt hint: a concise visual description for AI image generation.
 - Image frequency: only generate imagePromptHint for ~1 in 8 slides. Set to empty string "" for the rest.
+- LESS IS MORE: If you can say it in fewer words, do it. Slides are visual aids, not documents.
 
 SLIDE BODY STRUCTURE (follow this layered pattern):
-Most content slides should combine multiple elements in this order:
-1. Lead paragraph (1-2 sentences with **bold** on key figures)
-2. Table OR bullet list (table preferred for structured data)
-3. ### Key Takeaway (one-line insight in accent color)
+Most content slides should combine elements in this order:
+1. Lead sentence (1 short sentence, max 20 words, with **bold** on the key figure)
+2. Table OR bullet list (table preferred for structured data, max 5 rows or 4 bullets)
+3. ### Key Takeaway (one phrase, max 10 words)
 4. Sources: citation line
+TOTAL body must stay under 80 words. Move details to speaker notes.
 
 SLIDE TYPE FORMATTING GUIDE:
 Each slide type has a specific body format. Follow examples precisely.
@@ -83,44 +85,44 @@ TITLE: Write 2-3 short tagline phrases as separate lines (NOT bullets). No table
   Example body:
   "Transforming Enterprise AI\\nFrom Prototype to Production\\n$2.4B market by 2027"
 
-CONTENT: Lead paragraph + table + takeaway + sources. The default for most informational slides.
+CONTENT: Lead sentence + table + takeaway + sources. The default for most informational slides.
   Example body:
-  "The agentic AI market is accelerating, with **$55B** in cumulative venture funding since 2020 and enterprise adoption doubling year-over-year.\\n\\n| Metric | 2024 | 2025 (Projected) |\\n|---|---|---|\\n| **Enterprise adoption** | 34% | 58% |\\n| **Average deal size** | **$2.1M** | **$4.7M** |\\n| **Vendor count** | 340 | 520+ |\\n| **ROI timeline** | 18 months | 9 months |\\n\\n### Enterprise AI spending is shifting from experimentation to production-scale deployment\\nSources: Gartner 2024, McKinsey AI Index, CB Insights"
+  "**$55B** in cumulative AI venture funding since 2020.\\n\\n| Metric | 2024 | 2025 |\\n|---|---|---|\\n| **Adoption** | 34% | 58% |\\n| **Deal size** | **$2.1M** | **$4.7M** |\\n| **ROI timeline** | 18 mo | 9 mo |\\n\\n### AI spending shifts from experimentation to production\\nSources: Gartner 2024, McKinsey AI Index"
 
-PROBLEM: Lead paragraph describing the pain + table of pain-point metrics + takeaway. Use **bold** on costs and pain points.
+PROBLEM: Lead sentence with cost + table of pain points + takeaway. Use **bold** on costs.
   Example body:
-  "Enterprise teams lose **$12.9M annually** to fragmented data workflows, with decision latency averaging 14 days from insight to action.\\n\\n| Pain Point | Impact |\\n|---|---|\\n| **Data silos** | $12.9M annual cost per enterprise |\\n| **Manual preparation** | 68% of analyst time wasted |\\n| **Decision latency** | 14-day average from insight to action |\\n| **Error rates** | 23% in manual data entry |\\n\\n### The cost of inaction exceeds the cost of transformation\\nSources: Forrester Total Economic Impact, Deloitte 2024"
+  "Fragmented data costs enterprises **$12.9M annually**.\\n\\n| Pain Point | Impact |\\n|---|---|\\n| **Data silos** | $12.9M/year |\\n| **Manual prep** | 68% analyst time |\\n| **Decision lag** | 14 days average |\\n\\n### Inaction costs more than transformation\\nSources: Forrester TEI, Deloitte 2024"
 
-SOLUTION: Mirror the problem structure. Lead paragraph with capabilities + table of outcomes + takeaway.
+SOLUTION: Mirror problem structure. Lead sentence + outcomes table + takeaway.
   Example body:
-  "**Unified data fabric** connects 40+ sources in real-time, reducing analysis time by 73% while eliminating manual preparation entirely.\\n\\n| Capability | Outcome |\\n|---|---|\\n| **Real-time ingestion** | 40+ sources connected |\\n| **AI-powered prep** | 73% time reduction |\\n| **Instant insights** | Sub-60-second query response |\\n| **Automated validation** | 0.3% error rate |\\n\\n### From 14-day decision cycles to instant, validated insights\\nSources: Internal benchmarks, Gartner Peer Insights"
+  "**Unified data fabric** reduces analysis time by 73%.\\n\\n| Capability | Outcome |\\n|---|---|\\n| **Ingestion** | 40+ sources, real-time |\\n| **AI prep** | 73% time saved |\\n| **Query speed** | Sub-60s response |\\n\\n### From 14-day cycles to instant insights\\nSources: Internal benchmarks"
 
-DATA_METRICS: Lead stat paragraph + table with metrics (numbers auto-highlighted by renderer) + takeaway + sources.
+DATA_METRICS: Lead stat sentence + metrics table + takeaway + sources.
   Example body:
-  "**$4.2M ARR** with 127% year-over-year growth across 340 enterprise accounts spanning 12 verticals.\\n\\n| Metric | Value |\\n|---|---|\\n| **Revenue** | **$4.2M** ARR (up 127% YoY) |\\n| **Customers** | 340 enterprise accounts |\\n| **Net retention** | **142%** NRR |\\n| **Unit economics** | $0.42 CAC payback in 3.2 months |\\n| **Pipeline** | **$18M** qualified pipeline |\\n\\n### Unit economics and retention signal strong product-market fit\\nSources: Internal financials Q4 2024, Stripe dashboard"
+  "**$4.2M ARR** growing 127% YoY across 340 accounts.\\n\\n| Metric | Value |\\n|---|---|\\n| **Revenue** | $4.2M ARR (+127%) |\\n| **Customers** | 340 enterprise |\\n| **NRR** | **142%** |\\n| **Pipeline** | **$18M** qualified |\\n\\n### Unit economics signal product-market fit\\nSources: Internal financials Q4 2024"
 
-PROCESS: Write numbered steps (1. Step, 2. Step). Step numbers render in accent color. Use **bold** on the action verb. Add sources if referencing methodology.
+PROCESS: Numbered steps (1. Step). **Bold** on action verb. Max 4 steps, each under 10 words.
   Example body:
-  "The pipeline transforms raw enterprise data into production-ready insights in four stages.\\n\\n1. **Ingest** raw data from 40+ enterprise connectors via CDC and streaming\\n2. **Transform** using domain-specific NLP pipeline with schema inference\\n3. **Validate** against compliance rules engine and anomaly detection\\n4. **Deploy** to production with one-click rollback and A/B testing\\n\\n### Each stage is independently scalable and observable\\nSources: Architecture documentation v3.2"
+  "Four-stage pipeline from raw data to insights.\\n\\n1. **Ingest** from 40+ connectors via CDC\\n2. **Transform** with domain-specific NLP\\n3. **Validate** against compliance rules\\n4. **Deploy** with one-click rollback\\n\\n### Each stage independently scalable\\nSources: Architecture docs v3.2"
 
-COMPARISON: Write two groups of bullets separated by a blank line. First group = left column, second group = right column. Start each group with a **bold header** line. Alternatively, use a table for direct feature comparison.
-  Example body (table variant):
-  "Side-by-side analysis reveals **3.2x faster** processing and **89% cost reduction** with the automated pipeline.\\n\\n| Dimension | Before (Manual) | After (Automated) |\\n|---|---|---|\\n| **Cycle time** | 4-6 weeks | Real-time |\\n| **Headcount** | 3 analysts full-time | 1 oversight role |\\n| **Error rate** | 23% | 0.3% |\\n| **Cost per analysis** | **$45,000** | **$5,200** |\\n\\n### Automation delivers 89% cost reduction with higher accuracy\\nSources: Internal ROI study, Deloitte benchmark"
+COMPARISON: Table with Before/After columns preferred. Or two bullet groups separated by blank line. Max 4 rows.
+  Example body (table):
+  "**89% cost reduction** with automation.\\n\\n| Dimension | Before | After |\\n|---|---|---|\\n| **Cycle time** | 4-6 weeks | Real-time |\\n| **Headcount** | 3 analysts | 1 oversight |\\n| **Error rate** | 23% | 0.3% |\\n\\n### Automation: faster, cheaper, more accurate\\nSources: Internal ROI study"
 
-  Example body (column variant):
-  "**Before: Manual Process**\\n- 4-6 weeks per analysis cycle\\n- 3 analysts required full-time\\n- 23% error rate in data entry\\n\\n**After: Automated Pipeline**\\n- Real-time continuous analysis\\n- 1 analyst oversight role\\n- 0.3% error rate with validation\\n\\nSources: Internal ROI study"
+  Example body (columns):
+  "**Before: Manual**\\n- 4-6 week cycles\\n- 3 analysts full-time\\n- 23% error rate\\n\\n**After: Automated**\\n- Real-time analysis\\n- 1 oversight role\\n- 0.3% error rate"
 
-QUOTE: Use blockquote syntax for the quote. Follow with context or supporting data. Attribution uses bold.
+QUOTE: Blockquote syntax for the quote. Attribution with bold. One supporting sentence max.
   Example body:
-  "> \\"The companies that win will be those that treat AI not as a tool, but as a teammate.\\"\\n\\n— **Satya Nadella**, CEO Microsoft\\n\\nMicrosoft has invested **$13B** in OpenAI and integrated Copilot across its entire enterprise suite, signaling a long-term bet on agentic workflows.\\n\\nSources: Microsoft 10-K 2024, Bloomberg"
+  "> \\"AI is not a tool, it's a teammate.\\"\\n\\n— **Satya Nadella**, CEO Microsoft\\n\\n**$13B** invested in OpenAI signals a long-term bet on agentic AI.\\nSources: Microsoft 10-K 2024"
 
-ARCHITECTURE: Keep body concise (the image carries visual weight). Use **bold** on component names. Table for component specs.
+ARCHITECTURE: Minimal text — image carries the weight. **Bold** on component names. Max 3 rows.
   Example body:
-  "Three-tier architecture designed for **sub-100ms** query latency at enterprise scale.\\n\\n| Layer | Technology | SLA |\\n|---|---|---|\\n| **Ingestion** | Kafka streams + CDC | 99.99% uptime |\\n| **Processing** | Spark transformation pipeline | <500ms p95 |\\n| **Serving** | Vector store + GraphQL API | <100ms p95 |\\n\\nSources: Architecture spec v3.2"
+  "**Sub-100ms** query latency at enterprise scale.\\n\\n| Layer | Stack |\\n|---|---|\\n| **Ingestion** | Kafka + CDC |\\n| **Processing** | Spark pipeline |\\n| **Serving** | Vector store + GraphQL |\\n\\nSources: Architecture spec v3.2"
 
-CTA: Write 2-3 action items as bullets. Use **bold** on the action. Include concrete next steps. No table needed.
+CTA: 2-3 action bullets. **Bold** on action verb. Max 8 words per bullet. No table.
   Example body:
-  "- **Start free pilot**: 30-day enterprise trial, no credit card required\\n- **Book a demo**: See a live pipeline running on your own data\\n- **Read the whitepaper**: Technical deep-dive on architecture and benchmarks"
+  "- **Start free pilot**: 30-day trial, no card\\n- **Book a demo**: Live pipeline, your data\\n- **Read whitepaper**: Architecture deep-dive"
 
 PRESENTATION TYPE: ${presentationType}
 ${themeBlock}
