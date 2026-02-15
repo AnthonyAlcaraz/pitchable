@@ -71,12 +71,13 @@ export class ImagesService {
     presentationId: string,
     userId: string,
   ): Promise<ImageJobModel[]> {
-    // Get presentation with slides and theme
+    // Get presentation with slides, theme, and pitch lens
     const presentation = await this.prisma.presentation.findUnique({
       where: { id: presentationId },
       include: {
         slides: { orderBy: { slideNumber: 'asc' } },
         theme: true,
+        pitchLens: { select: { imageFrequency: true } },
       },
     });
 
@@ -84,6 +85,16 @@ export class ImagesService {
       throw new NotFoundException(
         `Presentation with id "${presentationId}" not found`,
       );
+    }
+
+    // Image frequency: 1 image every N slides. Default 4. 0 = no images.
+    const imageFrequency = presentation.pitchLens?.imageFrequency ?? 4;
+
+    if (imageFrequency === 0) {
+      this.logger.log(
+        `Image generation disabled for presentation ${presentationId} (imageFrequency=0)`,
+      );
+      return [];
     }
 
     const themeColors: ThemeColors = {
@@ -94,12 +105,18 @@ export class ImagesService {
       textColor: presentation.theme.textColor,
     };
 
+    // Select which slides get images based on frequency + priority
+    const eligibleSlides = this.selectSlidesForImages(
+      presentation.slides,
+      imageFrequency,
+    );
+
     const imageJobs: ImageJobModel[] = [];
     // Stagger jobs by 12s each to avoid Replicate API rate limits (6 req/min)
     const STAGGER_MS = 12_000;
     let jobIndex = 0;
 
-    for (const slide of presentation.slides) {
+    for (const slide of eligibleSlides) {
       // Skip slides that already have an image
       if (slide.imageUrl) {
         this.logger.log(
@@ -133,10 +150,67 @@ export class ImagesService {
     }
 
     this.logger.log(
-      `Queued ${imageJobs.length} image jobs for presentation ${presentationId}`,
+      `Queued ${imageJobs.length}/${presentation.slides.length} image jobs for presentation ${presentationId} (frequency: 1 per ${imageFrequency})`,
     );
 
     return imageJobs;
+  }
+
+  /**
+   * Select which slides get images based on frequency and slide type priority.
+   * Priority order: TITLE > ARCHITECTURE > PROBLEM/SOLUTION > CTA > DATA_METRICS > others
+   * Ensures even distribution across the deck.
+   */
+  private selectSlidesForImages<T extends { id: string; slideNumber: number; slideType: string; imageUrl: string | null }>(
+    slides: T[],
+    frequency: number,
+  ): T[] {
+    if (frequency <= 1) return slides; // Every slide gets an image
+
+    const totalSlides = slides.length;
+    const targetCount = Math.max(1, Math.ceil(totalSlides / frequency));
+
+    // Priority scores: higher = more likely to get an image
+    const typePriority: Record<string, number> = {
+      TITLE: 10,
+      ARCHITECTURE: 9,
+      PROBLEM: 7,
+      SOLUTION: 7,
+      CTA: 6,
+      DATA_METRICS: 5,
+      PROCESS: 4,
+      COMPARISON: 3,
+      QUOTE: 2,
+      CONTENT: 1,
+    };
+
+    // Score each slide: priority + position bonus (spread images evenly)
+    const scored = slides.map((slide, idx) => {
+      const priority = typePriority[slide.slideType] ?? 1;
+      // Position bonus: prefer slides at regular intervals
+      const idealPositions = Array.from({ length: targetCount }, (_, i) =>
+        Math.round((i * totalSlides) / targetCount),
+      );
+      const positionBonus = idealPositions.some(
+        (pos) => Math.abs(pos - idx) <= 1,
+      )
+        ? 3
+        : 0;
+      return { slide, score: priority + positionBonus, idx };
+    });
+
+    // Sort by score descending, take top N
+    scored.sort((a, b) => b.score - a.score);
+    const selected = scored.slice(0, targetCount).map((s) => s.slide);
+
+    // Re-sort by slide number for sequential processing
+    selected.sort((a, b) => a.slideNumber - b.slideNumber);
+
+    this.logger.log(
+      `Selected ${selected.length} slides for images: ${selected.map((s) => `#${s.slideNumber} (${s.slideType})`).join(', ')}`,
+    );
+
+    return selected;
   }
 
   async getJobStatus(jobId: string): Promise<ImageJobModel> {

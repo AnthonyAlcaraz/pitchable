@@ -35,12 +35,12 @@ export interface SplitResult {
 
 // ── Constants ───────────────────────────────────────────────
 
-export const MAX_WORDS_PER_BULLET = 18;
+export const MAX_WORDS_PER_BULLET = 20;
 
 export const DENSITY_LIMITS: Readonly<DensityLimits> = {
   maxBulletsPerSlide: 6,
-  maxTableRows: 6,
-  maxWordsPerSlide: 110,
+  maxTableRows: 7,
+  maxWordsPerSlide: 160,
   maxConceptsPerSlide: 1,
   maxNestedListDepth: 1,
 };
@@ -53,8 +53,30 @@ function countBullets(body: string): number {
 }
 
 function countWords(text: string): number {
-  // Strip markdown bold/italic markers before counting so **bold** doesn't inflate count
-  const noMarkdown = text.replace(/\*{1,2}/g, '');
+  // Strip markdown formatting that inflates word count:
+  // - **bold** and *italic* markers
+  // - Table separator rows (|---|---|)
+  // - Table pipe characters
+  // - ### heading markers
+  // - > blockquote markers
+  // - Sources: citation lines (these are metadata, not content)
+  const lines = text.split('\n');
+  const contentLines = lines.filter((line) => {
+    const trimmed = line.trim();
+    // Skip table separator rows
+    if (/^\|[\s-|:]+\|$/.test(trimmed)) return false;
+    // Skip source citation lines
+    if (/^Sources?:/i.test(trimmed)) return false;
+    return true;
+  });
+
+  const joined = contentLines.join(' ');
+  // Remove markdown markers
+  const noMarkdown = joined
+    .replace(/\*{1,2}/g, '')   // bold/italic
+    .replace(/#{1,3}\s/g, '')  // headings
+    .replace(/^>\s/gm, '')     // blockquotes
+    .replace(/\|/g, ' ');      // table pipes
   const stripped = noMarkdown.replace(/[^\w\s]/g, ' ').trim();
   if (stripped.length === 0) return 0;
   return stripped.split(/\s+/).length;
@@ -135,16 +157,21 @@ export function validateSlideContent(slide: SlideContent): DensityValidationResu
     );
   }
 
-  // Table rows
-  if (slide.hasTable && slide.tableRows !== undefined) {
-    if (slide.tableRows > DENSITY_LIMITS.maxTableRows) {
-      violations.push(
-        `Table has ${slide.tableRows} rows (max ${DENSITY_LIMITS.maxTableRows}).`,
-      );
-      suggestions.push(
-        `Split the table across multiple slides, or show only the top ${DENSITY_LIMITS.maxTableRows} rows with a "full data in appendix" note.`,
-      );
-    }
+  // Table rows — auto-detect from body if not explicitly provided
+  const detectedTableRows = slide.body.split('\n').filter((line) => {
+    const trimmed = line.trim();
+    return trimmed.startsWith('|') && trimmed.endsWith('|') && !/^\|[\s-|:]+\|$/.test(trimmed);
+  }).length;
+  const tableRowCount = slide.tableRows ?? (detectedTableRows > 0 ? detectedTableRows - 1 : 0); // subtract header
+  const hasTable = slide.hasTable ?? detectedTableRows > 0;
+
+  if (hasTable && tableRowCount > DENSITY_LIMITS.maxTableRows) {
+    violations.push(
+      `Table has ${tableRowCount} rows (max ${DENSITY_LIMITS.maxTableRows}).`,
+    );
+    suggestions.push(
+      `Split the table across multiple slides, or show only the top ${DENSITY_LIMITS.maxTableRows} rows with a "full data in appendix" note.`,
+    );
   }
 
   // Nesting depth

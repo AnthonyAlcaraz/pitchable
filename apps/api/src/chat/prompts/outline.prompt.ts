@@ -20,27 +20,38 @@ export function buildOutlineSystemPrompt(
 ): string {
   return `You are Pitchable, an AI presentation architect. Generate a structured outline for a ${presentationType} presentation.
 
+Your goal is to create a dense, data-rich, visually varied deck like a top-tier analyst briefing.
+
 CONSTRAINTS:
 - Between ${slideRange.min} and ${slideRange.max} slides total
 - Each slide must have 3-6 bullet points maximum
-- Each bullet point must be under 15 words
-- Each bullet should be a specific claim or data point, not a generic topic label
+- Each bullet should be a specific claim, data point, or source-backed assertion — NOT a generic topic label
+- Include exact numbers, percentages, currency values, and named sources in bullets whenever available
 - If the knowledge base provides a relevant statistic, include the exact number in the bullet
 - Slide 1 must be type TITLE
 - Last slide must be type CTA
 - 1 key concept per slide
+- Vary slide types for visual interest — avoid consecutive slides of the same type
 
-AVAILABLE SLIDE TYPES (choose the type that best matches the content):
-TITLE — Opening slide with tagline subtitle
-PROBLEM — Pain points with cost/impact metrics (red accent bar)
-SOLUTION — Capabilities mapped to problem points (green accent bar)
-DATA_METRICS — Slides dominated by numbers, KPIs, or financial data (auto-highlights $X, X%, Xx)
-PROCESS — Step-by-step workflows or timelines (numbered steps in accent color)
-COMPARISON — Before/after, us-vs-them, or option A vs B (two-column layout)
-ARCHITECTURE — System diagrams or technical components (image-focused)
-QUOTE — Notable quote from a person or source (decorative italic)
-CTA — Call to action with concrete next steps
-CONTENT — General content that doesn't fit other types
+AVAILABLE SLIDE TYPES (choose the type that best matches the content — see rendering details):
+TITLE — Opening slide: tagline subtitle, author info. Use for the opening hook.
+DATA_METRICS — Tables and metrics dominate. Use when the content is primarily numbers, KPIs, market data, or comparisons across categories. Renderer auto-highlights $X, X%, Xx in accent color. Tables render with styled headers.
+CONTENT — The workhorse slide. Lead paragraph + table + ### takeaway + sources. Use for structured analysis where data is presented in tabular form with narrative context.
+PROBLEM — Pain points with specific cost/impact metrics (red accent bar). Include $ cost or % impact.
+SOLUTION — Capabilities mapped directly to problems (green accent bar). Include measurable outcomes.
+COMPARISON — Before/after or option A vs B. Rendered as two-column layout. Great for side-by-side tables or bullet groups.
+PROCESS — Step-by-step workflows. Numbered steps render in accent color. Use for implementation paths, timelines.
+ARCHITECTURE — System diagrams. Image carries the visual weight; keep text minimal. Use for tech stacks, platform layers.
+QUOTE — Notable quote from a named person. Rendered with gold accent border and decorative italic.
+CTA — Call to action with 2-3 concrete next steps. Closing slide before thank-you.
+
+SLIDE TYPE SELECTION RULES:
+- Use DATA_METRICS or CONTENT (with tables) when the outline item contains 3+ data points that can be organized in columns
+- Use COMPARISON when contrasting two options, time periods, or approaches
+- Use PROCESS only for sequential workflows (3-6 steps)
+- Use QUOTE when featuring a specific person's statement
+- Prefer DATA_METRICS/CONTENT over PROBLEM/SOLUTION for data-heavy slides
+- A well-structured deck typically has: 1 TITLE, 2-4 DATA_METRICS/CONTENT with tables, 1-2 PROBLEM/SOLUTION, 0-1 COMPARISON, 0-1 QUOTE, 1 CTA
 
 ${pitchLensContext ? pitchLensContext : `PRESENTATION TYPE GUIDANCE:\n${getTypeGuidance(presentationType)}`}
 

@@ -38,6 +38,32 @@ function darken(color: string, amount: number): string {
   return ((r << 16) | (g << 8) | b).toString(16).padStart(6, '0');
 }
 
+/** Lighten a hex color by mixing toward white */
+function lighten(color: string, amount: number): string {
+  const c = hex(color);
+  const num = parseInt(c, 16);
+  const r = Math.min(255, Math.floor(((num >> 16) & 0xff) + (255 - ((num >> 16) & 0xff)) * amount));
+  const g = Math.min(255, Math.floor(((num >> 8) & 0xff) + (255 - ((num >> 8) & 0xff)) * amount));
+  const b = Math.min(255, Math.floor((num & 0xff) + (255 - (num & 0xff)) * amount));
+  return ((r << 16) | (g << 8) | b).toString(16).padStart(6, '0');
+}
+
+/** Convert a percentage string like '55%' to inches (based on slide height 7.5) */
+function pctToInchesY(pct: string | number): number {
+  if (typeof pct === 'number') return pct;
+  const match = String(pct).match(/^([\d.]+)%$/);
+  if (match) return (parseFloat(match[1]) / 100) * 7.5;
+  return parseFloat(String(pct)) || 0;
+}
+
+/** Convert a percentage string to inches (based on slide width 13.33) */
+function pctToInchesX(pct: string | number): number {
+  if (typeof pct === 'number') return pct;
+  const match = String(pct).match(/^([\d.]+)%$/);
+  if (match) return (parseFloat(match[1]) / 100) * 13.33;
+  return parseFloat(String(pct)) || 0;
+}
+
 // ── Service ────────────────────────────────────────────────
 
 @Injectable()
@@ -188,7 +214,7 @@ export class PptxGenJsExporterService {
     }
   }
 
-  // ── TITLE Slide ──────────────────────────────────────────
+  // ── TITLE Slide (AWS-cover style) ─────────────────────────
 
   private addTitleSlide(
     pres: PptxGenJS,
@@ -198,8 +224,17 @@ export class PptxGenJsExporterService {
   ): void {
     const s = pres.addSlide({ masterName: 'PITCHABLE_ACCENT' });
 
-    // Subtle gradient overlay
+    // Full gradient overlay for depth (cover-style)
     this.addGradientOverlay(s, palette);
+
+    // Top accent bar spanning full width
+    s.addShape('rect', {
+      x: 0,
+      y: 0,
+      w: '100%',
+      h: 0.06,
+      fill: { color: hex(palette.accent) },
+    });
 
     // Background image at low opacity (if available)
     if (slide.imageUrl) {
@@ -217,51 +252,64 @@ export class PptxGenJsExporterService {
       }
     }
 
-    // Title — large, centered
+    // Accent line separator — positioned above the title block at 50%
+    s.addShape('rect', {
+      x: 0.8,
+      y: '50%',
+      w: 2.5,
+      h: 0.04,
+      fill: { color: hex(palette.accent) },
+    });
+
+    // Title — large, bold, left-aligned at bottom-left (AWS cover style)
     if (slide.title) {
       s.addText(slide.title, {
         x: 0.8,
-        y: '30%',
-        w: '85%',
-        h: 1.2,
-        fontSize: 42,
+        y: '53%',
+        w: '80%',
+        h: 1.4,
+        fontSize: 38,
         fontFace: theme.headingFont,
         color: hex(palette.primary),
         bold: true,
-        align: 'center',
-        valign: 'middle',
-      });
-    }
-
-    // Subtitle from body — muted, centered below title
-    if (slide.body) {
-      const subtitle = slide.body
-        .split('\n')
-        .filter((l) => l.trim())
-        .slice(0, 3)
-        .map((l) => l.replace(/^[-*]\s+/, '').trim())
-        .join(' \u00b7 ');
-
-      s.addText(subtitle, {
-        x: 1.2,
-        y: '55%',
-        w: '78%',
-        h: 0.8,
-        fontSize: 18,
-        fontFace: theme.bodyFont,
-        color: hex(palette.secondary),
-        align: 'center',
+        align: 'left',
         valign: 'top',
       });
     }
 
-    // Accent line below subtitle
-    s.addShape('rect', {
-      x: '35%',
-      y: '72%',
-      w: '30%',
-      h: 0.03,
-      fill: { color: hex(palette.accent) },
+    // Subtitle from body — secondary color, below title
+    if (slide.body) {
+      const subtitleLines = slide.body
+        .split('\n')
+        .filter((l) => l.trim())
+        .slice(0, 3)
+        .map((l) => l.replace(/^[-*]\s+/, '').replace(/\*\*/g, '').trim());
+
+      s.addText(subtitleLines.join('\n'), {
+        x: 0.8,
+        y: '72%',
+        w: '80%',
+        h: 0.8,
+        fontSize: 16,
+        fontFace: theme.bodyFont,
+        color: hex(palette.secondary),
+        align: 'left',
+        valign: 'top',
+        lineSpacingMultiple: 1.3,
+      });
+    }
+
+    // Author / branding at bottom-left
+    s.addText('Pitchable', {
+      x: 0.8,
+      y: '90%',
+      w: 3,
+      h: 0.35,
+      fontSize: 10,
+      fontFace: theme.bodyFont,
+      color: hex(palette.border),
+      align: 'left',
+      valign: 'middle',
     });
 
     if (slide.speakerNotes) s.addNotes(slide.speakerNotes);
@@ -311,20 +359,14 @@ export class PptxGenJsExporterService {
       });
     }
 
-    // Body — centered below
+    // Body — use rich body parser for CTA slides too
     if (slide.body) {
-      const elements = this.parseBodyWithFormatting(slide.body, palette, theme, 18);
-      s.addText(elements, {
+      this.parseRichBody(s, slide.body, palette, theme, {
         x: 1.2,
         y: '50%',
         w: '78%',
-        h: '35%',
-        fontSize: 18,
-        fontFace: theme.bodyFont,
-        color: hex(palette.text),
-        align: 'center',
-        valign: 'top',
-        paraSpaceAfter: 8,
+        maxH: '35%',
+        baseFontSize: 18,
       });
     }
 
@@ -447,36 +489,25 @@ export class PptxGenJsExporterService {
         this.addBodyFallback(s, slide, palette, theme);
       }
 
-      // Compact body below image (if space)
+      // Compact body below image (if space) — use rich body parser
       if (slide.body) {
-        const elements = this.parseBodyWithFormatting(slide.body, palette, theme, 12);
-        s.addText(elements, {
+        this.parseRichBody(s, slide.body, palette, theme, {
           x: 0.5,
           y: '82%',
           w: '92%',
-          h: '12%',
-          fontSize: 12,
-          fontFace: theme.bodyFont,
-          color: hex(palette.secondary),
-          valign: 'top',
-          paraSpaceAfter: 2,
+          maxH: '12%',
+          baseFontSize: 12,
         });
       }
     } else {
       // No image — body fills the space, centered
       if (slide.body) {
-        const elements = this.parseBodyWithFormatting(slide.body, palette, theme, 16);
-        s.addText(elements, {
+        this.parseRichBody(s, slide.body, palette, theme, {
           x: 0.8,
           y: 1.2,
           w: '85%',
-          h: '68%',
-          fontSize: 16,
-          fontFace: theme.bodyFont,
-          color: hex(palette.text),
-          align: 'center',
-          valign: 'top',
-          paraSpaceAfter: 6,
+          maxH: '68%',
+          baseFontSize: 16,
         });
       }
     }
@@ -513,24 +544,19 @@ export class PptxGenJsExporterService {
       });
     }
 
-    // Split body into two columns
+    // Split body into two columns — use rich body parser for each
     const bodyLines = (slide.body ?? '').split('\n').filter((l) => l.trim());
     const midpoint = Math.ceil(bodyLines.length / 2);
-    const leftLines = bodyLines.slice(0, midpoint);
-    const rightLines = bodyLines.slice(midpoint);
+    const leftBody = bodyLines.slice(0, midpoint).join('\n');
+    const rightBody = bodyLines.slice(midpoint).join('\n');
 
     // Left column
-    const leftElements = this.parseBodyWithFormatting(leftLines.join('\n'), palette, theme, 14);
-    s.addText(leftElements, {
+    this.parseRichBody(s, leftBody, palette, theme, {
       x: 0.5,
       y: 1.3,
       w: '44%',
-      h: '58%',
-      fontSize: 14,
-      fontFace: theme.bodyFont,
-      color: hex(palette.text),
-      valign: 'top',
-      paraSpaceAfter: 4,
+      maxH: '58%',
+      baseFontSize: 14,
     });
 
     // Vertical divider line
@@ -543,17 +569,12 @@ export class PptxGenJsExporterService {
     });
 
     // Right column
-    const rightElements = this.parseBodyWithFormatting(rightLines.join('\n'), palette, theme, 14);
-    s.addText(rightElements, {
+    this.parseRichBody(s, rightBody, palette, theme, {
       x: '52%',
       y: 1.3,
       w: '44%',
-      h: '58%',
-      fontSize: 14,
-      fontFace: theme.bodyFont,
-      color: hex(palette.text),
-      valign: 'top',
-      paraSpaceAfter: 4,
+      maxH: '58%',
+      baseFontSize: 14,
     });
 
     this.addFooter(s, slide.slideNumber, totalSlides, palette, theme);
@@ -590,19 +611,15 @@ export class PptxGenJsExporterService {
       });
     }
 
-    // Body with number highlighting
+    // Body — use rich body parser which falls through to data metrics formatting
+    // for lines that are not tables/H3/blockquotes/sources
     if (slide.body) {
-      const elements = this.parseDataMetricsBody(slide.body, palette, theme);
-      s.addText(elements, {
+      this.parseRichBody(s, slide.body, palette, theme, {
         x: 0.5,
         y: 1.2,
         w: contentWidth,
-        h: '62%',
-        fontSize: 16,
-        fontFace: theme.bodyFont,
-        color: hex(palette.text),
-        valign: 'top',
-        paraSpaceAfter: 6,
+        maxH: '62%',
+        baseFontSize: 16,
       });
     }
 
@@ -645,19 +662,15 @@ export class PptxGenJsExporterService {
       });
     }
 
-    // Body as numbered steps with accent-colored step numbers
+    // Body as numbered steps — use rich body for tables/H3/sources,
+    // but process-style formatting for plain text lines
     if (slide.body) {
-      const elements = this.parseProcessBody(slide.body, palette, theme);
-      s.addText(elements, {
+      this.parseRichBody(s, slide.body, palette, theme, {
         x: 0.5,
         y: 1.2,
         w: contentWidth,
-        h: '62%',
-        fontSize: 16,
-        fontFace: theme.bodyFont,
-        color: hex(palette.text),
-        valign: 'top',
-        paraSpaceAfter: 8,
+        maxH: '62%',
+        baseFontSize: 16,
       });
     }
 
@@ -709,19 +722,14 @@ export class PptxGenJsExporterService {
       });
     }
 
-    // Body
+    // Body — use rich body parser
     if (slide.body) {
-      const elements = this.parseBodyWithFormatting(slide.body, palette, theme, 16);
-      s.addText(elements, {
+      this.parseRichBody(s, slide.body, palette, theme, {
         x: 0.5,
         y: 1.2,
         w: contentWidth,
-        h: '62%',
-        fontSize: 16,
-        fontFace: theme.bodyFont,
-        color: hex(palette.text),
-        valign: 'top',
-        paraSpaceAfter: 6,
+        maxH: '62%',
+        baseFontSize: 16,
       });
     }
 
@@ -765,19 +773,14 @@ export class PptxGenJsExporterService {
       });
     }
 
-    // Body
+    // Body — use rich body parser
     if (slide.body) {
-      const elements = this.parseBodyWithFormatting(slide.body, palette, theme, 16);
-      s.addText(elements, {
+      this.parseRichBody(s, slide.body, palette, theme, {
         x: 0.5,
         y: 1.2,
         w: contentWidth,
-        h: '62%',
-        fontSize: 16,
-        fontFace: theme.bodyFont,
-        color: hex(palette.text),
-        valign: 'top',
-        paraSpaceAfter: 6,
+        maxH: '62%',
+        baseFontSize: 16,
       });
     }
 
@@ -874,18 +877,411 @@ export class PptxGenJsExporterService {
     theme: ThemeModel,
   ): void {
     if (!slide.body) return;
-    const elements = this.parseBodyWithFormatting(slide.body, palette, theme, 16);
-    s.addText(elements, {
+    this.parseRichBody(s, slide.body, palette, theme, {
       x: 0.8,
       y: 1.2,
       w: '85%',
-      h: '68%',
-      fontSize: 16,
+      maxH: '68%',
+      baseFontSize: 16,
+    });
+  }
+
+  // ── Rich Body Parser (master router) ─────────────────────
+  //
+  // Detects and routes different content blocks within body text:
+  //   - Markdown tables (| ... |)      -> addTable()
+  //   - H3 subheadings (### ...)       -> addH3Subheading()
+  //   - Blockquotes (> ...)            -> addBlockquote()
+  //   - Source citations (Sources: ...) -> addSourceCitation()
+  //   - Everything else                -> parseBodyWithFormatting() -> s.addText()
+  //
+  // This method adds elements directly to the slide because tables need
+  // s.addTable() while text needs s.addText().
+
+  private parseRichBody(
+    s: PptxGenJS.Slide,
+    body: string,
+    palette: ColorPalette,
+    theme: ThemeModel,
+    opts: {
+      x: number | string;
+      y: number | string;
+      w: number | string;
+      maxH: number | string;
+      baseFontSize: number;
+    },
+  ): void {
+    const lines = body.split('\n');
+    let currentY = pctToInchesY(opts.y);
+    const xPos = pctToInchesX(opts.x);
+    const wPos = pctToInchesX(opts.w);
+
+    // Accumulator for plain text lines that will be batched into a single addText
+    let plainBuffer: string[] = [];
+
+    const flushPlainBuffer = (): void => {
+      if (plainBuffer.length === 0) return;
+      const text = plainBuffer.join('\n');
+      const elements = this.parseBodyWithFormatting(text, palette, theme, opts.baseFontSize);
+      if (elements.length > 0) {
+        // Estimate height: roughly lineCount * (fontSize * 1.5 / 72) inches
+        const lineCount = plainBuffer.filter((l) => l.trim()).length;
+        const estimatedH = Math.max(0.3, lineCount * (opts.baseFontSize * 1.6 / 72));
+
+        s.addText(elements, {
+          x: xPos,
+          y: currentY,
+          w: wPos,
+          h: estimatedH,
+          fontSize: opts.baseFontSize,
+          fontFace: theme.bodyFont,
+          color: hex(palette.text),
+          valign: 'top',
+          paraSpaceAfter: 6,
+        });
+        currentY += estimatedH;
+      }
+      plainBuffer = [];
+    };
+
+    let i = 0;
+    while (i < lines.length) {
+      const line = lines[i];
+      const trimmed = line.trim();
+
+      // ── Markdown table detection ──
+      if (this.isTableLine(trimmed)) {
+        flushPlainBuffer();
+        const tableLines: string[] = [];
+        while (i < lines.length && this.isTableLine(lines[i].trim())) {
+          tableLines.push(lines[i].trim());
+          i++;
+        }
+        const tableH = this.addTable(s, tableLines, palette, theme, currentY, wPos, xPos);
+        currentY = tableH;
+        continue;
+      }
+
+      // ── Source citation ──
+      if (/^sources?:/i.test(trimmed)) {
+        flushPlainBuffer();
+        // Collect the source line plus any continuation lines
+        let sourceLine = trimmed;
+        i++;
+        while (i < lines.length && lines[i].trim() && !this.isTableLine(lines[i].trim()) && !/^###\s/.test(lines[i].trim()) && !/^>\s/.test(lines[i].trim())) {
+          sourceLine += ' ' + lines[i].trim();
+          i++;
+        }
+        this.addSourceCitation(s, sourceLine, palette, theme);
+        continue;
+      }
+
+      // ── H3 subheading ──
+      if (/^###\s+/.test(trimmed)) {
+        flushPlainBuffer();
+        const headingText = trimmed.replace(/^###\s+/, '');
+        this.addH3Subheading(s, headingText, palette, theme, currentY, xPos, wPos);
+        currentY += 0.4; // H3 takes roughly 0.4 inches
+        i++;
+        continue;
+      }
+
+      // ── Blockquote ──
+      if (/^>\s+/.test(trimmed)) {
+        flushPlainBuffer();
+        const quoteLines: string[] = [];
+        while (i < lines.length && /^>\s+/.test(lines[i].trim())) {
+          quoteLines.push(lines[i].trim().replace(/^>\s+/, ''));
+          i++;
+        }
+        const quoteH = this.addBlockquote(s, quoteLines, palette, theme, currentY, xPos, wPos, opts.baseFontSize);
+        currentY = quoteH;
+        continue;
+      }
+
+      // ── Plain text / bullet / other ──
+      plainBuffer.push(line);
+      i++;
+    }
+
+    // Flush any remaining plain text
+    flushPlainBuffer();
+  }
+
+  // ── Table Detection & Rendering ───────────────────────────
+
+  /** Check if a line is part of a markdown table */
+  private isTableLine(line: string): boolean {
+    return /^\|.+\|$/.test(line.trim());
+  }
+
+  /** Check if a line is the markdown table separator row (|---|---|) */
+  private isTableSeparator(line: string): boolean {
+    return /^\|[\s:]*-{2,}[\s:]*(\|[\s:]*-{2,}[\s:]*)*\|$/.test(line.trim());
+  }
+
+  /**
+   * Parse markdown table lines and render as a PptxGenJS table.
+   * Returns the new Y position after the table.
+   */
+  private addTable(
+    s: PptxGenJS.Slide,
+    tableLines: string[],
+    palette: ColorPalette,
+    theme: ThemeModel,
+    yPos: number,
+    width: number | string,
+    xPos: number | string,
+  ): number {
+    if (tableLines.length === 0) return yPos;
+
+    // Parse rows: split each line by | and trim
+    const parseCells = (line: string): string[] => {
+      return line
+        .split('|')
+        .slice(1, -1) // remove empty first/last from leading/trailing |
+        .map((cell) => cell.trim());
+    };
+
+    // First row = headers
+    const headerCells = parseCells(tableLines[0]);
+    const colCount = headerCells.length;
+
+    // Collect data rows (skip separator row)
+    const dataRows: string[][] = [];
+    for (let i = 1; i < tableLines.length; i++) {
+      if (this.isTableSeparator(tableLines[i])) continue;
+      const cells = parseCells(tableLines[i]);
+      // Pad/trim to match column count
+      while (cells.length < colCount) cells.push('');
+      dataRows.push(cells.slice(0, colCount));
+    }
+
+    const wNum = typeof width === 'number' ? width : pctToInchesX(width);
+    const xNum = typeof xPos === 'number' ? xPos : pctToInchesX(xPos);
+    const colW = wNum / colCount;
+
+    // Build PptxGenJS table rows
+    type TableCell = { text: PptxGenJS.TextProps[]; options: Record<string, unknown> };
+    const tableRows: TableCell[][] = [];
+
+    // Header row
+    const headerRow: TableCell[] = headerCells.map((cell) => ({
+      text: this.parseTableCellInline(cell, palette, theme, 11, true),
+      options: {
+        fill: { color: hex(palette.primary) },
+        color: hex(palette.accent),
+        bold: true,
+        fontSize: 11,
+        fontFace: theme.bodyFont,
+        border: { type: 'solid', color: hex(palette.border), pt: 0.5 },
+        valign: 'middle' as const,
+        margin: [4, 6, 4, 6],
+      },
+    }));
+    tableRows.push(headerRow);
+
+    // Data rows with alternating backgrounds
+    dataRows.forEach((row, rowIdx) => {
+      const bgColor = rowIdx % 2 === 0 ? palette.surface : palette.background;
+      const dataRow: TableCell[] = row.map((cell) => ({
+        text: this.parseTableCellInline(cell, palette, theme, 11, false),
+        options: {
+          fill: { color: hex(bgColor) },
+          color: hex(palette.text),
+          fontSize: 11,
+          fontFace: theme.bodyFont,
+          border: { type: 'solid', color: hex(palette.border), pt: 0.5 },
+          valign: 'middle' as const,
+          margin: [4, 6, 4, 6],
+        },
+      }));
+      tableRows.push(dataRow);
+    });
+
+    // Calculate table height: header + data rows
+    const rowHeight = 0.35;
+    const tableHeight = rowHeight * tableRows.length;
+
+    s.addTable(tableRows as PptxGenJS.TableRow[], {
+      x: xNum,
+      y: yPos,
+      w: wNum,
+      colW: Array(colCount).fill(colW),
+      rowH: rowHeight,
+      border: { type: 'solid', color: hex(palette.border), pt: 0.5 },
+      autoPage: false,
+    });
+
+    return yPos + tableHeight + 0.15; // 0.15 inch gap after table
+  }
+
+  /**
+   * Parse inline formatting within a table cell.
+   * Handles **bold** with accent color.
+   */
+  private parseTableCellInline(
+    text: string,
+    palette: ColorPalette,
+    theme: ThemeModel,
+    fontSize: number,
+    isHeader: boolean,
+  ): PptxGenJS.TextProps[] {
+    const elements: PptxGenJS.TextProps[] = [];
+    const regex = /(\*\*(.+?)\*\*|([^*]+))/g;
+    let match: RegExpExecArray | null;
+
+    while ((match = regex.exec(text)) !== null) {
+      if (match[2]) {
+        // **bold** — accent color
+        elements.push({
+          text: match[2],
+          options: {
+            fontSize,
+            fontFace: theme.bodyFont,
+            color: hex(palette.accent),
+            bold: true,
+          },
+        });
+      } else if (match[3] && match[3].trim()) {
+        elements.push({
+          text: match[3],
+          options: {
+            fontSize,
+            fontFace: theme.bodyFont,
+            color: isHeader ? hex(palette.accent) : hex(palette.text),
+            bold: isHeader,
+          },
+        });
+      }
+    }
+
+    if (elements.length === 0) {
+      elements.push({
+        text: text || ' ',
+        options: {
+          fontSize,
+          fontFace: theme.bodyFont,
+          color: isHeader ? hex(palette.accent) : hex(palette.text),
+          bold: isHeader,
+        },
+      });
+    }
+
+    return elements;
+  }
+
+  // ── Source Citation ────────────────────────────────────────
+
+  /**
+   * Render source citation as small gray text at the bottom of the slide.
+   */
+  private addSourceCitation(
+    s: PptxGenJS.Slide,
+    sourceLine: string,
+    palette: ColorPalette,
+    theme: ThemeModel,
+  ): void {
+    s.addText(sourceLine, {
+      x: 0.5,
+      y: '88%',
+      w: '92%',
+      h: 0.35,
+      fontSize: 8,
+      fontFace: theme.bodyFont,
+      color: hex(palette.secondary),
+      valign: 'top',
+      italic: true,
+    });
+  }
+
+  // ── H3 Subheading ─────────────────────────────────────────
+
+  /**
+   * Render an H3 subheading in accent color, bold, slightly larger font.
+   */
+  private addH3Subheading(
+    s: PptxGenJS.Slide,
+    text: string,
+    palette: ColorPalette,
+    theme: ThemeModel,
+    yPos: number,
+    xPos: number | string,
+    width: number | string,
+  ): void {
+    const xNum = typeof xPos === 'number' ? xPos : pctToInchesX(xPos);
+    const wNum = typeof width === 'number' ? width : pctToInchesX(width);
+
+    s.addText(text, {
+      x: xNum,
+      y: yPos,
+      w: wNum,
+      h: 0.35,
+      fontSize: 14,
+      fontFace: theme.headingFont,
+      color: hex(palette.accent),
+      bold: true,
+      valign: 'middle',
+    });
+  }
+
+  // ── Blockquote ────────────────────────────────────────────
+
+  /**
+   * Render a blockquote with accent left bar and muted background.
+   * Returns the new Y position after the blockquote.
+   */
+  private addBlockquote(
+    s: PptxGenJS.Slide,
+    quoteLines: string[],
+    palette: ColorPalette,
+    theme: ThemeModel,
+    yPos: number,
+    xPos: number | string,
+    width: number | string,
+    baseFontSize: number,
+  ): number {
+    const xNum = typeof xPos === 'number' ? xPos : pctToInchesX(xPos);
+    const wNum = typeof width === 'number' ? width : pctToInchesX(width);
+
+    const quoteText = quoteLines.join('\n');
+    const lineCount = quoteLines.length;
+    const quoteH = Math.max(0.4, lineCount * (baseFontSize * 1.8 / 72));
+
+    // Muted background rectangle
+    s.addShape('rect', {
+      x: xNum,
+      y: yPos,
+      w: wNum,
+      h: quoteH,
+      fill: { color: darken(palette.surface, 0.3) },
+      rectRadius: 0.05,
+    });
+
+    // Accent left border bar
+    s.addShape('rect', {
+      x: xNum,
+      y: yPos,
+      w: 0.05,
+      h: quoteH,
+      fill: { color: hex(palette.accent) },
+    });
+
+    // Quote text (italic, slightly smaller)
+    s.addText(quoteText, {
+      x: xNum + 0.15,
+      y: yPos,
+      w: wNum - 0.2,
+      h: quoteH,
+      fontSize: baseFontSize - 1,
       fontFace: theme.bodyFont,
       color: hex(palette.text),
-      valign: 'top',
-      paraSpaceAfter: 6,
+      italic: true,
+      valign: 'middle',
+      paraSpaceAfter: 4,
     });
+
+    return yPos + quoteH + 0.1; // gap after blockquote
   }
 
   // ── Body Parsers ─────────────────────────────────────────
@@ -970,7 +1366,6 @@ export class PptxGenJsExporterService {
     // Match **bold**, *italic*, or regular text segments
     const regex = /(\*\*(.+?)\*\*|\*(.+?)\*|([^*]+))/g;
     let match: RegExpExecArray | null;
-    let isFirst = true;
 
     while ((match = regex.exec(text)) !== null) {
       if (match[2]) {
@@ -1009,7 +1404,6 @@ export class PptxGenJsExporterService {
           });
         }
       }
-      isFirst = false;
     }
 
     // If no matches, return original text
@@ -1046,7 +1440,6 @@ export class PptxGenJsExporterService {
       // Split on numeric patterns: $X, X%, Xk, Xm, Xb, Xx
       const parts = content.split(/(\$[\d,.]+[BMKbmk]?|\d+[.,]?\d*[%xXBMKbmk]+|\d+[.,]\d+)/);
       const lineElements: PptxGenJS.TextProps[] = [];
-      let isFirst = true;
 
       for (const part of parts) {
         if (!part) continue;
@@ -1061,7 +1454,6 @@ export class PptxGenJsExporterService {
             bold: isNumber,
           },
         });
-        isFirst = false;
       }
 
       // Add bullet to first element

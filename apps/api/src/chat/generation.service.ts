@@ -321,10 +321,24 @@ export class GenerationService {
         message: `Generating slide ${outlineSlide.slideNumber}/${outline.slides.length}: ${outlineSlide.title}`,
       });
 
+      // Per-slide KB enrichment for data-heavy types (Z4 pattern: per-slide evidence retrieval)
+      const dataHeavyTypes = ['DATA_METRICS', 'CONTENT', 'PROBLEM', 'SOLUTION', 'COMPARISON'];
+      let slideKbContext = '';
+      if (dataHeavyTypes.includes(outlineSlide.slideType)) {
+        slideKbContext = await this.contextBuilder.retrieveSlideContext(
+          userId,
+          outlineSlide.title,
+          outlineSlide.bulletPoints,
+          2,
+          2,
+        );
+      }
+
       const slideContent = await this.generateSlideContent(
         slideSystemPrompt,
         outlineSlide,
         generatedSlides,
+        slideKbContext,
       );
 
       // Validate density and auto-fix
@@ -731,14 +745,20 @@ export class GenerationService {
     systemPrompt: string,
     outlineSlide: OutlineSlide,
     priorSlides: Array<{ title: string; body: string }> = [],
+    slideKbContext = '',
   ): Promise<GeneratedSlideContent> {
-    const userPrompt = buildSlideGenerationUserPrompt(
+    let userPrompt = buildSlideGenerationUserPrompt(
       outlineSlide.slideNumber,
       outlineSlide.title,
       outlineSlide.bulletPoints,
       outlineSlide.slideType,
       priorSlides,
     );
+
+    // Inject per-slide KB context for data-heavy slides
+    if (slideKbContext) {
+      userPrompt += `\n\nADDITIONAL EVIDENCE FOR THIS SLIDE (use specific data points from this context):\n${slideKbContext}`;
+    }
 
     try {
       return await this.llm.completeJson<GeneratedSlideContent>(

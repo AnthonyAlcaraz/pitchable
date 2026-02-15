@@ -449,6 +449,7 @@ model PitchLens {
   frameworkOverridden Boolean        @default(false)
   customGuidance      String?        @db.Text
   preferredSlideRange Json?
+  imageFrequency      Int            @default(4) // 1 image every N slides (0 = no images)
   isDefault           Boolean        @default(false)
   isPublic            Boolean        @default(false)
   createdAt           DateTime       @default(now())

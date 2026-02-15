@@ -200,6 +200,47 @@ export class ContextBuilderService {
   }
 
   /**
+   * Retrieve per-slide KB context: searches with both the slide title
+   * and the bullet points as queries for maximum relevance.
+   * Returns context specifically relevant to a single slide's content.
+   */
+  async retrieveSlideContext(
+    userId: string,
+    slideTitle: string,
+    bulletPoints: string[],
+    kbLimit = 3,
+    omnisearchLimit = 3,
+  ): Promise<string> {
+    // Build focused queries from the slide content
+    const queries = [
+      slideTitle,
+      ...bulletPoints.filter((b) => b.length > 10).slice(0, 2),
+    ];
+
+    const allResults: string[] = [];
+
+    for (const query of queries) {
+      const [kb, vault] = await Promise.all([
+        this.retrieveKbContext(userId, query, kbLimit),
+        this.retrieveOmnisearchContext(query, omnisearchLimit),
+      ]);
+      if (kb) allResults.push(kb);
+      if (vault) allResults.push(vault);
+    }
+
+    // Deduplicate by checking for content overlap
+    const seen = new Set<string>();
+    const deduped = allResults.filter((r) => {
+      const key = r.slice(0, 100);
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+
+    return deduped.join('\n');
+  }
+
+  /**
    * Extract key search terms from a query string.
    * Removes common filler words, returns top concept phrases.
    */
