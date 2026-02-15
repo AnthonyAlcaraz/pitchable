@@ -89,17 +89,17 @@ ANTI-REPETITION (CRITICAL \u2014 check previous slides before writing):
 - Each slide must earn its place \u2014 if you cannot add new information beyond what prior slides already said, write a minimal slide with a single new takeaway.
 
 UNIVERSAL FORMATTING RULES:
-- Max \${maxWords} words body. 1 key concept per slide. Less text = more impact.
-- Tables: max \${maxTableRows} rows, 2-3 columns. Always include a header row and separator (|---|---|).
-- Bullets: max \${maxBullets} if used. Each bullet max 8 words \u2014 phrases only, never sentences. Prefer tables over bullets for structured data.
+- Max ${maxWords} words body. 1 key concept per slide. Less text = more impact.
+- Tables: max ${maxTableRows} rows, 2-3 columns. Always include a header row and separator (|---|---|).
+- Bullets: max ${maxBullets} if used. Each bullet max 8 words \u2014 phrases only, never sentences. Prefer tables over bullets for structured data.
 - **Bold** on key terms, company names, dollar amounts, and percentages.
 - Every data slide MUST end with a Sources line: "Sources: Source1, Source2, Source3"
 - Use ### subheadings for the slide's key insight or takeaway (max 10 words).
 - Lead with 1 short sentence (max 20 words) BEFORE the table or bullets.
 - Speaker notes: 2-4 sentences expanding on the slide content for the presenter (put detail HERE, not on the slide).
 - Image prompt hint: a concise visual description for AI image generation.
-- Image frequency: \${imageFrequencyInstruction ?? 'Only generate imagePromptHint for ~1 in 8 slides. Set to empty string "" for the rest.'}
-- Image placement: \${imageLayoutInstruction ?? 'Images will be placed on the right side of the slide (35% width).'}
+- Image frequency: ${imageFrequencyInstruction ?? 'Only generate imagePromptHint for ~1 in 8 slides. Set to empty string "" for the rest.'}
+- Image placement: ${imageLayoutInstruction ?? 'Images will be placed on the right side of the slide (35% width).'}
 - LESS IS MORE: If you can say it in fewer words, do it. Slides are visual aids, not documents.
 
 PHILLIPS' VISUAL HIERARCHY (enforce strictly):
@@ -107,15 +107,15 @@ PHILLIPS' VISUAL HIERARCHY (enforce strictly):
 - KEY FIGURE is the LARGEST element \u2014 the ### takeaway and **bolded** lead stat must visually dominate, not the title.
 - CONTRAST SEQUENCING: bold the focal item, leave supporting items plain. One emphasis per slide.
 - No decorative filler. Every element must carry meaning.
-- Speaker notes carry the detail \u2014 slides carry the signal. Max \${maxWords} words on slide, expand in notes.
+- Speaker notes carry the detail \u2014 slides carry the signal. Max ${maxWords} words on slide, expand in notes.
 
 SLIDE BODY STRUCTURE (follow this layered pattern):
 Most content slides should combine elements in this order:
 1. Lead sentence (1 short sentence, max 20 words, with **bold** on the key figure)
-2. Table OR bullet list (table preferred for structured data, max \${maxTableRows} rows or \${maxBullets} bullets)
+2. Table OR bullet list (table preferred for structured data, max ${maxTableRows} rows or ${maxBullets} bullets)
 3. ### Key Takeaway (one phrase, max 10 words)
 4. Sources: citation line
-TOTAL body must stay under \${maxWords} words. Move details to speaker notes.
+TOTAL body must stay under ${maxWords} words. Move details to speaker notes.
 
 ONE DATA BLOCK RULE (CRITICAL):
 Each slide uses EITHER a table OR bullet list \u2014 NEVER both on the same slide.
