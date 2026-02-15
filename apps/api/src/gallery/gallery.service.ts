@@ -12,6 +12,7 @@ export class GalleryService {
     limit: number;
     search?: string;
     type?: string;
+    sort?: 'recent' | 'trending';
   }) {
     const where: Record<string, unknown> = {
       isPublic: true,
@@ -28,7 +29,7 @@ export class GalleryService {
     const [items, total] = await Promise.all([
       this.prisma.presentation.findMany({
         where,
-        orderBy: { publishedAt: 'desc' },
+        orderBy: opts.sort === 'trending' ? { viewCount: 'desc' } : { publishedAt: 'desc' },
         skip: (opts.page - 1) * opts.limit,
         take: opts.limit,
         select: {
@@ -39,6 +40,8 @@ export class GalleryService {
           publishedAt: true,
           createdAt: true,
           imageCount: true,
+          viewCount: true,
+          forkCount: true,
           _count: { select: { slides: true } },
           user: { select: { name: true } },
           theme: { select: { displayName: true, primaryColor: true } },
@@ -57,6 +60,8 @@ export class GalleryService {
         authorName: p.user.name,
         themeName: p.theme.displayName,
         themeColor: p.theme.primaryColor,
+        viewCount: p.viewCount,
+        forkCount: p.forkCount,
         publishedAt: p.publishedAt,
         createdAt: p.createdAt,
       })),
@@ -203,6 +208,11 @@ export class GalleryService {
         where: { id: pres.id },
         select: { id: true },
       });
+    });
+
+    await this.prisma.presentation.update({
+      where: { id: presentationId },
+      data: { forkCount: { increment: 1 } },
     });
 
     return { id: forked.id };

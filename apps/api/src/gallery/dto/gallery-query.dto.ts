@@ -22,4 +22,8 @@ export class GalleryQueryDto {
   @IsOptional()
   @IsString()
   type?: string;
+
+  @IsOptional()
+  @IsString()
+  sort?: string;
 }

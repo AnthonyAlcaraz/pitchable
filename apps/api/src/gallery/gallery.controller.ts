@@ -25,6 +25,7 @@ export class GalleryController {
       limit: query.limit ?? 12,
       search: query.search,
       type: query.type,
+      sort: query.sort === 'trending' ? 'trending' : 'recent',
     });
   }
 
