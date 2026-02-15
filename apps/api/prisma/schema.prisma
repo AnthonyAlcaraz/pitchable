@@ -162,22 +162,22 @@ enum BriefStatus {
 // ─── Models ──────────────────────────────────────────────────────────────────
 
 model User {
-  id               String   @id @default(uuid()) @db.Uuid
-  email            String   @unique
+  id               String    @id @default(uuid()) @db.Uuid
+  email            String    @unique
   passwordHash     String
   name             String
-  role             UserRole @default(USER)
-  creditBalance    Int      @default(0)
-  tier             UserTier @default(FREE)
+  role             UserRole  @default(USER)
+  creditBalance    Int       @default(0)
+  tier             UserTier  @default(FREE)
   refreshTokenHash String?
-  stripeCustomerId String?  @unique
-  decksThisMonth   Int      @default(0)
-  monthResetAt     DateTime @default(now())
+  stripeCustomerId String?   @unique
+  decksThisMonth   Int       @default(0)
+  monthResetAt     DateTime  @default(now())
   registrationIp   String?
   lastLoginIp      String?
   lastLoginAt      DateTime?
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 
   presentations      Presentation[]
   creditTransactions CreditTransaction[]
@@ -206,20 +206,23 @@ model Presentation {
   briefId          String?            @db.Uuid
   forkedFromId     String?            @db.Uuid
   isPublic         Boolean            @default(false)
+  viewCount        Int                @default(0)
+  forkCount        Int                @default(0)
   publishedAt      DateTime?
   userId           String             @db.Uuid
   createdAt        DateTime           @default(now())
   updatedAt        DateTime           @updatedAt
 
-  user       User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  theme      Theme          @relation(fields: [themeId], references: [id])
-  pitchLens  PitchLens?     @relation(fields: [pitchLensId], references: [id], onDelete: SetNull)
-  brief      PitchBrief?    @relation(fields: [briefId], references: [id], onDelete: SetNull)
-  forkedFrom Presentation?  @relation("PresentationFork", fields: [forkedFromId], references: [id], onDelete: SetNull)
-  forks      Presentation[] @relation("PresentationFork")
+  user         User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  theme        Theme              @relation(fields: [themeId], references: [id])
+  pitchLens    PitchLens?         @relation(fields: [pitchLensId], references: [id], onDelete: SetNull)
+  brief        PitchBrief?        @relation(fields: [briefId], references: [id], onDelete: SetNull)
+  forkedFrom   Presentation?      @relation("PresentationFork", fields: [forkedFromId], references: [id], onDelete: SetNull)
+  forks        Presentation[]     @relation("PresentationFork")
   slides       Slide[]
   exportJobs   ExportJob[]
   chatMessages ChatMessage[]
+  views        PresentationView[]
 
   @@index([userId])
   @@index([status])
@@ -227,6 +230,7 @@ model Presentation {
   @@index([briefId])
   @@index([forkedFromId])
   @@index([isPublic, status])
+  @@index([isPublic, viewCount])
 }
 
 model Slide {
@@ -297,14 +301,14 @@ model Subscription {
 }
 
 model CreditReservation {
-  id          String    @id @default(uuid()) @db.Uuid
-  userId      String    @db.Uuid
+  id          String       @id @default(uuid()) @db.Uuid
+  userId      String       @db.Uuid
   amount      Int
   reason      CreditReason
   referenceId String?
-  status      String    @default("reserved") // reserved, committed, released
+  status      String       @default("reserved") // reserved, committed, released
   expiresAt   DateTime
-  createdAt   DateTime  @default(now())
+  createdAt   DateTime     @default(now())
   resolvedAt  DateTime?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -361,7 +365,7 @@ model Document {
   createdAt    DateTime           @default(now())
   updatedAt    DateTime           @updatedAt
 
-  briefId      String?            @db.Uuid
+  briefId String? @db.Uuid
 
   user   User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   brief  PitchBrief?     @relation(fields: [briefId], references: [id], onDelete: SetNull)
@@ -383,15 +387,15 @@ model EdgeQuakeMapping {
 }
 
 model DocumentChunk {
-  id           String   @id @default(uuid()) @db.Uuid
-  documentId   String   @db.Uuid
-  content      String   @db.Text
+  id           String                       @id @default(uuid()) @db.Uuid
+  documentId   String                       @db.Uuid
+  content      String                       @db.Text
   heading      String?
-  headingLevel Int      @default(0)
+  headingLevel Int                          @default(0)
   chunkIndex   Int
   embedding    Unsupported("vector(1536)")?
-  metadata     Json     @default("{}")
-  createdAt    DateTime @default(now())
+  metadata     Json                         @default("{}")
+  createdAt    DateTime                     @default(now())
 
   document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
 
@@ -401,7 +405,7 @@ model DocumentChunk {
 model ChatMessage {
   id             String   @id @default(uuid()) @db.Uuid
   presentationId String   @db.Uuid
-  role           String   // 'user' | 'assistant' | 'system'
+  role           String // 'user' | 'assistant' | 'system'
   content        String   @db.Text
   messageType    String   @default("text") // 'text' | 'outline' | 'validation' | 'credit_confirmation'
   metadata       Json     @default("{}")
@@ -417,8 +421,8 @@ model FeedbackEntry {
   userId           String   @db.Uuid
   presentationId   String?  @db.Uuid
   slideId          String?  @db.Uuid
-  type             String   // 'VIOLATION' | 'CORRECTION' | 'RULE'
-  category         String   // 'density' | 'typography' | 'concept' | 'style' | 'tone'
+  type             String // 'VIOLATION' | 'CORRECTION' | 'RULE'
+  category         String // 'density' | 'typography' | 'concept' | 'style' | 'tone'
   originalContent  String?  @db.Text
   correctedContent String?  @db.Text
   rule             String?  @db.Text
@@ -458,7 +462,6 @@ model PitchLens {
   @@index([userId, isDefault])
   @@index([isPublic])
 }
-
 
 model PitchBrief {
   id                   String      @id @default(uuid()) @db.Uuid
@@ -521,4 +524,18 @@ model ApiKey {
 
   @@index([keyPrefix])
   @@index([userId])
+}
+
+model PresentationView {
+  id             String   @id @default(uuid()) @db.Uuid
+  presentationId String   @db.Uuid
+  viewerIp       String?
+  viewerUserId   String?  @db.Uuid
+  referrer       String?
+  createdAt      DateTime @default(now())
+
+  presentation Presentation @relation(fields: [presentationId], references: [id], onDelete: Cascade)
+
+  @@index([presentationId])
+  @@index([presentationId, createdAt])
 }
