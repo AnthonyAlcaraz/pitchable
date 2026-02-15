@@ -268,16 +268,16 @@ export class PptxGenJsExporterService {
         y: '53%',
         w: '80%',
         h: 1.4,
-        fontSize: 38,
+        fontSize: 44,
         fontFace: theme.headingFont,
-        color: hex(palette.primary),
+        color: hex(palette.text),
         bold: true,
         align: 'left',
         valign: 'top',
       });
     }
 
-    // Subtitle from body — secondary color, below title
+    // Subtitle from body — accent color (cyan), below title
     if (slide.body) {
       const subtitleLines = slide.body
         .split('\n')
@@ -290,9 +290,9 @@ export class PptxGenJsExporterService {
         y: '72%',
         w: '80%',
         h: 0.8,
-        fontSize: 16,
+        fontSize: 20,
         fontFace: theme.bodyFont,
-        color: hex(palette.secondary),
+        color: hex(palette.accent),
         align: 'left',
         valign: 'top',
         lineSpacingMultiple: 1.3,
@@ -468,7 +468,7 @@ export class PptxGenJsExporterService {
         h: 0.7,
         fontSize: 26,
         fontFace: theme.headingFont,
-        color: hex(palette.primary),
+        color: hex(palette.text),
         bold: true,
         align: 'center',
       });
@@ -538,7 +538,7 @@ export class PptxGenJsExporterService {
         h: 0.7,
         fontSize: 26,
         fontFace: theme.headingFont,
-        color: hex(palette.primary),
+        color: hex(palette.text),
         bold: true,
         align: 'center',
       });
@@ -597,16 +597,25 @@ export class PptxGenJsExporterService {
     const hasImage = !!slide.imageUrl;
     const contentWidth = hasImage ? '58%' : '90%';
 
+    // Accent line above title
+    s.addShape('rect', {
+      x: 0.5,
+      y: 0.25,
+      w: 1.5,
+      h: 0.04,
+      fill: { color: hex(palette.primary) },
+    });
+
     // Title
     if (slide.title) {
       s.addText(slide.title, {
         x: 0.5,
-        y: 0.3,
+        y: 0.4,
         w: contentWidth,
         h: 0.7,
         fontSize: 28,
         fontFace: theme.headingFont,
-        color: hex(palette.primary),
+        color: hex(palette.text),
         bold: true,
       });
     }
@@ -648,16 +657,25 @@ export class PptxGenJsExporterService {
     const hasImage = !!slide.imageUrl;
     const contentWidth = hasImage ? '58%' : '90%';
 
+    // Accent line above title
+    s.addShape('rect', {
+      x: 0.5,
+      y: 0.25,
+      w: 1.5,
+      h: 0.04,
+      fill: { color: hex(palette.primary) },
+    });
+
     // Title
     if (slide.title) {
       s.addText(slide.title, {
         x: 0.5,
-        y: 0.3,
+        y: 0.4,
         w: contentWidth,
         h: 0.7,
         fontSize: 28,
         fontFace: theme.headingFont,
-        color: hex(palette.primary),
+        color: hex(palette.text),
         bold: true,
       });
     }
@@ -717,7 +735,7 @@ export class PptxGenJsExporterService {
         h: 0.7,
         fontSize: 28,
         fontFace: theme.headingFont,
-        color: hex(palette.primary),
+        color: hex(palette.text),
         bold: true,
       });
     }
@@ -758,16 +776,25 @@ export class PptxGenJsExporterService {
     const hasImage = !!slide.imageUrl;
     const contentWidth = hasImage ? '58%' : '90%';
 
+    // Accent line above title (Z4 style)
+    s.addShape('rect', {
+      x: 0.5,
+      y: 0.25,
+      w: 1.5,
+      h: 0.04,
+      fill: { color: hex(palette.primary) },
+    });
+
     // Title
     if (slide.title) {
       s.addText(slide.title, {
         x: 0.5,
-        y: 0.3,
+        y: 0.4,
         w: contentWidth,
         h: 0.7,
         fontSize: 28,
         fontFace: theme.headingFont,
-        color: hex(palette.primary),
+        color: hex(palette.text),
         bold: true,
         valign: 'top',
       });
@@ -1065,14 +1092,14 @@ export class PptxGenJsExporterService {
     type TableCell = { text: PptxGenJS.TextProps[]; options: Record<string, unknown> };
     const tableRows: TableCell[][] = [];
 
-    // Header row
+    // Header row — primary accent background with high-contrast text
     const headerRow: TableCell[] = headerCells.map((cell) => ({
-      text: this.parseTableCellInline(cell, palette, theme, 11, true),
+      text: this.parseTableCellInline(cell, palette, theme, 12, true),
       options: {
         fill: { color: hex(palette.primary) },
-        color: hex(palette.accent),
+        color: hex(palette.text),
         bold: true,
-        fontSize: 11,
+        fontSize: 12,
         fontFace: theme.bodyFont,
         border: { type: 'solid', color: hex(palette.border), pt: 0.5 },
         valign: 'middle' as const,
@@ -1149,7 +1176,7 @@ export class PptxGenJsExporterService {
           options: {
             fontSize,
             fontFace: theme.bodyFont,
-            color: isHeader ? hex(palette.accent) : hex(palette.text),
+            color: isHeader ? hex(palette.text) : hex(palette.text),
             bold: isHeader,
           },
         });
@@ -1162,7 +1189,7 @@ export class PptxGenJsExporterService {
         options: {
           fontSize,
           fontFace: theme.bodyFont,
-          color: isHeader ? hex(palette.accent) : hex(palette.text),
+          color: isHeader ? hex(palette.text) : hex(palette.text),
           bold: isHeader,
         },
       });
