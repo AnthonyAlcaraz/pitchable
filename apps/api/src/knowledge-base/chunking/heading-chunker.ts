@@ -101,7 +101,8 @@ export function chunkByHeadings(
         chunks[chunks.length - 1].content += '\n\n' + fullContent.trim();
       }
     } else {
-      const paragraphs = bodyText.split(/\n\s*\n/).filter((p) => p.trim().length > 0);
+      // Split oversized section into chunks, preserving paragraph boundaries
+      const paragraphs = splitIntoParagraphs(bodyText, opts.maxChunkSize);
       let buffer = headingPrefix;
 
       for (const paragraph of paragraphs) {
@@ -132,6 +133,40 @@ export function chunkByHeadings(
   }
 
   return chunks;
+}
+
+/**
+ * Split text into paragraph units. First tries double-newline splits.
+ * If that produces a single block larger than maxSize, falls back to
+ * grouping single-newline-separated lines into paragraph-sized units.
+ */
+function splitIntoParagraphs(text: string, maxSize: number): string[] {
+  const doubleSplit = text.split(/\n\s*\n/).filter((p) => p.trim().length > 0);
+
+  // If double-newline split produced multiple paragraphs, use those
+  if (doubleSplit.length > 1) return doubleSplit;
+
+  // Single block — try splitting on single newlines and grouping
+  const lines = text.split('\n').filter((l) => l.trim().length > 0);
+  if (lines.length <= 1) return doubleSplit;
+
+  const groups: string[] = [];
+  let buffer = '';
+
+  for (const line of lines) {
+    if (buffer.length + line.length + 1 > maxSize && buffer.length > 0) {
+      groups.push(buffer.trim());
+      buffer = line;
+    } else {
+      buffer += (buffer ? '\n' : '') + line;
+    }
+  }
+
+  if (buffer.trim().length > 0) {
+    groups.push(buffer.trim());
+  }
+
+  return groups.length > 0 ? groups : doubleSplit;
 }
 
 function addOverlap(
