@@ -8,6 +8,7 @@ import { DocxParser } from './parsers/docx.parser.js';
 import { MarkdownParser } from './parsers/markdown.parser.js';
 import { TextParser } from './parsers/text.parser.js';
 import { UrlParser } from './parsers/url.parser.js';
+import { SpreadsheetParser } from './parsers/spreadsheet.parser.js';
 import { EmbeddingService } from './embedding/embedding.service.js';
 import { VectorStoreService } from './embedding/vector-store.service.js';
 import { EdgeQuakeService } from './edgequake/edgequake.service.js';
@@ -28,6 +29,7 @@ export class DocumentProcessingProcessor extends WorkerHost {
     private readonly markdownParser: MarkdownParser,
     private readonly textParser: TextParser,
     private readonly urlParser: UrlParser,
+    private readonly spreadsheetParser: SpreadsheetParser,
     private readonly embeddingService: EmbeddingService,
     private readonly vectorStore: VectorStoreService,
     private readonly edgequake: EdgeQuakeService,
@@ -211,6 +213,13 @@ export class DocumentProcessingProcessor extends WorkerHost {
     }
     if (mimeType === 'text/plain') {
       return this.textParser.parse(buffer);
+    }
+    if (
+      mimeType === 'text/csv' ||
+      mimeType === 'application/vnd.ms-excel' ||
+      mimeType === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    ) {
+      return this.spreadsheetParser.parse(buffer);
     }
     this.logger.warn(`Unknown MIME type "${mimeType}", treating as plain text`);
     return this.textParser.parse(buffer);
