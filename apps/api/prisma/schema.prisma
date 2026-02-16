@@ -22,6 +22,7 @@ model User {
   registrationIp     String?
   lastLoginIp        String?
   lastLoginAt        DateTime?
+  onboardingCompleted Boolean            @default(false)
   createdAt          DateTime            @default(now())
   updatedAt          DateTime            @updatedAt
   apiKeys            ApiKey[]

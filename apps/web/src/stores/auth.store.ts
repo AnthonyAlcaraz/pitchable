@@ -9,6 +9,7 @@ interface User {
   role: string;
   tier: string;
   creditBalance: number;
+  onboardingCompleted: boolean;
 }
 
 interface LoginResponse {
@@ -41,6 +42,7 @@ interface AuthState {
   clearError: () => void;
   fetchProfile: () => Promise<void>;
   refreshCreditBalance: () => Promise<void>;
+  completeOnboarding: () => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -193,6 +195,13 @@ export const useAuthStore = create<AuthState>()(
         } catch {
           // Silently fail — balance will refresh on next page load
         }
+      },
+
+      completeOnboarding: async () => {
+        await api.patch<{ id: string; onboardingCompleted: boolean }>('/auth/complete-onboarding');
+        set((s) => ({
+          user: s.user ? { ...s.user, onboardingCompleted: true } : null,
+        }));
       },
     }),
     {

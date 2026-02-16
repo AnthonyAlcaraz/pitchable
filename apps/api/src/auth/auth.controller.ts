@@ -1,6 +1,7 @@
 import {
   Controller,
   Post,
+  Patch,
   Get,
   Body,
   UseGuards,
@@ -15,6 +16,7 @@ import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import type { Request as ExpressRequest } from 'express';
 import { AuthService } from './auth.service.js';
 import type { AuthResponse, AuthTokens } from './auth.service.js';
+import { PrismaService } from '../prisma/prisma.service.js';
 import { RegisterDto } from './dto/register.dto.js';
 import { LoginDto } from './dto/login.dto.js';
 import { ForgotPasswordDto } from './dto/forgot-password.dto.js';
@@ -32,7 +34,10 @@ interface RefreshRequest {
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
-  constructor(private authService: AuthService) {}
+  constructor(
+    private authService: AuthService,
+    private prisma: PrismaService,
+  ) {}
 
   @Post('register')
   @Throttle({
@@ -107,5 +112,19 @@ export class AuthController {
   async resetPassword(@Body() dto: ResetPasswordDto): Promise<{ message: string }> {
     await this.authService.resetPassword(dto.token, dto.newPassword);
     return { message: 'Password has been reset successfully' };
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Patch('complete-onboarding')
+  @HttpCode(HttpStatus.OK)
+  async completeOnboarding(
+    @CurrentUser() user: RequestUser,
+  ): Promise<{ id: string; onboardingCompleted: boolean }> {
+    return this.prisma.user.update({
+      where: { id: user.userId },
+      data: { onboardingCompleted: true },
+      select: { id: true, onboardingCompleted: true },
+    });
   }
 }

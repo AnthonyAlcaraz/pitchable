@@ -17,6 +17,7 @@ export interface UserDto {
   role: UserRole;
   tier: UserTier;
   creditBalance: number;
+  onboardingCompleted: boolean;
   createdAt: Date;
 }
 
@@ -234,6 +235,7 @@ export class AuthService {
     role: UserRole;
     tier: UserTier;
     creditBalance: number;
+    onboardingCompleted: boolean;
     createdAt: Date;
   }): UserDto {
     return {
@@ -243,6 +245,7 @@ export class AuthService {
       role: user.role,
       tier: user.tier,
       creditBalance: user.creditBalance,
+      onboardingCompleted: user.onboardingCompleted,
       createdAt: user.createdAt,
     };
   }
