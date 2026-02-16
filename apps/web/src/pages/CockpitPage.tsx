@@ -292,7 +292,7 @@ export function CockpitPage() {
           <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-border py-12">
             <BookOpen className="mb-3 h-10 w-10 text-muted-foreground/50" />
             <p className="mb-4 text-sm text-muted-foreground">
-              Create your first Pitch Brief — a curated knowledge collection
+              Add your context — upload documents, paste text, or add URLs to build your knowledge base
             </p>
             <button
               onClick={() => navigate('/pitch-briefs/new')}
@@ -364,7 +364,7 @@ export function CockpitPage() {
           <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-border py-12">
             <Focus className="mb-3 h-10 w-10 text-muted-foreground/50" />
             <p className="mb-4 text-sm text-muted-foreground">
-              Create your first Pitch Lens — a reusable strategy profile
+              Define your audience, goal, tone, and framework to guide AI generation
             </p>
             <button
               onClick={() => navigate('/pitch-lens/new')}

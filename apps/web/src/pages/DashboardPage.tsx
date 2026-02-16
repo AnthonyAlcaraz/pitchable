@@ -5,7 +5,7 @@ import { usePresentationsStore } from '@/stores/presentations.store';
 import type { PresentationListItem } from '@/stores/presentations.store';
 import { PresentationGrid } from '@/components/dashboard/PresentationGrid';
 import { ForkDialog } from '@/components/dashboard/ForkDialog';
-import { CreditCard, FileText, BarChart3 } from 'lucide-react';
+import { CreditCard, FileText, BarChart3, ArrowRight } from 'lucide-react';
 import { api } from '@/lib/api';
 
 export function DashboardPage() {
@@ -32,6 +32,26 @@ export function DashboardPage() {
 
   return (
     <div className="p-4 sm:p-6 lg:p-8">
+      {user && !user.onboardingCompleted && (
+        <div className="mb-6 flex items-center justify-between rounded-lg border border-primary/20 bg-primary/5 p-4">
+          <div>
+            <p className="text-sm font-medium text-foreground">
+              Finish setting up your account to generate your first deck
+            </p>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              Create a Pitch Brief and Lens to get started
+            </p>
+          </div>
+          <button
+            onClick={() => navigate('/onboarding')}
+            className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+          >
+            Resume Setup
+            <ArrowRight className="h-4 w-4" />
+          </button>
+        </div>
+      )}
+
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-foreground">
           Welcome back, {user?.name ?? 'there'}
