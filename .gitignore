@@ -32,6 +32,8 @@ apps/api/exports/
 # Standalone scripts (not part of app)
 *.py
 omnisearch-to-kb.js
+audit-slides.js
+check-slide-body.js
 
 # Misc
 *.log
