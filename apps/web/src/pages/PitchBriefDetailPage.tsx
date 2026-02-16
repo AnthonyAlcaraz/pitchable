@@ -1,24 +1,18 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { usePitchBriefStore } from '@/stores/pitch-brief.store';
+import type { SearchResult } from '@/stores/pitch-brief.store';
 import { usePitchLensStore } from '@/stores/pitch-lens.store';
 import { ArrowLeft, BookOpen, Plus, Trash2, Upload, FileText, Link2, Unlink, Search, Network } from 'lucide-react';
 
 const STATUS_COLORS: Record<string, string> = {
   EMPTY: 'bg-gray-500/10 text-gray-400',
+  UPLOADED: 'bg-blue-500/10 text-blue-400',
+  PARSING: 'bg-yellow-500/10 text-yellow-500',
+  EMBEDDING: 'bg-yellow-500/10 text-yellow-500',
   PROCESSING: 'bg-yellow-500/10 text-yellow-500',
   READY: 'bg-green-500/10 text-green-500',
   ERROR: 'bg-red-500/10 text-red-500',
-};
-
-const ENTITY_COLORS: Record<string, string> = {
-  PERSON: 'bg-orange-500/10 text-orange-400',
-  ORGANIZATION: 'bg-amber-500/10 text-amber-500',
-  CONCEPT: 'bg-green-500/10 text-green-500',
-  TECHNOLOGY: 'bg-purple-500/10 text-purple-500',
-  PRODUCT: 'bg-rose-500/10 text-rose-500',
-  EVENT: 'bg-cyan-500/10 text-cyan-500',
-  LOCATION: 'bg-orange-500/10 text-orange-500',
 };
 
 const NODE_COLORS: Record<string, string> = {
@@ -31,6 +25,16 @@ const NODE_COLORS: Record<string, string> = {
   LOCATION: '#f97316',
 };
 
+const ENTITY_COLORS: Record<string, string> = {
+  PERSON: 'bg-blue-500/10 text-blue-400',
+  ORGANIZATION: 'bg-amber-500/10 text-amber-500',
+  CONCEPT: 'bg-green-500/10 text-green-500',
+  TECHNOLOGY: 'bg-purple-500/10 text-purple-500',
+  PRODUCT: 'bg-rose-500/10 text-rose-500',
+  EVENT: 'bg-cyan-500/10 text-cyan-500',
+  LOCATION: 'bg-orange-500/10 text-orange-500',
+};
+
 export function PitchBriefDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -38,21 +42,18 @@ export function PitchBriefDetailPage() {
 
   const {
     currentBrief,
-    documents,
-    graph,
+    graphData,
     graphStats,
-    searchResults,
     loadBrief,
-    loadDocuments,
     loadGraph,
     loadGraphStats,
     uploadDocument,
     addTextDocument,
     addUrlDocument,
-    deleteDocument,
+    removeDocument,
     linkLens,
     unlinkLens,
-    searchBrief,
+    search,
   } = usePitchBriefStore();
 
   const { lenses, loadLenses } = usePitchLensStore();
@@ -63,17 +64,30 @@ export function PitchBriefDetailPage() {
   const [urlInput, setUrlInput] = useState('');
   const [urlTitle, setUrlTitle] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<SearchResult | null>(null);
   const [deletingDocId, setDeletingDocId] = useState<string | null>(null);
+
+  const docs = currentBrief?.documents ?? [];
+  const briefLenses = currentBrief?.briefLenses ?? [];
 
   useEffect(() => {
     if (id) {
       loadBrief(id);
-      loadDocuments(id);
       loadGraph(id);
       loadGraphStats(id);
       loadLenses();
     }
-  }, [id, loadBrief, loadDocuments, loadGraph, loadGraphStats, loadLenses]);
+  }, [id, loadBrief, loadGraph, loadGraphStats, loadLenses]);
+
+  // Poll while any document is still processing
+  useEffect(() => {
+    const hasProcessing = docs.some(
+      (d) => ['UPLOADED', 'PARSING', 'EMBEDDING', 'PROCESSING'].includes(d.status),
+    );
+    if (!hasProcessing || !id) return;
+    const interval = setInterval(() => loadBrief(id), 5000);
+    return () => clearInterval(interval);
+  }, [docs, id, loadBrief]);
 
   const handleFileUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -100,14 +114,14 @@ export function PitchBriefDetailPage() {
 
   const handleAddText = async () => {
     if (!id || !textTitle || !textContent) return;
-    await addTextDocument(id, { title: textTitle, content: textContent });
+    await addTextDocument(id, textContent, textTitle);
     setTextTitle('');
     setTextContent('');
   };
 
   const handleAddUrl = async () => {
     if (!id || !urlInput || !urlTitle) return;
-    await addUrlDocument(id, { url: urlInput, title: urlTitle });
+    await addUrlDocument(id, urlInput, urlTitle);
     setUrlInput('');
     setUrlTitle('');
   };
@@ -116,7 +130,7 @@ export function PitchBriefDetailPage() {
     if (!id) return;
 
     if (deletingDocId === docId) {
-      await deleteDocument(id, docId);
+      await removeDocument(id, docId);
       setDeletingDocId(null);
     } else {
       setDeletingDocId(docId);
@@ -124,9 +138,10 @@ export function PitchBriefDetailPage() {
     }
   };
 
-  const handleSearch = () => {
+  const handleSearch = async () => {
     if (!id || !searchQuery) return;
-    searchBrief(id, searchQuery);
+    const result = await search(id, searchQuery);
+    setSearchResults(result);
   };
 
   const handleLinkLens = async (lensId: string) => {
@@ -140,9 +155,8 @@ export function PitchBriefDetailPage() {
     await unlinkLens(id, lensId);
   };
 
-  const availableLenses = lenses.filter(
-    (lens) => !currentBrief?.linkedLenses?.some((ll) => ll.id === lens.id)
-  );
+  const linkedLensIds = new Set(briefLenses.map((bl) => bl.lens.id));
+  const availableLenses = lenses.filter((lens) => !linkedLensIds.has(lens.id));
 
   if (!currentBrief) {
     return (
@@ -195,7 +209,7 @@ export function PitchBriefDetailPage() {
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-semibold text-foreground flex items-center gap-2">
                 <FileText className="w-5 h-5" />
-                Documents ({documents.length})
+                Documents ({docs.length})
               </h2>
               <button
                 onClick={() => fileInputRef.current?.click()}
@@ -215,12 +229,12 @@ export function PitchBriefDetailPage() {
             >
               <Upload className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
               <p className="text-foreground mb-1">Drop files here or click to upload</p>
-              <p className="text-sm text-muted-foreground">PDF, DOCX, TXT, MD</p>
+              <p className="text-sm text-muted-foreground">PDF, DOCX, TXT, MD, CSV, XLSX, PPTX</p>
               <input
                 ref={fileInputRef}
                 type="file"
                 multiple
-                accept=".pdf,.docx,.txt,.md"
+                accept=".pdf,.docx,.txt,.md,.csv,.xlsx,.xls,.pptx"
                 onChange={handleFileUpload}
                 className="hidden"
               />
@@ -228,7 +242,7 @@ export function PitchBriefDetailPage() {
 
             {/* Document List */}
             <div className="space-y-3 mb-6">
-              {documents.map((doc) => (
+              {docs.map((doc) => (
                 <div
                   key={doc.id}
                   className="flex items-center justify-between p-4 bg-background border border-border rounded-lg"
@@ -239,10 +253,10 @@ export function PitchBriefDetailPage() {
                       <span className="text-xs px-2 py-1 rounded-full bg-primary/10 text-primary">
                         {doc.sourceType}
                       </span>
-                      <span className={`text-xs px-2 py-1 rounded-full ${STATUS_COLORS[doc.status]}`}>
+                      <span className={`text-xs px-2 py-1 rounded-full ${STATUS_COLORS[doc.status] ?? 'bg-gray-500/10 text-gray-400'}`}>
                         {doc.status}
                       </span>
-                      {doc.chunkCount && (
+                      {doc.chunkCount > 0 && (
                         <span className="text-xs text-muted-foreground">
                           {doc.chunkCount} chunks
                         </span>
@@ -277,7 +291,7 @@ export function PitchBriefDetailPage() {
                 className="w-full px-3 py-2 bg-card border border-border rounded-lg mb-2 text-foreground placeholder:text-muted-foreground min-h-[100px]"
               />
               <button
-                onClick={handleAddText}
+                onClick={() => void handleAddText()}
                 disabled={!textTitle || !textContent}
                 className="w-full px-3 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm"
               >
@@ -303,7 +317,7 @@ export function PitchBriefDetailPage() {
                 className="w-full px-3 py-2 bg-card border border-border rounded-lg mb-2 text-foreground placeholder:text-muted-foreground"
               />
               <button
-                onClick={handleAddUrl}
+                onClick={() => void handleAddUrl()}
                 disabled={!urlInput || !urlTitle}
                 className="w-full px-3 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm"
               >
@@ -317,7 +331,7 @@ export function PitchBriefDetailPage() {
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-semibold text-foreground flex items-center gap-2">
                 <Link2 className="w-5 h-5" />
-                Linked Lenses ({currentBrief.linkedLenses?.length || 0})
+                Linked Lenses ({briefLenses.length})
               </h2>
               <button
                 onClick={() => setShowLinkModal(!showLinkModal)}
@@ -338,13 +352,13 @@ export function PitchBriefDetailPage() {
                     availableLenses.map((lens) => (
                       <button
                         key={lens.id}
-                        onClick={() => handleLinkLens(lens.id)}
+                        onClick={() => void handleLinkLens(lens.id)}
                         className="w-full p-3 bg-card border border-border rounded-lg hover:border-primary/50 transition-colors text-left"
                       >
                         <div className="font-medium text-foreground mb-1">{lens.name}</div>
                         <div className="flex gap-2 text-xs">
-                          <span className="text-muted-foreground">Audience: {lens.audience}</span>
-                          <span className="text-muted-foreground">Goal: {lens.goal}</span>
+                          <span className="text-muted-foreground">{lens.audienceType}</span>
+                          <span className="text-muted-foreground">{lens.pitchGoal}</span>
                         </div>
                       </button>
                     ))
@@ -353,26 +367,26 @@ export function PitchBriefDetailPage() {
               </div>
             )}
 
-            {currentBrief.linkedLenses && currentBrief.linkedLenses.length > 0 ? (
+            {briefLenses.length > 0 ? (
               <div className="space-y-3">
-                {currentBrief.linkedLenses.map((lens) => (
+                {briefLenses.map((bl) => (
                   <div
-                    key={lens.id}
+                    key={bl.lens.id}
                     className="flex items-center justify-between p-4 bg-background border border-border rounded-lg"
                   >
                     <div>
-                      <h4 className="font-medium text-foreground mb-1">{lens.name}</h4>
+                      <h4 className="font-medium text-foreground mb-1">{bl.lens.name}</h4>
                       <div className="flex gap-2">
                         <span className="text-xs px-2 py-1 rounded-full bg-orange-500/10 text-orange-400">
-                          {lens.audience}
+                          {bl.lens.audienceType}
                         </span>
                         <span className="text-xs px-2 py-1 rounded-full bg-green-500/10 text-green-500">
-                          {lens.goal}
+                          {bl.lens.pitchGoal}
                         </span>
                       </div>
                     </div>
                     <button
-                      onClick={() => handleUnlinkLens(lens.id)}
+                      onClick={() => void handleUnlinkLens(bl.lens.id)}
                       className="p-2 hover:bg-destructive/10 rounded-lg transition-colors"
                     >
                       <Unlink className="w-4 h-4 text-muted-foreground" />
@@ -399,11 +413,11 @@ export function PitchBriefDetailPage() {
               <div className="space-y-6">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="p-4 bg-background rounded-lg">
-                    <div className="text-2xl font-bold text-foreground">{graphStats.totalNodes}</div>
+                    <div className="text-2xl font-bold text-foreground">{graphStats.total_nodes}</div>
                     <div className="text-sm text-muted-foreground">Nodes</div>
                   </div>
                   <div className="p-4 bg-background rounded-lg">
-                    <div className="text-2xl font-bold text-foreground">{graphStats.totalEdges}</div>
+                    <div className="text-2xl font-bold text-foreground">{graphStats.total_edges}</div>
                     <div className="text-sm text-muted-foreground">Edges</div>
                   </div>
                   <div className="p-4 bg-background rounded-lg">
@@ -411,16 +425,16 @@ export function PitchBriefDetailPage() {
                     <div className="text-sm text-muted-foreground">Density</div>
                   </div>
                   <div className="p-4 bg-background rounded-lg">
-                    <div className="text-2xl font-bold text-foreground">{graphStats.avgDegree?.toFixed(1)}</div>
+                    <div className="text-2xl font-bold text-foreground">{graphStats.avg_degree?.toFixed(1)}</div>
                     <div className="text-sm text-muted-foreground">Avg Degree</div>
                   </div>
                 </div>
 
-                {graphStats.nodeTypeBreakdown && (
+                {graphStats.node_types && Object.keys(graphStats.node_types).length > 0 && (
                   <div>
                     <h3 className="text-sm font-medium text-foreground mb-3">Node Types</h3>
                     <div className="flex flex-wrap gap-2">
-                      {Object.entries(graphStats.nodeTypeBreakdown).map(([type, count]) => (
+                      {Object.entries(graphStats.node_types).map(([type, count]) => (
                         <span
                           key={type}
                           className={`px-2 py-1 rounded-full text-xs font-medium ${
@@ -434,11 +448,11 @@ export function PitchBriefDetailPage() {
                   </div>
                 )}
 
-                {graphStats.edgeTypeBreakdown && (
+                {graphStats.edge_types && Object.keys(graphStats.edge_types).length > 0 && (
                   <div>
                     <h3 className="text-sm font-medium text-foreground mb-3">Edge Types</h3>
                     <div className="flex flex-wrap gap-2">
-                      {Object.entries(graphStats.edgeTypeBreakdown).map(([type, count]) => (
+                      {Object.entries(graphStats.edge_types).map(([type, count]) => (
                         <span
                           key={type}
                           className="px-2 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary"
@@ -467,19 +481,19 @@ export function PitchBriefDetailPage() {
               </button>
             </div>
 
-            {graph && graph.nodes.length > 0 ? (
+            {graphData && graphData.nodes.length > 0 ? (
               <svg
                 viewBox="0 0 400 400"
                 className="w-full h-[400px] bg-background rounded-lg border border-border"
               >
                 {/* Render edges */}
-                {graph.edges.map((edge, i) => {
-                  const sourceNode = graph.nodes.find((n) => n.id === edge.source);
-                  const targetNode = graph.nodes.find((n) => n.id === edge.target);
+                {graphData.edges.map((edge, i) => {
+                  const sourceNode = graphData.nodes.find((n) => n.id === edge.source);
+                  const targetNode = graphData.nodes.find((n) => n.id === edge.target);
                   if (!sourceNode || !targetNode) return null;
 
-                  const sourceAngle = (graph.nodes.indexOf(sourceNode) / graph.nodes.length) * 2 * Math.PI;
-                  const targetAngle = (graph.nodes.indexOf(targetNode) / graph.nodes.length) * 2 * Math.PI;
+                  const sourceAngle = (graphData.nodes.indexOf(sourceNode) / graphData.nodes.length) * 2 * Math.PI;
+                  const targetAngle = (graphData.nodes.indexOf(targetNode) / graphData.nodes.length) * 2 * Math.PI;
                   const radius = 150;
 
                   const x1 = 200 + Math.cos(sourceAngle) * radius;
@@ -502,12 +516,13 @@ export function PitchBriefDetailPage() {
                 })}
 
                 {/* Render nodes */}
-                {graph.nodes.map((node, i) => {
-                  const angle = (i / graph.nodes.length) * 2 * Math.PI;
+                {graphData.nodes.map((node, i) => {
+                  const angle = (i / graphData.nodes.length) * 2 * Math.PI;
                   const radius = 150;
                   const x = 200 + Math.cos(angle) * radius;
                   const y = 200 + Math.sin(angle) * radius;
-                  const color = NODE_COLORS[node.type] || '#6b7280';
+                  const color = NODE_COLORS[node.node_type] || '#6b7280';
+                  const displayLabel = node.label.length > 12 ? node.label.substring(0, 12) + '...' : node.label;
 
                   return (
                     <g key={node.id}>
@@ -527,7 +542,7 @@ export function PitchBriefDetailPage() {
                         fill="#9ca3af"
                         className="select-none"
                       >
-                        {node.name.length > 12 ? node.name.substring(0, 12) + '...' : node.name}
+                        {displayLabel}
                       </text>
                     </g>
                   );
@@ -554,36 +569,41 @@ export function PitchBriefDetailPage() {
                 placeholder="Search knowledge base..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                onKeyDown={(e) => e.key === 'Enter' && void handleSearch()}
                 className="flex-1 px-3 py-2 bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground"
               />
               <button
-                onClick={handleSearch}
+                onClick={() => void handleSearch()}
                 className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
               >
                 Search
               </button>
             </div>
 
-            {searchResults && searchResults.length > 0 && (
+            {searchResults && searchResults.sources.length > 0 && (
               <div className="space-y-3 max-h-96 overflow-y-auto">
-                {searchResults.map((result, i) => (
+                {searchResults.answer && (
+                  <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg mb-3">
+                    <p className="text-sm text-foreground">{searchResults.answer}</p>
+                  </div>
+                )}
+                {searchResults.sources.map((source, i) => (
                   <div
                     key={i}
                     className="p-4 bg-background border border-border rounded-lg"
                   >
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-xs font-medium text-primary">
-                        Score: {result.score.toFixed(3)}
+                        Score: {source.score.toFixed(3)}
                       </span>
                     </div>
-                    <p className="text-sm text-foreground line-clamp-3">{result.content}</p>
+                    <p className="text-sm text-foreground line-clamp-3">{source.content}</p>
                   </div>
                 ))}
               </div>
             )}
 
-            {searchResults && searchResults.length === 0 && searchQuery && (
+            {searchResults && searchResults.sources.length === 0 && searchQuery && (
               <p className="text-sm text-muted-foreground text-center py-8">No results found</p>
             )}
           </div>
