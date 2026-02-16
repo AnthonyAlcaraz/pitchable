@@ -524,7 +524,40 @@ const BUILT_IN_THEMES: ThemeDefinition[] = [
     },
   },
 
-  // 15. Academic Research — inspired by conference paper presentations
+  // 15. Z4 Dark Premium — navy gradient, blue/gold AI-enhanced presentation style
+  {
+    name: 'z4-dark-premium',
+    displayName: 'Z4 Dark Premium',
+    description: 'Navy gradient with blue headings and gold accents. AI-image-rich, data-heavy, conference-ready dark theme.',
+    primaryColor: '#60a5fa',
+    secondaryColor: '#94a3b8',
+    accentColor: '#fbbf24',
+    backgroundColor: '#0f172a',
+    textColor: '#e2e8f0',
+    headingFont: 'Montserrat',
+    bodyFont: 'Inter',
+    colorPalette: {
+      primary: '#60a5fa',
+      secondary: '#94a3b8',
+      accent: '#fbbf24',
+      background: '#0f172a',
+      text: '#e2e8f0',
+      surface: '#1e293b',
+      border: '#334155',
+      success: '#4ade80',
+      warning: '#fbbf24',
+      error: '#f87171',
+    },
+    meta: {
+      imageFrequency: 'frequent',
+      bestForAudience: ['TECHNICAL', 'CONFERENCE', 'TEAM', 'CUSTOMERS'],
+      bestForGoals: ['EDUCATE', 'SELL_PRODUCT', 'INSPIRE'],
+      suggestedFrameworks: ['WHAT_SO_WHAT_NOW_WHAT', 'STAR', 'PAS'],
+      category: 'dark',
+    },
+  },
+
+  // 16. Academic Research — inspired by conference paper presentations
   {
     name: 'academic-research',
     displayName: 'Academic Research',
