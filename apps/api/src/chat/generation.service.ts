@@ -1,4 +1,4 @@
-import { Injectable, Logger, Inject, forwardRef } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { LlmService, LlmModel } from './llm.service.js';
 import { ContextBuilderService } from './context-builder.service.js';
@@ -12,7 +12,6 @@ import { CreditsService } from '../credits/credits.service.js';
 import { DECK_GENERATION_COST } from '../credits/tier-config.js';
 import { ImagesService } from '../images/images.service.js';
 import { NanoBananaService } from '../images/nano-banana.service.js';
-import { PitchLensAgentService } from '../pitch-lens/pitch-lens-agent.service.js';
 import {
   buildOutlineSystemPrompt,
   buildOutlineUserPrompt,
@@ -75,8 +74,6 @@ export class GenerationService {
     private readonly credits: CreditsService,
     private readonly imagesService: ImagesService,
     private readonly nanoBanana: NanoBananaService,
-    @Inject(forwardRef(() => PitchLensAgentService))
-    private readonly pitchLensAgent: PitchLensAgentService,
   ) {}
 
   /**
@@ -108,42 +105,6 @@ export class GenerationService {
       if (!config.minSlides && !config.maxSlides && framework) {
         range.min = framework.idealSlideRange.min;
         range.max = framework.idealSlideRange.max;
-      }
-    }
-
-    // 0b. Auto-infer Pitch Lens if none linked (agentic narrative strategy)
-    if (!presWithContext?.pitchLens && presWithContext?.briefId) {
-      try {
-        yield { type: 'thinking', content: 'Analyzing your content to find the best narrative strategy...' };
-        const inference = await this.pitchLensAgent.inferFromBrief(
-          userId, presWithContext.briefId, config.topic,
-        );
-        const lensId = await this.pitchLensAgent.createLensFromInference(
-          userId, presentationId, config.topic, inference,
-        );
-        // Link lens to presentation
-        await this.prisma.presentation.update({
-          where: { id: presentationId },
-          data: { pitchLensId: lensId },
-        });
-        // Build injection from inferred lens
-        const inferredLens = await this.prisma.pitchLens.findUnique({ where: { id: lensId } });
-        if (inferredLens) {
-          const framework = getFrameworkConfig(inferredLens.selectedFramework);
-          pitchLensContext = buildPitchLensInjection({ ...inferredLens, framework });
-          if (!config.minSlides && !config.maxSlides && framework) {
-            range.min = framework.idealSlideRange.min;
-            range.max = framework.idealSlideRange.max;
-          }
-        }
-        yield {
-          type: 'lens_inferred',
-          content: `Narrative strategy: **${inference.recommendedLens.selectedFramework}** — ${inference.recommendedLens.reasoning}`,
-          metadata: inference as unknown as Record<string, unknown>,
-        };
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : 'Unknown error';
-        this.logger.warn(`Auto lens inference failed, continuing without: ${msg}`);
       }
     }
 
