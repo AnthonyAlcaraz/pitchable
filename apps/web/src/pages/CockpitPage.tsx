@@ -170,7 +170,8 @@ export function CockpitPage() {
 
           <button
             onClick={handleGenerate}
-            className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-6 py-2.5 font-medium text-primary-foreground transition-colors hover:bg-primary/90 sm:w-auto"
+            disabled={!selectedLensId}
+            className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-6 py-2.5 font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
           >
             {selectedSourceId ? (
               <>
@@ -185,6 +186,12 @@ export function CockpitPage() {
             )}
           </button>
         </div>
+        {!selectedLensId && (
+          <p className="mt-3 text-xs text-amber-500">
+            Select a Pitch Lens to generate a deck.
+            {lenses.length === 0 && ' Create one first.'}
+          </p>
+        )}
       </div>
 
       {/* Stats Row */}

@@ -98,6 +98,12 @@ export class GenerationService {
       where: { id: presentationId },
       include: { pitchLens: true, brief: true },
     });
+
+    // Guard: Pitch Lens is required for deck generation
+    if (!presWithContext?.pitchLens) {
+      yield { type: 'error', content: 'A Pitch Lens is required to generate a deck. Create one in the Cockpit or during onboarding.' };
+      return;
+    }
     if (presWithContext?.pitchLens) {
       const framework = getFrameworkConfig(presWithContext.pitchLens.selectedFramework);
       pitchLensContext = buildPitchLensInjection({ ...presWithContext.pitchLens, framework });

@@ -68,6 +68,11 @@ export class SyncGenerationService {
       throw new BadRequestException(deckCheck.reason ?? 'Monthly deck limit reached.');
     }
 
+    // 1b. Pitch Lens is required
+    if (!input.pitchLensId) {
+      throw new BadRequestException('pitchLensId is required for deck generation.');
+    }
+
     // 2. Credit check
     const hasCredits = await this.credits.hasEnoughCredits(userId, DECK_GENERATION_COST);
     if (!hasCredits) {
