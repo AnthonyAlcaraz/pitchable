@@ -12,6 +12,7 @@ import { MarkdownParser } from './parsers/markdown.parser.js';
 import { TextParser } from './parsers/text.parser.js';
 import { UrlParser } from './parsers/url.parser.js';
 import { SpreadsheetParser } from './parsers/spreadsheet.parser.js';
+import { PptxParser } from './parsers/pptx.parser.js';
 import { EmbeddingService } from './embedding/embedding.service.js';
 import { VectorStoreService } from './embedding/vector-store.service.js';
 import { EdgeQuakeService } from './edgequake/edgequake.service.js';
@@ -35,6 +36,7 @@ import { RerankerService } from './reranker.service.js';
     TextParser,
     UrlParser,
     SpreadsheetParser,
+    PptxParser,
     EmbeddingService,
     VectorStoreService,
     EdgeQuakeService,

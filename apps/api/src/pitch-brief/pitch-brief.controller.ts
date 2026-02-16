@@ -95,7 +95,7 @@ export class PitchBriefController {
           new MaxFileSizeValidator({ maxSize: 20 * 1024 * 1024 }),
           new FileTypeValidator({
             fileType:
-              /(pdf|vnd\.openxmlformats-officedocument\.wordprocessingml\.document|vnd\.openxmlformats-officedocument\.spreadsheetml\.sheet|vnd\.ms-excel|csv|plain|markdown|text)/,
+              /(pdf|vnd\.openxmlformats-officedocument\.wordprocessingml\.document|vnd\.openxmlformats-officedocument\.spreadsheetml\.sheet|vnd\.openxmlformats-officedocument\.presentationml\.presentation|vnd\.ms-excel|csv|plain|markdown|text)/,
           }),
         ],
       }),
