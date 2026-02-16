@@ -243,9 +243,16 @@ export class GenerationService {
 
     yield { type: 'thinking', content: 'Preparing to generate your deck...' };
 
-    // 1. Resolve theme
+    // 1. Parallel setup: resolve theme, get briefId, build feedback block
     yield { type: 'progress', content: 'Resolving theme', metadata: { step: 'theme', status: 'running' } };
-    const themeId = await this.resolveThemeId(config.themeId);
+    const [themeId, presForBrief, feedbackBlock] = await Promise.all([
+      this.resolveThemeId(config.themeId),
+      this.prisma.presentation.findUnique({
+        where: { id: presentationId },
+        select: { briefId: true },
+      }),
+      this.contextBuilder.buildFeedbackBlock(userId),
+    ]);
     const theme = await this.prisma.theme.findUnique({ where: { id: themeId } });
     const themeName = theme?.displayName ?? 'Pitchable Dark';
     const themeColors = theme?.colorPalette
@@ -253,15 +260,17 @@ export class GenerationService {
       : undefined;
     yield { type: 'progress', content: 'Resolving theme', metadata: { step: 'theme', status: 'complete' } };
 
-    // 2. Get KB + Omnisearch context for slide generation (scoped to brief if linked)
+    // 2. Parallel: KB context + Pitch Lens fetch
     yield { type: 'progress', content: 'Building knowledge context', metadata: { step: 'kb_context', status: 'running' } };
-    const presForBrief = await this.prisma.presentation.findUnique({
-      where: { id: presentationId },
-      select: { briefId: true },
-    });
-    const kbContext = presForBrief?.briefId
-      ? await this.contextBuilder.retrieveBriefContext(userId, presForBrief.briefId, config.topic, 8)
-      : await this.contextBuilder.retrieveEnrichedContext(userId, config.topic, 5, 5);
+    const [kbContext, presWithLens] = await Promise.all([
+      presForBrief?.briefId
+        ? this.contextBuilder.retrieveBriefContext(userId, presForBrief.briefId, config.topic, 8)
+        : this.contextBuilder.retrieveEnrichedContext(userId, config.topic, 5, 5),
+      this.prisma.presentation.findUnique({
+        where: { id: presentationId },
+        include: { pitchLens: true },
+      }),
+    ]);
     yield { type: 'progress', content: 'Building knowledge context', metadata: { step: 'kb_context', status: 'complete' } };
 
     // 3. Update presentation metadata
@@ -280,12 +289,8 @@ export class GenerationService {
     // 4. Delete existing slides (in case of regeneration)
     await this.prisma.slide.deleteMany({ where: { presentationId } });
 
-    // 4b. Fetch Pitch Lens context for slide generation
+    // 4b. Build Pitch Lens context for slide generation
     let pitchLensContext: string | undefined;
-    const presWithLens = await this.prisma.presentation.findUnique({
-      where: { id: presentationId },
-      include: { pitchLens: true },
-    });
     if (presWithLens?.pitchLens) {
       const framework = getFrameworkConfig(presWithLens.pitchLens.selectedFramework);
       pitchLensContext = buildPitchLensInjection({ ...presWithLens.pitchLens, framework });
@@ -302,7 +307,6 @@ export class GenerationService {
       : undefined;
 
     // 5. Build slide system prompt with user feedback injection
-    const feedbackBlock = await this.contextBuilder.buildFeedbackBlock(userId);
     const imageFreqInstruction = theme ? getImageFrequencyForTheme(theme.name) : undefined;
     const slideSystemPrompt = buildSlideGenerationSystemPrompt(
       config.presentationType,
@@ -324,7 +328,17 @@ export class GenerationService {
       Math.ceil(outline.slides.length * 1.25),
     );
 
-    for (const outlineSlide of outline.slides) {
+    // Pre-fetch all per-slide KB contexts in parallel (zero risk to narrative coherence)
+    const dataHeavyTypes = ['DATA_METRICS', 'CONTENT', 'PROBLEM', 'SOLUTION', 'COMPARISON'];
+    const slideKbContexts = await Promise.all(
+      outline.slides.map((slide) =>
+        dataHeavyTypes.includes(slide.slideType)
+          ? this.contextBuilder.retrieveSlideContext(userId, slide.title, slide.bulletPoints, 2, 2)
+          : Promise.resolve('')
+      ),
+    );
+
+    for (const [slideIndex, outlineSlide] of outline.slides.entries()) {
       const actualSlideNumber = outlineSlide.slideNumber + slideNumberOffset;
 
       yield {
@@ -347,18 +361,8 @@ export class GenerationService {
         message: `Generating slide ${outlineSlide.slideNumber}/${outline.slides.length}: ${outlineSlide.title}`,
       });
 
-      // Per-slide KB enrichment for data-heavy types (Z4 pattern: per-slide evidence retrieval)
-      const dataHeavyTypes = ['DATA_METRICS', 'CONTENT', 'PROBLEM', 'SOLUTION', 'COMPARISON'];
-      let slideKbContext = '';
-      if (dataHeavyTypes.includes(outlineSlide.slideType)) {
-        slideKbContext = await this.contextBuilder.retrieveSlideContext(
-          userId,
-          outlineSlide.title,
-          outlineSlide.bulletPoints,
-          2,
-          2,
-        );
-      }
+      // Use pre-fetched per-slide KB context
+      const slideKbContext = slideKbContexts[slideIndex];
 
       const slideContent = await this.generateSlideContent(
         slideSystemPrompt,
@@ -402,7 +406,7 @@ export class GenerationService {
       // Track for prior-slides context (Recommendation #5)
       generatedSlides.push({ title: validated.title, body: validated.body });
 
-      // Run content reviewer and queue validation
+      // Run content reviewer (pipelined: await previous review, fire this one async)
       let reviewPassed = true;
       try {
         const customLimits = densityOverrides ? {
@@ -411,6 +415,7 @@ export class GenerationService {
           ...(densityOverrides.maxWords != null && { maxWordsPerSlide: densityOverrides.maxWords }),
           ...(densityOverrides.maxTableRows != null && { maxTableRows: densityOverrides.maxTableRows }),
         } : undefined;
+        // Await review synchronously since NEEDS_SPLIT affects slideNumberOffset for next slide
         const review = await this.contentReviewer.reviewSlide({
           title: validated.title,
           body: validated.body,

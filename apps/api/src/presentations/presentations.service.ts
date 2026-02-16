@@ -640,9 +640,20 @@ export class PresentationsService {
     opts?: { briefId?: string; pitchLensId?: string },
   ): Promise<{ id: string }> {
     const themeId = await this.resolveThemeId(undefined);
+
+    // Use lens name as default title when pitchLensId is provided
+    let title = 'Untitled';
+    if (opts?.pitchLensId) {
+      const lens = await this.prisma.pitchLens.findUnique({
+        where: { id: opts.pitchLensId },
+        select: { name: true },
+      });
+      if (lens?.name) title = lens.name;
+    }
+
     const pres = await this.prisma.presentation.create({
       data: {
-        title: 'Untitled',
+        title,
         sourceContent: '',
         presentationType: PresentationType.STANDARD,
         status: PresentationStatus.DRAFT,

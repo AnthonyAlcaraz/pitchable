@@ -13,6 +13,7 @@ import { PptxParser } from './parsers/pptx.parser.js';
 import { EmbeddingService } from './embedding/embedding.service.js';
 import { VectorStoreService } from './embedding/vector-store.service.js';
 import { EdgeQuakeService } from './edgequake/edgequake.service.js';
+import { ZeroEntropyRetrievalService } from './zeroentropy/zeroentropy-retrieval.service.js';
 import { chunkByHeadings } from './chunking/heading-chunker.js';
 import { DocumentStatus } from '../../generated/prisma/enums.js';
 import type { DocumentProcessingJobData } from './knowledge-base.service.js';
@@ -35,12 +36,13 @@ export class DocumentProcessingProcessor extends WorkerHost {
     private readonly embeddingService: EmbeddingService,
     private readonly vectorStore: VectorStoreService,
     private readonly edgequake: EdgeQuakeService,
+    private readonly zeRetrieval: ZeroEntropyRetrievalService,
   ) {
     super();
   }
 
   async process(job: Job<DocumentProcessingJobData>): Promise<void> {
-    const { documentId, sourceType, mimeType, s3Key, rawText, url } = job.data;
+    const { documentId, userId, sourceType, mimeType, s3Key, rawText, url } = job.data;
     this.logger.log(`Processing document ${documentId} (type: ${sourceType})`);
 
     try {
@@ -110,25 +112,57 @@ export class DocumentProcessingProcessor extends WorkerHost {
         },
       });
 
-      // 6. Generate embeddings for all chunks (if embedding API is available)
+      // Fetch stored chunks for indexing and embedding
+      const storedChunks = await this.prisma.documentChunk.findMany({
+        where: { documentId },
+        orderBy: { chunkIndex: 'asc' },
+        select: { id: true, content: true, heading: true },
+      });
+
+      // Get document title for metadata
+      const docRecord = await this.prisma.document.findUnique({
+        where: { id: documentId },
+        select: { title: true },
+      });
+      const docTitle = docRecord?.title ?? 'Untitled';
+
+      // 6. Index into ZeroEntropy (primary retrieval, non-fatal)
+      if (this.zeRetrieval.isAvailable()) {
+        try {
+          const collectionName = this.zeRetrieval.collectionNameForUser(userId);
+          await this.zeRetrieval.indexDocument(
+            collectionName,
+            documentId,
+            docTitle,
+            storedChunks,
+          );
+        } catch (zeError) {
+          this.logger.warn(
+            `Document ${documentId}: ZeroEntropy indexing failed (non-fatal): ${zeError instanceof Error ? zeError.message : String(zeError)}`,
+          );
+        }
+      }
+
+      // 7. Generate OpenAI embeddings for pgvector (fallback retrieval, non-fatal)
       if (this.embeddingService.isAvailable()) {
-        const storedChunks = await this.prisma.documentChunk.findMany({
-          where: { documentId },
-          orderBy: { chunkIndex: 'asc' },
-          select: { id: true, content: true },
-        });
+        try {
+          const texts = storedChunks.map((c) => c.content);
+          const embeddings = await this.embeddingService.batchEmbed(texts);
 
-        const texts = storedChunks.map((c) => c.content);
-        const embeddings = await this.embeddingService.batchEmbed(texts);
-
-        // 7. Store embeddings via pgvector raw SQL
-        const chunkEmbeddings = storedChunks.map((chunk, i) => ({
-          chunkId: chunk.id,
-          embedding: embeddings[i],
-        }));
-        await this.vectorStore.updateChunkEmbeddings(documentId, chunkEmbeddings);
+          if (embeddings.length > 0) {
+            const chunkEmbeddings = storedChunks.map((chunk, i) => ({
+              chunkId: chunk.id,
+              embedding: embeddings[i],
+            }));
+            await this.vectorStore.updateChunkEmbeddings(documentId, chunkEmbeddings);
+          }
+        } catch (embedError) {
+          this.logger.warn(
+            `Document ${documentId}: embedding failed (non-fatal): ${embedError instanceof Error ? embedError.message : String(embedError)}`,
+          );
+        }
       } else {
-        this.logger.log(`Document ${documentId}: skipping embeddings (no OPENAI_API_KEY), keyword search will be used`);
+        this.logger.log(`Document ${documentId}: skipping embeddings (no OPENAI_API_KEY)`);
       }
 
       // 8. Update status to READY
@@ -140,21 +174,17 @@ export class DocumentProcessingProcessor extends WorkerHost {
         },
       });
 
-      this.logger.log(`Document ${documentId}: ${chunks.length} chunks embedded and stored, status=READY`);
+      this.logger.log(`Document ${documentId}: ${chunks.length} chunks processed, status=READY`);
 
       // 9. Sync to EdgeQuake Graph-RAG (non-blocking)
       if (this.edgequake.isEnabled()) {
         try {
-          const mapping = await this.getOrCreateEdgequakeMapping(job.data.userId);
-          const document = await this.prisma.document.findUnique({
-            where: { id: documentId },
-            select: { title: true },
-          });
+          const mapping = await this.getOrCreateEdgequakeMapping(userId);
           await this.edgequake.uploadDocument(
             mapping.tenantId,
             mapping.workspaceId,
             extractedText,
-            document?.title ?? 'Untitled',
+            docTitle,
           );
           this.logger.log(`Document ${documentId}: synced to EdgeQuake`);
         } catch (eqError) {
@@ -167,15 +197,19 @@ export class DocumentProcessingProcessor extends WorkerHost {
       const errorMessage = error instanceof Error ? error.message : String(error);
       this.logger.error(`Document ${documentId} processing failed: ${errorMessage}`);
 
-      await this.prisma.document.update({
-        where: { id: documentId },
-        data: {
-          status: DocumentStatus.ERROR,
-          errorMessage,
-        },
-      });
-
-      throw error;
+      try {
+        await this.prisma.document.update({
+          where: { id: documentId },
+          data: {
+            status: DocumentStatus.ERROR,
+            errorMessage,
+          },
+        });
+      } catch {
+        this.logger.error(`Failed to update error status for document ${documentId}`);
+      }
+      // Don't re-throw: the processor already handled the error by setting ERROR status.
+      // Re-throwing caused BullMQ to mark the job as failed with no benefit (no retries configured).
     }
   }
 

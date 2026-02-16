@@ -66,6 +66,7 @@
     "swagger-ui-express": "^5.0.1",
     "uuid": "^13.0.0",
     "xlsx": "^0.18.5",
+    "zeroentropy": "^0.1.0-alpha.7",
     "zod": "^4.3.6"
   },
   "devDependencies": {

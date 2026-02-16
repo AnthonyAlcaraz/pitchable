@@ -7,6 +7,7 @@ import { EmbeddingService } from './embedding/embedding.service.js';
 import { VectorStoreService } from './embedding/vector-store.service.js';
 import type { SearchResult } from './embedding/vector-store.service.js';
 import { EdgeQuakeService } from './edgequake/edgequake.service.js';
+import { ZeroEntropyRetrievalService } from './zeroentropy/zeroentropy-retrieval.service.js';
 import { DocumentSourceType, DocumentStatus } from '../../generated/prisma/enums.js';
 import { randomUUID } from 'node:crypto';
 
@@ -31,6 +32,7 @@ export class KnowledgeBaseService {
     private readonly embeddingService: EmbeddingService,
     private readonly vectorStore: VectorStoreService,
     private readonly edgequake: EdgeQuakeService,
+    private readonly zeRetrieval: ZeroEntropyRetrievalService,
   ) {}
 
   async uploadFile(
@@ -155,6 +157,24 @@ export class KnowledgeBaseService {
       }
     }
 
+    // Delete from ZeroEntropy if enabled (non-blocking)
+    if (this.zeRetrieval.isAvailable()) {
+      try {
+        const chunks = await this.prisma.documentChunk.findMany({
+          where: { documentId },
+          select: { id: true },
+        });
+        const collectionName = this.zeRetrieval.collectionNameForUser(userId);
+        await this.zeRetrieval.deleteDocument(
+          collectionName,
+          documentId,
+          chunks.map((c) => c.id),
+        );
+      } catch (zeError) {
+        this.logger.warn(`ZeroEntropy delete failed (non-blocking): ${zeError}`);
+      }
+    }
+
     // Delete from EdgeQuake if enabled (non-blocking)
     if (this.edgequake.isEnabled()) {
       try {
@@ -184,7 +204,20 @@ export class KnowledgeBaseService {
     limit = 10,
     threshold = 0.3,
   ): Promise<SearchResult[]> {
-    // Try EdgeQuake Graph-RAG first if enabled
+    // 1. Try ZeroEntropy first (managed retrieval with built-in reranking)
+    if (this.zeRetrieval.isAvailable()) {
+      try {
+        const collectionName = this.zeRetrieval.collectionNameForUser(userId);
+        const results = await this.zeRetrieval.search(collectionName, query, limit);
+        if (results.length > 0) return results;
+      } catch (zeError) {
+        this.logger.warn(
+          `ZeroEntropy search failed, falling back: ${zeError instanceof Error ? zeError.message : String(zeError)}`,
+        );
+      }
+    }
+
+    // 2. Try EdgeQuake Graph-RAG
     if (this.edgequake.isEnabled()) {
       try {
         const mapping = await this.prisma.edgeQuakeMapping.findUnique({
@@ -215,13 +248,13 @@ export class KnowledgeBaseService {
       }
     }
 
-    // Fallback: pgvector search (if embeddings available) or keyword search
+    // 3. Fallback: pgvector search (if embeddings available)
     if (this.embeddingService.isAvailable()) {
       const queryEmbedding = await this.embeddingService.embed(query);
       return this.vectorStore.searchSimilar(userId, queryEmbedding, limit, threshold);
     }
 
-    // Final fallback: keyword-based search (no API key needed)
+    // 4. Final fallback: keyword-based search (no API key needed)
     this.logger.log('Using keyword-based KB search (no OPENAI_API_KEY)');
     return this.vectorStore.searchByKeywords(userId, query, limit);
   }

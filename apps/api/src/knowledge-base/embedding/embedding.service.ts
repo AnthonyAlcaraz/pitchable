@@ -43,18 +43,25 @@ export class EmbeddingService {
     const results: number[][] = [];
     const BATCH_SIZE = this.model.startsWith('voyage') ? 50 : 100;
 
-    for (let i = 0; i < texts.length; i += BATCH_SIZE) {
-      const batch = texts.slice(i, i + BATCH_SIZE);
-      this.logger.log(
-        `Embedding batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(texts.length / BATCH_SIZE)}: ${batch.length} texts`,
+    try {
+      for (let i = 0; i < texts.length; i += BATCH_SIZE) {
+        const batch = texts.slice(i, i + BATCH_SIZE);
+        this.logger.log(
+          `Embedding batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(texts.length / BATCH_SIZE)}: ${batch.length} texts`,
+        );
+
+        const response = await this.client.embeddings.create({
+          model: this.model,
+          input: batch,
+        });
+
+        results.push(...response.data.map((d) => d.embedding));
+      }
+    } catch (err) {
+      this.logger.warn(
+        `Embedding API call failed (non-fatal, returning partial results): ${err instanceof Error ? err.message : String(err)}`,
       );
-
-      const response = await this.client.embeddings.create({
-        model: this.model,
-        input: batch,
-      });
-
-      results.push(...response.data.map((d) => d.embedding));
+      return results; // Return whatever we got before the failure
     }
 
     return results;

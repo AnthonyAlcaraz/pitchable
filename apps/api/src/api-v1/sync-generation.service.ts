@@ -81,8 +81,13 @@ export class SyncGenerationService {
       );
     }
 
-    // 3. Resolve theme
-    const themeId = await this.resolveThemeId(input.themeId);
+    // 3. Resolve theme + fetch lens in parallel
+    const [themeId, pitchLens] = await Promise.all([
+      this.resolveThemeId(input.themeId),
+      input.pitchLensId
+        ? this.prisma.pitchLens.findUnique({ where: { id: input.pitchLensId } })
+        : Promise.resolve(null),
+    ]);
 
     // 4. Create PROCESSING presentation
     const presentation = await this.prisma.presentation.create({
@@ -110,37 +115,30 @@ export class SyncGenerationService {
       let pitchLensContext: string | undefined;
       let syncDensityOverrides: { maxBullets?: number; maxWords?: number; maxTableRows?: number } | undefined;
       let syncImageLayoutInstruction: string | undefined;
-      if (input.pitchLensId) {
-        const lens = await this.prisma.pitchLens.findUnique({
-          where: { id: input.pitchLensId },
-        });
-        if (lens) {
-          const framework = getFrameworkConfig(lens.selectedFramework);
-          pitchLensContext = buildPitchLensInjection({ ...lens, framework });
-          if (framework) {
-            range.min = framework.idealSlideRange.min;
-            range.max = framework.idealSlideRange.max;
-          }
-          syncDensityOverrides = {
-            maxBullets: lens.maxBulletsPerSlide ?? undefined,
-            maxWords: lens.maxWordsPerSlide ?? undefined,
-            maxTableRows: lens.maxTableRows ?? undefined,
-          };
-          if (lens.imageLayout === 'BACKGROUND') {
-            syncImageLayoutInstruction = 'Place images as full-slide backgrounds at 15% opacity. Do not use side-panel images.';
-          }
+      if (pitchLens) {
+        const framework = getFrameworkConfig(pitchLens.selectedFramework);
+        pitchLensContext = buildPitchLensInjection({ ...pitchLens, framework });
+        if (framework) {
+          range.min = framework.idealSlideRange.min;
+          range.max = framework.idealSlideRange.max;
+        }
+        syncDensityOverrides = {
+          maxBullets: pitchLens.maxBulletsPerSlide ?? undefined,
+          maxWords: pitchLens.maxWordsPerSlide ?? undefined,
+          maxTableRows: pitchLens.maxTableRows ?? undefined,
+        };
+        if (pitchLens.imageLayout === 'BACKGROUND') {
+          syncImageLayoutInstruction = 'Place images as full-slide backgrounds at 15% opacity. Do not use side-panel images.';
         }
       }
 
-      // 6. RAG retrieval
-      const kbContext = input.briefId
-        ? await this.contextBuilder.retrieveBriefContext(
-            userId,
-            input.briefId,
-            input.topic,
-            8,
-          )
-        : await this.contextBuilder.retrieveKbContext(userId, input.topic, 8);
+      // 6. RAG retrieval + theme fetch in parallel
+      const [kbContext, theme] = await Promise.all([
+        input.briefId
+          ? this.contextBuilder.retrieveBriefContext(userId, input.briefId, input.topic, 8)
+          : this.contextBuilder.retrieveKbContext(userId, input.topic, 8),
+        this.prisma.theme.findUnique({ where: { id: themeId } }),
+      ]);
 
       // 7. Generate outline
       const outlineSystemPrompt = buildOutlineSystemPrompt(
@@ -171,17 +169,26 @@ export class SyncGenerationService {
         data: { title: outline.title },
       });
 
-      // 9. Get theme name for slide generation prompts
-      const theme = await this.prisma.theme.findUnique({ where: { id: themeId } });
+      // 9. Theme name for slide generation prompts (theme already fetched in step 6)
       const themeName = theme?.displayName ?? 'Pitchable Dark';
 
-      // 10. Generate slides sequentially
+      // 10. Pre-fetch per-slide KB contexts in parallel
+      const dataHeavyTypes = ['DATA_METRICS', 'CONTENT', 'PROBLEM', 'SOLUTION', 'COMPARISON'];
+      const slideKbContexts = await Promise.all(
+        outline.slides.map((slide) =>
+          dataHeavyTypes.includes(slide.slideType)
+            ? this.contextBuilder.retrieveSlideContext(userId, slide.title, slide.bulletPoints, 2, 2)
+            : Promise.resolve('')
+        ),
+      );
+
+      // 11. Generate slides sequentially (Opus needs priorSlides for coherence)
       const priorSlides: Array<{ title: string; body: string }> = [];
+      const syncImgFreq = theme ? getImageFrequencyForTheme(theme.name) : undefined;
 
       for (let i = 0; i < outline.slides.length; i++) {
         const outlineSlide = outline.slides[i];
 
-        const syncImgFreq = theme ? getImageFrequencyForTheme(theme.name) : undefined;
         const slideSystemPrompt = buildSlideGenerationSystemPrompt(
           presType,
           themeName,
@@ -192,13 +199,22 @@ export class SyncGenerationService {
           syncDensityOverrides,
           syncImageLayoutInstruction,
         );
-        const slideUserPrompt = buildSlideGenerationUserPrompt(
+        let slideUserPrompt = buildSlideGenerationUserPrompt(
           outlineSlide.slideNumber,
           outlineSlide.title,
           outlineSlide.bulletPoints,
           outlineSlide.slideType,
           priorSlides,
         );
+
+        // Inject pre-fetched per-slide KB context
+        const slideKbContext = slideKbContexts[i];
+        if (slideKbContext) {
+          slideUserPrompt += `
+
+ADDITIONAL EVIDENCE FOR THIS SLIDE (use specific data points from this context):
+${slideKbContext}`;
+        }
 
         const slideContent = await this.llm.completeJson<GeneratedSlideContent>(
           [
@@ -273,7 +289,7 @@ export class SyncGenerationService {
         priorSlides.push({ title: finalTitle, body: finalBody });
       }
 
-      // 11. Mark complete + deduct credits
+      // 12. Mark complete + deduct credits
       await this.prisma.presentation.update({
         where: { id: presentation.id },
         data: { status: PresentationStatus.COMPLETED },
@@ -286,7 +302,7 @@ export class SyncGenerationService {
         presentation.id,
       );
 
-      // 11b. Auto-generate images (non-blocking)
+      // 12b. Auto-generate images (non-blocking)
       if (this.nanoBanana.isConfigured) {
         this.imagesService
           .queueBatchGeneration(presentation.id, userId)
@@ -297,7 +313,7 @@ export class SyncGenerationService {
           );
       }
 
-      // 12. Return full presentation with slides and theme
+      // 13. Return full presentation with slides and theme
       return this.prisma.presentation.findUnique({
         where: { id: presentation.id },
         include: {
