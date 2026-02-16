@@ -1,0 +1,949 @@
+import { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuthStore } from '@/stores/auth.store';
+import { usePitchBriefStore } from '@/stores/pitch-brief.store';
+import { usePitchLensStore } from '@/stores/pitch-lens.store';
+import type { CreatePitchLensInput } from '@/stores/pitch-lens.store';
+import {
+  Layers,
+  ArrowRight,
+  ArrowLeft,
+  Check,
+  Upload,
+  FileText,
+  X,
+  Focus,
+  BookOpen,
+  Sparkles,
+} from 'lucide-react';
+import { cn } from '@/lib/utils';
+
+// ── Constants ─────────────────────────────────────────────────
+
+type Phase = 'welcome' | 'brief' | 'lens' | 'generate';
+
+const AUDIENCE_OPTIONS = [
+  { value: 'INVESTORS', label: 'Investors', desc: 'VCs, angels, or PE firms' },
+  { value: 'CUSTOMERS', label: 'Customers', desc: 'Prospects or existing clients' },
+  { value: 'EXECUTIVES', label: 'Executives', desc: 'C-suite decision makers' },
+  { value: 'TEAM', label: 'Team', desc: 'Internal team or all-hands' },
+  { value: 'CONFERENCE', label: 'Conference', desc: 'Public talks or panels' },
+  { value: 'BOARD', label: 'Board', desc: 'Board members or stakeholders' },
+  { value: 'TECHNICAL', label: 'Technical', desc: 'Engineers or architects' },
+];
+
+const GOAL_OPTIONS = [
+  { value: 'RAISE_FUNDING', label: 'Raise Funding', desc: 'Secure investment capital' },
+  { value: 'SELL_PRODUCT', label: 'Sell Product', desc: 'Close a deal or demo' },
+  { value: 'GET_BUYIN', label: 'Get Buy-In', desc: 'Win internal approval' },
+  { value: 'EDUCATE', label: 'Educate', desc: 'Teach or train the audience' },
+  { value: 'INSPIRE', label: 'Inspire', desc: 'Motivate and energize' },
+  { value: 'REPORT_RESULTS', label: 'Report Results', desc: 'Share metrics and outcomes' },
+];
+
+const TONE_OPTIONS = [
+  { value: 'FORMAL', label: 'Formal', desc: 'Professional and polished' },
+  { value: 'CONVERSATIONAL', label: 'Conversational', desc: 'Warm and approachable' },
+  { value: 'BOLD', label: 'Bold', desc: 'Confident and assertive' },
+  { value: 'INSPIRATIONAL', label: 'Inspirational', desc: 'Visionary and forward-looking' },
+  { value: 'ANALYTICAL', label: 'Analytical', desc: 'Data-driven and precise' },
+  { value: 'STORYTELLING', label: 'Storytelling', desc: 'Narrative-driven' },
+];
+
+const STAGE_OPTIONS = [
+  { value: 'IDEA', label: 'Idea' },
+  { value: 'MVP', label: 'MVP' },
+  { value: 'GROWTH', label: 'Growth' },
+  { value: 'ENTERPRISE', label: 'Enterprise' },
+];
+
+const TECH_OPTIONS = [
+  { value: 'NON_TECHNICAL', label: 'Non-Technical' },
+  { value: 'SEMI_TECHNICAL', label: 'Semi-Technical' },
+  { value: 'TECHNICAL', label: 'Technical' },
+  { value: 'HIGHLY_TECHNICAL', label: 'Highly Technical' },
+];
+
+function formatEnum(value: string): string {
+  return value.toLowerCase().replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+// ── Persistence ───────────────────────────────────────────────
+
+interface OnboardingState {
+  phase: Phase;
+  briefId: string | null;
+  lensId: string | null;
+}
+
+function saveState(state: OnboardingState) {
+  localStorage.setItem('onboarding-state', JSON.stringify(state));
+}
+
+function loadState(): OnboardingState | null {
+  try {
+    const raw = localStorage.getItem('onboarding-state');
+    if (!raw) return null;
+    return JSON.parse(raw) as OnboardingState;
+  } catch {
+    return null;
+  }
+}
+
+function clearState() {
+  localStorage.removeItem('onboarding-state');
+}
+
+// ── Card Selector Component ───────────────────────────────────
+
+function CardSelector({ options, value, onChange }: {
+  options: Array<{ value: string; label: string; desc?: string }>;
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  return (
+    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      {options.map((opt) => (
+        <button
+          key={opt.value}
+          onClick={() => onChange(opt.value)}
+          className={cn(
+            'rounded-lg border-2 p-4 text-left transition-colors',
+            value === opt.value
+              ? 'border-primary bg-primary/5'
+              : 'border-border hover:border-primary/30',
+          )}
+        >
+          <p className="font-medium text-foreground">{opt.label}</p>
+          {opt.desc && (
+            <p className="mt-1 text-xs text-muted-foreground">{opt.desc}</p>
+          )}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+// ── Main Component ────────────────────────────────────────────
+
+export function OnboardingPage() {
+  const navigate = useNavigate();
+  const user = useAuthStore((s) => s.user);
+  const completeOnboarding = useAuthStore((s) => s.completeOnboarding);
+
+  // Already completed onboarding — redirect
+  useEffect(() => {
+    if (user?.onboardingCompleted) {
+      navigate('/cockpit', { replace: true });
+    }
+  }, [user, navigate]);
+
+  // ── Phase state ────────────────────────────────────────────
+
+  const [phase, setPhase] = useState<Phase>('welcome');
+  const [briefId, setBriefId] = useState<string | null>(null);
+  const [lensId, setLensId] = useState<string | null>(null);
+
+  // Restore state from localStorage
+  useEffect(() => {
+    const saved = loadState();
+    if (saved) {
+      setPhase(saved.phase);
+      setBriefId(saved.briefId);
+      setLensId(saved.lensId);
+    }
+  }, []);
+
+  // Persist state
+  useEffect(() => {
+    saveState({ phase, briefId, lensId });
+  }, [phase, briefId, lensId]);
+
+  const goToPhase = useCallback((p: Phase) => {
+    setPhase(p);
+  }, []);
+
+  // ── Brief state ────────────────────────────────────────────
+
+  const { createBrief, uploadDocument, addTextDocument, addUrlDocument } = usePitchBriefStore();
+  const [briefStep, setBriefStep] = useState(0); // 0=name, 1=docs, 2=done
+  const [briefName, setBriefName] = useState('');
+  const [briefDesc, setBriefDesc] = useState('');
+  const [pendingFiles, setPendingFiles] = useState<File[]>([]);
+  const [pendingTexts, setPendingTexts] = useState<Array<{ title: string; content: string }>>([]);
+  const [pendingUrls, setPendingUrls] = useState<Array<{ title: string; url: string }>>([]);
+  const [textTitle, setTextTitle] = useState('');
+  const [textInput, setTextInput] = useState('');
+  const [urlTitle, setUrlTitle] = useState('');
+  const [urlInput, setUrlInput] = useState('');
+  const [dragActive, setDragActive] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const totalDocs = pendingFiles.length + pendingTexts.length + pendingUrls.length;
+
+  const handleBriefNext = useCallback(async () => {
+    if (briefStep === 0) {
+      if (!briefName.trim()) return;
+      setIsSubmitting(true);
+      try {
+        const id = await createBrief({ name: briefName, description: briefDesc || undefined });
+        setBriefId(id);
+        setBriefStep(1);
+      } catch (err) {
+        console.error('Failed to create brief:', err);
+      } finally {
+        setIsSubmitting(false);
+      }
+    } else if (briefStep === 1) {
+      if (!briefId) return;
+      setIsSubmitting(true);
+      try {
+        for (const file of pendingFiles) {
+          await uploadDocument(briefId, file);
+        }
+        for (const text of pendingTexts) {
+          await addTextDocument(briefId, text.content, text.title);
+        }
+        for (const url of pendingUrls) {
+          await addUrlDocument(briefId, url.url, url.title);
+        }
+        setBriefStep(2);
+      } catch (err) {
+        console.error('Failed to upload documents:', err);
+      } finally {
+        setIsSubmitting(false);
+      }
+    } else {
+      goToPhase('lens');
+    }
+  }, [briefStep, briefName, briefDesc, briefId, pendingFiles, pendingTexts, pendingUrls, createBrief, uploadDocument, addTextDocument, addUrlDocument, goToPhase]);
+
+  // ── Lens state ─────────────────────────────────────────────
+
+  const { createLens, getRecommendations, recommendations, loadFrameworks } = usePitchLensStore();
+  const [lensStep, setLensStep] = useState(0); // 0..6
+  const [lensForm, setLensForm] = useState<CreatePitchLensInput>({
+    name: '',
+    description: '',
+    audienceType: '',
+    pitchGoal: '',
+    industry: '',
+    companyStage: 'MVP',
+    toneStyle: '',
+    technicalLevel: 'SEMI_TECHNICAL',
+    selectedFramework: '',
+    customGuidance: '',
+  });
+
+  useEffect(() => {
+    loadFrameworks();
+  }, [loadFrameworks]);
+
+  // Auto-select top recommendation when recommendations load
+  useEffect(() => {
+    if (lensStep === 5 && recommendations.length > 0 && !lensForm.selectedFramework) {
+      setLensForm((f) => ({ ...f, selectedFramework: recommendations[0].framework.id }));
+    }
+  }, [recommendations, lensStep, lensForm.selectedFramework]);
+
+  const lensCanProceed = (): boolean => {
+    switch (lensStep) {
+      case 0: return lensForm.name.trim().length > 0;
+      case 1: return lensForm.audienceType !== '';
+      case 2: return lensForm.pitchGoal !== '';
+      case 3: return lensForm.industry.trim().length > 0;
+      case 4: return lensForm.toneStyle !== '';
+      case 5: return lensForm.selectedFramework !== '';
+      case 6: return true;
+      default: return false;
+    }
+  };
+
+  const handleLensNext = useCallback(async () => {
+    if (lensStep === 4) {
+      await getRecommendations({
+        audienceType: lensForm.audienceType,
+        pitchGoal: lensForm.pitchGoal,
+        companyStage: lensForm.companyStage,
+        technicalLevel: lensForm.technicalLevel,
+      });
+    }
+    setLensStep(lensStep + 1);
+  }, [lensStep, lensForm, getRecommendations]);
+
+  const handleLensSubmit = useCallback(async () => {
+    setIsSubmitting(true);
+    try {
+      const id = await createLens(lensForm);
+      setLensId(id);
+      goToPhase('generate');
+    } catch (err) {
+      console.error('Failed to create lens:', err);
+    } finally {
+      setIsSubmitting(false);
+    }
+  }, [lensForm, createLens, goToPhase]);
+
+  // ── Generate ───────────────────────────────────────────────
+
+  const handleGenerate = useCallback(async () => {
+    setIsSubmitting(true);
+    try {
+      await completeOnboarding();
+      clearState();
+      const params = new URLSearchParams();
+      if (briefId) params.set('briefId', briefId);
+      if (lensId) params.set('lensId', lensId);
+      const qs = params.toString();
+      navigate(`/workspace/new${qs ? `?${qs}` : ''}`, { replace: true });
+    } catch (err) {
+      console.error('Failed to complete onboarding:', err);
+    } finally {
+      setIsSubmitting(false);
+    }
+  }, [briefId, lensId, completeOnboarding, navigate]);
+
+  // ── Drag & Drop handlers ───────────────────────────────────
+
+  const handleDrag = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === 'dragenter' || e.type === 'dragover') setDragActive(true);
+    else if (e.type === 'dragleave') setDragActive(false);
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    setPendingFiles((prev) => [...prev, ...Array.from(e.dataTransfer.files)]);
+  }, []);
+
+  // ── LENS STEPS labels ──────────────────────────────────────
+
+  const LENS_STEPS = ['Name', 'Audience', 'Goal', 'Context', 'Tone', 'Framework', 'Review'] as const;
+
+  // ── Render ─────────────────────────────────────────────────
+
+  return (
+    <div className="flex min-h-screen flex-col bg-background">
+      {/* Minimal header */}
+      <header className="flex h-14 items-center justify-center border-b border-border">
+        <div className="flex items-center gap-2">
+          <Layers className="h-5 w-5 text-primary" />
+          <span className="text-lg font-bold text-foreground">Pitchable</span>
+        </div>
+      </header>
+
+      <main className="flex flex-1 items-start justify-center px-4 py-8">
+        <div className="w-full max-w-2xl">
+          {/* ─── Welcome ──────────────────────────────────── */}
+          {phase === 'welcome' && (
+            <div className="space-y-8 text-center">
+              <div>
+                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
+                  <Sparkles className="h-8 w-8 text-primary" />
+                </div>
+                <h1 className="text-3xl font-bold text-foreground">Welcome to Pitchable!</h1>
+                <p className="mt-2 text-muted-foreground">
+                  Let's set up your first pitch deck in 3 steps.
+                </p>
+              </div>
+
+              <div className="mx-auto max-w-md space-y-4">
+                {[
+                  { icon: BookOpen, label: 'Add your context', desc: 'Upload documents or paste text to ground your pitch in real content' },
+                  { icon: Focus, label: 'Define your strategy', desc: 'Choose audience, goal, tone, and storytelling framework' },
+                  { icon: Layers, label: 'Generate your deck', desc: 'Describe your topic and watch slides appear in real-time' },
+                ].map((step, i) => (
+                  <div key={i} className="flex items-start gap-4 rounded-lg border border-border bg-card p-4 text-left">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary">
+                      {i + 1}
+                    </div>
+                    <div>
+                      <p className="font-medium text-foreground">{step.label}</p>
+                      <p className="text-sm text-muted-foreground">{step.desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <button
+                onClick={() => goToPhase('brief')}
+                className="inline-flex items-center gap-2 rounded-lg bg-primary px-8 py-3 font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+              >
+                Get Started
+                <ArrowRight className="h-4 w-4" />
+              </button>
+            </div>
+          )}
+
+          {/* ─── Brief ────────────────────────────────────── */}
+          {phase === 'brief' && (
+            <div className="space-y-6">
+              <div>
+                <p className="text-sm font-medium text-primary">Step 1 of 3</p>
+                <h2 className="text-2xl font-bold text-foreground">Add Your Context</h2>
+                <p className="mt-1 text-muted-foreground">
+                  Upload documents, paste text, or add URLs to improve AI generation quality.
+                </p>
+              </div>
+
+              {/* Brief step indicators */}
+              <div className="flex items-center gap-2">
+                {['Name', 'Documents', 'Done'].map((label, i) => (
+                  <div key={label} className="flex items-center gap-2">
+                    <div className={cn(
+                      'flex h-7 w-7 items-center justify-center rounded-full text-xs font-medium',
+                      i < briefStep ? 'bg-primary text-primary-foreground'
+                        : i === briefStep ? 'border-2 border-primary text-primary'
+                        : 'border border-border text-muted-foreground',
+                    )}>
+                      {i < briefStep ? <Check className="h-3.5 w-3.5" /> : i + 1}
+                    </div>
+                    {i < 2 && <div className={cn('h-px w-8', i < briefStep ? 'bg-primary' : 'bg-border')} />}
+                  </div>
+                ))}
+              </div>
+
+              <div className="rounded-lg border border-border bg-card p-6">
+                {/* Brief Step 0: Name */}
+                {briefStep === 0 && (
+                  <div className="space-y-4">
+                    <div>
+                      <label className="mb-1.5 block text-sm font-medium text-foreground">Brief Name</label>
+                      <input
+                        type="text"
+                        value={briefName}
+                        onChange={(e) => setBriefName(e.target.value)}
+                        maxLength={100}
+                        placeholder="e.g., Series A Pitch Context, Q1 Board Materials..."
+                        className="w-full rounded-lg border border-border bg-background px-4 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                        autoFocus
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-1.5 block text-sm font-medium text-foreground">Description (optional)</label>
+                      <textarea
+                        value={briefDesc}
+                        onChange={(e) => setBriefDesc(e.target.value)}
+                        rows={3}
+                        maxLength={2000}
+                        placeholder="What is this brief about?"
+                        className="w-full rounded-lg border border-border bg-background px-4 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary resize-none"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Brief Step 1: Documents */}
+                {briefStep === 1 && (
+                  <div className="space-y-6">
+                    {/* File upload */}
+                    <div
+                      onDragEnter={handleDrag}
+                      onDragLeave={handleDrag}
+                      onDragOver={handleDrag}
+                      onDrop={handleDrop}
+                      className={cn(
+                        'border-2 border-dashed rounded-lg p-6 text-center transition-colors',
+                        dragActive ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50',
+                      )}
+                    >
+                      <Upload className="mx-auto mb-2 h-6 w-6 text-muted-foreground" />
+                      <p className="text-sm text-foreground">Drag and drop files or</p>
+                      <label className="mt-2 inline-block cursor-pointer rounded-lg bg-primary px-4 py-1.5 text-sm text-primary-foreground hover:bg-primary/90">
+                        Browse Files
+                        <input type="file" multiple onChange={(e) => {
+                          setPendingFiles((prev) => [...prev, ...Array.from(e.target.files || [])]);
+                        }} className="hidden" />
+                      </label>
+                    </div>
+
+                    {/* Text input */}
+                    <div className="space-y-2">
+                      <h3 className="text-sm font-medium text-foreground">Add Text</h3>
+                      <input
+                        type="text" value={textTitle}
+                        onChange={(e) => setTextTitle(e.target.value)}
+                        placeholder="Document title"
+                        className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                      />
+                      <textarea
+                        value={textInput}
+                        onChange={(e) => setTextInput(e.target.value)}
+                        rows={3}
+                        placeholder="Paste your text content"
+                        className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary resize-none"
+                      />
+                      <button
+                        onClick={() => {
+                          if (textTitle.trim() && textInput.trim()) {
+                            setPendingTexts((prev) => [...prev, { title: textTitle, content: textInput }]);
+                            setTextTitle(''); setTextInput('');
+                          }
+                        }}
+                        disabled={!textTitle.trim() || !textInput.trim()}
+                        className="rounded-lg bg-primary px-4 py-1.5 text-sm text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+                      >
+                        Add Text
+                      </button>
+                    </div>
+
+                    {/* URL input */}
+                    <div className="space-y-2">
+                      <h3 className="text-sm font-medium text-foreground">Add URL</h3>
+                      <input
+                        type="text" value={urlTitle}
+                        onChange={(e) => setUrlTitle(e.target.value)}
+                        placeholder="Document title"
+                        className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                      />
+                      <input
+                        type="url" value={urlInput}
+                        onChange={(e) => setUrlInput(e.target.value)}
+                        placeholder="https://example.com/document"
+                        className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                      />
+                      <button
+                        onClick={() => {
+                          if (urlTitle.trim() && urlInput.trim()) {
+                            setPendingUrls((prev) => [...prev, { title: urlTitle, url: urlInput }]);
+                            setUrlTitle(''); setUrlInput('');
+                          }
+                        }}
+                        disabled={!urlTitle.trim() || !urlInput.trim()}
+                        className="rounded-lg bg-primary px-4 py-1.5 text-sm text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+                      >
+                        Add URL
+                      </button>
+                    </div>
+
+                    {/* Pending documents list */}
+                    {totalDocs > 0 && (
+                      <div>
+                        <h3 className="mb-2 text-sm font-medium text-foreground">Added ({totalDocs})</h3>
+                        <div className="space-y-2">
+                          {pendingFiles.map((f, i) => (
+                            <div key={`f-${i}`} className="flex items-center justify-between rounded-lg border border-border bg-background p-2.5">
+                              <div className="flex items-center gap-2">
+                                <FileText className="h-4 w-4 text-muted-foreground" />
+                                <span className="text-sm text-foreground">{f.name}</span>
+                              </div>
+                              <button onClick={() => setPendingFiles((prev) => prev.filter((_, j) => j !== i))} className="text-muted-foreground hover:text-foreground">
+                                <X className="h-4 w-4" />
+                              </button>
+                            </div>
+                          ))}
+                          {pendingTexts.map((t, i) => (
+                            <div key={`t-${i}`} className="flex items-center justify-between rounded-lg border border-border bg-background p-2.5">
+                              <div className="flex items-center gap-2">
+                                <FileText className="h-4 w-4 text-muted-foreground" />
+                                <span className="text-sm text-foreground">{t.title}</span>
+                              </div>
+                              <button onClick={() => setPendingTexts((prev) => prev.filter((_, j) => j !== i))} className="text-muted-foreground hover:text-foreground">
+                                <X className="h-4 w-4" />
+                              </button>
+                            </div>
+                          ))}
+                          {pendingUrls.map((u, i) => (
+                            <div key={`u-${i}`} className="flex items-center justify-between rounded-lg border border-border bg-background p-2.5">
+                              <div className="flex items-center gap-2">
+                                <FileText className="h-4 w-4 text-muted-foreground" />
+                                <span className="text-sm text-foreground">{u.title}</span>
+                              </div>
+                              <button onClick={() => setPendingUrls((prev) => prev.filter((_, j) => j !== i))} className="text-muted-foreground hover:text-foreground">
+                                <X className="h-4 w-4" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Brief Step 2: Done */}
+                {briefStep === 2 && (
+                  <div className="space-y-4 text-center py-4">
+                    <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-green-500/10">
+                      <Check className="h-6 w-6 text-green-500" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold text-foreground">Brief Created</h3>
+                      <p className="text-sm text-muted-foreground">
+                        "{briefName}" — {totalDocs} {totalDocs === 1 ? 'document' : 'documents'} added
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Brief navigation */}
+              <div className="flex justify-between">
+                <button
+                  onClick={() => briefStep > 0 ? setBriefStep(briefStep - 1) : goToPhase('welcome')}
+                  className="flex items-center gap-1.5 rounded-lg border border-border px-4 py-2 text-sm hover:bg-accent"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                  Back
+                </button>
+                <div className="flex gap-3">
+                  {briefStep === 0 && (
+                    <button
+                      onClick={() => goToPhase('lens')}
+                      className="rounded-lg border border-border px-4 py-2 text-sm text-muted-foreground hover:bg-accent"
+                    >
+                      Skip Brief
+                    </button>
+                  )}
+                  {briefStep === 1 && (
+                    <button
+                      onClick={() => setBriefStep(2)}
+                      disabled={isSubmitting}
+                      className="rounded-lg border border-border px-4 py-2 text-sm text-muted-foreground hover:bg-accent"
+                    >
+                      Skip Documents
+                    </button>
+                  )}
+                  <button
+                    onClick={handleBriefNext}
+                    disabled={isSubmitting || (briefStep === 0 && !briefName.trim())}
+                    className="flex items-center gap-1.5 rounded-lg bg-primary px-6 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+                  >
+                    {isSubmitting ? 'Saving...' : briefStep === 2 ? 'Continue to Strategy' : 'Next'}
+                    <ArrowRight className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ─── Lens ─────────────────────────────────────── */}
+          {phase === 'lens' && (
+            <div className="space-y-6">
+              <div>
+                <p className="text-sm font-medium text-primary">Step 2 of 3</p>
+                <h2 className="text-2xl font-bold text-foreground">Define Your Strategy</h2>
+                <p className="mt-1 text-muted-foreground">
+                  Configure audience, goal, tone, and storytelling framework for your pitch.
+                </p>
+              </div>
+
+              {/* Lens step indicators */}
+              <div className="flex items-center gap-1">
+                {LENS_STEPS.map((s, i) => (
+                  <div key={s} className="flex items-center gap-1">
+                    <div className={cn(
+                      'flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-medium',
+                      i < lensStep ? 'bg-primary text-primary-foreground'
+                        : i === lensStep ? 'border-2 border-primary text-primary'
+                        : 'border border-border text-muted-foreground',
+                    )}>
+                      {i < lensStep ? <Check className="h-3 w-3" /> : i + 1}
+                    </div>
+                    {i < LENS_STEPS.length - 1 && (
+                      <div className={cn('h-px w-3', i < lensStep ? 'bg-primary' : 'bg-border')} />
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              <div className="rounded-lg border border-border bg-card p-6">
+                {/* Step 0: Name */}
+                {lensStep === 0 && (
+                  <div className="space-y-4">
+                    <div>
+                      <label className="mb-1.5 block text-sm font-medium text-foreground">Lens Name</label>
+                      <input
+                        type="text"
+                        value={lensForm.name}
+                        onChange={(e) => setLensForm({ ...lensForm, name: e.target.value })}
+                        placeholder="e.g., Series A Pitch, Q1 Board Update..."
+                        className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                        autoFocus
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-1.5 block text-sm font-medium text-foreground">Description (optional)</label>
+                      <textarea
+                        value={lensForm.description}
+                        onChange={(e) => setLensForm({ ...lensForm, description: e.target.value })}
+                        placeholder="What is this lens for?"
+                        rows={3}
+                        className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Step 1: Audience */}
+                {lensStep === 1 && (
+                  <CardSelector
+                    options={AUDIENCE_OPTIONS}
+                    value={lensForm.audienceType}
+                    onChange={(v) => setLensForm({ ...lensForm, audienceType: v })}
+                  />
+                )}
+
+                {/* Step 2: Goal */}
+                {lensStep === 2 && (
+                  <CardSelector
+                    options={GOAL_OPTIONS}
+                    value={lensForm.pitchGoal}
+                    onChange={(v) => setLensForm({ ...lensForm, pitchGoal: v })}
+                  />
+                )}
+
+                {/* Step 3: Context */}
+                {lensStep === 3 && (
+                  <div className="space-y-4">
+                    <div>
+                      <label className="mb-1.5 block text-sm font-medium text-foreground">Industry / Domain</label>
+                      <input
+                        type="text"
+                        value={lensForm.industry}
+                        onChange={(e) => setLensForm({ ...lensForm, industry: e.target.value })}
+                        placeholder="e.g., AI/SaaS, Healthcare, Fintech..."
+                        className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                        autoFocus
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-1.5 block text-sm font-medium text-foreground">Company Stage</label>
+                      <div className="flex gap-2">
+                        {STAGE_OPTIONS.map((opt) => (
+                          <button
+                            key={opt.value}
+                            onClick={() => setLensForm({ ...lensForm, companyStage: opt.value })}
+                            className={cn(
+                              'flex-1 rounded-lg border-2 px-3 py-2 text-sm font-medium transition-colors',
+                              lensForm.companyStage === opt.value
+                                ? 'border-primary bg-primary/5 text-primary'
+                                : 'border-border text-muted-foreground hover:border-primary/30',
+                            )}
+                          >
+                            {opt.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <label className="mb-1.5 block text-sm font-medium text-foreground">Audience Technical Level</label>
+                      <div className="flex gap-2">
+                        {TECH_OPTIONS.map((opt) => (
+                          <button
+                            key={opt.value}
+                            onClick={() => setLensForm({ ...lensForm, technicalLevel: opt.value })}
+                            className={cn(
+                              'flex-1 rounded-lg border-2 px-3 py-1.5 text-xs font-medium transition-colors',
+                              lensForm.technicalLevel === opt.value
+                                ? 'border-primary bg-primary/5 text-primary'
+                                : 'border-border text-muted-foreground hover:border-primary/30',
+                            )}
+                          >
+                            {opt.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Step 4: Tone */}
+                {lensStep === 4 && (
+                  <CardSelector
+                    options={TONE_OPTIONS}
+                    value={lensForm.toneStyle}
+                    onChange={(v) => setLensForm({ ...lensForm, toneStyle: v })}
+                  />
+                )}
+
+                {/* Step 5: Framework */}
+                {lensStep === 5 && (
+                  <div className="space-y-4">
+                    {recommendations.length > 0 && (
+                      <>
+                        <p className="text-sm text-muted-foreground">
+                          Based on your profile, we recommend these storytelling frameworks:
+                        </p>
+                        <div className="space-y-3">
+                          {recommendations.map((rec, i) => (
+                            <button
+                              key={rec.framework.id}
+                              onClick={() => setLensForm({ ...lensForm, selectedFramework: rec.framework.id })}
+                              className={cn(
+                                'w-full rounded-lg border-2 p-4 text-left transition-colors',
+                                lensForm.selectedFramework === rec.framework.id
+                                  ? 'border-primary bg-primary/5'
+                                  : 'border-border hover:border-primary/30',
+                              )}
+                            >
+                              <div className="mb-2 flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                  <span className={cn(
+                                    'flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold',
+                                    i === 0 ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground',
+                                  )}>
+                                    {i + 1}
+                                  </span>
+                                  <h3 className="font-semibold text-foreground">{rec.framework.name}</h3>
+                                </div>
+                                <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+                                  {rec.score}% match
+                                </span>
+                              </div>
+                              <p className="mb-2 text-sm text-muted-foreground">{rec.framework.shortDescription}</p>
+                              <div className="flex flex-wrap gap-1">
+                                {rec.reasons.map((reason, j) => (
+                                  <span key={j} className="rounded bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">
+                                    {reason}
+                                  </span>
+                                ))}
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      </>
+                    )}
+                    <div>
+                      <label className="mb-1.5 block text-sm font-medium text-foreground">
+                        Custom Guidance (optional)
+                      </label>
+                      <textarea
+                        value={lensForm.customGuidance}
+                        onChange={(e) => setLensForm({ ...lensForm, customGuidance: e.target.value })}
+                        placeholder="Any additional instructions for the AI..."
+                        rows={3}
+                        className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Step 6: Review */}
+                {lensStep === 6 && (
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-3 border-b border-border pb-4">
+                      <Focus className="h-6 w-6 text-primary" />
+                      <div>
+                        <h3 className="font-semibold text-foreground">{lensForm.name}</h3>
+                        {lensForm.description && (
+                          <p className="text-sm text-muted-foreground">{lensForm.description}</p>
+                        )}
+                      </div>
+                    </div>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      {[
+                        { label: 'Audience', value: formatEnum(lensForm.audienceType) },
+                        { label: 'Goal', value: formatEnum(lensForm.pitchGoal) },
+                        { label: 'Industry', value: lensForm.industry },
+                        { label: 'Stage', value: formatEnum(lensForm.companyStage) },
+                        { label: 'Tone', value: formatEnum(lensForm.toneStyle) },
+                        { label: 'Technical Level', value: formatEnum(lensForm.technicalLevel) },
+                      ].map((item) => (
+                        <div key={item.label}>
+                          <p className="text-xs text-muted-foreground">{item.label}</p>
+                          <p className="text-sm font-medium text-foreground">{item.value}</p>
+                        </div>
+                      ))}
+                    </div>
+                    {lensForm.selectedFramework && (
+                      <div className="border-t border-border pt-3">
+                        <p className="text-xs text-muted-foreground">Framework</p>
+                        <p className="text-sm font-medium text-foreground">{formatEnum(lensForm.selectedFramework)}</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Lens navigation */}
+              <div className="flex justify-between">
+                <button
+                  onClick={() => lensStep > 0 ? setLensStep(lensStep - 1) : goToPhase(briefId ? 'brief' : 'welcome')}
+                  className="flex items-center gap-1.5 rounded-lg border border-border px-4 py-2 text-sm hover:bg-accent"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                  Back
+                </button>
+
+                {lensStep < LENS_STEPS.length - 1 ? (
+                  <button
+                    onClick={handleLensNext}
+                    disabled={!lensCanProceed()}
+                    className={cn(
+                      'flex items-center gap-1.5 rounded-lg px-6 py-2 text-sm font-medium',
+                      lensCanProceed()
+                        ? 'bg-primary text-primary-foreground hover:bg-primary/90'
+                        : 'cursor-not-allowed bg-muted text-muted-foreground',
+                    )}
+                  >
+                    Next
+                    <ArrowRight className="h-4 w-4" />
+                  </button>
+                ) : (
+                  <button
+                    onClick={handleLensSubmit}
+                    disabled={isSubmitting}
+                    className="flex items-center gap-1.5 rounded-lg bg-primary px-6 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+                  >
+                    {isSubmitting ? 'Creating...' : 'Create Lens'}
+                    <Check className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* ─── Generate ─────────────────────────────────── */}
+          {phase === 'generate' && (
+            <div className="space-y-8 text-center">
+              <div>
+                <p className="text-sm font-medium text-primary">Step 3 of 3</p>
+                <h2 className="text-2xl font-bold text-foreground">Generate Your First Deck</h2>
+                <p className="mt-1 text-muted-foreground">
+                  You're all set! Head to the workspace to describe your topic and generate slides.
+                </p>
+              </div>
+
+              <div className="mx-auto max-w-md space-y-3">
+                {briefId && (
+                  <div className="flex items-center gap-3 rounded-lg border border-border bg-card p-3">
+                    <BookOpen className="h-5 w-5 text-primary" />
+                    <div className="text-left">
+                      <p className="text-xs text-muted-foreground">Brief</p>
+                      <p className="text-sm font-medium text-foreground">{briefName || 'Created'}</p>
+                    </div>
+                    <Check className="ml-auto h-4 w-4 text-green-500" />
+                  </div>
+                )}
+                {lensId && (
+                  <div className="flex items-center gap-3 rounded-lg border border-border bg-card p-3">
+                    <Focus className="h-5 w-5 text-primary" />
+                    <div className="text-left">
+                      <p className="text-xs text-muted-foreground">Lens</p>
+                      <p className="text-sm font-medium text-foreground">{lensForm.name || 'Created'}</p>
+                    </div>
+                    <Check className="ml-auto h-4 w-4 text-green-500" />
+                  </div>
+                )}
+              </div>
+
+              <button
+                onClick={handleGenerate}
+                disabled={isSubmitting}
+                className="inline-flex items-center gap-2 rounded-lg bg-primary px-8 py-3 font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors"
+              >
+                {isSubmitting ? 'Setting up...' : 'Open Workspace'}
+                <ArrowRight className="h-4 w-4" />
+              </button>
+            </div>
+          )}
+        </div>
+      </main>
+    </div>
+  );
+}
+
+export default OnboardingPage;
