@@ -15,8 +15,13 @@ export function LoginPage() {
     e.preventDefault();
     try {
       await login(email, password);
-      const returnTo = searchParams.get('returnTo') || '/dashboard';
-      navigate(returnTo, { replace: true });
+      const { user } = useAuthStore.getState();
+      if (user && !user.onboardingCompleted) {
+        navigate('/onboarding', { replace: true });
+      } else {
+        const returnTo = searchParams.get('returnTo') || '/cockpit';
+        navigate(returnTo, { replace: true });
+      }
     } catch {
       // Error is set in the store
     }

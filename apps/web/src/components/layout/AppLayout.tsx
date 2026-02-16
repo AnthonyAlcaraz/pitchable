@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/stores/auth.store';
 import {
@@ -32,6 +32,12 @@ export function AppLayout() {
   const { user, logout } = useAuthStore();
   const location = useLocation();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (user && !user.onboardingCompleted) {
+      navigate('/onboarding', { replace: true });
+    }
+  }, [user, navigate]);
 
   const handleLogout = async () => {
     await logout();

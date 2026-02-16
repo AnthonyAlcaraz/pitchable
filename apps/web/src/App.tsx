@@ -26,6 +26,7 @@ const GalleryViewerPage = lazy(() => import('@/pages/GalleryViewerPage'));
 const ApiKeysPage = lazy(() => import('@/pages/ApiKeysPage'));
 const DocsPage = lazy(() => import('@/pages/DocsPage'));
 const AnalyticsPage = lazy(() => import('@/pages/AnalyticsPage'));
+const OnboardingPage = lazy(() => import('@/pages/OnboardingPage'));
 
 function PageFallback() {
   return (
@@ -74,6 +75,16 @@ function App() {
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="/settings/api-keys" element={<ApiKeysPage />} />
           </Route>
+
+          {/* Protected onboarding route (full-width, no sidebar) */}
+          <Route
+            path="/onboarding"
+            element={
+              <ProtectedRoute>
+                <OnboardingPage />
+              </ProtectedRoute>
+            }
+          />
 
           {/* Protected workspace route (full-width, no sidebar) */}
           <Route

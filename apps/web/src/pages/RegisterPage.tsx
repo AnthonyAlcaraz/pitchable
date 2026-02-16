@@ -29,7 +29,7 @@ export function RegisterPage() {
 
     try {
       await register(email, password, name);
-      navigate('/dashboard', { replace: true });
+      navigate('/onboarding', { replace: true });
     } catch {
       // Error is set in the store
     }
