@@ -37,7 +37,7 @@ Speaker Notes: ${slide.speakerNotes}`;
           { role: 'system', content: customLimits ? buildContentReviewerPrompt(customLimits) : CONTENT_REVIEWER_SYSTEM_PROMPT },
           { role: 'user', content: `Review this slide:\n\n${slideDescription}` },
         ],
-        LlmModel.HAIKU,
+        LlmModel.OPUS,
         isValidReviewResult,
         2,
       );
@@ -49,12 +49,9 @@ Speaker Notes: ${slide.speakerNotes}`;
         suggestedSplits: result.suggestedSplits,
       };
     } catch (err) {
-      this.logger.warn(`Content review failed, defaulting to PASS: ${err}`);
-      return {
-        verdict: 'PASS',
-        score: 1.0,
-        issues: [],
-      };
+      this.logger.error(`Content review failed (blocking): ${err}`);
+      // Re-throw so callers handle the failure explicitly instead of silent pass-through
+      throw err;
     }
   }
 

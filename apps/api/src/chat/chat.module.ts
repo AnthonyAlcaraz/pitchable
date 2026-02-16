@@ -9,6 +9,7 @@ import { SlideModifierService } from './slide-modifier.service.js';
 import { ContentReviewerService } from './content-reviewer.service.js';
 import { FeedbackLogService } from './feedback-log.service.js';
 import { ValidationGateService } from './validation-gate.service.js';
+import { QualityAgentsService } from './quality-agents.service.js';
 import { PrismaModule } from '../prisma/prisma.module.js';
 import { KnowledgeBaseModule } from '../knowledge-base/knowledge-base.module.js';
 import { ConstraintsModule } from '../constraints/constraints.module.js';
@@ -30,6 +31,7 @@ import { EmailModule } from '../email/email.module.js';
     ContentReviewerService,
     FeedbackLogService,
     ValidationGateService,
+    QualityAgentsService,
   ],
   exports: [
     ChatService,
@@ -41,6 +43,7 @@ import { EmailModule } from '../email/email.module.js';
     ContentReviewerService,
     FeedbackLogService,
     ValidationGateService,
+    QualityAgentsService,
   ],
 })
 export class ChatModule {}

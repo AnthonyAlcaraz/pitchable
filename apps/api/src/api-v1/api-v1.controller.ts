@@ -10,6 +10,7 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
+import { SkipThrottle } from '@nestjs/throttler';
 import { ApiKeyGuard } from '../api-keys/guards/api-key.guard.js';
 import { RequireScopes } from '../api-keys/decorators/require-scopes.decorator.js';
 import { CurrentUser } from '../auth/decorators/current-user.decorator.js';
@@ -78,6 +79,7 @@ export class ApiV1Controller {
   // -- Generation -----------------------------------------------------
 
   @Post('generate')
+  @SkipThrottle()
   @RequireScopes('generation')
   @HttpCode(HttpStatus.CREATED)
   async generate(@CurrentUser() user: RequestUser, @Body() dto: GenerateDto) {

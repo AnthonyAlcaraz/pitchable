@@ -69,6 +69,15 @@ export function getImageFrequencyForTheme(themeName: string): string | undefined
   return IMAGE_FREQUENCY_PROMPT[theme.meta.imageFrequency];
 }
 
+/**
+ * Static lookup: get theme category by theme name.
+ * Used by Quality Agents for per-theme style rules.
+ */
+export function getThemeCategoryByName(themeName: string): string {
+  const theme = BUILT_IN_THEMES.find((t) => t.name === themeName);
+  return theme?.meta.category ?? 'dark';
+}
+
 const BUILT_IN_THEMES: ThemeDefinition[] = [
   // ── Dark Themes ───────────────────────────────────────────
   {

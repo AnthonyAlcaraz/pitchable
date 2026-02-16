@@ -12,6 +12,8 @@ import { CreditsService } from '../credits/credits.service.js';
 import { DECK_GENERATION_COST } from '../credits/tier-config.js';
 import { ImagesService } from '../images/images.service.js';
 import { NanoBananaService } from '../images/nano-banana.service.js';
+import { QualityAgentsService } from './quality-agents.service.js';
+import type { SlideForReview } from './quality-agents.service.js';
 import {
   buildOutlineSystemPrompt,
   buildOutlineUserPrompt,
@@ -24,7 +26,7 @@ import {
 import { DEFAULT_SLIDE_RANGES } from './dto/generation-config.dto.js';
 import { getFrameworkConfig } from '../pitch-lens/frameworks/story-frameworks.config.js';
 import { buildPitchLensInjection } from '../pitch-lens/prompts/pitch-lens-injection.prompt.js';
-import { getImageFrequencyForTheme } from '../themes/themes.service.js';
+import { getImageFrequencyForTheme, getThemeCategoryByName } from '../themes/themes.service.js';
 import {
   PresentationType,
   PresentationStatus,
@@ -74,6 +76,7 @@ export class GenerationService {
     private readonly credits: CreditsService,
     private readonly imagesService: ImagesService,
     private readonly nanoBanana: NanoBananaService,
+    private readonly qualityAgents: QualityAgentsService,
   ) {}
 
   /**
@@ -135,7 +138,7 @@ export class GenerationService {
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt },
         ],
-        LlmModel.SONNET,
+        LlmModel.OPUS,
         isValidOutline,
         2,
       );
@@ -307,7 +310,22 @@ export class GenerationService {
       : undefined;
 
     // 5. Build slide system prompt with user feedback injection
-    const imageFreqInstruction = theme ? getImageFrequencyForTheme(theme.name) : undefined;
+    // PitchLens imageFrequency overrides theme default when set
+    let imageFreqInstruction: string | undefined;
+    if (presWithLens?.pitchLens?.imageFrequency && presWithLens.pitchLens.imageFrequency > 0) {
+      const freq = presWithLens.pitchLens.imageFrequency;
+      if (freq === 1) {
+        imageFreqInstruction = 'MANDATORY: Generate a non-empty imagePromptHint for EVERY slide. Every single slide MUST have an image. Never set imagePromptHint to empty string.';
+      } else if (freq <= 2) {
+        imageFreqInstruction = `MANDATORY: Generate a non-empty imagePromptHint for at least every other slide. At minimum 50% of slides MUST have a non-empty imagePromptHint. Do NOT set all to empty string — the client explicitly requested frequent images.`;
+      } else if (freq <= 4) {
+        imageFreqInstruction = `Generate imagePromptHint for ~1 in ${freq} slides. Prefer data visualizations, product screenshots, and hero images.`;
+      } else {
+        imageFreqInstruction = `Generate imagePromptHint for ~1 in ${freq} slides. Set to empty string "" for the rest.`;
+      }
+    } else {
+      imageFreqInstruction = theme ? getImageFrequencyForTheme(theme.name) : undefined;
+    }
     const slideSystemPrompt = buildSlideGenerationSystemPrompt(
       config.presentationType,
       themeName,
@@ -524,8 +542,10 @@ export class GenerationService {
             `Slide ${actualSlideNumber} split skipped — budget exhausted (${currentTotal}/${maxTotalSlides})`,
           );
         }
-      } catch {
-        // Content review failed — treat as passed
+      } catch (reviewErr) {
+        // Content review failed — log and continue with original content (blocking behavior
+        // is handled by the service itself; if it throws, we still proceed with the slide)
+        this.logger.warn(`Content review error for slide ${actualSlideNumber}: ${reviewErr}`);
       }
 
       // Queue for validation gate (non-blocking: if auto-approved, skip)
@@ -572,7 +592,83 @@ export class GenerationService {
       };
     }
 
-    // 6. Mark presentation as completed and increment deck count
+    // 6. Multi-Agent Quality Review (Style + Narrative + Fact Check — all Opus 4.6)
+    yield { type: 'progress', content: 'Running quality review agents', metadata: { step: 'quality_review', status: 'running' } };
+
+    const allSlides = await this.prisma.slide.findMany({
+      where: { presentationId },
+      orderBy: { slideNumber: 'asc' },
+      select: { id: true, slideNumber: true, title: true, body: true, speakerNotes: true, slideType: true, imagePrompt: true },
+    });
+
+    const slidesForReview: SlideForReview[] = allSlides.map((s) => ({
+      slideNumber: s.slideNumber,
+      title: s.title,
+      body: s.body,
+      speakerNotes: s.speakerNotes ?? '',
+      slideType: s.slideType,
+      imagePromptHint: s.imagePrompt ?? undefined,
+    }));
+
+    // Determine theme category for style rules (from in-memory BUILT_IN_THEMES)
+    const themeCategory = getThemeCategoryByName(theme?.name ?? '');
+
+    try {
+      const qualityResult = await this.qualityAgents.reviewPresentation(slidesForReview, {
+        themeCategory,
+        themeName,
+        themeColors,
+        presentationType: config.presentationType || 'STANDARD',
+        frameworkName: presWithLens?.pitchLens?.selectedFramework ?? undefined,
+        userId,
+        presentationId,
+      });
+
+      yield { type: 'progress', content: 'Running quality review agents', metadata: { step: 'quality_review', status: 'complete' } };
+
+      // Apply auto-fixes from agents
+      if (qualityResult.fixes.length > 0) {
+        yield { type: 'token', content: `\n**Quality Review:** Auto-fixing ${qualityResult.fixes.length} slides...\n` };
+        for (const fix of qualityResult.fixes) {
+          const slideToFix = allSlides.find((s) => s.slideNumber === fix.slideNumber);
+          if (slideToFix) {
+            await this.prisma.slide.update({
+              where: { id: slideToFix.id },
+              data: { title: fix.fixedTitle, body: fix.fixedBody },
+            });
+            this.events.emitSlideUpdated({
+              presentationId,
+              slideId: slideToFix.id,
+              data: { title: fix.fixedTitle, body: fix.fixedBody },
+            });
+            yield { type: 'token', content: `  Fixed slide ${fix.slideNumber} (${fix.agent}): "${fix.fixedTitle}"\n` };
+          }
+        }
+      }
+
+      // Report quality metrics
+      const m = qualityResult.metrics;
+      yield {
+        type: 'token',
+        content: `\n**Quality Scores:** Style: ${(m.avgStyleScore * 100).toFixed(0)}% | Narrative: ${(m.narrativeScore * 100).toFixed(0)}% | Facts: ${(m.avgFactScore * 100).toFixed(0)}%${m.errorsFound > 0 ? ` | Errors fixed: ${m.errorsFound}` : ''}\n`,
+      };
+
+      // Report narrative issues (if any)
+      if (qualityResult.narrativeResult?.issues.length) {
+        const errors = qualityResult.narrativeResult.issues.filter((i) => i.severity === 'error');
+        if (errors.length > 0) {
+          yield { type: 'token', content: `\n**Narrative Issues:**\n` };
+          for (const issue of errors) {
+            yield { type: 'token', content: `- Slides ${issue.slideNumbers.join(',')}: ${issue.message}\n` };
+          }
+        }
+      }
+    } catch (qualityErr) {
+      this.logger.warn(`Quality review pipeline failed (non-fatal): ${qualityErr}`);
+      yield { type: 'progress', content: 'Quality review skipped', metadata: { step: 'quality_review', status: 'complete' } };
+    }
+
+    // 7. Mark presentation as completed and increment deck count
     await this.prisma.presentation.update({
       where: { id: presentationId },
       data: { status: PresentationStatus.COMPLETED },
@@ -589,7 +685,7 @@ export class GenerationService {
       content: `\n**Done!** Generated ${totalSlides} slides for "${outline.title}"${slideNumberOffset > 0 ? ` (${slideNumberOffset} auto-split)` : ''}. You can now:\n- Click any slide to edit inline\n- Ask me to modify specific slides ("make slide 3 more concise")\n- Use /theme to change the visual style\n- Use /export to download\n`,
     };
 
-    // 7. Auto-generate images (non-blocking) if configured
+    // 8. Auto-generate images (non-blocking) if configured
     const shouldGenerateImages = config.autoGenerateImages !== false && this.nanoBanana.isConfigured;
     if (shouldGenerateImages) {
       try {

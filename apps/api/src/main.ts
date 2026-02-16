@@ -43,5 +43,11 @@ async function bootstrap() {
   SwaggerModule.setup('api/docs', app, document);
 
   await app.listen(process.env['PORT'] || 3000);
+
+  // Increase server timeout for long-running sync generation (quality agents + Opus)
+  const httpServer = app.getHttpServer();
+  httpServer.setTimeout(600_000);      // 10 min request timeout
+  httpServer.keepAliveTimeout = 620_000; // slightly longer than setTimeout
+  console.log('Server timeout set to 600s');
 }
 bootstrap();

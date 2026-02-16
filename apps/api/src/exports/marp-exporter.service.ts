@@ -24,9 +24,9 @@ import {
 
 const execFileAsync = promisify(execFile);
 
-/** Convert Windows backslash paths to forward slashes for shell safety. */
+/** Quote paths with double-quotes for shell safety (handles spaces, ampersands, etc.). */
 function shellSafePath(p: string): string {
-  return p.replace(/\\/g, '/');
+  return `"${p.replace(/\\/g, '/')}"`;
 }
 
 // ── Color contrast helpers ──────────────────────────────────

@@ -9,6 +9,8 @@ import { CreditsService } from '../credits/credits.service.js';
 import { DECK_GENERATION_COST } from '../credits/tier-config.js';
 import { ImagesService } from '../images/images.service.js';
 import { NanoBananaService } from '../images/nano-banana.service.js';
+import { QualityAgentsService } from '../chat/quality-agents.service.js';
+import type { SlideForReview } from '../chat/quality-agents.service.js';
 import {
   buildOutlineSystemPrompt,
   buildOutlineUserPrompt,
@@ -21,7 +23,7 @@ import {
 import { DEFAULT_SLIDE_RANGES } from '../chat/dto/generation-config.dto.js';
 import { getFrameworkConfig } from '../pitch-lens/frameworks/story-frameworks.config.js';
 import { buildPitchLensInjection } from '../pitch-lens/prompts/pitch-lens-injection.prompt.js';
-import { getImageFrequencyForTheme } from '../themes/themes.service.js';
+import { getImageFrequencyForTheme, getThemeCategoryByName } from '../themes/themes.service.js';
 import {
   PresentationType,
   PresentationStatus,
@@ -55,6 +57,7 @@ export class SyncGenerationService {
     private readonly credits: CreditsService,
     private readonly imagesService: ImagesService,
     private readonly nanoBanana: NanoBananaService,
+    private readonly qualityAgents: QualityAgentsService,
   ) {}
 
   /**
@@ -154,7 +157,7 @@ export class SyncGenerationService {
           { role: 'system', content: outlineSystemPrompt },
           { role: 'user', content: outlineUserPrompt },
         ],
-        LlmModel.SONNET,
+        LlmModel.OPUS,
         isValidOutline,
         2,
       );
@@ -184,7 +187,23 @@ export class SyncGenerationService {
 
       // 11. Generate slides sequentially (Opus needs priorSlides for coherence)
       const priorSlides: Array<{ title: string; body: string }> = [];
-      const syncImgFreq = theme ? getImageFrequencyForTheme(theme.name) : undefined;
+
+      // PitchLens imageFrequency overrides theme default when set
+      let syncImgFreq: string | undefined;
+      if (pitchLens?.imageFrequency && pitchLens.imageFrequency > 0) {
+        const freq = pitchLens.imageFrequency;
+        if (freq === 1) {
+          syncImgFreq = 'MANDATORY: Generate a non-empty imagePromptHint for EVERY slide. Every single slide MUST have an image. Never set imagePromptHint to empty string.';
+        } else if (freq <= 2) {
+          syncImgFreq = `MANDATORY: Generate a non-empty imagePromptHint for at least every other slide. At minimum 50% of slides MUST have a non-empty imagePromptHint. Do NOT set all to empty string — the client explicitly requested frequent images.`;
+        } else if (freq <= 4) {
+          syncImgFreq = `Generate imagePromptHint for ~1 in ${freq} slides. Prefer data visualizations, product screenshots, and hero images.`;
+        } else {
+          syncImgFreq = `Generate imagePromptHint for ~1 in ${freq} slides. Set to empty string "" for the rest.`;
+        }
+      } else {
+        syncImgFreq = theme ? getImageFrequencyForTheme(theme.name) : undefined;
+      }
 
       for (let i = 0; i < outline.slides.length; i++) {
         const outlineSlide = outline.slides[i];
@@ -261,9 +280,9 @@ ${slideKbContext}`;
               `Sync slide ${i + 1} review issues: ${review.issues.map((iss) => iss.message).join('; ')}`,
             );
           }
-        } catch {
-          // Review failure is non-fatal — keep original content
-          this.logger.warn(`Content review failed for sync slide ${i + 1}, using original content`);
+        } catch (reviewErr) {
+          // Content review failed — log explicitly and keep original content
+          this.logger.warn(`Content review error for sync slide ${i + 1}: ${reviewErr instanceof Error ? reviewErr.message : 'unknown'}`);
         }
 
         // Density validation: truncate table rows if over limit
@@ -289,7 +308,53 @@ ${slideKbContext}`;
         priorSlides.push({ title: finalTitle, body: finalBody });
       }
 
-      // 12. Mark complete + deduct credits
+      // 12. Multi-Agent Quality Review (Style + Narrative + Fact Check — all Opus 4.6)
+      const allSyncSlides = await this.prisma.slide.findMany({
+        where: { presentationId: presentation.id },
+        orderBy: { slideNumber: 'asc' },
+        select: { id: true, slideNumber: true, title: true, body: true, speakerNotes: true, slideType: true, imagePrompt: true },
+      });
+
+      const syncSlidesForReview: SlideForReview[] = allSyncSlides.map((s) => ({
+        slideNumber: s.slideNumber,
+        title: s.title,
+        body: s.body,
+        speakerNotes: s.speakerNotes ?? '',
+        slideType: s.slideType,
+        imagePromptHint: s.imagePrompt ?? undefined,
+      }));
+
+      const syncThemeCategory = getThemeCategoryByName(theme?.name ?? '');
+
+      try {
+        const qualityResult = await this.qualityAgents.reviewPresentation(syncSlidesForReview, {
+          themeCategory: syncThemeCategory,
+          themeName,
+          presentationType: presType,
+          frameworkName: pitchLens?.selectedFramework ?? undefined,
+          userId,
+          presentationId: presentation.id,
+        });
+
+        // Apply auto-fixes
+        for (const fix of qualityResult.fixes) {
+          const slideToFix = allSyncSlides.find((s) => s.slideNumber === fix.slideNumber);
+          if (slideToFix) {
+            await this.prisma.slide.update({
+              where: { id: slideToFix.id },
+              data: { title: fix.fixedTitle, body: fix.fixedBody },
+            });
+          }
+        }
+
+        this.logger.log(
+          `Sync quality review: style=${qualityResult.metrics.avgStyleScore.toFixed(2)} narrative=${qualityResult.metrics.narrativeScore.toFixed(2)} facts=${qualityResult.metrics.avgFactScore.toFixed(2)} fixes=${qualityResult.fixes.length}`,
+        );
+      } catch (qualityErr) {
+        this.logger.warn(`Sync quality review failed (non-fatal): ${qualityErr}`);
+      }
+
+      // 13. Mark complete + deduct credits
       await this.prisma.presentation.update({
         where: { id: presentation.id },
         data: { status: PresentationStatus.COMPLETED },

@@ -16,7 +16,12 @@ import { ExportFormat, JobStatus } from '../../generated/prisma/enums.js';
 
 /** Strip characters unsafe for Windows filenames and shell arg passing. */
 function safeFilename(title: string): string {
-  return title.replace(/[<>:"/\\|?*]/g, '').replace(/\s+/g, '-').trim().slice(0, 80);
+  return title
+    .replace(/[<>:"/\\|?*&;()!$^{}[\]`~#%+=']/g, '')
+    .replace(/,/g, '')
+    .replace(/\s+/g, '-')
+    .trim()
+    .slice(0, 80);
 }
 
 @Injectable()
