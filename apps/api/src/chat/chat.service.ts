@@ -426,11 +426,12 @@ export class ChatService {
       const msg = [
         '**Current configuration:**',
         `- **Bullets per slide**: ${lens.maxBulletsPerSlide ?? '4 (default)'}`,
-        `- **Words per slide**: ${lens.maxWordsPerSlide ?? '60 (default)'}`,
+        `- **Words per slide**: ${lens.maxWordsPerSlide ?? '50 (default)'}`,
+        `- **Table rows**: ${lens.maxTableRows ?? '4 (default)'}`,
         `- **Image layout**: ${lens.imageLayout ?? 'RIGHT'}`,
         `- **Image frequency**: 1 per ${lens.imageFrequency} slides`,
         '',
-        'Use `/config bullets 3`, `/config words 50`, `/config images background`, `/config frequency 6` to change.',
+        'Use `/config bullets 3`, `/config words 50`, `/config rows 3`, `/config images background`, `/config frequency 6` to change.',
       ].join('\n');
       yield { type: 'token', content: msg };
       yield { type: 'done', content: '' };
@@ -485,8 +486,18 @@ export class ChatService {
         msg = `Image frequency set to **1 per ${n} slides**. Will apply on next /regenerate.`;
         break;
       }
+      case 'rows': {
+        const n = parseInt(value, 10);
+        if (isNaN(n) || n < 2 || n > 8) {
+          msg = 'Invalid value. Use `/config rows <2-8>`.';
+          break;
+        }
+        await this.prisma.pitchLens.update({ where: { id: lensId }, data: { maxTableRows: n } });
+        msg = `Max table rows per slide set to **${n}**. Will apply on next /regenerate or /rewrite.`;
+        break;
+      }
       default:
-        msg = `Unknown setting "${setting}". Available: bullets, words, images, frequency. Use \`/config\` to see current values.`;
+        msg = `Unknown setting "${setting}". Available: bullets, words, rows, images, frequency. Use \`/config\` to see current values.`;
     }
 
     yield { type: 'token', content: msg };

@@ -32,7 +32,7 @@ import {
   SlideType,
   CreditReason,
 } from '../../generated/prisma/enums.js';
-import type { SlideContent } from '../constraints/density-validator.js';
+import { DENSITY_LIMITS, type SlideContent } from '../constraints/density-validator.js';
 import { TtlMap } from '../common/ttl-map.js';
 import type { ChatStreamEvent } from './chat.service.js';
 import { isValidOutline, isValidSlideContent } from './validators.js';
@@ -328,6 +328,7 @@ export class GenerationService {
     const densityOverrides = presWithLens?.pitchLens ? {
       maxBullets: presWithLens.pitchLens.maxBulletsPerSlide ?? undefined,
       maxWords: presWithLens.pitchLens.maxWordsPerSlide ?? undefined,
+      maxTableRows: presWithLens.pitchLens.maxTableRows ?? undefined,
     } : undefined;
     const imageLayoutInstruction = presWithLens?.pitchLens?.imageLayout === 'BACKGROUND'
       ? 'Place images as full-slide backgrounds at 15% opacity. Do not use side-panel images.'
@@ -437,12 +438,18 @@ export class GenerationService {
       // Run content reviewer and queue validation
       let reviewPassed = true;
       try {
+        const customLimits = densityOverrides ? {
+          ...DENSITY_LIMITS,
+          ...(densityOverrides.maxBullets != null && { maxBulletsPerSlide: densityOverrides.maxBullets }),
+          ...(densityOverrides.maxWords != null && { maxWordsPerSlide: densityOverrides.maxWords }),
+          ...(densityOverrides.maxTableRows != null && { maxTableRows: densityOverrides.maxTableRows }),
+        } : undefined;
         const review = await this.contentReviewer.reviewSlide({
           title: validated.title,
           body: validated.body,
           speakerNotes: validated.speakerNotes,
           slideType: outlineSlide.slideType,
-        });
+        }, customLimits);
 
         reviewPassed = review.verdict === 'PASS';
 

@@ -23,7 +23,7 @@ export class NanoBananaService {
   private readonly logger = new Logger(NanoBananaService.name);
   private readonly apiToken: string | undefined;
   private readonly imgurClientId: string | undefined;
-  private readonly model = 'google/imagen-3';
+  private readonly model = 'google/nano-banana-pro';
   private readonly baseUrl = 'https://api.replicate.com/v1';
   private readonly timeoutMs = 180_000;
   private readonly pollIntervalMs = 3_000;
@@ -37,7 +37,7 @@ export class NanoBananaService {
         'REPLICATE_API_TOKEN is not set — NanoBananaService will not be operational',
       );
     } else {
-      this.logger.log('NanoBananaService configured with Replicate API (Imagen 3)');
+      this.logger.log('NanoBananaService configured with Replicate API (Nano Banana Pro)');
     }
   }
 
@@ -60,7 +60,7 @@ export class NanoBananaService {
     }
 
     this.logger.log(
-      `Generating image via Replicate (Imagen 3): "${prompt.slice(0, 100)}..."`,
+      `Generating image via Replicate (Nano Banana Pro): "${prompt.slice(0, 100)}..."`,
     );
 
     // 1. Create prediction
@@ -130,8 +130,8 @@ export class NanoBananaService {
       version: undefined as undefined,
       input: {
         prompt: negativePrompt
-          ? `${prompt}\n\nAVOID: ${negativePrompt}`
-          : prompt,
+          ? `${prompt}\n\nIMPORTANT: Do NOT render any text, words, letters, numbers, labels, or watermarks in the image.\n\nAVOID: ${negativePrompt}`
+          : `${prompt}\n\nIMPORTANT: Do NOT render any text, words, letters, numbers, labels, or watermarks in the image.`,
         aspect_ratio: '16:9',
         output_format: 'png',
         safety_filter_level: 'block_only_high',

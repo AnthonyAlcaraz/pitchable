@@ -78,6 +78,12 @@ export class CreatePitchLensDto {
   maxWordsPerSlide?: number;
 
   @IsOptional()
+  @IsInt()
+  @Min(2)
+  @Max(8)
+  maxTableRows?: number;
+
+  @IsOptional()
   @IsBoolean()
   isDefault?: boolean;
 }

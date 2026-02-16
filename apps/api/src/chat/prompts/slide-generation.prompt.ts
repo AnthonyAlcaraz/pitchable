@@ -34,7 +34,7 @@ Do NOT reference colors outside this palette. Image prompts should complement th
   const mcKinseyBlock = themeName?.toLowerCase().includes('mckinsey')
     ? `
 MCKINSEY FORMATTING (override standard formatting for this theme):
-- Title MUST be a complete action sentence: subject + verb + object, max 15 words
+- Title MUST be a complete action sentence: subject + verb + object, max 10 words
 - Title IS the takeaway, not a topic label
 - BAD: "Market Opportunity" \u2014 this is a topic label, NOT a title
 - BAD: "Key Findings" \u2014 generic, says nothing
@@ -63,7 +63,7 @@ Do NOT fabricate statistics. If KB has no relevant data for a point, write a qua
 ${kbContext}`
     : '';
 
-  const maxWords = densityOverrides?.maxWords ?? 60;
+  const maxWords = densityOverrides?.maxWords ?? 50;
   const maxBullets = densityOverrides?.maxBullets ?? 4;
   const maxTableRows = densityOverrides?.maxTableRows ?? 4;
 
@@ -97,7 +97,7 @@ UNIVERSAL FORMATTING RULES:
 - Use ### subheadings for the slide's key insight or takeaway (max 10 words).
 - Lead with 1 short sentence (max 20 words) BEFORE the table or bullets.
 - Speaker notes: 2-4 sentences expanding on the slide content for the presenter (put detail HERE, not on the slide).
-- Image prompt hint: a concise visual description for AI image generation.
+- Image prompt hint: a concise visual description for AI image generation. MUST NOT include any text, words, letters, numbers, or labels in the image — AI image generators render text poorly. Describe only visual scenes, objects, and abstract concepts.
 - Image frequency: ${imageFrequencyInstruction ?? 'Only generate imagePromptHint for ~1 in 8 slides. Set to empty string "" for the rest.'}
 - Image placement: ${imageLayoutInstruction ?? 'Images will be placed on the right side of the slide (35% width).'}
 - LESS IS MORE: If you can say it in fewer words, do it. Slides are visual aids, not documents.

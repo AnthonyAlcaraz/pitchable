@@ -30,6 +30,8 @@ import {
 } from '../../generated/prisma/enums.js';
 import { isValidOutline, isValidSlideContent } from '../chat/validators.js';
 import type { GeneratedSlideContent } from '../chat/validators.js';
+import { validateSlideContent, suggestSplit, DENSITY_LIMITS } from '../constraints/density-validator.js';
+import type { DensityLimits } from '../constraints/density-validator.js';
 
 export interface SyncGenerationInput {
   topic: string;
@@ -101,7 +103,7 @@ export class SyncGenerationService {
       };
 
       let pitchLensContext: string | undefined;
-      let syncDensityOverrides: { maxBullets?: number; maxWords?: number } | undefined;
+      let syncDensityOverrides: { maxBullets?: number; maxWords?: number; maxTableRows?: number } | undefined;
       let syncImageLayoutInstruction: string | undefined;
       if (input.pitchLensId) {
         const lens = await this.prisma.pitchLens.findUnique({
@@ -117,6 +119,7 @@ export class SyncGenerationService {
           syncDensityOverrides = {
             maxBullets: lens.maxBulletsPerSlide ?? undefined,
             maxWords: lens.maxWordsPerSlide ?? undefined,
+            maxTableRows: lens.maxTableRows ?? undefined,
           };
           if (lens.imageLayout === 'BACKGROUND') {
             syncImageLayoutInstruction = 'Place images as full-slide backgrounds at 15% opacity. Do not use side-panel images.';
@@ -202,19 +205,67 @@ export class SyncGenerationService {
           2,
         );
 
+        // Build custom density limits from PitchLens overrides
+        const customLimits: DensityLimits = {
+          ...DENSITY_LIMITS,
+          ...(syncDensityOverrides?.maxBullets && { maxBulletsPerSlide: syncDensityOverrides.maxBullets }),
+          ...(syncDensityOverrides?.maxWords && { maxWordsPerSlide: syncDensityOverrides.maxWords }),
+          ...(syncDensityOverrides?.maxTableRows && { maxTableRows: syncDensityOverrides.maxTableRows }),
+        };
+
+        // Run content review (same Haiku pass as chat generation path)
+        let finalTitle = slideContent.title;
+        let finalBody = slideContent.body;
+        try {
+          const review = await this.contentReviewer.reviewSlide(
+            {
+              title: slideContent.title,
+              body: slideContent.body,
+              speakerNotes: slideContent.speakerNotes ?? '',
+              slideType: outlineSlide.slideType,
+            },
+            customLimits,
+          );
+
+          if (review.verdict === 'NEEDS_SPLIT' && review.suggestedSplits?.length) {
+            // Use the first split as the primary slide content (tighter)
+            const firstSplit = review.suggestedSplits[0];
+            finalTitle = firstSplit.title;
+            finalBody = firstSplit.body;
+            this.logger.log(`Sync slide ${i + 1} trimmed by content reviewer`);
+          }
+
+          if (review.issues.length > 0) {
+            this.logger.debug(
+              `Sync slide ${i + 1} review issues: ${review.issues.map((iss) => iss.message).join('; ')}`,
+            );
+          }
+        } catch {
+          // Review failure is non-fatal — keep original content
+          this.logger.warn(`Content review failed for sync slide ${i + 1}, using original content`);
+        }
+
+        // Density validation: truncate table rows if over limit
+        const densityResult = validateSlideContent({ title: finalTitle, body: finalBody }, customLimits);
+        if (!densityResult.valid) {
+          this.logger.debug(
+            `Sync slide ${i + 1} density violations: ${densityResult.violations.join('; ')}`,
+          );
+        }
+
         await this.prisma.slide.create({
           data: {
             presentationId: presentation.id,
             slideNumber: i + 1,
-            title: slideContent.title,
-            body: slideContent.body,
+            title: finalTitle,
+            body: finalBody,
             speakerNotes: slideContent.speakerNotes ?? null,
             slideType: (outlineSlide.slideType as SlideType) ?? SlideType.CONTENT,
             imagePrompt: slideContent.imagePromptHint ?? null,
           },
         });
 
-        priorSlides.push({ title: slideContent.title, body: slideContent.body });
+        priorSlides.push({ title: finalTitle, body: finalBody });
       }
 
       // 11. Mark complete + deduct credits

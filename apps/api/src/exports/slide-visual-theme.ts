@@ -310,18 +310,18 @@ export function generateMarpMcKinseyCSS(palette: ColorPalette): string {
  */
 export function generateMarpMcKinseyTableCSS(palette: ColorPalette): string {
   return [
-    `  table { border-collapse: collapse; width: 100%; }`,
+    `  table { border-collapse: collapse; width: 100%; font-size: 0.75em; margin-top: 0.3em; margin-bottom: 0.3em; }`,
     `  th {`,
     `    background: ${palette.primary};`,
     `    color: #FFFFFF;`,
-    `    padding: 8px 12px;`,
+    `    padding: 5px 10px;`,
     `    border: none;`,
     `    border-bottom: 2px solid ${palette.primary};`,
     `    font-weight: bold;`,
     `    text-align: left;`,
     `  }`,
     `  td {`,
-    `    padding: 8px 12px;`,
+    `    padding: 5px 10px;`,
     `    border: none;`,
     `    border-bottom: 1px solid #E5E5E5;`,
     `    color: ${palette.text};`,

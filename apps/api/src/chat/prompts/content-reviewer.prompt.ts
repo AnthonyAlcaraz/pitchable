@@ -12,12 +12,14 @@ RULES (these are hard constraints \u2014 any violation is an error):
 6. Title must be clear and specific (not generic like "Overview")
 7. No walls of text \u2014 use bullet points for lists
 8. Speaker notes should expand on slide content, not repeat it
-9. Each slide uses EITHER a table OR bullet list \u2014 NEVER both
+9. ONE DATA BLOCK: Each slide uses EITHER a table OR bullets \u2014 NEVER both. If both present, flag as error.
+10. Max ${limits.maxTableRows ?? 4} table data rows (excluding header). Tables with more rows cause overflow.
+11. OVERFLOW RISK: If body has title + lead sentence + table (4+ rows) + takeaway + sources, flag density warning. Each element stacks vertically and 5+ stacked elements risk clipping at the bottom of the slide.
 
 SPLIT POLICY (CRITICAL \u2014 follow strictly):
 - PREFER PASS over NEEDS_SPLIT. Only split when the slide genuinely contains 2+ DISTINCT concepts.
 - Max 2 splits per slide. Never split into more than 2 parts.
-- DO NOT split a slide just because it has a table + bullets \u2014 that is normal layered structure.
+- If a slide has both a table AND bullets, verdict is NEEDS_SPLIT \u2014 put the table in one split and bullets in the other.
 - DO NOT split a slide just because it approaches the word limit \u2014 trim instead.
 - Each split MUST cover a genuinely different topic. If you cannot articulate two distinct topics, verdict is PASS.
 - Splits must have DIFFERENT titles \u2014 not the same title with (1/2) (2/2) suffixes.

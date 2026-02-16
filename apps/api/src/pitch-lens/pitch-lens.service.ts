@@ -49,6 +49,11 @@ export class PitchLensService {
         technicalLevel: dto.technicalLevel,
         selectedFramework: dto.selectedFramework,
         customGuidance: dto.customGuidance,
+        imageFrequency: dto.imageFrequency,
+        imageLayout: dto.imageLayout,
+        maxBulletsPerSlide: dto.maxBulletsPerSlide,
+        maxWordsPerSlide: dto.maxWordsPerSlide,
+        maxTableRows: dto.maxTableRows,
         isDefault: dto.isDefault ?? false,
       },
     });
