@@ -120,6 +120,20 @@ Creative: `ted-talk`, `airbnb-story`, `stripe-fintech`, `academic-research`, `as
 - Guards: `guards/*.guard.ts`
 - Modules: `*.module.ts`
 
+## Slide Types (11)
+
+`TITLE`, `PROBLEM`, `SOLUTION`, `ARCHITECTURE`, `PROCESS`, `COMPARISON`, `DATA_METRICS`, `CTA`, `CONTENT`, `QUOTE`, `VISUAL_HUMOR`
+
+### VISUAL_HUMOR
+- Image-forward humor slide: full-screen image + short witty title (max 8 words)
+- Body is empty or a single punchline subtitle — image carries the message
+- Content reviewer skips these (intentionally minimal)
+- Image priority is highest (always gets an image regardless of frequency)
+- Tone-gated: only for CONVERSATIONAL, BOLD, INSPIRATIONAL, STORYTELLING (max 1-2 per deck)
+- Never split by slide structurer
+- PPTX: full-bleed image at 80% visibility + dark gradient overlay + centered title
+- Marp: `![bg brightness:0.7]` + `lead` class + no pagination
+
 ## Important Patterns
 
 1. **Never edit `.env`** — read-only, contains secrets
@@ -128,3 +142,4 @@ Creative: `ted-talk`, `airbnb-story`, `stripe-fintech`, `academic-research`, `as
 4. **Both generation paths** must stay in sync (chat + sync API v1)
 5. **Image prompts** must include "no text/words/letters" instruction
 6. **McKinsey theme** triggers special CSS (white bg, navy dividers, Georgia serif)
+7. **Always commit and push** after every verified change — never leave uncommitted work
