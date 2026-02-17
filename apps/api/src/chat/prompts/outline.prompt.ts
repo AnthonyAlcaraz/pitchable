@@ -142,10 +142,12 @@ ${structureList}
 
 CRITICAL RULES:
 - Each section above MUST have at least 1 dedicated slide. Do not merge sections.
+- You MAY expand sections into multiple slides AND insert SECTION_DIVIDER, METRICS_HIGHLIGHT, FEATURE_GRID, TEAM, or TIMELINE slides between sections when the archetype requires them. These extra slides supplement the framework — they do not replace framework sections.
 - The slide titles must clearly signal which section they belong to.
 - If the framework has an "Engagement", "Plan", "Go-to-Market", "Bridge", or "How It Works" section, that slide MUST explicitly address the audience's adoption/engagement path — how will they actually use, buy, or implement this?
 - The narrative must flow as a coherent story: each slide's title should logically lead to the next.
-- Reading ONLY the slide titles should tell a complete, persuasive story from beginning to end.`;
+- Reading ONLY the slide titles should tell a complete, persuasive story from beginning to end.
+- SECTION_DIVIDER slides have bulletPoints: [] (empty array). All other slide types need 1+ bulletPoints.`;
   }
 
   return `Create a presentation outline about: ${topic}${frameworkConstraint}`;

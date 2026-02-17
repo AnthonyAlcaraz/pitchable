@@ -20,7 +20,9 @@ export function isValidOutline(data: unknown): data is GeneratedOutline {
     const s = slide as Record<string, unknown>;
     if (typeof s['slideNumber'] !== 'number') return false;
     if (typeof s['title'] !== 'string' || s['title'].length === 0) return false;
-    if (!Array.isArray(s['bulletPoints']) || s['bulletPoints'].length === 0) return false;
+    if (!Array.isArray(s['bulletPoints'])) return false;
+    // SECTION_DIVIDER slides are intentionally minimal - allow empty bulletPoints
+    if (s['slideType'] !== 'SECTION_DIVIDER' && s['bulletPoints'].length === 0) return false;
     if (typeof s['slideType'] !== 'string') return false;
   }
 

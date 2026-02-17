@@ -457,25 +457,61 @@ export class MarpExporterService {
       lines.push('');
     }
 
-    // Body content — varies by slide type
+    // Inject scoped CSS for grid-based slide types (keeps LLM body simple)
+    const scopedCSS: Record<string, string> = {
+      TEAM: `<style scoped>
+.team-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 12px; }
+.team-card { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 16px; text-align: center; }
+.team-card strong { display: block; font-size: 1.1em; margin-bottom: 4px; }
+.team-card em { font-size: 0.8em; }
+.team-card span { font-size: 0.7em; opacity: 0.7; display: block; margin-top: 4px; }
+</style>`,
+      TIMELINE: `<style scoped>
+ol { counter-reset: phase; list-style: none; padding-left: 0; border-left: 3px solid var(--accent, #38bdf8); margin-left: 20px; }
+ol li { counter-increment: phase; position: relative; padding: 8px 0 8px 28px; font-size: 0.8em; }
+ol li::before { content: counter(phase, decimal-leading-zero); position: absolute; left: -16px; background: var(--accent, #38bdf8); color: #fff; width: 28px; height: 28px; border-radius: 50%; text-align: center; line-height: 28px; font-weight: 700; font-size: 0.75em; }
+</style>`,
+      METRICS_HIGHLIGHT: `<style scoped>
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-top: 24px; text-align: center; }
+.stat-card { padding: 16px; }
+.stat-card .big-number { font-size: 3em; line-height: 1; }
+.stat-card p { font-size: 0.65em; opacity: 0.8; margin-top: 4px; }
+h3 { margin-top: 20px; }
+</style>`,
+      FEATURE_GRID: `<style scoped>
+.grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-top: 12px; }
+.card { background: rgba(255,255,255,0.06); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 20px; }
+.card strong { font-size: 0.95em; display: block; margin-bottom: 6px; }
+.card span { font-size: 0.7em; line-height: 1.3; opacity: 0.85; }
+</style>`,
+    };
+    if (scopedCSS[type]) {
+      lines.push(scopedCSS[type]);
+      lines.push('');
+    }
+
+    // Body content
     if (slide.body) {
+      // Strip any <style scoped> the LLM may have included (we inject our own above)
+      const bodyToRender = slide.body.replace(/<style scoped>[\s\S]*?<\/style>\s*/g, '').trim() || slide.body;
+
       // Types that handle their own layout (scoped CSS grids, lead class, etc.) skip glass-card
       const skipGlassCard = ['TITLE', 'CTA', 'VISUAL_HUMOR', 'TEAM', 'TIMELINE', 'METRICS_HIGHLIGHT', 'FEATURE_GRID'];
       if (type === 'QUOTE') {
         // Wrap body in blockquote
-        const quoteLines = slide.body
+        const quoteLines = bodyToRender
           .split('\n')
           .filter((l) => l.trim())
           .map((l) => `> ${l.replace(/^[-*]\s+/, '')}`);
         lines.push(quoteLines.join('\n'));
       } else if (skipGlassCard.includes(type)) {
         // These types render their own scoped CSS / grid layout directly
-        lines.push(slide.body);
+        lines.push(bodyToRender);
       } else {
         // AMI Labs: wrap body content in glass card for content slides
         lines.push('<div class="glass-card">');
         lines.push('');
-        lines.push(slide.body);
+        lines.push(bodyToRender);
         lines.push('');
         lines.push('</div>');
       }
