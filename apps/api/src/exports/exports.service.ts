@@ -5,8 +5,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { join } from 'path';
-import { mkdir } from 'fs/promises';
-import { readFile } from 'fs/promises';
+import { mkdir, readFile, writeFile } from 'fs/promises';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { MarpExporterService } from './marp-exporter.service.js';
 import { RevealJsExporterService } from './revealjs-exporter.service.js';
@@ -123,21 +122,19 @@ export class ExportsService {
 
       switch (job.format) {
         case ExportFormat.PPTX: {
-          // Marp CLI produces proven Z4-quality PPTX output
-          const pptxDir = join(this.tempDir, jobId);
-          await mkdir(pptxDir, { recursive: true });
-          const pptxPath = join(pptxDir, `${safeFilename(presentation.title)}.pptx`);
-          const pptxMarkdown = this.marpExporter.generateMarpMarkdown(
+          // PptxGenJS produces native editable PPTX with AMI Labs visual effects
+          buffer = await this.pptxGenJsExporter.exportToPptx(
             presentation,
             slides,
             theme,
-            imageLayout,
           );
-          await this.marpExporter.exportToPptx(pptxMarkdown, pptxPath);
-          buffer = await readFile(pptxPath);
           contentType =
             'application/vnd.openxmlformats-officedocument.presentationml.presentation';
           filename = `${safeFilename(presentation.title)}.pptx`;
+          // Save locally for download
+          const pptxDir = join(this.tempDir, jobId);
+          await mkdir(pptxDir, { recursive: true });
+          await writeFile(join(pptxDir, filename), buffer);
           break;
         }
 
@@ -271,12 +268,8 @@ export class ExportsService {
 
     switch (job.format) {
       case ExportFormat.PPTX: {
-        const pptxDir = join(this.tempDir, jobId);
-        await mkdir(pptxDir, { recursive: true });
-        const pptxPath = join(pptxDir, `${safeFilename(presentation.title)}.pptx`);
-        const pptxMd = this.marpExporter.generateMarpMarkdown(presentation, slides, theme, imageLayout);
-        await this.marpExporter.exportToPptx(pptxMd, pptxPath);
-        buffer = await readFile(pptxPath);
+        // PptxGenJS produces native editable PPTX with AMI Labs visual effects
+        buffer = await this.pptxGenJsExporter.exportToPptx(presentation, slides, theme);
         contentType = 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
         filename = `${safeFilename(presentation.title)}.pptx`;
         break;
