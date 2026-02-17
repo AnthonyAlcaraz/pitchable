@@ -6,6 +6,7 @@
 export {
   hexToRgb,
   hexToHsl,
+  hslToHex,
   rgbToLab,
   deltaE,
   luminance,

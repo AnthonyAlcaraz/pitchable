@@ -15,6 +15,7 @@ import {
 import {
   getSlideBackground,
   generateMarpBackgroundCSS,
+  generateBackgroundShades,
   generateMarpAccentRotationCSS,
   generateLeadEnhancementCSS,
   generateMarpMcKinseyCSS,
@@ -181,7 +182,7 @@ export class MarpExporterService {
       `    font-family: ${bodyFontStack};`,
       `    font-size: ${isMcKinsey ? '24px' : '26px'};`,
       '    overflow: hidden;',
-      '    padding: 40px 50px 50px 50px;',
+      '    padding: 32px 40px 40px 40px;',
       '    display: flex;',
       '    flex-direction: column;',
       '    justify-content: flex-start;',
@@ -315,7 +316,8 @@ export class MarpExporterService {
       // No accent rotation — McKinsey uses uniform navy bold
       frontmatter.push(generateMarpMcKinseyLeadCSS(palette));
     } else {
-      frontmatter.push(generateMarpBackgroundCSS(palette, bg, gradientEnd));
+      const bgShades = isDarkBackground(bg) ? generateBackgroundShades(bg, safeText) : undefined;
+      frontmatter.push(generateMarpBackgroundCSS(palette, bg, gradientEnd, bgShades));
       frontmatter.push(generateMarpAccentRotationCSS(safeAccent, safePrimary, safeSuccess, safeSecondary));
       frontmatter.push(generateLeadEnhancementCSS(safeAccent, safeText));
     }
@@ -329,6 +331,9 @@ export class MarpExporterService {
       '  ul { list-style-type: disc; }',
       '  ul ul { list-style-type: circle; }',
       '  li { margin-bottom: 0.15em; line-height: 1.3; }',
+      // Layout classes for content centering/spreading
+      '  section.content-center { justify-content: center; }',
+      '  section.content-spread { justify-content: space-between; }',
       // AMI Labs: glass card effect
       '  .glass-card {',
       '    background: rgba(255, 255, 255, 0.06);',
@@ -336,8 +341,12 @@ export class MarpExporterService {
       '    -webkit-backdrop-filter: blur(12px);',
       '    border: 1px solid rgba(255, 255, 255, 0.12);',
       '    border-radius: 16px;',
-      '    padding: 24px 28px;',
-      '    margin-top: 8px;',
+      '    padding: 20px 24px;',
+      '    margin: 8px -8px 0 -8px;',
+      '    flex-grow: 1;',
+      '    display: flex;',
+      '    flex-direction: column;',
+      '    justify-content: center;',
       '  }',
       // AMI Labs: section label pill badge
       '  .section-pill {',
@@ -382,6 +391,13 @@ export class MarpExporterService {
     const type = slide.slideType;
     const bgVariant = getSlideBackground(type, slide.slideNumber, bgColor);
 
+    // Layout class by type
+    const centerTypes = ['QUOTE', 'COMPARISON'];
+    const spreadTypes = ['DATA_METRICS', 'METRICS_HIGHLIGHT', 'ARCHITECTURE', 'PROCESS', 'FEATURE_GRID', 'TIMELINE'];
+    const layoutClass = centerTypes.includes(type) ? ' content-center'
+      : spreadTypes.includes(type) ? ' content-spread'
+      : '';
+
     // Per-slide background + type-specific Marp directives
     if (type === 'SECTION_DIVIDER') {
       // Full-bleed accent background, centered text, no pagination
@@ -408,7 +424,7 @@ export class MarpExporterService {
       lines.push(`<!-- _class: lead ${bgVariant.className} -->`);
       lines.push('');
     } else {
-      lines.push(`<!-- _class: ${bgVariant.className} -->`);
+      lines.push(`<!-- _class: ${bgVariant.className}${layoutClass} -->`);
       lines.push('');
     }
 

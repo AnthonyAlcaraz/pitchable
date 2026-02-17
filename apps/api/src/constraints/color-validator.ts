@@ -104,6 +104,30 @@ export function hexToHsl(hex: string): HslColor {
   };
 }
 
+export function hslToHex(hsl: HslColor): string {
+  const h = hsl.h;
+  const s = hsl.s / 100;
+  const l = hsl.l / 100;
+
+  const c = (1 - Math.abs(2 * l - 1)) * s;
+  const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
+  const m = l - c / 2;
+
+  let r1 = 0, g1 = 0, b1 = 0;
+  if (h < 60)       { r1 = c; g1 = x; b1 = 0; }
+  else if (h < 120) { r1 = x; g1 = c; b1 = 0; }
+  else if (h < 180) { r1 = 0; g1 = c; b1 = x; }
+  else if (h < 240) { r1 = 0; g1 = x; b1 = c; }
+  else if (h < 300) { r1 = x; g1 = 0; b1 = c; }
+  else              { r1 = c; g1 = 0; b1 = x; }
+
+  const r = Math.round((r1 + m) * 255);
+  const g = Math.round((g1 + m) * 255);
+  const b = Math.round((b1 + m) * 255);
+
+  return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+}
+
 export function rgbToLab(rgb: RgbColor): LabColor {
   // sRGB -> linear RGB
   let rLin = rgb.r / 255;

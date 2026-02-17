@@ -6,6 +6,8 @@
  * No external images, no DB schema changes. Derived from slideType + slideNumber.
  */
 
+import { hexToHsl, hslToHex, contrastRatio } from '../constraints/index.js';
+
 // ── Types ──────────────────────────────────────────────────
 
 export interface ColorPalette {
@@ -103,6 +105,53 @@ const LIGHT_TYPE_TO_VARIANT: Record<SlideType, number> = {
   FEATURE_GRID: 0,    // bg-clean
 };
 
+
+// ── Background Color Variation (Analogous Hue Shifts) ─────
+
+/**
+ * Map background variant index → shade index for color variation.
+ * Shade 0 = base hue (TITLE, CTA)
+ * Shade 1 = +10 hue, +2% lightness (slightly teal)
+ * Shade 2 = -8 hue, +1% lightness (slightly indigo)
+ * Shade 3 = +5 hue, +3% lightness (warm shift)
+ */
+const VARIANT_TO_SHADE: Record<number, number> = {
+  0: 0, // bg-radial-glow → base (TITLE, CTA)
+  1: 1, // bg-diagonal-lines → shade 1 (PROBLEM)
+  2: 2, // bg-wave → shade 2 (SOLUTION, TIMELINE)
+  3: 3, // bg-subtle-grid → shade 3 (ARCHITECTURE, PROCESS, FEATURE_GRID)
+  4: 1, // bg-circuit → shade 1 (DATA_METRICS, METRICS_HIGHLIGHT)
+  5: 2, // bg-corner-accent → shade 2 (QUOTE, TEAM)
+};
+
+/**
+ * Generate 4 background shade variations from a base color using
+ * analogous HSL shifts. Each shade is validated for contrast against textColor.
+ * Falls back to original bg if contrast breaks.
+ */
+export function generateBackgroundShades(bg: string, textColor: string): string[] {
+  const base = hexToHsl(bg);
+  const shifts: Array<{ hDelta: number; lDelta: number }> = [
+    { hDelta: 0, lDelta: 0 },     // Shade 0: base
+    { hDelta: 10, lDelta: 2 },    // Shade 1: teal shift
+    { hDelta: -8, lDelta: 1 },    // Shade 2: indigo shift
+    { hDelta: 5, lDelta: 3 },     // Shade 3: warm shift
+  ];
+
+  return shifts.map(({ hDelta, lDelta }) => {
+    const shifted = hslToHex({
+      h: ((base.h + hDelta) % 360 + 360) % 360,
+      s: base.s,
+      l: Math.min(100, base.l + lDelta),
+    });
+    // Validate contrast — fall back to original if it breaks
+    if (contrastRatio(shifted, textColor) < 4.5) {
+      return bg;
+    }
+    return shifted;
+  });
+}
+
 // ── Public API ─────────────────────────────────────────────
 
 export function getSlideBackground(
@@ -187,6 +236,16 @@ function circuitSvg(bg: string): string {
   );
 }
 
+
+/** Darken a hex color slightly for gradient end-point. */
+function darkenForGradient(hex: string): string {
+  const c = hex.replace('#', '');
+  const r = Math.max(0, parseInt(c.slice(0, 2), 16) - 15);
+  const g = Math.max(0, parseInt(c.slice(2, 4), 16) - 15);
+  const b = Math.max(0, parseInt(c.slice(4, 6), 16) - 15);
+  return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+}
+
 /**
  * Generate Marp CSS for all 6 background variant classes.
  * Each class provides its own background, replacing the global gradient.
@@ -195,8 +254,18 @@ export function generateMarpBackgroundCSS(
   palette: ColorPalette,
   bg: string,
   gradientEnd: string,
+  bgShades?: string[],
 ): string {
   const baseGrad = `linear-gradient(135deg, ${bg} 0%, ${gradientEnd} 100%)`;
+
+  // Per-variant gradient function: uses shade if available
+  function variantGrad(variantIdx: number): string {
+    if (!bgShades) return baseGrad;
+    const shadeIdx = VARIANT_TO_SHADE[variantIdx] ?? 0;
+    const shadeBg = bgShades[shadeIdx] ?? bg;
+    const shadeEnd = darkenForGradient(shadeBg);
+    return `linear-gradient(135deg, ${shadeBg} 0%, ${shadeEnd} 100%)`;
+  }
   const pc = patternColor(bg, 0.03);
   const accentRgba = hexToRgba(palette.primary, 0.08);
   const accentCorner = hexToRgba(palette.accent, 0.06);
@@ -219,23 +288,23 @@ export function generateMarpBackgroundCSS(
 
   // 1. bg-diagonal-lines — fine hairlines
   lines.push(`  section.bg-diagonal-lines {`);
-  lines.push(`    background: repeating-linear-gradient(45deg, transparent, transparent 14px, ${pc} 14px, ${pc} 15px), ${baseGrad};`);
+  lines.push(`    background: repeating-linear-gradient(45deg, transparent, transparent 14px, ${pc} 14px, ${pc} 15px), ${variantGrad(1)};`);
   lines.push(`  }`);
 
   // 2. bg-wave — SVG wave at bottom
   lines.push(`  section.bg-wave {`);
-  lines.push(`    background: url("data:image/svg+xml,${waveSvg(palette.accent)}") no-repeat bottom center / 100% 80px, ${baseGrad};`);
+  lines.push(`    background: url("data:image/svg+xml,${waveSvg(palette.accent)}") no-repeat bottom center / 100% 80px, ${variantGrad(2)};`);
   lines.push(`  }`);
 
   // 3. bg-subtle-grid — dot grid
   lines.push(`  section.bg-subtle-grid {`);
-  lines.push(`    background: radial-gradient(circle, ${pc} 1px, transparent 1px), ${baseGrad};`);
+  lines.push(`    background: radial-gradient(circle, ${pc} 1px, transparent 1px), ${variantGrad(3)};`);
   lines.push(`    background-size: 30px 30px, 100% 100%;`);
   lines.push(`  }`);
 
   // 4. bg-circuit — trace pattern
   lines.push(`  section.bg-circuit {`);
-  lines.push(`    background: url("data:image/svg+xml,${circuitSvg(bg)}") repeat, ${baseGrad};`);
+  lines.push(`    background: url("data:image/svg+xml,${circuitSvg(bg)}") repeat, ${variantGrad(4)};`);
   lines.push(`    background-size: 200px 200px, 100% 100%;`);
   lines.push(`  }`);
 
@@ -244,7 +313,7 @@ export function generateMarpBackgroundCSS(
   lines.push(`    background:`);
   lines.push(`      radial-gradient(ellipse 400px 350px at 85% 15%, ${bokehAccent} 0%, transparent 65%),`);
   lines.push(`      radial-gradient(ellipse 300px 300px at 20% 75%, ${bokehPrimary} 0%, transparent 70%),`);
-  lines.push(`      ${baseGrad};`);
+  lines.push(`      ${variantGrad(5)};`);
   lines.push(`  }`);
 
   return lines.join('\n');
