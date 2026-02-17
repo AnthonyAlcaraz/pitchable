@@ -169,6 +169,17 @@ export class ImagesService {
 
     const totalSlides = slides.length;
     const targetCount = Math.max(1, Math.ceil(totalSlides / frequency));
+    // Minimum 4 images per deck (user preference), but don't exceed total slides
+    const minImages = Math.min(totalSlides, Math.max(4, targetCount));
+
+    // Force-include slides that MUST have images
+    const mustIncludeTypes = new Set(['TITLE', 'CTA', 'VISUAL_HUMOR']);
+    const forced = slides.filter((s) => mustIncludeTypes.has(s.slideType));
+    const forcedIds = new Set(forced.map((s) => s.id));
+
+    // Remaining slots for scored selection
+    const remainingSlots = Math.max(0, minImages - forced.length);
+    const candidates = slides.filter((s) => !forcedIds.has(s.id));
 
     // Priority scores: higher = more likely to get an image
     const typePriority: Record<string, number> = {
@@ -182,28 +193,27 @@ export class ImagesService {
       COMPARISON: 3,
       QUOTE: 2,
       CONTENT: 1,
-      VISUAL_HUMOR: 11, // always gets an image — image IS the slide
+      VISUAL_HUMOR: 11,
     };
 
-    // Score each slide: priority + position bonus (spread images evenly)
-    const scored = slides.map((slide, idx) => {
+    // Score remaining candidates
+    const scored = candidates.map((slide, idx) => {
       const priority = typePriority[slide.slideType] ?? 1;
-      // Position bonus: prefer slides at regular intervals
-      const idealPositions = Array.from({ length: targetCount }, (_, i) =>
-        Math.round((i * totalSlides) / targetCount),
+      const idealPositions = Array.from({ length: minImages }, (_, i) =>
+        Math.round((i * totalSlides) / minImages),
       );
       const positionBonus = idealPositions.some(
-        (pos) => Math.abs(pos - idx) <= 1,
+        (pos) => Math.abs(pos - slides.indexOf(slide)) <= 1,
       )
         ? 3
         : 0;
-      return { slide, score: priority + positionBonus, idx };
+      return { slide, score: priority + positionBonus };
     });
 
-    // Sort by score descending, take top N
     scored.sort((a, b) => b.score - a.score);
-    const selected = scored.slice(0, targetCount).map((s) => s.slide);
+    const additionalSlides = scored.slice(0, remainingSlots).map((s) => s.slide);
 
+    const selected = [...forced, ...additionalSlides];
     // Re-sort by slide number for sequential processing
     selected.sort((a, b) => a.slideNumber - b.slideNumber);
 

@@ -179,16 +179,16 @@ CTA: 2-3 action bullets. **Bold** on action verb. Max 8 words per bullet. No tab
   Example body:
   "- **Start free pilot**: 30-day trial, no card\\n- **Book a demo**: Live pipeline, your data\\n- **Read whitepaper**: Architecture deep-dive"
 
-VISUAL_HUMOR: Image-forward humor slide. Title IS the message — max 8 words, witty, punchy. Body is empty string OR a single subtitle/punchline phrase (max 10 words). No table, no bullets, no sources, no ### takeaway. The AI-generated image does all the heavy lifting — humor comes from the juxtaposition of title + image. Speaker notes explain the actual point for the presenter. imagePromptHint is MANDATORY (never empty) and must describe a vivid, photorealistic scene that creates humor or irony when paired with the title.
-  Example (with subtitle):
-  title: "When the deadline was yesterday"
+VISUAL_HUMOR: Title IS the punchline — max 8 words, dry wit preferred over slapstick. Body is empty string. No table, no bullets, no sources, no ### takeaway. The AI image creates an unexpected visual metaphor that only becomes funny when paired with the title. Think New Yorker cartoon energy, not meme energy. Speaker notes explain the actual point. imagePromptHint is MANDATORY and must describe a REALISTIC scene — the humor emerges from context, not from the image being inherently funny.
+  Example 1:
+  title: "We're aligned on the strategy"
   body: ""
-  imagePromptHint: "A person calmly sipping coffee at their desk while papers fly everywhere and clocks melt on the walls, photorealistic office scene, cinematic warm lighting"
+  imagePromptHint: "Five shopping carts in a supermarket parking lot, each pointing in a completely different direction, shot from above, natural daylight, photorealistic"
 
-  Example (empty body):
-  title: "One more thing..."
+  Example 2:
+  title: "Just one small change"
   body: ""
-  imagePromptHint: "A single dramatic spotlight illuminating an empty podium on a dark stage, theatrical atmosphere, anticipation and suspense"
+  imagePromptHint: "A single thread being pulled from an elaborate knitted sweater that is visibly unraveling, soft studio lighting, macro photography, photorealistic"
 
 PRESENTATION TYPE: ${presentationType}
 ${themeBlock}

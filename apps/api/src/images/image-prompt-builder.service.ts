@@ -639,7 +639,7 @@ export class ImagePromptBuilderService {
     const concept = this.condenseTitle(title);
     return {
       subject: {
-        main: `Photorealistic scene that creates visual humor or irony when paired with: "${concept}"`,
+        main: `A perfectly ordinary, realistic scene that becomes unexpectedly ironic when paired with: "${concept}"`,
         elements: {
           primary: 'A vivid, relatable scene or visual metaphor',
           secondary: 'Subtle details that reward a second look',
@@ -654,9 +654,9 @@ export class ImagePromptBuilderService {
       },
       style: {
         medium: 'Photorealistic digital photography',
-        artistic_reference: 'Stock photography humor, corporate comedy, meme-quality relatability',
+        artistic_reference: 'Editorial photography, New Yorker magazine illustration energy, visual metaphor',
         color_palette: 'Natural, vivid, cinematic color grading',
-        vibe: 'Witty, unexpected, relatable, memorable',
+        vibe: 'Deadpan, understated, clever, the humor is in the subtext',
       },
       technical: {
         resolution: 'Ultra high resolution, 4K quality',

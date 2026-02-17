@@ -17,6 +17,7 @@ export function buildOutlineSystemPrompt(
   slideRange: { min: number; max: number },
   kbContext: string,
   pitchLensContext?: string,
+  archetypeContext?: string,
 ): string {
   return `You are Pitchable, an AI presentation architect. Generate a structured outline for a ${presentationType} presentation.
 
@@ -62,7 +63,7 @@ PROCESS — Step-by-step workflows. Numbered steps render in accent color. Use f
 ARCHITECTURE — System diagrams. Image carries the visual weight; keep text minimal. Use for tech stacks, platform layers.
 QUOTE — Notable quote from a named person. Rendered with gold accent border and decorative italic.
 CTA — Call to action with 2-3 concrete next steps. Closing slide before thank-you.
-VISUAL_HUMOR — Image-forward humor slide. Title is a short witty phrase (max 8 words). Body is empty or a single punchline subtitle (max 10 words). The AI-generated image carries the entire message — humor comes from the interplay between the title and a vivid photorealistic scene. Use for transition moments, visual metaphors with humor, or breather slides between dense content. Max 1-2 per deck. Works best with CONVERSATIONAL, BOLD, INSPIRATIONAL, or STORYTELLING tones. Skip entirely for FORMAL or ANALYTICAL presentations.
+VISUAL_HUMOR — Image-forward dry humor slide. Title is the punchline (max 8 words, dry wit, not slapstick). Body is empty. The humor emerges from pairing a deadpan business title with an unexpected but realistic AI image — think New Yorker cartoon, not meme. Use for transition moments, visual metaphors with humor, or breather slides between dense content. Max 1-2 per deck. Works best with CONVERSATIONAL, BOLD, INSPIRATIONAL, or STORYTELLING tones. Skip entirely for FORMAL or ANALYTICAL presentations.
 
 SLIDE TYPE SELECTION RULES:
 - Use DATA_METRICS or CONTENT (with tables) when the outline item contains 3+ data points that can be organized in columns
@@ -81,6 +82,8 @@ NARRATIVE ARC (CRITICAL):
 - Every slide after the opening must answer a logical question raised by the previous slide.
 
 ${pitchLensContext ? pitchLensContext : `PRESENTATION TYPE GUIDANCE:\n${getTypeGuidance(presentationType)}`}
+
+${archetypeContext ? archetypeContext : ''}
 
 ${kbContext ? `KNOWLEDGE BASE CONTEXT (ground your outline in this verified content — pull specific facts, data points, and claims):
 ${kbContext}` : ''}
