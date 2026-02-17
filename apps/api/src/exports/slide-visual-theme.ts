@@ -242,8 +242,9 @@ export function generateMarpAccentRotationCSS(
 
 /**
  * Generate enhanced section.lead CSS with decorative elements.
+ * For dark themes: ensures all text in lead slides is white/light for readability.
  */
-export function generateLeadEnhancementCSS(safeAccent: string): string {
+export function generateLeadEnhancementCSS(safeAccent: string, safeText: string): string {
   return [
     `  section.lead {`,
     `    text-align: center;`,
@@ -254,6 +255,16 @@ export function generateLeadEnhancementCSS(safeAccent: string): string {
     `  }`,
     `  section.lead h1 {`,
     `    font-size: 2.2em;`,
+    `    color: #FFFFFF;`,
+    `  }`,
+    `  section.lead h2, section.lead h3 {`,
+    `    color: rgba(255,255,255,0.85);`,
+    `  }`,
+    `  section.lead p, section.lead li {`,
+    `    color: rgba(255,255,255,0.9);`,
+    `  }`,
+    `  section.lead strong {`,
+    `    color: ${safeAccent};`,
     `  }`,
     `  section.lead::after {`,
     `    content: '';`,

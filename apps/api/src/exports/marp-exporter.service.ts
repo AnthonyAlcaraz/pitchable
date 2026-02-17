@@ -223,6 +223,10 @@ export class MarpExporterService {
       '  strong {',
       `    color: ${isMcKinsey ? safePrimary : safeAccent};`,
       '  }',
+      // Ensure bold text inside table cells contrasts against cell backgrounds
+      `  td strong { color: ${ensureContrast(isMcKinsey ? palette.primary : palette.accent, palette.surface, 4.5)}; }`,
+      `  tr:nth-child(even) td strong { color: ${ensureContrast(isMcKinsey ? palette.primary : palette.accent, bg, 4.5)}; }`,
+      `  th strong { color: ${ensureContrast('#FFFFFF', tableHeaderBg, 4.5)}; }`,
       '  em {',
       `    color: ${safeSecondary};`,
       '  }',
@@ -310,7 +314,7 @@ export class MarpExporterService {
     } else {
       frontmatter.push(generateMarpBackgroundCSS(palette, bg, gradientEnd));
       frontmatter.push(generateMarpAccentRotationCSS(safeAccent, safePrimary, safeSuccess, safeSecondary));
-      frontmatter.push(generateLeadEnhancementCSS(safeAccent));
+      frontmatter.push(generateLeadEnhancementCSS(safeAccent, safeText));
     }
 
     frontmatter.push(

@@ -125,12 +125,31 @@ export class ImagesService {
         continue;
       }
 
-      const prompt = this.promptBuilder.buildPrompt(
-        slide.slideType,
-        slide.title,
-        slide.body,
-        themeColors,
-      );
+      // Use the LLM's imagePromptHint when available (stored as slide.imagePrompt),
+      // fall back to building a prompt from slide type/content
+      let prompt: { prompt: string; negativePrompt: string };
+      if (slide.imagePrompt && slide.imagePrompt.trim()) {
+        prompt = this.promptBuilder.buildPromptFromHint(
+          slide.imagePrompt,
+          slide.slideType,
+          themeColors,
+        );
+        this.logger.log(
+          `Using LLM imagePromptHint for slide ${slide.id}: "${slide.imagePrompt.slice(0, 80)}..."`,
+        );
+      } else {
+        prompt = this.promptBuilder.buildPrompt(
+          slide.slideType,
+          slide.title,
+          slide.body,
+          themeColors,
+        );
+        // Store the generated prompt on the slide for reference
+        await this.prisma.slide.update({
+          where: { id: slide.id },
+          data: { imagePrompt: prompt.prompt },
+        });
+      }
 
       const imageJob = await this.queueImageGeneration(
         slide.id,
@@ -139,12 +158,6 @@ export class ImagesService {
         jobIndex * STAGGER_MS,
       );
       jobIndex++;
-
-      // Store the prompt on the slide for reference
-      await this.prisma.slide.update({
-        where: { id: slide.id },
-        data: { imagePrompt: prompt.prompt },
-      });
 
       imageJobs.push(imageJob);
     }
@@ -161,7 +174,7 @@ export class ImagesService {
    * Priority order: TITLE > ARCHITECTURE > PROBLEM/SOLUTION > CTA > DATA_METRICS > others
    * Ensures even distribution across the deck.
    */
-  private selectSlidesForImages<T extends { id: string; slideNumber: number; slideType: string; imageUrl: string | null }>(
+  private selectSlidesForImages<T extends { id: string; slideNumber: number; slideType: string; imageUrl: string | null; imagePrompt: string | null }>(
     slides: T[],
     frequency: number,
   ): T[] {

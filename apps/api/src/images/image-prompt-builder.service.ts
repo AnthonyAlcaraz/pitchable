@@ -122,6 +122,32 @@ export class ImagePromptBuilderService {
     };
   }
 
+  /**
+   * Build a prompt using the LLM's imagePromptHint as the primary description.
+   * Wraps the hint in the standard negative prompt structure but preserves
+   * the LLM's creative intent rather than generating a new concept.
+   */
+  buildPromptFromHint(
+    hint: string,
+    slideType: string,
+    theme: ThemeColors,
+  ): { prompt: string; negativePrompt: string } {
+    const negatives = slideType === 'VISUAL_HUMOR'
+      ? [...BASE_NEGATIVE, 'abstract', 'geometric', 'diagram', 'chart', 'graph', 'corporate clip art', 'flat design']
+      : BASE_NEGATIVE;
+
+    // For VISUAL_HUMOR, the hint IS the full scene description — use it directly
+    // For other types, wrap it in a professional context
+    const fullPrompt = slideType === 'VISUAL_HUMOR'
+      ? hint
+      : `Professional presentation visual: ${hint}. Style: clean, modern, photorealistic. Color palette complementing ${theme.primaryColor} and ${theme.accentColor}.`;
+
+    return {
+      prompt: fullPrompt,
+      negativePrompt: negatives.join(', '),
+    };
+  }
+
   // ── Per-type rich prompt builders (z4 quality) ────────────
 
   private buildTitleRich(title: string, theme: ThemeColors): RichPrompt {
