@@ -37,7 +37,12 @@ type SlideType =
   | 'CTA'
   | 'CONTENT'
   | 'QUOTE'
-  | 'VISUAL_HUMOR';
+  | 'VISUAL_HUMOR'
+  | 'TEAM'
+  | 'TIMELINE'
+  | 'SECTION_DIVIDER'
+  | 'METRICS_HIGHLIGHT'
+  | 'FEATURE_GRID';
 
 // ── Background Variant Pool ────────────────────────────────
 
@@ -64,6 +69,11 @@ const TYPE_TO_VARIANT: Record<SlideType, number | 'cycle'> = {
   CONTENT: 'cycle', // rotates through all 6
   QUOTE: 5,         // bg-corner-accent
   VISUAL_HUMOR: 0,   // bg-radial-glow (subtle, image dominates)
+  TEAM: 5,            // bg-corner-accent
+  TIMELINE: 2,        // bg-wave
+  SECTION_DIVIDER: 0, // bg-radial-glow (overridden by spot directives)
+  METRICS_HIGHLIGHT: 4, // bg-circuit
+  FEATURE_GRID: 3,    // bg-subtle-grid
 };
 
 // ── Light-Background Variant Pool (McKinsey / Consulting) ───
@@ -86,6 +96,11 @@ const LIGHT_TYPE_TO_VARIANT: Record<SlideType, number> = {
   COMPARISON: 0,
   CONTENT: 0,
   VISUAL_HUMOR: 0,  // bg-clean (image dominates)
+  TEAM: 0,            // bg-clean
+  TIMELINE: 0,        // bg-clean
+  SECTION_DIVIDER: 1, // bg-section-divider
+  METRICS_HIGHLIGHT: 2, // bg-callout
+  FEATURE_GRID: 0,    // bg-clean
 };
 
 // ── Public API ─────────────────────────────────────────────

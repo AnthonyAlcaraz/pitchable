@@ -105,6 +105,16 @@ export const DECK_ARCHETYPES: DeckArchetypeConfig[] = [
         min: 1,
         description: 'Competitive positioning matrix',
       },
+      {
+        slideType: 'TEAM',
+        min: 1,
+        description: 'Founders and key leadership',
+      },
+      {
+        slideType: 'METRICS_HIGHLIGHT',
+        min: 1,
+        description: 'Key traction numbers',
+      },
     ],
     antiPatterns: [
       'NEVER use more than 10 slides.',
@@ -179,6 +189,11 @@ export const DECK_ARCHETYPES: DeckArchetypeConfig[] = [
         slideType: 'QUOTE',
         min: 1,
         description: 'Customer testimonial',
+      },
+      {
+        slideType: 'FEATURE_GRID',
+        min: 1,
+        description: 'Product capabilities',
       },
     ],
     antiPatterns: [
@@ -320,6 +335,11 @@ export const DECK_ARCHETYPES: DeckArchetypeConfig[] = [
         min: 1,
         description: 'Memorable quote or soundbite',
       },
+      {
+        slideType: 'SECTION_DIVIDER',
+        min: 2,
+        description: 'Act breaks',
+      },
     ],
     antiPatterns: [
       'NEVER open with an agenda slide or "Today I will talk about...".',
@@ -395,6 +415,11 @@ export const DECK_ARCHETYPES: DeckArchetypeConfig[] = [
         min: 1,
         description: 'Demo / how it works',
       },
+      {
+        slideType: 'FEATURE_GRID',
+        min: 1,
+        description: 'Feature pillars',
+      },
     ],
     antiPatterns: [
       'NEVER start with the product. Start with the problem it solves.',
@@ -465,6 +490,11 @@ export const DECK_ARCHETYPES: DeckArchetypeConfig[] = [
         slideType: 'CTA',
         min: 1,
         description: 'Decision requests with specific asks',
+      },
+      {
+        slideType: 'METRICS_HIGHLIGHT',
+        min: 1,
+        description: 'KPI headlines',
       },
     ],
     antiPatterns: [
@@ -539,6 +569,16 @@ export const DECK_ARCHETYPES: DeckArchetypeConfig[] = [
         slideType: 'PROCESS',
         min: 1,
         description: 'Getting started / adoption path',
+      },
+      {
+        slideType: 'FEATURE_GRID',
+        min: 1,
+        description: 'Key capabilities overview',
+      },
+      {
+        slideType: 'SECTION_DIVIDER',
+        min: 2,
+        description: 'Section breaks between deep-dive topics',
       },
     ],
     antiPatterns: [
@@ -673,6 +713,16 @@ export const DECK_ARCHETYPES: DeckArchetypeConfig[] = [
         min: 3,
         description: 'Theory + example pairs',
       },
+      {
+        slideType: 'SECTION_DIVIDER',
+        min: 2,
+        description: 'Module separators',
+      },
+      {
+        slideType: 'TIMELINE',
+        min: 1,
+        description: 'Learning path',
+      },
     ],
     antiPatterns: [
       'NEVER start without learning objectives. The audience needs to know what they will gain.',
@@ -747,6 +797,11 @@ export const DECK_ARCHETYPES: DeckArchetypeConfig[] = [
         slideType: 'QUOTE',
         min: 1,
         description: 'Customer testimonial',
+      },
+      {
+        slideType: 'METRICS_HIGHLIGHT',
+        min: 1,
+        description: 'Results at a glance',
       },
     ],
     antiPatterns: [

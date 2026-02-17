@@ -66,6 +66,11 @@ QUOTE — Notable quote from a named person. Rendered with gold accent border an
 CTA — Call to action with 2-3 concrete next steps. Closing slide before thank-you.
 OUTLINE — Table of contents / agenda slide. Title is "Agenda" or "What We'll Cover". Body lists numbered items matching the remaining slide titles. Placed as slide 2 (after TITLE). Only include when explicitly requested.
 VISUAL_HUMOR — Image-forward dry humor slide. Title is the punchline (max 8 words, dry wit, not slapstick). Body is empty. The humor emerges from pairing a deadpan business title with an unexpected but realistic AI image — think New Yorker cartoon, not meme. Use for transition moments, visual metaphors with humor, or breather slides between dense content. Max 1-2 per deck. Works best with CONVERSATIONAL, BOLD, INSPIRATIONAL, or STORYTELLING tones. Skip entirely for FORMAL or ANALYTICAL presentations.
+TEAM — CSS Grid person cards showing founders, leadership, or key team members. Each person gets a card with name, role, and credential. Max 6 people, 3 columns. Never generates images. Use when presenting team, leadership, or advisory board.
+TIMELINE — Numbered milestone list with accent bar. Shows roadmap phases, evolution, or historical progression. Max 5 milestones. Use for roadmaps, phased plans, company evolution (NOT for how-to steps — that's PROCESS).
+SECTION_DIVIDER — Full-bleed accent-colored section break with centered 1-3 word title. Body is always empty. Use to break decks of 12+ slides into major sections. Place before each topic shift. No pagination, no image, no notes.
+METRICS_HIGHLIGHT — 2-4 oversized stat numbers in a horizontal CSS Grid layout. Use for impressive standalone KPIs, traction metrics, or financial headlines (NOT for detailed tables — that's DATA_METRICS).
+FEATURE_GRID — 2x2 CSS Grid card layout showing 3-4 parallel capabilities, use cases, or product features. Each card has a bold title + one sentence description. Use when features/capabilities deserve equal visual weight.
 
 SLIDE TYPE SELECTION RULES:
 - Use DATA_METRICS or CONTENT (with tables) when the outline item contains 3+ data points that can be organized in columns
@@ -73,7 +78,12 @@ SLIDE TYPE SELECTION RULES:
 - Use PROCESS only for sequential workflows (3-6 steps)
 - Use QUOTE when featuring a specific person's statement
 - Prefer DATA_METRICS/CONTENT over PROBLEM/SOLUTION for data-heavy slides
-- A well-structured deck typically has: 1 TITLE, 2-4 DATA_METRICS/CONTENT with tables, 1-2 PROBLEM/SOLUTION, 0-1 COMPARISON, 0-1 QUOTE, 0-2 VISUAL_HUMOR, 1 CTA
+- A well-structured deck typically has: 1 TITLE, 2-4 DATA_METRICS/CONTENT with tables, 1-2 PROBLEM/SOLUTION, 0-1 COMPARISON, 0-1 QUOTE, 0-2 VISUAL_HUMOR, 0-1 TEAM, 0-1 TIMELINE, 0-2 SECTION_DIVIDER, 0-1 METRICS_HIGHLIGHT, 0-1 FEATURE_GRID, 1 CTA
+- Use TEAM when presenting founders, leadership, or advisory board members
+- Use TIMELINE for roadmap or milestones (NOT for how-to steps — that's PROCESS)
+- Use SECTION_DIVIDER to break decks of 12+ slides into sections. Place before each major topic shift
+- Use METRICS_HIGHLIGHT for 2-4 impressive standalone numbers/KPIs (NOT for detailed tables — that's DATA_METRICS)
+- Use FEATURE_GRID for 3-4 parallel capabilities or product features shown with equal visual weight
 - Use VISUAL_HUMOR sparingly (max 1-2 per deck) as a breather between dense slides — only when tone is conversational, bold, inspirational, or storytelling. Never use for formal or analytical presentations.
 
 NARRATIVE ARC (CRITICAL):

@@ -122,8 +122,8 @@ TOTAL body must stay under ${maxWords} words. Move details to speaker notes.
 SELF-VALIDATION CHECKLIST (verify ALL before responding):
 □ Body starts with a lead sentence containing **bold** on the key figure
 □ Body contains EITHER a table (| col | col |) OR bullet list — never both
-□ Body ends with ### takeaway line (MANDATORY for all types except TITLE, CTA, VISUAL_HUMOR, QUOTE)
-□ Sources: line present at the very end (MANDATORY for DATA_METRICS, CONTENT, PROBLEM, SOLUTION, COMPARISON, PROCESS)
+□ Body ends with ### takeaway line (MANDATORY for all types except TITLE, CTA, VISUAL_HUMOR, QUOTE, SECTION_DIVIDER)
+□ Sources: line present at the very end (MANDATORY for DATA_METRICS, CONTENT, PROBLEM, SOLUTION, COMPARISON, PROCESS — skip for TEAM, TIMELINE, SECTION_DIVIDER, METRICS_HIGHLIGHT, FEATURE_GRID)
 □ Total word count ≤ ${maxWords}
 If ANY checkbox fails, rewrite before outputting.
 
@@ -191,6 +191,29 @@ VISUAL_HUMOR: Title IS the punchline — max 8 words, dry wit preferred over sla
   title: "Just one small change"
   body: ""
   imagePromptHint: "A single thread being pulled from an elaborate knitted sweater that is visibly unraveling, soft studio lighting, macro photography, photorealistic"
+
+TEAM: Body must contain a <style scoped> block defining .team-grid and .team-card CSS classes, followed by a <div class="team-grid"> with person cards. Max 6 people, max 3 columns. Each card: **Name** / *Role* / <span>Credential</span>. Never generate imagePromptHint (AI can't make good headshots). Title should describe the team strength.
+  Example body:
+  "<style scoped>\n.team-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 12px; }\n.team-card { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 16px; text-align: center; }\n.team-card strong { display: block; font-size: 1.1em; margin-bottom: 4px; }\n.team-card em { font-size: 0.8em; }\n.team-card span { font-size: 0.7em; opacity: 0.7; display: block; margin-top: 4px; }\n</style>\n\n<div class=\"team-grid\">\n<div class=\"team-card\">\n\n**Jane Smith**\n*CEO*\n<span>Ex-Google, Stanford</span>\n\n</div>\n<div class=\"team-card\">\n\n**John Doe**\n*CTO*\n<span>Ex-Meta, MIT</span>\n\n</div>\n<div class=\"team-card\">\n\n**Alice Chen**\n*VP Engineering*\n<span>Ex-Stripe</span>\n\n</div>\n</div>"
+
+TIMELINE: Body must contain a <style scoped> block with counter-based ordered list styling (numbered milestones with accent-colored circles and left border line), followed by an ordered list where each item is **Date — Phase** Description. Max 5 milestones, 20 words per milestone max.
+  Example body:
+  "<style scoped>\nol { counter-reset: phase; list-style: none; padding-left: 0; border-left: 3px solid var(--accent, #38bdf8); margin-left: 20px; }\nol li { counter-increment: phase; position: relative; padding: 8px 0 8px 28px; font-size: 0.8em; }\nol li::before { content: counter(phase, decimal-leading-zero); position: absolute; left: -16px; background: var(--accent, #38bdf8); color: #fff; width: 28px; height: 28px; border-radius: 50%; text-align: center; line-height: 28px; font-weight: 700; font-size: 0.75em; }\n</style>\n\n1. **Q1-Q2 2026 — Foundation** Build core infrastructure and refine methodology\n2. **Q3-Q4 2026 — Partnerships** Deploy with industrial partners, initiate data flywheel\n3. **2027+ — Scale** Global licensing and API products for enterprise\n\n### First partner revenue by Q4 2026"
+
+SECTION_DIVIDER: Body MUST be empty string "". Title is 1-3 words only (e.g. "Introduction", "Evidence", "The Ask"). No imagePromptHint (always ""), no speakerNotes (always ""). This is a full-bleed accent-colored section break slide with centered white text. Used to visually separate major sections of a deck.
+  Example:
+  title: "Introduction"
+  body: ""
+  speakerNotes: ""
+  imagePromptHint: ""
+
+METRICS_HIGHLIGHT: Body must contain a <style scoped> block defining .stats, .stat-card, and .big-number CSS classes with CSS Grid layout, followed by <div class="stats"> containing 2-4 stat cards. Each stat card has a <div class="big-number">NUMBER</div> and a <p>label</p>. Numbers should be specific and impressive. No tables. The title frames the narrative. End with ### takeaway.
+  Example body:
+  "<style scoped>\n.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-top: 24px; text-align: center; }\n.stat-card { padding: 16px; }\n.stat-card .big-number { font-size: 3em; line-height: 1; }\n.stat-card p { font-size: 0.65em; opacity: 0.8; margin-top: 4px; }\nh3 { margin-top: 20px; }\n</style>\n\n<div class=\"stats\">\n<div class=\"stat-card\">\n<div class=\"big-number\">13,500</div>\n<p>template downloads</p>\n</div>\n<div class=\"stat-card\">\n<div class=\"big-number\">1,500</div>\n<p>custom design requests</p>\n</div>\n<div class=\"stat-card\">\n<div class=\"big-number\">$850K</div>\n<p>total revenue</p>\n</div>\n</div>\n\n### 6x MRR growth in 12 months"
+
+FEATURE_GRID: Body must contain a <style scoped> block defining .grid and .card CSS classes with 2-column CSS Grid, followed by <div class="grid"> with exactly 3-4 cards. Each card has **Title** and <span>description sentence</span>. Title frames the capabilities. End with ### takeaway.
+  Example body:
+  "<style scoped>\n.grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-top: 12px; }\n.card { background: rgba(255,255,255,0.06); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 20px; }\n.card strong { font-size: 0.95em; display: block; margin-bottom: 6px; }\n.card span { font-size: 0.7em; line-height: 1.3; opacity: 0.85; }\n</style>\n\n<div class=\"grid\">\n<div class=\"card\">\n\n**Smart Manufacturing**\n<span>Interpret and predict sensory streams from industrial machines</span>\n\n</div>\n<div class=\"card\">\n\n**AI Wearables**\n<span>Streaming video assistant with persistent memory</span>\n\n</div>\n<div class=\"card\">\n\n**Robotics**\n<span>Enable robots to understand the physical world</span>\n\n</div>\n<div class=\"card\">\n\n**Enterprise Automation**\n<span>Pilot complex workflows with contextual understanding</span>\n\n</div>\n</div>\n\n### One architecture powers all four domains"
 
 PRESENTATION TYPE: ${presentationType}
 ${themeBlock}

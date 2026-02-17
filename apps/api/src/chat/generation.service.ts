@@ -479,7 +479,7 @@ export class GenerationService {
 
       // Run content reviewer (pipelined: await previous review, fire this one async)
       // VISUAL_HUMOR slides are intentionally minimal — skip density review
-      const skipReview = outlineSlide.slideType === 'VISUAL_HUMOR';
+      const skipReview = outlineSlide.slideType === 'VISUAL_HUMOR' || outlineSlide.slideType === 'SECTION_DIVIDER';
       let reviewPassed = true;
       if (skipReview) {
         this.logger.debug(`Skipping content review for VISUAL_HUMOR slide ${actualSlideNumber}`);
@@ -1014,8 +1014,8 @@ export class GenerationService {
     outlineSlide: OutlineSlide,
     themeColors?: { primary: string; secondary: string; accent: string; background: string; text: string; headingFont?: string; bodyFont?: string },
   ): GeneratedSlideContent {
-    // VISUAL_HUMOR slides are intentionally minimal — skip density validation
-    if (outlineSlide.slideType === 'VISUAL_HUMOR') {
+    // VISUAL_HUMOR and SECTION_DIVIDER slides are intentionally minimal — skip density validation
+    if (outlineSlide.slideType === 'VISUAL_HUMOR' || outlineSlide.slideType === 'SECTION_DIVIDER') {
       return {
         title: content.title || outlineSlide.title,
         body: content.body || '',

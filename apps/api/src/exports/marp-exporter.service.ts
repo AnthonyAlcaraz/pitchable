@@ -174,6 +174,9 @@ export class MarpExporterService {
       `color: ${safeText}`,
       'style: |',
       '  section {',
+      `    --accent: ${safeAccent};`,
+      `    --primary: ${safePrimary};`,
+      `    --surface: ${palette.surface};`,
       `    color: ${safeText};`,
       `    font-family: ${bodyFontStack};`,
       `    font-size: ${isMcKinsey ? '24px' : '26px'};`,
@@ -368,19 +371,26 @@ export class MarpExporterService {
     );
 
     for (const slide of sortedSlides) {
-      sections.push(this.buildSlideMarkdown(slide, bg, imageLayout));
+      sections.push(this.buildSlideMarkdown(slide, bg, imageLayout, safePrimary));
     }
 
     return sections.join('\n\n---\n\n');
   }
 
-  private buildSlideMarkdown(slide: SlideModel, bgColor?: string, imageLayout?: string): string {
+  private buildSlideMarkdown(slide: SlideModel, bgColor?: string, imageLayout?: string, primaryColor?: string): string {
     const lines: string[] = [];
     const type = slide.slideType;
     const bgVariant = getSlideBackground(type, slide.slideNumber, bgColor);
 
     // Per-slide background + type-specific Marp directives
-    if (type === 'VISUAL_HUMOR') {
+    if (type === 'SECTION_DIVIDER') {
+      // Full-bleed accent background, centered text, no pagination
+      lines.push('<!-- _class: lead -->');
+      lines.push('<!-- _paginate: skip -->');
+      lines.push(`<!-- _backgroundColor: ${primaryColor || '#1e3a5f'} -->`);
+      lines.push('<!-- _color: #FFFFFF -->');
+      lines.push('');
+    } else if (type === 'VISUAL_HUMOR') {
       // Image-forward humor slide: full-screen image, centered text overlay
       lines.push('<!-- _class: lead -->');
       lines.push('<!-- _paginate: false -->');
@@ -394,6 +404,9 @@ export class MarpExporterService {
         lines.push('<!-- _color: #FFFFFF -->');
       }
       lines.push('');
+    } else if (type === 'METRICS_HIGHLIGHT') {
+      lines.push(`<!-- _class: lead ${bgVariant.className} -->`);
+      lines.push('');
     } else {
       lines.push(`<!-- _class: ${bgVariant.className} -->`);
       lines.push('');
@@ -401,7 +414,7 @@ export class MarpExporterService {
 
     // Section label (AMI Labs style - colored pill badge)
     const sectionLabel = (slide as Record<string, unknown>).sectionLabel as string | undefined;
-    if (sectionLabel && type !== 'TITLE' && type !== 'CTA') {
+    if (sectionLabel && type !== 'TITLE' && type !== 'CTA' && type !== 'SECTION_DIVIDER') {
       lines.push(`<span class="section-pill">${sectionLabel.toUpperCase()}</span>`);
       lines.push('');
     }
@@ -412,6 +425,11 @@ export class MarpExporterService {
       lines.push('');
     }
 
+    // SECTION_DIVIDER: title only, no body/image/notes
+    if (type === 'SECTION_DIVIDER') {
+      return lines.join('\n');
+    }
+
     // Image placement — varies by slide type and imageLayout setting
     if (slide.imageUrl) {
       if (type === 'VISUAL_HUMOR') {
@@ -420,6 +438,15 @@ export class MarpExporterService {
       } else if (type === 'TITLE' || type === 'CTA') {
         // Always background for hero slides regardless of setting
         lines.push(`![bg opacity:0.15](${slide.imageUrl})`);
+      } else if (type === 'QUOTE' && imageLayout !== 'BACKGROUND') {
+        // Blurred background for cinematic testimonial feel
+        lines.push(`![bg blur:12px brightness:0.3](${slide.imageUrl})`);
+      } else if (type === 'SOLUTION' && imageLayout !== 'BACKGROUND') {
+        // Left-side image to mirror PROBLEM's right-side
+        lines.push(`![bg left:40%](${slide.imageUrl})`);
+      } else if (type === 'ARCHITECTURE' && imageLayout !== 'BACKGROUND') {
+        // Contain (not cover) to preserve diagram integrity
+        lines.push(`![bg right:40% contain](${slide.imageUrl})`);
       } else if (imageLayout === 'BACKGROUND') {
         // User chose background layout for all slides
         lines.push(`![bg opacity:0.15](${slide.imageUrl})`);
@@ -432,6 +459,8 @@ export class MarpExporterService {
 
     // Body content — varies by slide type
     if (slide.body) {
+      // Types that handle their own layout (scoped CSS grids, lead class, etc.) skip glass-card
+      const skipGlassCard = ['TITLE', 'CTA', 'VISUAL_HUMOR', 'TEAM', 'TIMELINE', 'METRICS_HIGHLIGHT', 'FEATURE_GRID'];
       if (type === 'QUOTE') {
         // Wrap body in blockquote
         const quoteLines = slide.body
@@ -439,15 +468,16 @@ export class MarpExporterService {
           .filter((l) => l.trim())
           .map((l) => `> ${l.replace(/^[-*]\s+/, '')}`);
         lines.push(quoteLines.join('\n'));
-      } else if (type !== 'TITLE' && type !== 'CTA' && type !== 'VISUAL_HUMOR') {
+      } else if (skipGlassCard.includes(type)) {
+        // These types render their own scoped CSS / grid layout directly
+        lines.push(slide.body);
+      } else {
         // AMI Labs: wrap body content in glass card for content slides
         lines.push('<div class="glass-card">');
         lines.push('');
         lines.push(slide.body);
         lines.push('');
         lines.push('</div>');
-      } else {
-        lines.push(slide.body);
       }
       lines.push('');
     }

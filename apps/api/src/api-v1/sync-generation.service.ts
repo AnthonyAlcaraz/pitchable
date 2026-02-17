@@ -330,11 +330,14 @@ ${slideKbContext}`;
           ...(syncDensityOverrides?.maxTableRows && { maxTableRows: syncDensityOverrides.maxTableRows }),
         };
 
+        // Skip content review for intentionally minimal slides
+        const skipSyncReview = outlineSlide.slideType === 'VISUAL_HUMOR' || outlineSlide.slideType === 'SECTION_DIVIDER';
+
         // Run content review (Haiku — lightweight density/quality check)
         const tReview = Date.now();
         let finalTitle = slideContent.title;
         let finalBody = slideContent.body;
-        try {
+        if (!skipSyncReview) try {
           const review = await this.contentReviewer.reviewSlide(
             {
               title: slideContent.title,
