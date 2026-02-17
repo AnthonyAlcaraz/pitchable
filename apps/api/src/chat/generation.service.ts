@@ -372,6 +372,41 @@ export class GenerationService {
       ),
     );
 
+    // Enforce section labels when PitchLens toggle is on
+    const requireLabels = !!(presWithLens?.pitchLens as unknown as Record<string, unknown> | null)?.showSectionLabels;
+    if (requireLabels) {
+      for (const slide of outline.slides) {
+        if (!slide.sectionLabel || slide.sectionLabel.trim() === '') {
+          slide.sectionLabel = slide.slideType.replace(/_/g, ' ');
+        }
+      }
+      this.logger.debug('Section labels enforced on all outline slides');
+    }
+
+    // Enforce outline slide when PitchLens toggle is on
+    const requireOutline = !!(presWithLens?.pitchLens as unknown as Record<string, unknown> | null)?.showOutlineSlide;
+    if (requireOutline && !outline.slides.some((s) => s.slideType === 'OUTLINE')) {
+      const contentTitles = outline.slides
+        .filter((s) => s.slideType !== 'TITLE' && s.slideType !== 'CTA')
+        .map((s, i) => `${i + 1}. ${s.title}`)
+        .join('\n');
+      const outlineSlideObj = {
+        slideNumber: 2,
+        title: 'Agenda',
+        slideType: 'OUTLINE' as const,
+        bulletPoints: ['Overview of topics covered in this presentation'],
+        body: contentTitles,
+        sectionLabel: requireLabels ? 'AGENDA' : undefined,
+        speakerNotes: 'This slide provides an overview of the topics we will cover.',
+      };
+      // Insert at position 1 (after TITLE) and renumber
+      outline.slides.splice(1, 0, outlineSlideObj as typeof outline.slides[0]);
+      for (let i = 0; i < outline.slides.length; i++) {
+        outline.slides[i].slideNumber = i + 1;
+      }
+      this.logger.debug('Outline slide injected at position 2');
+    }
+
     for (const [slideIndex, outlineSlide] of outline.slides.entries()) {
       const actualSlideNumber = outlineSlide.slideNumber + slideNumberOffset;
 
@@ -419,6 +454,7 @@ export class GenerationService {
           speakerNotes: validated.speakerNotes,
           slideType: outlineSlide.slideType as SlideType,
           imagePrompt: validated.imagePromptHint,
+          sectionLabel: outlineSlide.sectionLabel ?? null,
         },
       });
 
@@ -533,6 +569,7 @@ export class GenerationService {
                 speakerNotes: validated.speakerNotes,
                 slideType: outlineSlide.slideType as SlideType,
                 imagePrompt: validated.imagePromptHint,
+                sectionLabel: outlineSlide.sectionLabel ?? null,
               },
             });
 

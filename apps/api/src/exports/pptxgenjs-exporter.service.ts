@@ -80,6 +80,7 @@ function pctToInchesX(pct: string | number): number {
 export class PptxGenJsExporterService {
   private readonly logger = new Logger(PptxGenJsExporterService.name);
   private isMcKinseyTheme = false;
+  private logoDataUri: string | null = null;
 
   async exportToPptx(
     presentation: PresentationModel,
@@ -124,6 +125,18 @@ export class PptxGenJsExporterService {
 
     // Pre-download all images as base64 data URIs (PptxGenJS can't fetch http:// URLs)
     const imageCache = await this.preDownloadImages(sortedSlides);
+
+    // Pre-download presentation logo if available
+    const logoUrl = (presentation as Record<string, unknown>).logoUrl as string | undefined;
+    this.logoDataUri = null;
+    if (logoUrl) {
+      try {
+        this.logoDataUri = await this.downloadAsDataUri(logoUrl);
+        this.logger.debug('Pre-downloaded presentation logo');
+      } catch (err) {
+        this.logger.warn('Failed to download logo', err);
+      }
+    }
 
     for (const slide of sortedSlides) {
       this.addSlide(pres, slide, palette, theme, totalSlides, imageCache);
@@ -309,6 +322,9 @@ export class PptxGenJsExporterService {
         break;
       case 'PROCESS':
         this.addProcessSlide(pres, cachedSlide, safePalette, theme, totalSlides);
+        break;
+      case 'OUTLINE':
+        this.addOutlineSlide(pres, cachedSlide, safePalette, theme, totalSlides);
         break;
       case 'PROBLEM':
         this.addAccentBarSlide(pres, cachedSlide, safePalette, theme, totalSlides, safePalette.error);
@@ -559,7 +575,9 @@ export class PptxGenJsExporterService {
   ): void {
     const s = pres.addSlide({ masterName: 'PITCHABLE_ACCENT' });
 
+    this.applyGradientBackground(s, palette, slide.slideNumber);
     this.applyBackgroundDecoration(s, slide, palette);
+    this.addSectionLabel(s, slide, palette, theme);
 
     // Background image at low opacity
     if (slide.imageUrl) {
@@ -727,7 +745,9 @@ export class PptxGenJsExporterService {
   ): void {
     const s = pres.addSlide({ masterName: 'PITCHABLE_DARK' });
 
+    this.applyGradientBackground(s, palette, slide.slideNumber);
     this.applyBackgroundDecoration(s, slide, palette);
+    this.addSectionLabel(s, slide, palette, theme);
 
     // Accent left border
     s.addShape('rect', {
@@ -817,7 +837,9 @@ export class PptxGenJsExporterService {
   ): void {
     const s = pres.addSlide({ masterName: 'PITCHABLE_DARK' });
 
+    this.applyGradientBackground(s, palette, slide.slideNumber);
     this.applyBackgroundDecoration(s, slide, palette);
+    this.addSectionLabel(s, slide, palette, theme);
 
     // Accent line above title
     s.addShape('rect', {
@@ -895,7 +917,9 @@ export class PptxGenJsExporterService {
   ): void {
     const s = pres.addSlide({ masterName: 'PITCHABLE_DARK' });
 
+    this.applyGradientBackground(s, palette, slide.slideNumber);
     this.applyBackgroundDecoration(s, slide, palette);
+    this.addSectionLabel(s, slide, palette, theme);
 
 
 
@@ -1060,7 +1084,9 @@ export class PptxGenJsExporterService {
   ): void {
     const s = pres.addSlide({ masterName: 'PITCHABLE_DARK' });
 
+    this.applyGradientBackground(s, palette, slide.slideNumber);
     this.applyBackgroundDecoration(s, slide, palette);
+    this.addSectionLabel(s, slide, palette, theme);
 
     const hasImage = !!slide.imageUrl;
     const contentWidth = hasImage ? '58%' : '90%';
@@ -1090,6 +1116,9 @@ export class PptxGenJsExporterService {
 
     // Body — use rich body parser which falls through to data metrics formatting
     // for lines that are not tables/H3/blockquotes/sources
+    // Glass card container (AMI Labs style)
+    this.addGlassCard(s, palette, { x: 0.3, y: 1.05, w: (hasImage ? '57%' : '92%') as PptxGenJS.Coord, h: '62%' as PptxGenJS.Coord });
+
     if (slide.body) {
       this.parseRichBody(s, slide.body, palette, theme, {
         x: 0.5,
@@ -1120,7 +1149,9 @@ export class PptxGenJsExporterService {
   ): void {
     const s = pres.addSlide({ masterName: 'PITCHABLE_DARK' });
 
+    this.applyGradientBackground(s, palette, slide.slideNumber);
     this.applyBackgroundDecoration(s, slide, palette);
+    this.addSectionLabel(s, slide, palette, theme);
 
 
 
@@ -1150,18 +1181,93 @@ export class PptxGenJsExporterService {
       });
     }
 
-    // Body as numbered steps — use rich body for tables/H3/sources,
-    // but process-style formatting for plain text lines
+    // Body: detect numbered steps for large-anchor layout (AMI Labs style)
     if (slide.body) {
-      this.parseRichBody(s, slide.body, palette, theme, {
-        x: 0.5,
-        y: 1.2,
-        w: contentWidth,
-        maxH: '60%',
-        baseFontSize: 18,
-      });
-    }
+      const bodyLines = slide.body.split('\n').filter((l: string) => l.trim());
+      const numberedSteps = bodyLines
+        .map((l: string) => l.match(/^\s*(\d+)[.)\s]+(.+)/))
+        .filter(Boolean) as RegExpMatchArray[];
 
+      if (numberedSteps.length >= 2 && numberedSteps.length <= 6) {
+        // AMI Labs large-number anchor layout
+        const stepHeight = Math.min(1.4, 4.5 / numberedSteps.length);
+        const stepGap = 0.15;
+        let yPos = 1.25;
+
+        for (const match of numberedSteps) {
+          const stepNum = match[1].padStart(2, '0');
+          const stepText = match[2].replace(/\*\*/g, '').trim();
+          const stepTitle = stepText.split(/\s*[-:]\s*/)[0] || stepText;
+          const stepDetail = stepText.includes('-') || stepText.includes(':')
+            ? stepText.split(/\s*[-:]\s*/).slice(1).join(' ').trim()
+            : '';
+
+          // Glass card for each step
+          this.addGlassCard(s, palette, {
+            x: 0.4,
+            y: yPos,
+            w: (hasImage ? '55%' : '88%') as PptxGenJS.Coord,
+            h: stepHeight - stepGap,
+          });
+
+          // Large step number (01, 02, 03)
+          s.addText(stepNum, {
+            x: 0.6,
+            y: yPos + 0.05,
+            w: 0.8,
+            h: stepHeight - stepGap - 0.1,
+            fontSize: 32,
+            fontFace: theme.headingFont,
+            color: hex(palette.accent),
+            bold: true,
+            align: 'left',
+            valign: 'middle',
+          });
+
+          // Step title (uppercase, bold)
+          s.addText(stepTitle.toUpperCase(), {
+            x: 1.6,
+            y: yPos + 0.08,
+            w: hasImage ? 5.5 : 8.5,
+            h: 0.35,
+            fontSize: 14,
+            fontFace: theme.headingFont,
+            color: hex(palette.text),
+            bold: true,
+            align: 'left',
+            valign: 'top',
+          });
+
+          // Step detail (if present)
+          if (stepDetail) {
+            s.addText(stepDetail, {
+              x: 1.6,
+              y: yPos + 0.42,
+              w: hasImage ? 5.5 : 8.5,
+              h: stepHeight - stepGap - 0.5,
+              fontSize: 11,
+              fontFace: theme.bodyFont,
+              color: hex(palette.border || palette.text),
+              align: 'left',
+              valign: 'top',
+              lineSpacingMultiple: 1.2,
+            });
+          }
+
+          yPos += stepHeight;
+        }
+      } else {
+        // Fallback: not a clean numbered list, use rich body parser
+        this.addGlassCard(s, palette, { x: 0.3, y: 1.05, w: (hasImage ? '57%' : '92%') as PptxGenJS.Coord, h: '62%' as PptxGenJS.Coord });
+        this.parseRichBody(s, slide.body, palette, theme, {
+          x: 0.5,
+          y: 1.2,
+          w: contentWidth,
+          maxH: '60%',
+          baseFontSize: 18,
+        });
+      }
+    }
     if (hasImage) {
       this.addRightImage(s, slide);
     }
@@ -1182,7 +1288,9 @@ export class PptxGenJsExporterService {
   ): void {
     const s = pres.addSlide({ masterName: 'PITCHABLE_DARK' });
 
+    this.applyGradientBackground(s, palette, slide.slideNumber);
     this.applyBackgroundDecoration(s, slide, palette);
+    this.addSectionLabel(s, slide, palette, theme);
 
     // Left accent bar (red for PROBLEM, green for SOLUTION)
     s.addShape('rect', {
@@ -1250,7 +1358,9 @@ export class PptxGenJsExporterService {
   ): void {
     const s = pres.addSlide({ masterName: 'PITCHABLE_DARK' });
 
+    this.applyGradientBackground(s, palette, slide.slideNumber);
     this.applyBackgroundDecoration(s, slide, palette);
+    this.addSectionLabel(s, slide, palette, theme);
 
 
 
@@ -1282,6 +1392,9 @@ export class PptxGenJsExporterService {
     }
 
     // Body — use rich body parser
+    // Glass card container (AMI Labs style)
+    this.addGlassCard(s, palette, { x: 0.3, y: 1.05, w: (hasImage ? '57%' : '92%') as PptxGenJS.Coord, h: '62%' as PptxGenJS.Coord });
+
     if (slide.body) {
       this.parseRichBody(s, slide.body, palette, theme, {
         x: 0.5,
@@ -1360,6 +1473,22 @@ export class PptxGenJsExporterService {
       color: hex(palette.border),
       align: 'right',
     });
+
+    // Persistent logo (top-right corner, AMI Labs style)
+    if (this.logoDataUri) {
+      try {
+        s.addImage({
+          data: this.logoDataUri,
+          x: '91%',
+          y: 0.15,
+          w: 0.8,
+          h: 0.8,
+          rounding: false,
+        });
+      } catch {
+        // Logo render failed silently
+      }
+    }
   }
 
   /** Fallback: render body text when image fails on ARCHITECTURE slides */
@@ -2052,5 +2181,192 @@ export class PptxGenJsExporterService {
 
     return elements;
   }
+
+  // ---- AMI Labs-Inspired Visual Enhancements ----
+
+  /**
+   * Render an outline / agenda slide with numbered topics.
+   * Clean numbered list of slide titles as a visual table of contents.
+   */
+  private addOutlineSlide(
+    pres: PptxGenJS,
+    slide: SlideModel,
+    palette: ColorPalette,
+    theme: ThemeModel,
+    totalSlides: number,
+  ): void {
+    const s = pres.addSlide();
+    this.applyGradientBackground(s, palette, slide.slideNumber);
+    this.addSectionLabel(s, slide, palette, theme);
+
+    const accentHex = hex(palette.accent);
+    const textHex = hex(palette.text);
+
+    // Title
+    s.addText(slide.title || 'Agenda', {
+      x: 0.5, y: 0.3, w: '90%', h: 0.6,
+      fontSize: 28,
+      fontFace: theme.headingFont,
+      color: textHex,
+      bold: true,
+    });
+
+    // Parse body as numbered items
+    const items = (slide.body || '')
+      .split('\n')
+      .map((l) => l.trim())
+      .filter(Boolean);
+
+    const startY = 1.1;
+    const itemHeight = Math.min(0.55, 4.5 / Math.max(items.length, 1));
+
+    for (let i = 0; i < items.length; i++) {
+      const yPos = startY + i * itemHeight;
+      const label = items[i].replace(/^\d+[\.\)]\s*/, '');
+      const num = String(i + 1).padStart(2, '0');
+
+      // Number in accent color
+      s.addText(num, {
+        x: 0.5, y: yPos, w: 0.7, h: itemHeight,
+        fontSize: 20,
+        fontFace: theme.headingFont,
+        color: accentHex,
+        bold: true,
+        valign: 'middle',
+      });
+
+      // Topic text
+      s.addText(label, {
+        x: 1.3, y: yPos, w: '70%', h: itemHeight,
+        fontSize: 16,
+        fontFace: theme.bodyFont,
+        color: textHex,
+        valign: 'middle',
+      });
+
+      // Subtle separator line
+      if (i < items.length - 1) {
+        s.addShape('line' as PptxGenJS.ShapeType, {
+          x: 1.3, y: yPos + itemHeight - 0.02, w: 7, h: 0,
+          line: { color: hex(palette.border || palette.text), width: 0.3, transparency: 70 },
+        });
+      }
+    }
+
+    this.addFooter(s, slide.slideNumber, totalSlides, palette, theme);
+  }
+
+  /**
+   * Render a section label badge in the top-left corner (AMI Labs style).
+   * Bold colored uppercase tag like 'VISION', 'EVIDENCE', 'THE ASK'.
+   */
+  private addSectionLabel(
+    s: PptxGenJS.Slide,
+    slide: SlideModel,
+    palette: ColorPalette,
+    theme: ThemeModel,
+  ): void {
+    const label = (slide as Record<string, unknown>).sectionLabel as string | undefined;
+    if (!label) return;
+    if (slide.slideType === 'TITLE' || slide.slideType === 'CTA') return;
+
+    const accentHex = hex(palette.accent);
+
+    // Background pill shape behind the label text
+    s.addShape('roundRect' as PptxGenJS.ShapeType, {
+      x: 0.35,
+      y: 0.12,
+      w: Math.max(1.2, label.length * 0.13 + 0.4),
+      h: 0.30,
+      fill: { color: accentHex, transparency: 85 },
+      rectRadius: 0.04,
+    });
+
+    // Label text
+    s.addText(label.toUpperCase(), {
+      x: 0.45,
+      y: 0.12,
+      w: Math.max(1.0, label.length * 0.13 + 0.2),
+      h: 0.30,
+      fontSize: 11,
+      fontFace: theme.headingFont,
+      color: accentHex,
+      bold: true,
+      align: 'left',
+      valign: 'middle',
+    });
+  }
+
+  /**
+   * Apply gradient background with bokeh-style ambient light effects (AMI Labs style).
+   * Soft colored ellipses for depth on dark backgrounds only.
+   */
+  private applyGradientBackground(
+    s: PptxGenJS.Slide,
+    palette: ColorPalette,
+    slideNumber: number,
+  ): void {
+    const bgHex = palette.background.replace('#', '');
+    const r = parseInt(bgHex.slice(0, 2), 16);
+    const g = parseInt(bgHex.slice(2, 4), 16);
+    const b = parseInt(bgHex.slice(4, 6), 16);
+    const isLight = (0.299 * r + 0.587 * g + 0.114 * b) >= 128;
+    if (isLight) return;
+
+    // Gradient overlay for depth
+    const gradEnd = lighten(palette.background, 0.08);
+    s.addShape('rect' as PptxGenJS.ShapeType, {
+      x: 0, y: 0, w: '100%', h: '100%',
+      fill: { color: gradEnd, transparency: 70 },
+    });
+
+    // Bokeh: large soft primary ellipse
+    const positions = [
+      { x: -1.0, y: 1.0, w: 7.0, h: 6.0 },
+      { x: 8.0, y: -0.5, w: 6.0, h: 5.0 },
+      { x: 3.0, y: 3.0, w: 5.0, h: 5.0 },
+    ];
+    const pos = positions[slideNumber % positions.length];
+
+    s.addShape('ellipse' as PptxGenJS.ShapeType, {
+      x: pos.x, y: pos.y, w: pos.w, h: pos.h,
+      fill: { color: hex(palette.primary), transparency: 92 },
+    });
+
+    // Bokeh: smaller accent ellipse (offset)
+    const pos2 = positions[(slideNumber + 1) % positions.length];
+    s.addShape('ellipse' as PptxGenJS.ShapeType, {
+      x: pos2.x + 2, y: pos2.y + 1, w: pos2.w * 0.6, h: pos2.h * 0.6,
+      fill: { color: hex(palette.accent), transparency: 94 },
+    });
+  }
+
+  /**
+   * Add a glassmorphism card container (AMI Labs style).
+   * Semi-transparent surface with rounded corners and subtle border.
+   */
+  private addGlassCard(
+    s: PptxGenJS.Slide,
+    palette: ColorPalette,
+    opts: { x: PptxGenJS.Coord; y: PptxGenJS.Coord; w: PptxGenJS.Coord; h: PptxGenJS.Coord },
+  ): void {
+    const bgHex = palette.background.replace('#', '');
+    const rr = parseInt(bgHex.slice(0, 2), 16);
+    const gg = parseInt(bgHex.slice(2, 4), 16);
+    const bb = parseInt(bgHex.slice(4, 6), 16);
+    const isLight = (0.299 * rr + 0.587 * gg + 0.114 * bb) >= 128;
+    if (isLight) return;
+
+    const surfaceHex = hex(palette.surface || palette.background);
+    const borderHex = hex(palette.border || palette.text);
+
+    s.addShape('roundRect' as PptxGenJS.ShapeType, {
+      x: opts.x, y: opts.y, w: opts.w, h: opts.h,
+      fill: { color: surfaceHex, transparency: 75 },
+      rectRadius: 0.12,
+      line: { color: borderHex, width: 0.5, transparency: 70 },
+    });
+  }
+
 }
 

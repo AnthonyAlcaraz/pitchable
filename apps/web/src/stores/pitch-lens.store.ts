@@ -60,6 +60,8 @@ export interface CreatePitchLensInput {
   technicalLevel: string;
   selectedFramework: string;
   customGuidance?: string;
+  showSectionLabels?: boolean;
+  showOutlineSlide?: boolean;
   isDefault?: boolean;
 }
 

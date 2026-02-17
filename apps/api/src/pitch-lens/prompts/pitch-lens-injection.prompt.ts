@@ -97,6 +97,27 @@ export function buildPitchLensInjection(
     parts.push(lens.customGuidance);
   }
 
+  // Outline slide enforcement
+  if ((lens as unknown as Record<string, unknown>).showOutlineSlide) {
+    parts.push('');
+    parts.push('### Outline / Agenda Slide (MANDATORY)');
+    parts.push(
+      'Slide 2 MUST be an OUTLINE slide. Title it "Agenda" or "What We\'ll Cover". The body must be a numbered list of the key topics from the remaining slides (excluding the TITLE and CTA slides). Keep each item to 3-6 words. This gives the audience a roadmap of the presentation.',
+    );
+  }
+
+  // Section labels enforcement
+  if ((lens as unknown as Record<string, unknown>).showSectionLabels) {
+    parts.push('');
+    parts.push('### Section Labels (MANDATORY)');
+    parts.push(
+      'Every slide MUST have a sectionLabel field. This is a 1-3 word ALL-CAPS tag displayed in the top-left corner of each slide (e.g., "VISION", "EVIDENCE", "THE ASK", "TEAM", "COMPETITIVE LANDSCAPE", "ARCHITECTURE", "PATH", "BUSINESS MODEL").',
+    );
+    parts.push(
+      'Section labels group slides into narrative chapters. Adjacent slides CAN share the same label. Use specific, descriptive labels. Do NOT leave sectionLabel empty or omit it.',
+    );
+  }
+
   parts.push('');
   parts.push(
     'IMPORTANT: All content must be calibrated for this Pitch Lens. Tone, depth, jargon level, narrative structure, and slide ordering must match the settings above.',

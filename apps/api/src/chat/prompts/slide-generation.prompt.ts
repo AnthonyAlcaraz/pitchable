@@ -94,6 +94,7 @@ UNIVERSAL FORMATTING RULES:
 - Tables: max ${maxTableRows} rows, 2-3 columns. Always include a header row and separator (|---|---|).
 - Bullets: max ${maxBullets} if used. Each bullet max 8 words \u2014 phrases only, never sentences. Prefer tables over bullets for structured data.
 - **Bold** on key terms, company names, dollar amounts, and percentages.
+- TITLE EMPHASIS: When generating titles, bold ONLY the 1-2 operative keywords, not the full title. Example: "LLMs are **fundamentally limited** and will not deliver human-level intelligence" — not "**LLMs are fundamentally limited**". The bold word is the conceptual anchor.
 - Every data slide MUST end with a Sources line: "Sources: Source1, Source2, Source3"
 - Use ### subheadings for the slide's key insight or takeaway (max 10 words).
 - Lead with 1 short sentence (max 20 words) BEFORE the table or bullets.
@@ -156,9 +157,10 @@ DATA_METRICS: Lead stat sentence + metrics table + takeaway + sources.
   Example body:
   "**$4.2M ARR** growing 127% YoY across 340 accounts.\\n\\n| Metric | Value |\\n|---|---|\\n| **Revenue** | $4.2M ARR (+127%) |\\n| **Customers** | 340 enterprise |\\n| **NRR** | **142%** |\\n| **Pipeline** | **$18M** qualified |\\n\\n### Unit economics signal product-market fit\\nSources: Internal financials Q4 2024"
 
-PROCESS: Numbered steps (1. Step). **Bold** on action verb. Max 4 steps, each under 10 words.
+PROCESS: Numbered steps with LARGE visual anchors. Format step numbers as prominent markers. **Bold** on action verb. Max 4 steps, each under 10 words. Steps should read as a clear progression.
   Example body:
   "Four-stage pipeline from raw data to insights.\\n\\n1. **Ingest** from 40+ connectors via CDC\\n2. **Transform** with domain-specific NLP\\n3. **Validate** against compliance rules\\n4. **Deploy** with one-click rollback\\n\\n### Each stage independently scalable\\nSources: Architecture docs v3.2"
+  Note: The exporter will render step numbers as large visual anchors (01, 02, 03, 04) — keep step text SHORT.
 
 COMPARISON: Table with Before/After columns preferred. Or two bullet groups separated by blank line. Max 4 rows.
   Example body (table):

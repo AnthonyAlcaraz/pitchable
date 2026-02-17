@@ -51,6 +51,7 @@ model Presentation {
   presentationType PresentationType
   status           PresentationStatus @default(DRAFT)
   themeId          String             @db.Uuid
+  logoUrl          String?
   imageCount       Int                @default(0)
   pitchLensId      String?            @db.Uuid
   briefId          String?            @db.Uuid
@@ -95,6 +96,7 @@ model Slide {
   imageUrl       String?
   imageLocalPath String?
   imagePrompt    String?
+  sectionLabel   String?
   createdAt      DateTime     @default(now())
   imageJobs      ImageJob[]
   presentation   Presentation @relation(fields: [presentationId], references: [id], onDelete: Cascade)
@@ -297,6 +299,8 @@ model PitchLens {
   maxBulletsPerSlide  Int?
   maxWordsPerSlide    Int?
   maxTableRows        Int?
+  showSectionLabels   Boolean        @default(false)
+  showOutlineSlide    Boolean        @default(false)
   briefLenses         BriefLens[]
   user                User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   presentations       Presentation[]
@@ -417,6 +421,7 @@ enum SlideType {
   CONTENT
   QUOTE
   VISUAL_HUMOR
+  OUTLINE
 }
 
 enum CreditReason {

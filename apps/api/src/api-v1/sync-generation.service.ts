@@ -243,6 +243,40 @@ export class SyncGenerationService {
       const tSlidesLoop = Date.now();
       const slideTimings: number[] = [];
 
+      // Enforce section labels when PitchLens toggle is on
+      const requireLabels = !!(pitchLens as unknown as Record<string, unknown> | null)?.showSectionLabels;
+      if (requireLabels) {
+        for (const sl of outline.slides) {
+          if (!sl.sectionLabel || sl.sectionLabel.trim() === '') {
+            sl.sectionLabel = sl.slideType.replace(/_/g, ' ');
+          }
+        }
+        this.logger.debug('Section labels enforced on all outline slides');
+      }
+
+      // Enforce outline slide when PitchLens toggle is on
+      const requireOutline = !!(pitchLens as unknown as Record<string, unknown> | null)?.showOutlineSlide;
+      if (requireOutline && !outline.slides.some((s) => s.slideType === 'OUTLINE')) {
+        const contentTitles = outline.slides
+          .filter((s) => s.slideType !== 'TITLE' && s.slideType !== 'CTA')
+          .map((s, i) => `${i + 1}. ${s.title}`)
+          .join('\n');
+        const outlineSlideObj = {
+          slideNumber: 2,
+          title: 'Agenda',
+          slideType: 'OUTLINE' as const,
+          bulletPoints: ['Overview of topics covered in this presentation'],
+          body: contentTitles,
+          sectionLabel: requireLabels ? 'AGENDA' : undefined,
+          speakerNotes: 'This slide provides an overview of the topics we will cover.',
+        };
+        outline.slides.splice(1, 0, outlineSlideObj as typeof outline.slides[0]);
+        for (let j = 0; j < outline.slides.length; j++) {
+          outline.slides[j].slideNumber = j + 1;
+        }
+        this.logger.debug('Outline slide injected at position 2');
+      }
+
       for (let i = 0; i < outline.slides.length; i++) {
         const tSlide = Date.now();
         const outlineSlide = outline.slides[i];
@@ -347,6 +381,7 @@ ${slideKbContext}`;
             speakerNotes: slideContent.speakerNotes ?? null,
             slideType: (outlineSlide.slideType as SlideType) ?? SlideType.CONTENT,
             imagePrompt: slideContent.imagePromptHint ?? null,
+            sectionLabel: outlineSlide.sectionLabel ?? null,
           },
         });
 

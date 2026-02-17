@@ -98,5 +98,13 @@ export class UpdatePitchLensDto {
 
   @IsOptional()
   @IsBoolean()
+  showSectionLabels?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  showOutlineSlide?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
   isDefault?: boolean;
 }

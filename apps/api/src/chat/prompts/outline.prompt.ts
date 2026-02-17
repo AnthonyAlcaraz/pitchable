@@ -5,6 +5,7 @@ export interface OutlineSlide {
   title: string;
   bulletPoints: string[];
   slideType: SlideType;
+  sectionLabel?: string;
 }
 
 export interface GeneratedOutline {
@@ -63,6 +64,7 @@ PROCESS — Step-by-step workflows. Numbered steps render in accent color. Use f
 ARCHITECTURE — System diagrams. Image carries the visual weight; keep text minimal. Use for tech stacks, platform layers.
 QUOTE — Notable quote from a named person. Rendered with gold accent border and decorative italic.
 CTA — Call to action with 2-3 concrete next steps. Closing slide before thank-you.
+OUTLINE — Table of contents / agenda slide. Title is "Agenda" or "What We'll Cover". Body lists numbered items matching the remaining slide titles. Placed as slide 2 (after TITLE). Only include when explicitly requested.
 VISUAL_HUMOR — Image-forward dry humor slide. Title is the punchline (max 8 words, dry wit, not slapstick). Body is empty. The humor emerges from pairing a deadpan business title with an unexpected but realistic AI image — think New Yorker cartoon, not meme. Use for transition moments, visual metaphors with humor, or breather slides between dense content. Max 1-2 per deck. Works best with CONVERSATIONAL, BOLD, INSPIRATIONAL, or STORYTELLING tones. Skip entirely for FORMAL or ANALYTICAL presentations.
 
 SLIDE TYPE SELECTION RULES:
@@ -88,6 +90,12 @@ ${archetypeContext ? archetypeContext : ''}
 ${kbContext ? `KNOWLEDGE BASE CONTEXT (ground your outline in this verified content — pull specific facts, data points, and claims):
 ${kbContext}` : ''}
 
+SECTION LABELS (add a short uppercase label for each slide's narrative section):
+- Each slide gets a sectionLabel: a 1-3 word ALL-CAPS tag shown in the top-left corner (e.g., "VISION", "EVIDENCE", "THE ASK", "TEAM", "COMPETITIVE LANDSCAPE", "PROBLEM", "SOLUTION", "ARCHITECTURE", "PATH", "BUSINESS MODEL")
+- Section labels group slides into narrative chapters and help the audience track where they are in the story
+- Adjacent slides CAN share the same sectionLabel if they belong to the same narrative section
+- Use specific, descriptive labels — not generic ones like "SLIDE 3" or "CONTENT"
+
 OUTPUT FORMAT:
 Respond with valid JSON matching this schema:
 {
@@ -97,7 +105,8 @@ Respond with valid JSON matching this schema:
       "slideNumber": 1,
       "title": "Slide Title",
       "bulletPoints": ["Point 1", "Point 2", "Point 3"],
-      "slideType": "TITLE"
+      "slideType": "TITLE",
+      "sectionLabel": "INTRODUCTION"
     }
   ]
 }
@@ -135,17 +144,28 @@ CRITICAL RULES:
 function getTypeGuidance(presentationType: string): string {
   switch (presentationType) {
     case 'VC_PITCH':
-      return `VC Pitch structure:
-1. Title slide (hook + company name)
-2. Problem (pain point with market evidence)
-3. Solution (your unique approach)
-4. Market size (TAM/SAM/SOM)
-5. Product/demo (how it works)
-6. Traction (metrics, users, revenue)
-7. Business model (how you make money)
-8. Competition (positioning matrix)
-9. Team (founders + key hires)
-10. The Ask (funding amount + use of funds)`;
+      return `VC/Investor Pitch structure (inspired by top fundraise decks):
+1. TITLE — Company name + bold tagline. Set the tone immediately.
+2. PROBLEM — Why the status quo is broken. Use "Current X is bounded" framing with specific limitations (3-5 concrete failure modes).
+3. PROBLEM — What the world NEEDS but doesn't have yet. Frame as "The foundations of [real X]" — list 5-7 capabilities missing from current solutions.
+4. SOLUTION — Your vision: "The future will be powered by [your approach]". Define your core technology/method clearly.
+5. CONTENT — Evidence it works: show research results, demos, benchmarks, proof points. Use specific names and numbers.
+6. ARCHITECTURE — Technical roadmap: show the integrated system. Diagram + 3-4 component pillars.
+7. PROCESS — Execution roadmap: 3 phased milestones (Research → Partnerships → Productization).
+8. CONTENT — Use cases: 4 quadrant layout of target applications with 1-line descriptions each.
+9. CONTENT — Business model: revenue engines (licensing, partnerships, APIs).
+10. CONTENT — Team: "The world's best minds in [X]" — key leaders with titles and affiliations. Note total headcount.
+11. CONTENT — Global presence / competitive advantage (what sets you apart from others in the space).
+12. COMPARISON — Competitive landscape: categorize competitors by APPROACH, not features. Show 2-3 category buckets and position yourself in the best one.
+13. DATA_METRICS — The Ask: funding amount + 3 milestone-based use-of-funds breakdown.
+14. CTA — Closing: bold mission statement + call to action.
+
+INVESTOR DECK PRINCIPLES:
+- Build a narrative arc: Status Quo Is Broken → Vision of Better Future → We Have the Key → Here's the Proof → Here's the Plan → Join Us
+- Each slide should make the audience WANT to see the next one
+- Problem slides use urgency and specificity. Solution slides use ambition and clarity.
+- Evidence before ask. Never ask for money before proving you deserve it.
+- The competitive landscape slide positions by CATEGORY (how competitors think about the space), not by feature checklist.`;
 
     case 'TECHNICAL':
       return `Technical presentation structure:

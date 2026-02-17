@@ -368,6 +368,13 @@ export class MarpExporterService {
       lines.push('');
     }
 
+    // Section label (AMI Labs style - rendered as bold text above title)
+    const sectionLabel = (slide as Record<string, unknown>).sectionLabel as string | undefined;
+    if (sectionLabel && type !== 'TITLE' && type !== 'CTA') {
+      lines.push('**' + sectionLabel.toUpperCase() + '**');
+      lines.push('');
+    }
+
     // Title
     if (slide.title) {
       lines.push(`# ${slide.title}`);

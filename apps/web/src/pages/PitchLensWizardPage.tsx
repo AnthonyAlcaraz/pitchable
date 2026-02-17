@@ -71,6 +71,8 @@ export function PitchLensWizardPage() {
     technicalLevel: 'SEMI_TECHNICAL',
     selectedFramework: '',
     customGuidance: '',
+    showSectionLabels: false,
+    showOutlineSlide: false,
   });
 
   // Load existing lens for editing
@@ -94,6 +96,8 @@ export function PitchLensWizardPage() {
         technicalLevel: currentLens.technicalLevel,
         selectedFramework: currentLens.selectedFramework,
         customGuidance: currentLens.customGuidance ?? '',
+        showSectionLabels: (currentLens as Record<string, unknown>).showSectionLabels as boolean ?? false,
+        showOutlineSlide: (currentLens as Record<string, unknown>).showOutlineSlide as boolean ?? false,
       });
     }
   }, [editId, currentLens]);
@@ -383,6 +387,54 @@ export function PitchLensWizardPage() {
                 className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
               />
             </div>
+
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                role="switch"
+                aria-checked={form.showSectionLabels}
+                onClick={() => setForm({ ...form, showSectionLabels: !form.showSectionLabels })}
+                className={cn(
+                  'relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2',
+                  form.showSectionLabels ? 'bg-primary' : 'bg-muted',
+                )}
+              >
+                <span
+                  className={cn(
+                    'pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition-transform',
+                    form.showSectionLabels ? 'translate-x-5' : 'translate-x-0',
+                  )}
+                />
+              </button>
+              <div>
+                <label className="text-sm font-medium text-foreground">Section Labels</label>
+                <p className="text-xs text-muted-foreground">Show category tags on each slide (e.g., VISION, EVIDENCE, THE ASK)</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                role="switch"
+                aria-checked={form.showOutlineSlide}
+                onClick={() => setForm({ ...form, showOutlineSlide: !form.showOutlineSlide })}
+                className={cn(
+                  'relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2',
+                  form.showOutlineSlide ? 'bg-primary' : 'bg-muted',
+                )}
+              >
+                <span
+                  className={cn(
+                    'pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition-transform',
+                    form.showOutlineSlide ? 'translate-x-5' : 'translate-x-0',
+                  )}
+                />
+              </button>
+              <div>
+                <label className="text-sm font-medium text-foreground">Outline Slide</label>
+                <p className="text-xs text-muted-foreground">Add an agenda / table of contents slide after the title</p>
+              </div>
+            </div>
           </div>
         )}
 
@@ -430,6 +482,16 @@ export function PitchLensWizardPage() {
                 <p className="text-sm text-foreground">{form.customGuidance}</p>
               </div>
             )}
+
+            <div className="border-t border-border pt-3">
+              <p className="text-xs text-muted-foreground">Section Labels</p>
+              <p className="text-sm font-medium text-foreground">{form.showSectionLabels ? 'Enabled' : 'Disabled'}</p>
+            </div>
+
+            <div className="border-t border-border pt-3">
+              <p className="text-xs text-muted-foreground">Outline Slide</p>
+              <p className="text-sm font-medium text-foreground">{form.showOutlineSlide ? 'Enabled' : 'Disabled'}</p>
+            </div>
           </div>
         )}
 
