@@ -2248,7 +2248,7 @@ export class PptxGenJsExporterService {
       if (i < items.length - 1) {
         s.addShape('line' as PptxGenJS.ShapeType, {
           x: 1.3, y: yPos + itemHeight - 0.02, w: 7, h: 0,
-          line: { color: hex(palette.border || palette.text), width: 0.3, transparency: 70 },
+          line: { color: hex(palette.border || palette.text), width: 0.5, transparency: 40 },
         });
       }
     }
@@ -2272,25 +2272,25 @@ export class PptxGenJsExporterService {
 
     const accentHex = hex(palette.accent);
 
-    // Background pill shape behind the label text
+    // Background pill shape behind the label text (AMI Labs style — prominent colored badge)
     s.addShape('roundRect' as PptxGenJS.ShapeType, {
       x: 0.35,
       y: 0.12,
-      w: Math.max(1.2, label.length * 0.13 + 0.4),
-      h: 0.30,
-      fill: { color: accentHex, transparency: 85 },
-      rectRadius: 0.04,
+      w: Math.max(1.4, label.length * 0.14 + 0.5),
+      h: 0.34,
+      fill: { color: accentHex, transparency: 20 },
+      rectRadius: 0.06,
     });
 
-    // Label text
+    // Label text — white on colored pill for contrast
     s.addText(label.toUpperCase(), {
       x: 0.45,
       y: 0.12,
-      w: Math.max(1.0, label.length * 0.13 + 0.2),
-      h: 0.30,
+      w: Math.max(1.2, label.length * 0.14 + 0.3),
+      h: 0.34,
       fontSize: 11,
       fontFace: theme.headingFont,
-      color: accentHex,
+      color: 'FFFFFF',
       bold: true,
       align: 'left',
       valign: 'middle',
@@ -2314,30 +2314,30 @@ export class PptxGenJsExporterService {
     if (isLight) return;
 
     // Gradient overlay for depth
-    const gradEnd = lighten(palette.background, 0.08);
+    const gradEnd = lighten(palette.background, 0.12);
     s.addShape('rect' as PptxGenJS.ShapeType, {
       x: 0, y: 0, w: '100%', h: '100%',
-      fill: { color: gradEnd, transparency: 70 },
+      fill: { color: gradEnd, transparency: 40 },
     });
 
-    // Bokeh: large soft primary ellipse
+    // Bokeh: large soft primary ellipse (AMI Labs style — clearly visible ambient glow)
     const positions = [
-      { x: -1.0, y: 1.0, w: 7.0, h: 6.0 },
-      { x: 8.0, y: -0.5, w: 6.0, h: 5.0 },
-      { x: 3.0, y: 3.0, w: 5.0, h: 5.0 },
+      { x: -1.5, y: 0.5, w: 8.0, h: 7.0 },
+      { x: 7.5, y: -1.0, w: 7.0, h: 6.0 },
+      { x: 2.5, y: 2.5, w: 6.0, h: 6.0 },
     ];
     const pos = positions[slideNumber % positions.length];
 
     s.addShape('ellipse' as PptxGenJS.ShapeType, {
       x: pos.x, y: pos.y, w: pos.w, h: pos.h,
-      fill: { color: hex(palette.primary), transparency: 92 },
+      fill: { color: hex(palette.primary), transparency: 65 },
     });
 
     // Bokeh: smaller accent ellipse (offset)
     const pos2 = positions[(slideNumber + 1) % positions.length];
     s.addShape('ellipse' as PptxGenJS.ShapeType, {
-      x: pos2.x + 2, y: pos2.y + 1, w: pos2.w * 0.6, h: pos2.h * 0.6,
-      fill: { color: hex(palette.accent), transparency: 94 },
+      x: pos2.x + 2, y: pos2.y + 1, w: pos2.w * 0.7, h: pos2.h * 0.7,
+      fill: { color: hex(palette.accent), transparency: 70 },
     });
   }
 
@@ -2362,9 +2362,9 @@ export class PptxGenJsExporterService {
 
     s.addShape('roundRect' as PptxGenJS.ShapeType, {
       x: opts.x, y: opts.y, w: opts.w, h: opts.h,
-      fill: { color: surfaceHex, transparency: 75 },
-      rectRadius: 0.12,
-      line: { color: borderHex, width: 0.5, transparency: 70 },
+      fill: { color: surfaceHex, transparency: 35 },
+      rectRadius: 0.15,
+      line: { color: borderHex, width: 1.0, transparency: 40 },
     });
   }
 
