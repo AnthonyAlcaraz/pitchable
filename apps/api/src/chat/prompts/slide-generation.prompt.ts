@@ -17,6 +17,7 @@ export function buildSlideGenerationSystemPrompt(
   imageFrequencyInstruction?: string,
   densityOverrides?: { maxBullets?: number; maxWords?: number; maxTableRows?: number },
   imageLayoutInstruction?: string,
+  archetypeContext?: string,
 ): string {
   const themeBlock = themeColors
     ? `THEME: ${themeName}
@@ -117,6 +118,14 @@ Most content slides should combine elements in this order:
 4. Sources: citation line
 TOTAL body must stay under ${maxWords} words. Move details to speaker notes.
 
+SELF-VALIDATION CHECKLIST (verify ALL before responding):
+□ Body starts with a lead sentence containing **bold** on the key figure
+□ Body contains EITHER a table (| col | col |) OR bullet list — never both
+□ Body ends with ### takeaway line (MANDATORY for all types except TITLE, CTA, VISUAL_HUMOR, QUOTE)
+□ Sources: line present at the very end (MANDATORY for DATA_METRICS, CONTENT, PROBLEM, SOLUTION, COMPARISON, PROCESS)
+□ Total word count ≤ ${maxWords}
+If ANY checkbox fails, rewrite before outputting.
+
 ONE DATA BLOCK RULE (CRITICAL):
 Each slide uses EITHER a table OR bullet list \u2014 NEVER both on the same slide.
 - If data is structured/comparative \u2192 use a table (no bullets)
@@ -188,6 +197,7 @@ ${kbBlock}
 
 ${pitchLensContext ? `PITCH LENS GUIDANCE (follow this for tone, depth, and narrative structure):
 ${pitchLensContext}
+` : ''}${archetypeContext ? `${archetypeContext}
 ` : ''}OUTPUT FORMAT:
 Respond with valid JSON. Follow the formatting guide for the given slide type:
 {
@@ -249,5 +259,6 @@ Remember:
 - Start with a 1-2 sentence lead paragraph with **bold** on key figures
 - End with ### key takeaway and Sources: line (unless this is a TITLE or CTA slide)
 - Set imagePromptHint to "" unless this slide specifically needs a visual
-- This slide must ADVANCE the story — connect to the previous slide's conclusion and lead naturally into the next topic`;
+- This slide must ADVANCE the story — connect to the previous slide's conclusion and lead naturally into the next topic
+- STRUCTURE CHECK: Does your body have (1) lead sentence with **bold**, (2) table or bullets, (3) ### takeaway, (4) Sources line? If not, add them.`;
 }
