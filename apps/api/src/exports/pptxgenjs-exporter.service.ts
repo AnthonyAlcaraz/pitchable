@@ -11,6 +11,10 @@ import {
   type ColorPalette as VisualColorPalette,
   getSlideBackground,
 } from './slide-visual-theme.js';
+import {
+  luminance,
+  contrastRatio,
+} from '../constraints/index.js';
 
 // ── Types ──────────────────────────────────────────────────
 
@@ -224,6 +228,23 @@ export class PptxGenJsExporterService {
     }
   }
 
+  /** Ensure text color has sufficient contrast against background (WCAG). */
+  private safeColor(fg: string, bg: string, minRatio = 4.5): string {
+    const fgHex = fg.startsWith('#') ? fg : `#${fg}`;
+    const bgHex = bg.startsWith('#') ? bg : `#${bg}`;
+    let ratio = contrastRatio(fgHex, bgHex);
+    if (ratio >= minRatio) return hex(fg);
+
+    // Lighten text on dark backgrounds, darken text on light backgrounds
+    const isDark = luminance(bgHex) < 0.18;
+    let adjusted = fgHex;
+    for (let step = 0.05; step <= 1.0 && ratio < minRatio; step += 0.05) {
+      adjusted = '#' + (isDark ? lighten(fgHex, step) : darken(fgHex, step));
+      ratio = contrastRatio(adjusted, bgHex);
+    }
+    return hex(adjusted);
+  }
+
   // ── Slide Router ─────────────────────────────────────────
 
   private addSlide(
@@ -245,49 +266,58 @@ export class PptxGenJsExporterService {
       palette as unknown as VisualColorPalette,
     );
 
+    // Ensure text colors contrast against background for this palette
+    const safePalette: ColorPalette = {
+      ...palette,
+      text: '#' + this.safeColor(palette.text, palette.background, 7.0),
+      primary: '#' + this.safeColor(palette.primary, palette.background, 4.5),
+      accent: '#' + this.safeColor(palette.accent, palette.background, 4.5),
+      secondary: '#' + this.safeColor(palette.secondary, palette.background, 4.5),
+    };
+
     // McKinsey routing: TITLE/CTA → navy divider, all others → clean 5-zone content
     if (this.isMcKinseyTheme) {
       if (slide.slideType === 'TITLE' || slide.slideType === 'CTA') {
-        this.addMcKinseySectionDivider(pres, cachedSlide, palette, theme);
+        this.addMcKinseySectionDivider(pres, cachedSlide, safePalette, theme);
       } else {
-        this.addMcKinseyContentSlide(pres, cachedSlide, palette, theme, totalSlides);
+        this.addMcKinseyContentSlide(pres, cachedSlide, safePalette, theme, totalSlides);
       }
       return;
     }
 
     switch (slide.slideType) {
       case 'TITLE':
-        this.addTitleSlide(pres, cachedSlide, palette, theme);
+        this.addTitleSlide(pres, cachedSlide, safePalette, theme);
         break;
       case 'CTA':
-        this.addCTASlide(pres, cachedSlide, palette, theme);
+        this.addCTASlide(pres, cachedSlide, safePalette, theme);
         break;
       case 'VISUAL_HUMOR':
-        this.addVisualHumorSlide(pres, cachedSlide, palette, theme, totalSlides);
+        this.addVisualHumorSlide(pres, cachedSlide, safePalette, theme, totalSlides);
         break;
       case 'QUOTE':
-        this.addQuoteSlide(pres, cachedSlide, palette, theme, totalSlides);
+        this.addQuoteSlide(pres, cachedSlide, safePalette, theme, totalSlides);
         break;
       case 'ARCHITECTURE':
-        this.addArchitectureSlide(pres, cachedSlide, palette, theme, totalSlides);
+        this.addArchitectureSlide(pres, cachedSlide, safePalette, theme, totalSlides);
         break;
       case 'COMPARISON':
-        this.addComparisonSlide(pres, cachedSlide, palette, theme, totalSlides);
+        this.addComparisonSlide(pres, cachedSlide, safePalette, theme, totalSlides);
         break;
       case 'DATA_METRICS':
-        this.addDataMetricsSlide(pres, cachedSlide, palette, theme, totalSlides);
+        this.addDataMetricsSlide(pres, cachedSlide, safePalette, theme, totalSlides);
         break;
       case 'PROCESS':
-        this.addProcessSlide(pres, cachedSlide, palette, theme, totalSlides);
+        this.addProcessSlide(pres, cachedSlide, safePalette, theme, totalSlides);
         break;
       case 'PROBLEM':
-        this.addAccentBarSlide(pres, cachedSlide, palette, theme, totalSlides, palette.error);
+        this.addAccentBarSlide(pres, cachedSlide, safePalette, theme, totalSlides, safePalette.error);
         break;
       case 'SOLUTION':
-        this.addAccentBarSlide(pres, cachedSlide, palette, theme, totalSlides, palette.success);
+        this.addAccentBarSlide(pres, cachedSlide, safePalette, theme, totalSlides, safePalette.success);
         break;
       default:
-        this.addContentSlide(pres, cachedSlide, palette, theme, totalSlides);
+        this.addContentSlide(pres, cachedSlide, safePalette, theme, totalSlides);
         break;
     }
   }
