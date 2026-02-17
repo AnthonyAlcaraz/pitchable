@@ -186,11 +186,20 @@ export function generateMarpBackgroundCSS(
   const accentRgba = hexToRgba(palette.primary, 0.08);
   const accentCorner = hexToRgba(palette.accent, 0.06);
 
+  // AMI Labs bokeh colors at visible opacity
+  const bokehPrimary = hexToRgba(palette.primary, 0.18);
+  const bokehAccent = hexToRgba(palette.accent, 0.14);
+  const bokehSecondary = hexToRgba(palette.secondary || palette.primary, 0.10);
+
   const lines: string[] = [];
 
-  // 0. bg-radial-glow — soft radial bloom
+  // 0. bg-radial-glow — AMI Labs multi-blob bokeh effect
   lines.push(`  section.bg-radial-glow {`);
-  lines.push(`    background: radial-gradient(ellipse at 30% 50%, ${accentRgba} 0%, transparent 70%), ${baseGrad};`);
+  lines.push(`    background:`);
+  lines.push(`      radial-gradient(ellipse 600px 500px at 15% 60%, ${bokehPrimary} 0%, transparent 70%),`);
+  lines.push(`      radial-gradient(ellipse 500px 400px at 80% 25%, ${bokehAccent} 0%, transparent 70%),`);
+  lines.push(`      radial-gradient(ellipse 350px 350px at 50% 85%, ${bokehSecondary} 0%, transparent 65%),`);
+  lines.push(`      ${baseGrad};`);
   lines.push(`  }`);
 
   // 1. bg-diagonal-lines — fine hairlines
@@ -215,9 +224,12 @@ export function generateMarpBackgroundCSS(
   lines.push(`    background-size: 200px 200px, 100% 100%;`);
   lines.push(`  }`);
 
-  // 5. bg-corner-accent — glow in top-right
+  // 5. bg-corner-accent — glow in top-right + subtle bokeh
   lines.push(`  section.bg-corner-accent {`);
-  lines.push(`    background: linear-gradient(225deg, ${accentCorner} 0%, transparent 40%), ${baseGrad};`);
+  lines.push(`    background:`);
+  lines.push(`      radial-gradient(ellipse 400px 350px at 85% 15%, ${bokehAccent} 0%, transparent 65%),`);
+  lines.push(`      radial-gradient(ellipse 300px 300px at 20% 75%, ${bokehPrimary} 0%, transparent 70%),`);
+  lines.push(`      ${baseGrad};`);
   lines.push(`  }`);
 
   return lines.join('\n');

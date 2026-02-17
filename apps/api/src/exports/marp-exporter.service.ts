@@ -326,6 +326,37 @@ export class MarpExporterService {
       '  ul { list-style-type: disc; }',
       '  ul ul { list-style-type: circle; }',
       '  li { margin-bottom: 0.15em; line-height: 1.3; }',
+      // AMI Labs: glass card effect
+      '  .glass-card {',
+      '    background: rgba(255, 255, 255, 0.06);',
+      '    backdrop-filter: blur(12px);',
+      '    -webkit-backdrop-filter: blur(12px);',
+      '    border: 1px solid rgba(255, 255, 255, 0.12);',
+      '    border-radius: 16px;',
+      '    padding: 24px 28px;',
+      '    margin-top: 8px;',
+      '  }',
+      // AMI Labs: section label pill badge
+      '  .section-pill {',
+      '    display: inline-block;',
+      `    background: ${safeAccent};`,
+      '    color: #FFFFFF;',
+      '    padding: 4px 16px;',
+      '    border-radius: 20px;',
+      '    font-size: 0.55em;',
+      '    font-weight: 700;',
+      '    letter-spacing: 0.08em;',
+      '    text-transform: uppercase;',
+      '    margin-bottom: 8px;',
+      '  }',
+      // AMI Labs: large number anchor for data slides
+      '  .big-number {',
+      '    font-size: 2.8em;',
+      '    font-weight: 800;',
+      `    color: ${safeAccent};`,
+      '    line-height: 1.0;',
+      '    margin-bottom: 4px;',
+      '  }',
       '  img { max-height: 280px; margin: 4px auto; }',
       '---',
     );
@@ -368,10 +399,10 @@ export class MarpExporterService {
       lines.push('');
     }
 
-    // Section label (AMI Labs style - rendered as bold text above title)
+    // Section label (AMI Labs style - colored pill badge)
     const sectionLabel = (slide as Record<string, unknown>).sectionLabel as string | undefined;
     if (sectionLabel && type !== 'TITLE' && type !== 'CTA') {
-      lines.push('**' + sectionLabel.toUpperCase() + '**');
+      lines.push(`<span class="section-pill">${sectionLabel.toUpperCase()}</span>`);
       lines.push('');
     }
 
@@ -408,6 +439,13 @@ export class MarpExporterService {
           .filter((l) => l.trim())
           .map((l) => `> ${l.replace(/^[-*]\s+/, '')}`);
         lines.push(quoteLines.join('\n'));
+      } else if (type !== 'TITLE' && type !== 'CTA' && type !== 'VISUAL_HUMOR') {
+        // AMI Labs: wrap body content in glass card for content slides
+        lines.push('<div class="glass-card">');
+        lines.push('');
+        lines.push(slide.body);
+        lines.push('');
+        lines.push('</div>');
       } else {
         lines.push(slide.body);
       }
