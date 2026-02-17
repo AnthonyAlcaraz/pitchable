@@ -262,6 +262,9 @@ export class PptxGenJsExporterService {
       case 'CTA':
         this.addCTASlide(pres, cachedSlide, palette, theme);
         break;
+      case 'VISUAL_HUMOR':
+        this.addVisualHumorSlide(pres, cachedSlide, palette, theme, totalSlides);
+        break;
       case 'QUOTE':
         this.addQuoteSlide(pres, cachedSlide, palette, theme, totalSlides);
         break;
@@ -609,6 +612,77 @@ export class PptxGenJsExporterService {
       color: hex(palette.border),
     });
 
+    if (slide.speakerNotes) s.addNotes(slide.speakerNotes);
+  }
+
+  // ── VISUAL_HUMOR Slide (image-forward with centered title) ──
+
+  private addVisualHumorSlide(
+    pres: PptxGenJS,
+    slide: SlideModel,
+    palette: ColorPalette,
+    theme: ThemeModel,
+    totalSlides: number,
+  ): void {
+    const s = pres.addSlide({ masterName: 'PITCHABLE_DARK' });
+
+    // Full-bleed image at high opacity — the star of the show
+    if (slide.imageUrl) {
+      try {
+        s.addImage({
+          data: slide.imageUrl,
+          x: 0,
+          y: 0,
+          w: '100%',
+          h: '100%',
+          transparency: 20, // 80% visible — much higher than normal slides
+        });
+      } catch {
+        // continue without image
+      }
+    }
+
+    // Semi-transparent dark gradient overlay at bottom for text readability
+    s.addShape('rect', {
+      x: 0,
+      y: '60%',
+      w: '100%',
+      h: '40%',
+      fill: { color: hex(palette.background), transparency: 35 },
+    });
+
+    // Title — large, bold, centered in the bottom third
+    if (slide.title) {
+      s.addText(slide.title, {
+        x: 0.5,
+        y: '65%',
+        w: '92%',
+        h: 1.0,
+        fontSize: 38,
+        fontFace: theme.headingFont,
+        color: 'FFFFFF',
+        bold: true,
+        align: 'center',
+        valign: 'middle',
+      });
+    }
+
+    // Optional subtitle/punchline below title
+    if (slide.body?.trim()) {
+      s.addText(slide.body.trim(), {
+        x: 0.5,
+        y: '82%',
+        w: '92%',
+        h: 0.5,
+        fontSize: 22,
+        fontFace: theme.bodyFont,
+        color: 'E0E0E0',
+        align: 'center',
+        valign: 'top',
+      });
+    }
+
+    this.addFooter(s, slide.slideNumber, totalSlides, palette, theme);
     if (slide.speakerNotes) s.addNotes(slide.speakerNotes);
   }
 

@@ -103,6 +103,9 @@ export class ImagePromptBuilderService {
       case 'CTA':
         richPrompt = this.buildCTARich(slideTitle);
         break;
+      case 'VISUAL_HUMOR':
+        richPrompt = this.buildVisualHumorRich(slideTitle, slideBody, theme);
+        break;
       case 'QUOTE':
         richPrompt = this.buildQuoteRich(slideTitle, slideBody, theme);
         break;
@@ -632,6 +635,63 @@ export class ImagePromptBuilderService {
     };
   }
 
+  private buildVisualHumorRich(title: string, body: string, theme: ThemeColors): RichPrompt {
+    const concept = this.condenseTitle(title);
+    return {
+      subject: {
+        main: `Photorealistic scene that creates visual humor or irony when paired with: "${concept}"`,
+        elements: {
+          primary: 'A vivid, relatable scene or visual metaphor',
+          secondary: 'Subtle details that reward a second look',
+          composition: 'Cinematic, full-frame, immersive — designed to fill the entire slide',
+        },
+      },
+      background: {
+        type: 'Full scene — no abstract backgrounds',
+        color: 'Natural scene colors, warm or cool depending on mood',
+        texture: 'Photorealistic detail and texture',
+        depth: 'Cinematic depth of field, environmental storytelling',
+      },
+      style: {
+        medium: 'Photorealistic digital photography',
+        artistic_reference: 'Stock photography humor, corporate comedy, meme-quality relatability',
+        color_palette: 'Natural, vivid, cinematic color grading',
+        vibe: 'Witty, unexpected, relatable, memorable',
+      },
+      technical: {
+        resolution: 'Ultra high resolution, 4K quality',
+        aspect_ratio: '16:9 widescreen — image fills entire slide',
+      },
+      lighting: {
+        type: 'Cinematic natural lighting',
+        source: 'Scene-appropriate — office fluorescent, outdoor natural, stage spotlight',
+        details: 'Professional photography quality, subtle color grading',
+      },
+      constraints: {
+        must_keep: [
+          'Scene must be INSTANTLY readable — humor lands in 1 second',
+          'Full-frame composition — no empty corners',
+          'Photorealistic quality',
+          'Relatable to business/tech audience',
+          'The humor comes from pairing with the title — image alone should be interesting',
+        ],
+        avoid: [
+          'Any text, words, or letters in the image',
+          'Abstract or geometric imagery',
+          'Corporate clip-art aesthetic',
+          'Dark or moody unless the humor calls for it',
+          'Multiple scenes — one clear focal point',
+        ],
+      },
+      negative_prompt: [
+        ...BASE_NEGATIVE,
+        'abstract', 'geometric', 'diagram', 'chart', 'graph',
+        'corporate clip art', 'flat design',
+        'split composition', 'collage',
+      ],
+    };
+  }
+
   private buildGenericRich(title: string, body: string, theme: ThemeColors): RichPrompt {
     const concept = this.condenseTitle(title);
     return {
@@ -683,6 +743,7 @@ export class ImagePromptBuilderService {
       negative_prompt: [...BASE_NEGATIVE],
     };
   }
+
 
   // ── Helpers ───────────────────────────────────────────────
 

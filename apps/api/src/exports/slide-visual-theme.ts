@@ -36,7 +36,8 @@ type SlideType =
   | 'DATA_METRICS'
   | 'CTA'
   | 'CONTENT'
-  | 'QUOTE';
+  | 'QUOTE'
+  | 'VISUAL_HUMOR';
 
 // ── Background Variant Pool ────────────────────────────────
 
@@ -62,6 +63,7 @@ const TYPE_TO_VARIANT: Record<SlideType, number | 'cycle'> = {
   COMPARISON: 1,    // bg-diagonal-lines
   CONTENT: 'cycle', // rotates through all 6
   QUOTE: 5,         // bg-corner-accent
+  VISUAL_HUMOR: 0,   // bg-radial-glow (subtle, image dominates)
 };
 
 // ── Light-Background Variant Pool (McKinsey / Consulting) ───
@@ -83,6 +85,7 @@ const LIGHT_TYPE_TO_VARIANT: Record<SlideType, number> = {
   DATA_METRICS: 0,
   COMPARISON: 0,
   CONTENT: 0,
+  VISUAL_HUMOR: 0,  // bg-clean (image dominates)
 };
 
 // ── Public API ─────────────────────────────────────────────
