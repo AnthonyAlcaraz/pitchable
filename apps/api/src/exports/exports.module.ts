@@ -11,6 +11,6 @@ import { KnowledgeBaseModule } from '../knowledge-base/knowledge-base.module.js'
   imports: [PrismaModule, KnowledgeBaseModule],
   controllers: [ExportsController],
   providers: [MarpExporterService, RevealJsExporterService, PptxGenJsExporterService, ExportsService],
-  exports: [ExportsService],
+  exports: [ExportsService, MarpExporterService],
 })
 export class ExportsModule {}

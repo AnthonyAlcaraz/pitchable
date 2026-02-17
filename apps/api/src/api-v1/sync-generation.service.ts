@@ -10,6 +10,8 @@ import { DECK_GENERATION_COST } from '../credits/tier-config.js';
 import { ImagesService } from '../images/images.service.js';
 import { NanoBananaService } from '../images/nano-banana.service.js';
 import { QualityAgentsService } from '../chat/quality-agents.service.js';
+import { VisualCriticService } from '../chat/visual-critic.service.js';
+import { MarpExporterService } from '../exports/marp-exporter.service.js';
 import type { SlideForReview } from '../chat/quality-agents.service.js';
 import {
   buildOutlineSystemPrompt,
@@ -60,6 +62,8 @@ export class SyncGenerationService {
     private readonly imagesService: ImagesService,
     private readonly nanoBanana: NanoBananaService,
     private readonly qualityAgents: QualityAgentsService,
+    private readonly visualCritic: VisualCriticService,
+    private readonly marpExporter: MarpExporterService,
     private readonly archetypeResolver: ArchetypeResolverService,
   ) {}
 
@@ -448,6 +452,26 @@ ${slideKbContext}`;
       } catch (qualityErr) {
         timings['quality_agents'] = Date.now() - tQuality;
         this.logger.warn(`Sync quality review failed (non-fatal) after ${((Date.now() - tQuality) / 1000).toFixed(1)}s: ${qualityErr}`);
+      }
+
+      // 12c. Visual critic (non-blocking)
+      try {
+        const tCritic = Date.now();
+        
+        const finalSlides = await this.prisma.slide.findMany({
+          where: { presentationId: presentation.id },
+          orderBy: { slideNumber: 'asc' },
+        });
+        const marpMd = this.marpExporter.generateMarpMarkdown(presentation, finalSlides, theme!);
+        const criticResult = await this.visualCritic.reviewPresentation(marpMd, finalSlides.length);
+        this.logger.log(
+          `[TIMING] Visual critic: ${((Date.now() - tCritic) / 1000).toFixed(1)}s — ` +
+          `score=${criticResult.overallScore.toFixed(2)} aesthetic=${criticResult.aestheticScore.toFixed(2)} diversity=${criticResult.diversityScore.toFixed(2)} ` +
+          `issues=${criticResult.issues.length}`,
+        );
+        timings['visual_critic'] = Date.now() - tCritic;
+      } catch (criticErr) {
+        this.logger.warn(`Visual critic failed (non-fatal): ${criticErr}`);
       }
 
       // 13. Mark complete + deduct credits

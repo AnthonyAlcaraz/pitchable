@@ -10,6 +10,7 @@ import { ContentReviewerService } from './content-reviewer.service.js';
 import { FeedbackLogService } from './feedback-log.service.js';
 import { ValidationGateService } from './validation-gate.service.js';
 import { QualityAgentsService } from './quality-agents.service.js';
+import { VisualCriticService } from './visual-critic.service.js';
 import { PrismaModule } from '../prisma/prisma.module.js';
 import { KnowledgeBaseModule } from '../knowledge-base/knowledge-base.module.js';
 import { ConstraintsModule } from '../constraints/constraints.module.js';
@@ -33,6 +34,7 @@ import { PitchLensModule } from '../pitch-lens/pitch-lens.module.js';
     FeedbackLogService,
     ValidationGateService,
     QualityAgentsService,
+    VisualCriticService,
   ],
   exports: [
     ChatService,
@@ -45,6 +47,7 @@ import { PitchLensModule } from '../pitch-lens/pitch-lens.module.js';
     FeedbackLogService,
     ValidationGateService,
     QualityAgentsService,
+    VisualCriticService,
   ],
 })
 export class ChatModule {}

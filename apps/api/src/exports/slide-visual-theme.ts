@@ -420,7 +420,7 @@ export function generateMarpMcKinseyCSS(palette: ColorPalette): string {
  */
 export function generateMarpMcKinseyTableCSS(palette: ColorPalette): string {
   return [
-    `  table { border-collapse: collapse; width: 100%; font-size: 0.75em; margin-top: 0.3em; margin-bottom: 0.3em; }`,
+    `  table { border-collapse: collapse; width: auto; min-width: 70%; max-width: 100%; margin-left: auto; margin-right: auto; font-size: 0.82em; margin-top: 0.3em; margin-bottom: 0.3em; }`,
     `  th {`,
     `    background: ${palette.primary};`,
     `    color: #FFFFFF;`,
