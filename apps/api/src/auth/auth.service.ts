@@ -91,10 +91,37 @@ export class AuthService {
       return null;
     }
 
+    // Check account lockout
+    if (user.lockedUntil && user.lockedUntil > new Date()) {
+      const minutesLeft = Math.ceil(
+        (user.lockedUntil.getTime() - Date.now()) / 60_000,
+      );
+      throw new UnauthorizedException(
+        `Account temporarily locked. Try again in ${minutesLeft} minute(s).`,
+      );
+    }
+
     const isPasswordValid = await argon2.verify(user.passwordHash, password);
 
     if (!isPasswordValid) {
+      const attempts = user.failedLoginAttempts + 1;
+      const lockout = attempts >= 5 ? new Date(Date.now() + 15 * 60_000) : null;
+      await this.prisma.user.update({
+        where: { id: user.id },
+        data: {
+          failedLoginAttempts: attempts,
+          ...(lockout ? { lockedUntil: lockout } : {}),
+        },
+      });
       return null;
+    }
+
+    // Successful login — reset lockout counters
+    if (user.failedLoginAttempts > 0 || user.lockedUntil) {
+      await this.prisma.user.update({
+        where: { id: user.id },
+        data: { failedLoginAttempts: 0, lockedUntil: null },
+      });
     }
 
     return this.toUserDto(user);
@@ -158,6 +185,13 @@ export class AuthService {
       },
     );
 
+    // Store hashed token for single-use verification
+    const tokenHash = await argon2.hash(token);
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: { passwordResetToken: tokenHash, passwordResetUsedAt: null },
+    });
+
     const frontendUrl = this.configService.get<string>('FRONTEND_URL', 'http://localhost:5173');
     const resetUrl = `${frontendUrl}/reset-password?token=${token}`;
 
@@ -183,10 +217,32 @@ export class AuthService {
         throw new UnauthorizedException('Invalid token type');
       }
 
+      // Single-use check: verify token matches stored hash and hasn't been used
+      const user = await this.prisma.user.findUnique({
+        where: { id: payload.sub },
+        select: { passwordResetToken: true, passwordResetUsedAt: true },
+      });
+
+      if (!user?.passwordResetToken) {
+        throw new UnauthorizedException('No password reset was requested');
+      }
+      if (user.passwordResetUsedAt) {
+        throw new UnauthorizedException('This reset link has already been used');
+      }
+
+      const tokenValid = await argon2.verify(user.passwordResetToken, token);
+      if (!tokenValid) {
+        throw new UnauthorizedException('Invalid reset token');
+      }
+
       const passwordHash = await argon2.hash(newPassword);
       await this.prisma.user.update({
         where: { id: payload.sub },
-        data: { passwordHash, refreshTokenHash: null },
+        data: {
+          passwordHash,
+          refreshTokenHash: null,
+          passwordResetUsedAt: new Date(),
+        },
       });
     } catch (error) {
       if (error instanceof UnauthorizedException) {

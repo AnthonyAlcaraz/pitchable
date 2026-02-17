@@ -47,6 +47,7 @@ export function buildStyleEnforcerPrompt(
   themeCategory: string,
   themeName: string,
   themeColors: { primary: string; accent: string; background: string; text: string } | undefined,
+  archetypeExtraRules?: string[],
 ): string {
   const themeRules = THEME_STYLE_RULES[themeCategory] ?? THEME_STYLE_RULES['dark'];
 
@@ -58,11 +59,15 @@ export function buildStyleEnforcerPrompt(
 - Text: ${themeColors.text}`
     : '';
 
+  const archetypeBlock = archetypeExtraRules?.length
+    ? `\nARCHETYPE-SPECIFIC STYLE RULES (enforce these in addition to theme rules):\n${archetypeExtraRules.map((r, i) => `${i + 1}. ${r}`).join('\n')}\n`
+    : '';
+
   return `You are the Style Enforcer Agent for "${themeName}" presentations. Your job is to validate every slide against theme-specific design rules.
 
 ${themeRules}
 ${colorGuidance}
-
+${archetypeBlock}
 UNIVERSAL STYLE RULES (apply to ALL themes):
 - Title must not be generic ("Overview", "Introduction", "Summary")
 - No walls of text — max 80 words in body
@@ -121,13 +126,18 @@ export function isValidStyleEnforcerResult(data: unknown): data is StyleEnforcer
 export function buildNarrativeCoherencePrompt(
   presentationType: string,
   frameworkName?: string,
+  archetypeExtraRules?: string[],
 ): string {
   const frameworkGuidance = frameworkName
     ? `\nSTORY FRAMEWORK: "${frameworkName}" — validate that the slide sequence follows this framework's prescribed arc.`
     : '';
 
+  const archetypeNarrativeBlock = archetypeExtraRules?.length
+    ? `\nARCHETYPE NARRATIVE RULES (validate compliance with these):\n${archetypeExtraRules.map((r, i) => `${i + 1}. ${r}`).join('\n')}`
+    : '';
+
   return `You are the Narrative Coherence Agent. You review an ENTIRE presentation for story arc, logical flow, and structural integrity.
-${frameworkGuidance}
+${frameworkGuidance}${archetypeNarrativeBlock}
 
 PRESENTATION TYPE: ${presentationType}
 

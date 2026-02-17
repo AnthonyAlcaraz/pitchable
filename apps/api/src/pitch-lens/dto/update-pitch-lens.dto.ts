@@ -10,6 +10,7 @@ import {
 } from 'class-validator';
 import {
   AudienceType,
+  DeckArchetype,
   PitchGoal,
   ToneStyle,
   CompanyStage,
@@ -90,6 +91,10 @@ export class UpdatePitchLensDto {
   @Min(2)
   @Max(8)
   maxTableRows?: number;
+
+  @IsOptional()
+  @IsEnum(DeckArchetype)
+  deckArchetype?: DeckArchetype;
 
   @IsOptional()
   @IsBoolean()

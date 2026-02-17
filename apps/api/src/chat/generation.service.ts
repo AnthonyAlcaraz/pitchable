@@ -27,12 +27,14 @@ import { DEFAULT_SLIDE_RANGES } from './dto/generation-config.dto.js';
 import { getFrameworkConfig } from '../pitch-lens/frameworks/story-frameworks.config.js';
 import { buildPitchLensInjection } from '../pitch-lens/prompts/pitch-lens-injection.prompt.js';
 import { getImageFrequencyForTheme, getThemeCategoryByName } from '../themes/themes.service.js';
+import { ArchetypeResolverService } from '../pitch-lens/archetypes/archetype-resolver.service.js';
 import {
   PresentationType,
   PresentationStatus,
   SlideType,
   CreditReason,
 } from '../../generated/prisma/enums.js';
+import type { DeckArchetype } from '../../generated/prisma/enums.js';
 import { DENSITY_LIMITS, type SlideContent } from '../constraints/density-validator.js';
 import { TtlMap } from '../common/ttl-map.js';
 import type { ChatStreamEvent } from './chat.service.js';
@@ -77,6 +79,7 @@ export class GenerationService {
     private readonly imagesService: ImagesService,
     private readonly nanoBanana: NanoBananaService,
     private readonly qualityAgents: QualityAgentsService,
+    private readonly archetypeResolver: ArchetypeResolverService,
   ) {}
 
   /**
@@ -127,8 +130,13 @@ export class GenerationService {
       : await this.contextBuilder.retrieveEnrichedContext(userId, config.topic, 5, 5);
     yield { type: 'progress', content: 'Retrieving relevant content', metadata: { step: 'rag', status: 'complete' } };
 
+    // 1b. Build archetype context (if set on Pitch Lens)
+    const archetypeContext = presWithContext?.pitchLens?.deckArchetype
+      ? this.archetypeResolver.buildArchetypeInjection(presWithContext.pitchLens.deckArchetype as DeckArchetype)
+      : undefined;
+
     // 2. Generate outline via LLM (JSON mode)
-    const systemPrompt = buildOutlineSystemPrompt(presType, range, kbContext, pitchLensContext);
+    const systemPrompt = buildOutlineSystemPrompt(presType, range, kbContext, pitchLensContext, archetypeContext);
     const userPrompt = buildOutlineUserPrompt(config.topic, chatFrameworkSlideStructure);
 
     yield { type: 'progress', content: 'Generating outline structure', metadata: { step: 'outline_llm', status: 'running' } };
@@ -301,7 +309,12 @@ export class GenerationService {
       pitchLensContext = buildPitchLensInjection({ ...presWithLens.pitchLens, framework });
     }
 
-    // 4c. Extract density + image layout from Pitch Lens
+    // 4c. Build archetype context for slide generation
+    const execArchetypeContext = presWithLens?.pitchLens?.deckArchetype
+      ? this.archetypeResolver.buildArchetypeInjection(presWithLens.pitchLens.deckArchetype as DeckArchetype)
+      : undefined;
+
+    // 4d. Extract density + image layout from Pitch Lens
     const densityOverrides = presWithLens?.pitchLens ? {
       maxBullets: presWithLens.pitchLens.maxBulletsPerSlide ?? undefined,
       maxWords: presWithLens.pitchLens.maxWordsPerSlide ?? undefined,
@@ -337,6 +350,7 @@ export class GenerationService {
       imageFreqInstruction,
       densityOverrides,
       imageLayoutInstruction,
+      execArchetypeContext,
     ) + feedbackBlock;
 
     // Track offset when NEEDS_SPLIT inserts extra slides
@@ -629,6 +643,7 @@ export class GenerationService {
         frameworkName: presWithLens?.pitchLens?.selectedFramework ?? undefined,
         userId,
         presentationId,
+        archetypeId: presWithLens?.pitchLens?.deckArchetype ?? undefined,
       });
 
       yield { type: 'progress', content: 'Running quality review agents', metadata: { step: 'quality_review', status: 'complete' } };
@@ -781,6 +796,11 @@ export class GenerationService {
       pitchLensContext = buildPitchLensInjection({ ...presentation.pitchLens, framework });
     }
 
+    // Build archetype context for rewrite path
+    const rewriteArchetypeContext = presentation.pitchLens?.deckArchetype
+      ? this.archetypeResolver.buildArchetypeInjection(presentation.pitchLens.deckArchetype as DeckArchetype)
+      : undefined;
+
     // Extract density + image layout from Pitch Lens (rewrite path)
     const rewriteDensity = presentation.pitchLens ? {
       maxBullets: presentation.pitchLens.maxBulletsPerSlide ?? undefined,
@@ -805,6 +825,7 @@ export class GenerationService {
       rewriteImgFreq,
       rewriteDensity,
       rewriteImageLayout,
+      rewriteArchetypeContext,
     ) + feedbackBlock;
 
     const priorSlides: Array<{ title: string; body: string }> = [];

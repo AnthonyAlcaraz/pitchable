@@ -23,6 +23,10 @@ model User {
   lastLoginIp        String?
   lastLoginAt        DateTime?
   onboardingCompleted Boolean            @default(false)
+  failedLoginAttempts Int                @default(0)
+  lockedUntil        DateTime?
+  passwordResetToken String?
+  passwordResetUsedAt DateTime?
   createdAt          DateTime            @default(now())
   updatedAt          DateTime            @updatedAt
   apiKeys            ApiKey[]
@@ -52,6 +56,7 @@ model Presentation {
   briefId          String?            @db.Uuid
   forkedFromId     String?            @db.Uuid
   isPublic         Boolean            @default(false)
+  featured         Boolean            @default(false)
   viewCount        Int                @default(0)
   forkCount        Int                @default(0)
   publishedAt      DateTime?
@@ -76,6 +81,7 @@ model Presentation {
   @@index([forkedFromId])
   @@index([isPublic, status])
   @@index([isPublic, viewCount])
+  @@index([isPublic, featured, publishedAt])
 }
 
 model Slide {

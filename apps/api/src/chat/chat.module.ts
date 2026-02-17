@@ -17,9 +17,10 @@ import { ExportsModule } from '../exports/exports.module.js';
 import { CreditsModule } from '../credits/credits.module.js';
 import { ImagesModule } from '../images/images.module.js';
 import { EmailModule } from '../email/email.module.js';
+import { PitchLensModule } from '../pitch-lens/pitch-lens.module.js';
 
 @Module({
-  imports: [PrismaModule, KnowledgeBaseModule, ConstraintsModule, ExportsModule, CreditsModule, ImagesModule, EmailModule],
+  imports: [PrismaModule, KnowledgeBaseModule, ConstraintsModule, ExportsModule, CreditsModule, ImagesModule, EmailModule, PitchLensModule],
   controllers: [ChatController],
   providers: [
     ChatService,

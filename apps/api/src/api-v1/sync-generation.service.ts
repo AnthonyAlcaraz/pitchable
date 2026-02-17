@@ -24,12 +24,14 @@ import { DEFAULT_SLIDE_RANGES } from '../chat/dto/generation-config.dto.js';
 import { getFrameworkConfig } from '../pitch-lens/frameworks/story-frameworks.config.js';
 import { buildPitchLensInjection } from '../pitch-lens/prompts/pitch-lens-injection.prompt.js';
 import { getImageFrequencyForTheme, getThemeCategoryByName } from '../themes/themes.service.js';
+import { ArchetypeResolverService } from '../pitch-lens/archetypes/archetype-resolver.service.js';
 import {
   PresentationType,
   PresentationStatus,
   SlideType,
   CreditReason,
 } from '../../generated/prisma/enums.js';
+import type { DeckArchetype } from '../../generated/prisma/enums.js';
 import { isValidOutline, isValidSlideContent } from '../chat/validators.js';
 import type { GeneratedSlideContent } from '../chat/validators.js';
 import { validateSlideContent, suggestSplit, DENSITY_LIMITS } from '../constraints/density-validator.js';
@@ -58,6 +60,7 @@ export class SyncGenerationService {
     private readonly imagesService: ImagesService,
     private readonly nanoBanana: NanoBananaService,
     private readonly qualityAgents: QualityAgentsService,
+    private readonly archetypeResolver: ArchetypeResolverService,
   ) {}
 
   /** Timing helper — returns elapsed ms since start. */
@@ -162,6 +165,11 @@ export class SyncGenerationService {
       timings['rag_retrieval'] = Date.now() - tRag;
       this.logger.log(`[TIMING] RAG retrieval + theme fetch: ${((Date.now() - tRag) / 1000).toFixed(1)}s (KB context: ${kbContext.length} chars)`);
 
+      // 6b. Build archetype context
+      const syncArchetypeContext = pitchLens?.deckArchetype
+        ? this.archetypeResolver.buildArchetypeInjection(pitchLens.deckArchetype as DeckArchetype)
+        : undefined;
+
       // 7. Generate outline
       const tOutline = Date.now();
       const outlineSystemPrompt = buildOutlineSystemPrompt(
@@ -169,6 +177,7 @@ export class SyncGenerationService {
         range,
         kbContext,
         pitchLensContext,
+        syncArchetypeContext,
       );
       const outlineUserPrompt = buildOutlineUserPrompt(input.topic, frameworkSlideStructure);
 
@@ -247,6 +256,7 @@ export class SyncGenerationService {
           syncImgFreq,
           syncDensityOverrides,
           syncImageLayoutInstruction,
+          syncArchetypeContext,
         );
         let slideUserPrompt = buildSlideGenerationUserPrompt(
           outlineSlide.slideNumber,
@@ -379,6 +389,7 @@ ${slideKbContext}`;
           frameworkName: pitchLens?.selectedFramework ?? undefined,
           userId,
           presentationId: presentation.id,
+          archetypeId: pitchLens?.deckArchetype ?? undefined,
         });
 
         // Apply auto-fixes

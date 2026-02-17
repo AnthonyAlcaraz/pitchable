@@ -1,18 +1,29 @@
 import { Injectable } from '@nestjs/common';
+import { createHash } from 'node:crypto';
 import { PrismaService } from '../prisma/prisma.service.js';
+
+// Salt for IP hashing — prevents rainbow table lookups
+const IP_HASH_SALT = 'pitchable-analytics-v1';
+
+function hashIp(ip: string): string {
+  return createHash('sha256').update(ip + IP_HASH_SALT).digest('hex').slice(0, 32);
+}
 
 @Injectable()
 export class AnalyticsService {
   constructor(private readonly prisma: PrismaService) {}
 
   async recordView(presentationId: string, viewerIp?: string, viewerUserId?: string, referrer?: string) {
-    // Debounce: same IP can only count once per hour for same presentation
-    if (viewerIp) {
+    // Hash IP for GDPR compliance — never store raw IP
+    const hashedIp = viewerIp ? hashIp(viewerIp) : undefined;
+
+    // Debounce: same hashed IP can only count once per hour for same presentation
+    if (hashedIp) {
       const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
       const existing = await this.prisma.presentationView.findFirst({
         where: {
           presentationId,
-          viewerIp,
+          viewerIp: hashedIp,
           createdAt: { gte: oneHourAgo },
         },
       });
@@ -21,7 +32,7 @@ export class AnalyticsService {
 
     await this.prisma.$transaction([
       this.prisma.presentationView.create({
-        data: { presentationId, viewerIp, viewerUserId, referrer },
+        data: { presentationId, viewerIp: hashedIp, viewerUserId, referrer },
       }),
       this.prisma.presentation.update({
         where: { id: presentationId },

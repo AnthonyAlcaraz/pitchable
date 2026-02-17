@@ -43,6 +43,27 @@ export class PitchLensController {
     return this.pitchLensService.findAll(user.userId);
   }
 
+  @Get('archetypes')
+  listArchetypes() {
+    return this.pitchLensService.listArchetypes();
+  }
+
+  @Get('archetypes/:archetypeId')
+  getArchetype(@Param('archetypeId') archetypeId: string) {
+    return this.pitchLensService.getArchetypeDetails(archetypeId);
+  }
+
+  @Get('archetypes/:archetypeId/defaults')
+  getArchetypeDefaults(@Param('archetypeId') archetypeId: string) {
+    return this.pitchLensService.getArchetypeDefaults(archetypeId);
+  }
+
+  @Post('recommend-archetype')
+  @HttpCode(HttpStatus.OK)
+  recommendArchetype(@Body() body: { audienceType: string; pitchGoal: string }) {
+    return this.pitchLensService.recommendArchetypes(body.audienceType, body.pitchGoal);
+  }
+
   @Get('frameworks')
   listFrameworks() {
     return this.pitchLensService.listFrameworks();

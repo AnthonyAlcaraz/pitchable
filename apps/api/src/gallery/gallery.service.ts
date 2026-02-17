@@ -26,10 +26,14 @@ export class GalleryService {
       where['presentationType'] = opts.type as PresentationType;
     }
 
+    const orderBy = opts.sort === 'trending'
+      ? [{ featured: 'desc' as const }, { viewCount: 'desc' as const }]
+      : [{ featured: 'desc' as const }, { publishedAt: 'desc' as const }];
+
     const [items, total] = await Promise.all([
       this.prisma.presentation.findMany({
         where,
-        orderBy: opts.sort === 'trending' ? { viewCount: 'desc' } : { publishedAt: 'desc' },
+        orderBy,
         skip: (opts.page - 1) * opts.limit,
         take: opts.limit,
         select: {
@@ -37,6 +41,7 @@ export class GalleryService {
           title: true,
           description: true,
           presentationType: true,
+          featured: true,
           publishedAt: true,
           createdAt: true,
           imageCount: true,
@@ -56,6 +61,7 @@ export class GalleryService {
         title: p.title,
         description: p.description,
         presentationType: p.presentationType,
+        featured: p.featured,
         slideCount: p._count.slides,
         authorName: p.user.name,
         themeName: p.theme.displayName,

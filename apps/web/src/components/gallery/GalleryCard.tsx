@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Layers, Eye, GitFork } from 'lucide-react';
+import { Layers, Eye, GitFork, Star } from 'lucide-react';
 
 const TYPE_LABELS: Record<string, string> = {
   STANDARD: 'Standard',
@@ -21,6 +21,7 @@ export interface GalleryPresentation {
   createdAt: string;
   viewCount?: number;
   forkCount?: number;
+  featured?: boolean;
 }
 
 interface GalleryCardProps {
@@ -35,11 +36,17 @@ export function GalleryCard({ presentation }: GalleryCardProps) {
     >
       {/* Color gradient header */}
       <div
-        className="flex h-36 items-center justify-center"
+        className="relative flex h-36 items-center justify-center"
         style={{
           background: `linear-gradient(135deg, ${presentation.themeColor}30, ${presentation.themeColor}08)`,
         }}
       >
+        {presentation.featured && (
+          <span className="absolute left-2 top-2 flex items-center gap-1 rounded-full bg-orange-500/90 px-2 py-0.5 text-[10px] font-bold text-white">
+            <Star className="h-3 w-3 fill-white" />
+            Featured
+          </span>
+        )}
         <Layers className="h-12 w-12 text-muted-foreground/30 transition-transform group-hover:scale-110" />
       </div>
 

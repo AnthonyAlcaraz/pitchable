@@ -17,6 +17,8 @@ import {
   getAllFrameworks,
 } from './frameworks/story-frameworks.config.js';
 import type { StoryFrameworkConfig } from './frameworks/story-frameworks.config.js';
+import { ArchetypeResolverService } from './archetypes/archetype-resolver.service.js';
+import type { DeckArchetype } from '../../generated/prisma/enums.js';
 
 @Injectable()
 export class PitchLensService {
@@ -25,6 +27,7 @@ export class PitchLensService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly themesService: ThemesService,
+    private readonly archetypeResolver: ArchetypeResolverService,
   ) {}
 
   async create(userId: string, dto: CreatePitchLensDto) {
@@ -54,6 +57,7 @@ export class PitchLensService {
         maxBulletsPerSlide: dto.maxBulletsPerSlide,
         maxWordsPerSlide: dto.maxWordsPerSlide,
         maxTableRows: dto.maxTableRows,
+        deckArchetype: dto.deckArchetype,
         isDefault: dto.isDefault ?? false,
       },
     });
@@ -193,6 +197,27 @@ export class PitchLensService {
 
   listFrameworks(): StoryFrameworkConfig[] {
     return getAllFrameworks();
+  }
+
+  // ── Archetype API ──────────────────────────────────────────
+
+  listArchetypes() {
+    return this.archetypeResolver.listArchetypes();
+  }
+
+  getArchetypeDetails(archetypeId: string) {
+    return this.archetypeResolver.getArchetype(archetypeId as DeckArchetype);
+  }
+
+  recommendArchetypes(audienceType: string, pitchGoal: string) {
+    return this.archetypeResolver.recommendArchetypes(
+      audienceType as import('../../generated/prisma/enums.js').AudienceType,
+      pitchGoal as import('../../generated/prisma/enums.js').PitchGoal,
+    );
+  }
+
+  getArchetypeDefaults(archetypeId: string) {
+    return this.archetypeResolver.getDefaults(archetypeId as DeckArchetype);
   }
 
   /**

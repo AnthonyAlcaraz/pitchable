@@ -1,6 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { LlmService, LlmModel } from './llm.service.js';
 import { ContextBuilderService } from './context-builder.service.js';
+import { ArchetypeResolverService } from '../pitch-lens/archetypes/archetype-resolver.service.js';
+import type { DeckArchetype } from '../../generated/prisma/enums.js';
 import {
   buildStyleEnforcerPrompt,
   isValidStyleEnforcerResult,
@@ -69,6 +71,7 @@ export class QualityAgentsService {
   constructor(
     private readonly llm: LlmService,
     private readonly contextBuilder: ContextBuilderService,
+    private readonly archetypeResolver: ArchetypeResolverService,
   ) {}
 
   /**
@@ -92,6 +95,7 @@ export class QualityAgentsService {
       frameworkName?: string;
       userId: string;
       presentationId: string;
+      archetypeId?: string;
     },
   ): Promise<QualityReviewResult> {
     const tQStart = Date.now();
@@ -99,10 +103,21 @@ export class QualityAgentsService {
       `Quality review: ${slides.length} slides, theme="${options.themeName}", type="${options.presentationType}"`,
     );
 
+    // Resolve archetype quality gate rules (if archetype is set)
+    const styleGate = options.archetypeId
+      ? this.archetypeResolver.getQualityGateRules(options.archetypeId as DeckArchetype, 'style')
+      : { extraRules: [] };
+    const narrativeGate = options.archetypeId
+      ? this.archetypeResolver.getQualityGateRules(options.archetypeId as DeckArchetype, 'narrative')
+      : { extraRules: [] };
+    const factCheckGate = options.archetypeId
+      ? this.archetypeResolver.getQualityGateRules(options.archetypeId as DeckArchetype, 'fact_check')
+      : { extraRules: [] };
+
     // Run Style Enforcer + Fact Checker in parallel (both are per-slide)
     const tStyleFact = Date.now();
     const [styleResults, factCheckResults] = await Promise.all([
-      this.runStyleEnforcer(slides, options.themeCategory, options.themeName, options.themeColors),
+      this.runStyleEnforcer(slides, options.themeCategory, options.themeName, options.themeColors, styleGate.extraRules),
       this.runFactChecker(slides, options.userId, options.presentationId),
     ]);
     this.logger.log(`[TIMING] Style+FactCheck (parallel): ${((Date.now() - tStyleFact) / 1000).toFixed(1)}s — ${styleResults.length} style, ${factCheckResults.length} fact checks`);
@@ -113,6 +128,7 @@ export class QualityAgentsService {
       slides,
       options.presentationType,
       options.frameworkName,
+      narrativeGate.extraRules,
     );
     this.logger.log(`[TIMING] Narrative coherence: ${((Date.now() - tNarrative) / 1000).toFixed(1)}s`);
 
@@ -180,9 +196,9 @@ export class QualityAgentsService {
       );
 
     const passed =
-      avgStyleScore >= STYLE_PASS_THRESHOLD &&
-      narrativeScore >= NARRATIVE_PASS_THRESHOLD &&
-      avgFactScore >= FACT_CHECK_PASS_THRESHOLD;
+      avgStyleScore >= (styleGate.threshold ?? STYLE_PASS_THRESHOLD) &&
+      narrativeScore >= (narrativeGate.threshold ?? NARRATIVE_PASS_THRESHOLD) &&
+      avgFactScore >= (factCheckGate.threshold ?? FACT_CHECK_PASS_THRESHOLD);
 
     this.logger.log(
       `[TIMING] Quality review complete in ${((Date.now() - tQStart) / 1000).toFixed(1)}s: style=${avgStyleScore.toFixed(2)}, narrative=${narrativeScore.toFixed(2)}, facts=${avgFactScore.toFixed(2)}, fixes=${fixes.length}, passed=${passed}`,
@@ -211,8 +227,9 @@ export class QualityAgentsService {
     themeCategory: string,
     themeName: string,
     themeColors?: { primary: string; accent: string; background: string; text: string },
+    archetypeExtraRules?: string[],
   ): Promise<Array<{ slideNumber: number; result: StyleEnforcerResult }>> {
-    const systemPrompt = buildStyleEnforcerPrompt(themeCategory, themeName, themeColors);
+    const systemPrompt = buildStyleEnforcerPrompt(themeCategory, themeName, themeColors, archetypeExtraRules);
     const results: Array<{ slideNumber: number; result: StyleEnforcerResult }> = [];
 
     // Process slides in batches of 3 for controlled parallelism
@@ -269,10 +286,11 @@ ${slide.imagePromptHint ? `Image Prompt: ${slide.imagePromptHint}` : ''}`;
     slides: SlideForReview[],
     presentationType: string,
     frameworkName?: string,
+    archetypeExtraRules?: string[],
   ): Promise<NarrativeCoherenceResult | null> {
     if (slides.length < 3) return null; // Too few slides for narrative analysis
 
-    const systemPrompt = buildNarrativeCoherencePrompt(presentationType, frameworkName);
+    const systemPrompt = buildNarrativeCoherencePrompt(presentationType, frameworkName, archetypeExtraRules);
 
     const slideSummaries = slides
       .map((s) => `Slide ${s.slideNumber} [${s.slideType}]: "${s.title}"\n  ${s.body.slice(0, 150).replace(/\n/g, ' ')}...`)
