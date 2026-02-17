@@ -58,6 +58,8 @@ export class PitchLensService {
         maxWordsPerSlide: dto.maxWordsPerSlide,
         maxTableRows: dto.maxTableRows,
         deckArchetype: dto.deckArchetype,
+        showSectionLabels: dto.showSectionLabels ?? false,
+        showOutlineSlide: dto.showOutlineSlide ?? false,
         isDefault: dto.isDefault ?? false,
       },
     });
