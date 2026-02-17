@@ -182,6 +182,7 @@ export class ImagesService {
       COMPARISON: 3,
       QUOTE: 2,
       CONTENT: 1,
+      VISUAL_HUMOR: 11, // always gets an image — image IS the slide
     };
 
     // Score each slide: priority + position bonus (spread images evenly)

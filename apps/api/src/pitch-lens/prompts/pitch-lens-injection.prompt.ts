@@ -84,7 +84,7 @@ export function buildPitchLensInjection(
 
     // Slide structure
     parts.push('');
-    parts.push('### Recommended Slide Structure (follow this order):');
+    parts.push('### MANDATORY Slide Structure (follow this section order — each section needs at least 1 slide):');
     lens.framework.slideStructure.forEach((step, i) => {
       parts.push(`${i + 1}. ${step}`);
     });

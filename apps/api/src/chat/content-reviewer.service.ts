@@ -25,6 +25,11 @@ export class ContentReviewerService {
    * Review a single slide for quality.
    */
   async reviewSlide(slide: SlideInput, customLimits?: DensityLimits): Promise<ReviewResult> {
+    // VISUAL_HUMOR slides are intentionally minimal — skip density review
+    if (slide.slideType === 'VISUAL_HUMOR') {
+      return { verdict: 'PASS', score: 1.0, issues: [] };
+    }
+
     const slideDescription = `Title: ${slide.title}
 Type: ${slide.slideType}
 Body:
@@ -37,7 +42,7 @@ Speaker Notes: ${slide.speakerNotes}`;
           { role: 'system', content: customLimits ? buildContentReviewerPrompt(customLimits) : CONTENT_REVIEWER_SYSTEM_PROMPT },
           { role: 'user', content: `Review this slide:\n\n${slideDescription}` },
         ],
-        LlmModel.OPUS,
+        LlmModel.HAIKU,
         isValidReviewResult,
         2,
       );

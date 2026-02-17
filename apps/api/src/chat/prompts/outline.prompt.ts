@@ -62,6 +62,7 @@ PROCESS — Step-by-step workflows. Numbered steps render in accent color. Use f
 ARCHITECTURE — System diagrams. Image carries the visual weight; keep text minimal. Use for tech stacks, platform layers.
 QUOTE — Notable quote from a named person. Rendered with gold accent border and decorative italic.
 CTA — Call to action with 2-3 concrete next steps. Closing slide before thank-you.
+VISUAL_HUMOR — Image-forward humor slide. Title is a short witty phrase (max 8 words). Body is empty or a single punchline subtitle (max 10 words). The AI-generated image carries the entire message — humor comes from the interplay between the title and a vivid photorealistic scene. Use for transition moments, visual metaphors with humor, or breather slides between dense content. Max 1-2 per deck. Works best with CONVERSATIONAL, BOLD, INSPIRATIONAL, or STORYTELLING tones. Skip entirely for FORMAL or ANALYTICAL presentations.
 
 SLIDE TYPE SELECTION RULES:
 - Use DATA_METRICS or CONTENT (with tables) when the outline item contains 3+ data points that can be organized in columns
@@ -69,7 +70,15 @@ SLIDE TYPE SELECTION RULES:
 - Use PROCESS only for sequential workflows (3-6 steps)
 - Use QUOTE when featuring a specific person's statement
 - Prefer DATA_METRICS/CONTENT over PROBLEM/SOLUTION for data-heavy slides
-- A well-structured deck typically has: 1 TITLE, 2-4 DATA_METRICS/CONTENT with tables, 1-2 PROBLEM/SOLUTION, 0-1 COMPARISON, 0-1 QUOTE, 1 CTA
+- A well-structured deck typically has: 1 TITLE, 2-4 DATA_METRICS/CONTENT with tables, 1-2 PROBLEM/SOLUTION, 0-1 COMPARISON, 0-1 QUOTE, 0-2 VISUAL_HUMOR, 1 CTA
+- Use VISUAL_HUMOR sparingly (max 1-2 per deck) as a breather between dense slides — only when tone is conversational, bold, inspirational, or storytelling. Never use for formal or analytical presentations.
+
+NARRATIVE ARC (CRITICAL):
+- The presentation MUST tell a coherent story from start to finish.
+- Reading ONLY the slide titles should convey a complete, persuasive narrative.
+- Middle slides must advance toward a resolution — never drift into unrelated tangents.
+- If the topic implies an "engagement plan", "go-to-market", "adoption strategy", or "implementation path", there MUST be at least one dedicated slide for it. Do NOT leave the audience wondering "but how does this actually work for me?"
+- Every slide after the opening must answer a logical question raised by the previous slide.
 
 ${pitchLensContext ? pitchLensContext : `PRESENTATION TYPE GUIDANCE:\n${getTypeGuidance(presentationType)}`}
 
@@ -93,8 +102,31 @@ Respond with valid JSON matching this schema:
 Only output JSON. No markdown fences, no explanation.`;
 }
 
-export function buildOutlineUserPrompt(topic: string): string {
-  return `Create a presentation outline about: ${topic}`;
+export function buildOutlineUserPrompt(
+  topic: string,
+  frameworkSlideStructure?: string[],
+): string {
+  let frameworkConstraint = '';
+
+  if (frameworkSlideStructure && frameworkSlideStructure.length > 0) {
+    const structureList = frameworkSlideStructure
+      .map((step, i) => `  ${i + 1}. ${step}`)
+      .join('\n');
+
+    frameworkConstraint = `
+
+MANDATORY SLIDE STRUCTURE (follow this section order exactly — do not skip any section):
+${structureList}
+
+CRITICAL RULES:
+- Each section above MUST have at least 1 dedicated slide. Do not merge sections.
+- The slide titles must clearly signal which section they belong to.
+- If the framework has an "Engagement", "Plan", "Go-to-Market", "Bridge", or "How It Works" section, that slide MUST explicitly address the audience's adoption/engagement path — how will they actually use, buy, or implement this?
+- The narrative must flow as a coherent story: each slide's title should logically lead to the next.
+- Reading ONLY the slide titles should tell a complete, persuasive story from beginning to end.`;
+  }
+
+  return `Create a presentation outline about: ${topic}${frameworkConstraint}`;
 }
 
 function getTypeGuidance(presentationType: string): string {

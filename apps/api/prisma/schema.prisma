@@ -279,6 +279,7 @@ model PitchLens {
   technicalLevel      TechnicalLevel
   selectedFramework   StoryFramework
   frameworkOverridden Boolean        @default(false)
+  deckArchetype       DeckArchetype?
   customGuidance      String?
   preferredSlideRange Json?
   isDefault           Boolean        @default(false)
@@ -409,6 +410,7 @@ enum SlideType {
   CTA
   CONTENT
   QUOTE
+  VISUAL_HUMOR
 }
 
 enum CreditReason {
@@ -510,6 +512,19 @@ enum StoryFramework {
 enum ImageLayout {
   BACKGROUND
   RIGHT
+}
+
+enum DeckArchetype {
+  INVESTOR_PITCH
+  SALES_DECK
+  STRATEGY_BRIEF
+  KEYNOTE
+  PRODUCT_LAUNCH
+  BOARD_UPDATE
+  TECHNICAL_DEEP_DIVE
+  CULTURE_DECK
+  TRAINING_WORKSHOP
+  CASE_STUDY
 }
 
 enum BriefStatus {

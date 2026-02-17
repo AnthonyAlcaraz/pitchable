@@ -107,9 +107,11 @@ export class GenerationService {
       yield { type: 'error', content: 'A Pitch Lens is required to generate a deck. Create one in the Cockpit or during onboarding.' };
       return;
     }
+    let chatFrameworkSlideStructure: string[] | undefined;
     if (presWithContext?.pitchLens) {
       const framework = getFrameworkConfig(presWithContext.pitchLens.selectedFramework);
       pitchLensContext = buildPitchLensInjection({ ...presWithContext.pitchLens, framework });
+      chatFrameworkSlideStructure = framework?.slideStructure;
       // Use framework's ideal slide range if user didn't specify custom range
       if (!config.minSlides && !config.maxSlides && framework) {
         range.min = framework.idealSlideRange.min;
@@ -127,7 +129,7 @@ export class GenerationService {
 
     // 2. Generate outline via LLM (JSON mode)
     const systemPrompt = buildOutlineSystemPrompt(presType, range, kbContext, pitchLensContext);
-    const userPrompt = buildOutlineUserPrompt(config.topic);
+    const userPrompt = buildOutlineUserPrompt(config.topic, chatFrameworkSlideStructure);
 
     yield { type: 'progress', content: 'Generating outline structure', metadata: { step: 'outline_llm', status: 'running' } };
 
@@ -387,6 +389,7 @@ export class GenerationService {
         outlineSlide,
         generatedSlides,
         slideKbContext,
+        outline.slides.length,
       );
 
       // Validate density and auto-fix
@@ -425,8 +428,12 @@ export class GenerationService {
       generatedSlides.push({ title: validated.title, body: validated.body });
 
       // Run content reviewer (pipelined: await previous review, fire this one async)
+      // VISUAL_HUMOR slides are intentionally minimal — skip density review
+      const skipReview = outlineSlide.slideType === 'VISUAL_HUMOR';
       let reviewPassed = true;
-      try {
+      if (skipReview) {
+        this.logger.debug(`Skipping content review for VISUAL_HUMOR slide ${actualSlideNumber}`);
+      } else try {
         const customLimits = densityOverrides ? {
           ...DENSITY_LIMITS,
           ...(densityOverrides.maxBullets != null && { maxBulletsPerSlide: densityOverrides.maxBullets }),
@@ -907,6 +914,7 @@ export class GenerationService {
     outlineSlide: OutlineSlide,
     priorSlides: Array<{ title: string; body: string }> = [],
     slideKbContext = '',
+    totalSlides?: number,
   ): Promise<GeneratedSlideContent> {
     let userPrompt = buildSlideGenerationUserPrompt(
       outlineSlide.slideNumber,
@@ -914,6 +922,7 @@ export class GenerationService {
       outlineSlide.bulletPoints,
       outlineSlide.slideType,
       priorSlides,
+      totalSlides,
     );
 
     // Inject per-slide KB context for data-heavy slides
@@ -947,6 +956,16 @@ export class GenerationService {
     outlineSlide: OutlineSlide,
     themeColors?: { primary: string; secondary: string; accent: string; background: string; text: string; headingFont?: string; bodyFont?: string },
   ): GeneratedSlideContent {
+    // VISUAL_HUMOR slides are intentionally minimal — skip density validation
+    if (outlineSlide.slideType === 'VISUAL_HUMOR') {
+      return {
+        title: content.title || outlineSlide.title,
+        body: content.body || '',
+        speakerNotes: content.speakerNotes || `Key topic: ${outlineSlide.title}.`,
+        imagePromptHint: content.imagePromptHint || `Vivid photorealistic scene for humor slide: ${outlineSlide.title}`,
+      };
+    }
+
     const slideContent: SlideContent = {
       title: content.title || outlineSlide.title,
       body: content.body || outlineSlide.bulletPoints.map((b) => `- ${b}`).join('\n'),

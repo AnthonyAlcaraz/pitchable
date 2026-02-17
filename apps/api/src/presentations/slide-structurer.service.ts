@@ -433,6 +433,11 @@ export class SlideStructurerService {
   ): SlideDefinition[] {
     const baseSlide = this.buildContentSlide(section, startNumber);
 
+    // VISUAL_HUMOR slides are intentionally minimal — never split
+    if (baseSlide.slideType === SlideType.VISUAL_HUMOR) {
+      return [baseSlide];
+    }
+
     // Check density: too many bullets?
     if (section.bulletPoints.length > MAX_BULLETS_PER_SLIDE) {
       return this.splitByBullets(section, startNumber);

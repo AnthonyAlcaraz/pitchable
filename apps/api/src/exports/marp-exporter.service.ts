@@ -121,6 +121,23 @@ export class MarpExporterService {
     const safeSuccess = ensureContrast(palette.success, bg, 4.5);
     const safeError = ensureContrast(palette.error, bg, 4.5);
 
+    // Contrast audit: log all color pairs for debugging
+    const contrastPairs: Array<[string, string, string, number]> = [
+      ['text', safeText, bg, contrastRatio(safeText, bg)],
+      ['primary', safePrimary, bg, contrastRatio(safePrimary, bg)],
+      ['accent', safeAccent, bg, contrastRatio(safeAccent, bg)],
+      ['secondary', safeSecondary, bg, contrastRatio(safeSecondary, bg)],
+    ];
+    const failures = contrastPairs.filter(([, , , ratio]) => ratio < 4.5);
+    if (failures.length > 0) {
+      this.logger.warn(
+        `[CONTRAST] Theme "${theme.name}" has ${failures.length} low-contrast pairs: ` +
+        failures.map(([name, fg, b, ratio]) => `${name}(${fg} on ${b})=${ratio.toFixed(1)}`).join(', '),
+      );
+    } else {
+      this.logger.debug(`[CONTRAST] Theme "${theme.name}" — all ${contrastPairs.length} color pairs pass WCAG AA+`);
+    }
+
     // Table header background: surface-like, darkened from background
     const tableHeaderBg = isDarkBackground(bg)
       ? lightenColor(bg, 0.12)
@@ -250,24 +267,39 @@ export class MarpExporterService {
         '  }',
         '  tr:nth-child(even) td {',
         `    background: ${bg};`,
+        `    color: ${safeText};`,
         '  }',
       );
     }
 
+    // Ensure code text is readable against its own background (surface color)
+    const safeCodeText = ensureContrast(palette.text, palette.surface, 7.0);
+
     frontmatter.push(
       '  code {',
       `    background-color: ${palette.surface};`,
+      `    color: ${safeCodeText};`,
       '    padding: 0.2em 0.4em;',
       `    border-radius: ${isMcKinsey ? '2px' : '4px'};`,
       '    font-size: 0.85em;',
       '  }',
+      '  pre {',
+      `    background-color: ${palette.surface};`,
+      `    color: ${safeCodeText};`,
+      '    padding: 0.8em;',
+      `    border-radius: ${isMcKinsey ? '2px' : '6px'};`,
+      '  }',
       '  .source {',
       `    font-size: ${isMcKinsey ? '0.45em' : '0.55em'};`,
-      `    color: ${isMcKinsey ? '#A0A0A0' : safeSecondary};`,
+      `    color: ${safeSecondary};`,
       '  }',
       `  .gold { color: ${safeAccent}; }`,
       `  .green { color: ${safeSuccess}; }`,
       `  .red { color: ${safeError}; }`,
+      // Global catch-all: prevent browser default black text on any element
+      '  * {',
+      `    color: inherit;`,
+      '  }',
     );
 
     // Background variants + accent rotation + lead styling (theme-conditional)
@@ -313,7 +345,12 @@ export class MarpExporterService {
     const bgVariant = getSlideBackground(type, slide.slideNumber, bgColor);
 
     // Per-slide background + type-specific Marp directives
-    if (type === 'TITLE' || type === 'CTA') {
+    if (type === 'VISUAL_HUMOR') {
+      // Image-forward humor slide: full-screen image, centered text overlay
+      lines.push('<!-- _class: lead -->');
+      lines.push('<!-- _paginate: false -->');
+      lines.push('');
+    } else if (type === 'TITLE' || type === 'CTA') {
       lines.push(`<!-- _class: lead ${bgVariant.className} -->`);
       lines.push('<!-- _paginate: false -->');
       // Override Marp's global backgroundColor for divider slides
@@ -335,7 +372,10 @@ export class MarpExporterService {
 
     // Image placement — varies by slide type and imageLayout setting
     if (slide.imageUrl) {
-      if (type === 'TITLE' || type === 'CTA') {
+      if (type === 'VISUAL_HUMOR') {
+        // Full-screen background at high visibility — image IS the slide
+        lines.push(`![bg brightness:0.7](${slide.imageUrl})`);
+      } else if (type === 'TITLE' || type === 'CTA') {
         // Always background for hero slides regardless of setting
         lines.push(`![bg opacity:0.15](${slide.imageUrl})`);
       } else if (imageLayout === 'BACKGROUND') {

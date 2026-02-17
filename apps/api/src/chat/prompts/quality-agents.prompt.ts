@@ -140,6 +140,8 @@ CHECKS:
 6. OPENING: Does slide 1 hook the audience? (Not a generic "Agenda" or "Table of Contents")
 7. CLOSING: Does the last slide have a clear call-to-action or memorable takeaway?
 8. FRAMEWORK COMPLIANCE: If a story framework is specified, does the sequence match it?
+9. ENGAGEMENT PLAN: For business/pitch presentations, is there at least one slide that explicitly addresses HOW the audience will engage, adopt, implement, or buy? Look for: adoption path, sales cycle, implementation timeline, customer success model. Flag as ERROR if this is completely missing from the middle section of the deck.
+10. TITLE-ONLY NARRATIVE: Read ONLY the slide titles in order. Do they tell a complete, coherent story? If a reader skipping all body content would be confused about the "so what" or "how", flag the specific titles that break the narrative thread.
 
 Respond with valid JSON only:
 {

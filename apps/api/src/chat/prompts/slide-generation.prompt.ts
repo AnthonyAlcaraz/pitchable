@@ -170,6 +170,17 @@ CTA: 2-3 action bullets. **Bold** on action verb. Max 8 words per bullet. No tab
   Example body:
   "- **Start free pilot**: 30-day trial, no card\\n- **Book a demo**: Live pipeline, your data\\n- **Read whitepaper**: Architecture deep-dive"
 
+VISUAL_HUMOR: Image-forward humor slide. Title IS the message — max 8 words, witty, punchy. Body is empty string OR a single subtitle/punchline phrase (max 10 words). No table, no bullets, no sources, no ### takeaway. The AI-generated image does all the heavy lifting — humor comes from the juxtaposition of title + image. Speaker notes explain the actual point for the presenter. imagePromptHint is MANDATORY (never empty) and must describe a vivid, photorealistic scene that creates humor or irony when paired with the title.
+  Example (with subtitle):
+  title: "When the deadline was yesterday"
+  body: ""
+  imagePromptHint: "A person calmly sipping coffee at their desk while papers fly everywhere and clocks melt on the walls, photorealistic office scene, cinematic warm lighting"
+
+  Example (empty body):
+  title: "One more thing..."
+  body: ""
+  imagePromptHint: "A single dramatic spotlight illuminating an empty podium on a dark stage, theatrical atmosphere, anticipation and suspense"
+
 PRESENTATION TYPE: ${presentationType}
 ${themeBlock}
 ${mcKinseyBlock}
@@ -195,8 +206,25 @@ export function buildSlideGenerationUserPrompt(
   bulletPoints: string[],
   slideType: string,
   priorSlides: Array<{ title: string; body: string }> = [],
+  totalSlides?: number,
 ): string {
   const bullets = bulletPoints.map((b) => `- ${b}`).join('\n');
+
+  // Position context: help Claude understand where this slide sits in the narrative
+  let positionHint = '';
+  const total = totalSlides ?? (priorSlides.length + 4); // estimate if not provided
+  const pct = slideNumber / total;
+  if (pct <= 0.15) {
+    positionHint = 'POSITION: Opening section — hook the audience, set context.';
+  } else if (pct <= 0.4) {
+    positionHint = 'POSITION: Problem/Context section — establish why this matters, show urgency.';
+  } else if (pct <= 0.7) {
+    positionHint = 'POSITION: Plan/Solution section — this is the CORE of the deck. Show HOW to engage, adopt, or implement. Be concrete and actionable.';
+  } else if (pct <= 0.85) {
+    positionHint = 'POSITION: Proof/Evidence section — provide credibility, traction, team strength.';
+  } else {
+    positionHint = 'POSITION: Closing section — drive action, summarize the ask.';
+  }
 
   let priorContext = '';
   if (priorSlides.length > 0) {
@@ -209,7 +237,8 @@ export function buildSlideGenerationUserPrompt(
     priorContext = `\nPrevious slides (DO NOT repeat any stat, claim, or insight from these \u2014 find NEW information):\n${summaries.join('\n')}\n`;
   }
 
-  return `Generate full content for slide ${slideNumber}:
+  return `Generate full content for slide ${slideNumber}/${totalSlides ?? '?'}:
+${positionHint}
 Title: ${slideTitle}
 Type: ${slideType}
 Outline bullets:
@@ -219,5 +248,6 @@ Remember:
 - Use a TABLE (| col | col |) as the primary data container if this slide has structured data
 - Start with a 1-2 sentence lead paragraph with **bold** on key figures
 - End with ### key takeaway and Sources: line (unless this is a TITLE or CTA slide)
-- Set imagePromptHint to "" unless this slide specifically needs a visual`;
+- Set imagePromptHint to "" unless this slide specifically needs a visual
+- This slide must ADVANCE the story — connect to the previous slide's conclusion and lead naturally into the next topic`;
 }

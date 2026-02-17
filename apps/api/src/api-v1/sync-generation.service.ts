@@ -60,11 +60,19 @@ export class SyncGenerationService {
     private readonly qualityAgents: QualityAgentsService,
   ) {}
 
+  /** Timing helper — returns elapsed ms since start. */
+  private elapsed(start: number): string {
+    return `${((Date.now() - start) / 1000).toFixed(1)}s`;
+  }
+
   /**
    * Generate a complete presentation synchronously.
    * Runs: tier check -> credit check -> outline -> slides -> review -> complete.
    */
   async generate(userId: string, input: SyncGenerationInput) {
+    const t0 = Date.now();
+    const timings: Record<string, number> = {};
+
     // 1. Tier enforcement
     const deckCheck = await this.tierEnforcement.canCreateDeck(userId);
     if (!deckCheck.allowed) {
@@ -84,13 +92,19 @@ export class SyncGenerationService {
       );
     }
 
+    timings['preflight'] = Date.now() - t0;
+    this.logger.log(`[TIMING] Preflight checks: ${this.elapsed(t0)}`);
+
     // 3. Resolve theme + fetch lens in parallel
+    const tResolve = Date.now();
     const [themeId, pitchLens] = await Promise.all([
       this.resolveThemeId(input.themeId),
       input.pitchLensId
         ? this.prisma.pitchLens.findUnique({ where: { id: input.pitchLensId } })
         : Promise.resolve(null),
     ]);
+    timings['resolve_theme_lens'] = Date.now() - tResolve;
+    this.logger.log(`[TIMING] Resolve theme+lens: ${((Date.now() - tResolve) / 1000).toFixed(1)}s`);
 
     // 4. Create PROCESSING presentation
     const presentation = await this.prisma.presentation.create({
@@ -118,9 +132,11 @@ export class SyncGenerationService {
       let pitchLensContext: string | undefined;
       let syncDensityOverrides: { maxBullets?: number; maxWords?: number; maxTableRows?: number } | undefined;
       let syncImageLayoutInstruction: string | undefined;
+      let frameworkSlideStructure: string[] | undefined;
       if (pitchLens) {
         const framework = getFrameworkConfig(pitchLens.selectedFramework);
         pitchLensContext = buildPitchLensInjection({ ...pitchLens, framework });
+        frameworkSlideStructure = framework?.slideStructure;
         if (framework) {
           range.min = framework.idealSlideRange.min;
           range.max = framework.idealSlideRange.max;
@@ -136,21 +152,25 @@ export class SyncGenerationService {
       }
 
       // 6. RAG retrieval + theme fetch in parallel
+      const tRag = Date.now();
       const [kbContext, theme] = await Promise.all([
         input.briefId
           ? this.contextBuilder.retrieveBriefContext(userId, input.briefId, input.topic, 8)
           : this.contextBuilder.retrieveKbContext(userId, input.topic, 8),
         this.prisma.theme.findUnique({ where: { id: themeId } }),
       ]);
+      timings['rag_retrieval'] = Date.now() - tRag;
+      this.logger.log(`[TIMING] RAG retrieval + theme fetch: ${((Date.now() - tRag) / 1000).toFixed(1)}s (KB context: ${kbContext.length} chars)`);
 
       // 7. Generate outline
+      const tOutline = Date.now();
       const outlineSystemPrompt = buildOutlineSystemPrompt(
         presType,
         range,
         kbContext,
         pitchLensContext,
       );
-      const outlineUserPrompt = buildOutlineUserPrompt(input.topic);
+      const outlineUserPrompt = buildOutlineUserPrompt(input.topic, frameworkSlideStructure);
 
       const outline = await this.llm.completeJson<GeneratedOutline>(
         [
@@ -161,6 +181,8 @@ export class SyncGenerationService {
         isValidOutline,
         2,
       );
+      timings['outline'] = Date.now() - tOutline;
+      this.logger.log(`[TIMING] Outline generation (Opus): ${((Date.now() - tOutline) / 1000).toFixed(1)}s — ${outline.slides?.length ?? 0} slides planned`);
 
       if (!outline.slides?.length) {
         throw new Error('Generated outline was empty');
@@ -176,6 +198,7 @@ export class SyncGenerationService {
       const themeName = theme?.displayName ?? 'Pitchable Dark';
 
       // 10. Pre-fetch per-slide KB contexts in parallel
+      const tSlideKb = Date.now();
       const dataHeavyTypes = ['DATA_METRICS', 'CONTENT', 'PROBLEM', 'SOLUTION', 'COMPARISON'];
       const slideKbContexts = await Promise.all(
         outline.slides.map((slide) =>
@@ -184,6 +207,9 @@ export class SyncGenerationService {
             : Promise.resolve('')
         ),
       );
+      const dataSlideCount = slideKbContexts.filter(c => c.length > 0).length;
+      timings['slide_kb_prefetch'] = Date.now() - tSlideKb;
+      this.logger.log(`[TIMING] Slide KB prefetch (parallel): ${((Date.now() - tSlideKb) / 1000).toFixed(1)}s — ${dataSlideCount}/${outline.slides.length} slides enriched`);
 
       // 11. Generate slides sequentially (Opus needs priorSlides for coherence)
       const priorSlides: Array<{ title: string; body: string }> = [];
@@ -205,7 +231,11 @@ export class SyncGenerationService {
         syncImgFreq = theme ? getImageFrequencyForTheme(theme.name) : undefined;
       }
 
+      const tSlidesLoop = Date.now();
+      const slideTimings: number[] = [];
+
       for (let i = 0; i < outline.slides.length; i++) {
+        const tSlide = Date.now();
         const outlineSlide = outline.slides[i];
 
         const slideSystemPrompt = buildSlideGenerationSystemPrompt(
@@ -224,6 +254,7 @@ export class SyncGenerationService {
           outlineSlide.bulletPoints,
           outlineSlide.slideType,
           priorSlides,
+          outline.slides.length,
         );
 
         // Inject pre-fetched per-slide KB context
@@ -244,6 +275,8 @@ ${slideKbContext}`;
           isValidSlideContent,
           2,
         );
+        const tSlideGen = Date.now() - tSlide;
+        this.logger.log(`[TIMING] Slide ${i + 1}/${outline.slides.length} generation (Opus): ${(tSlideGen / 1000).toFixed(1)}s — "${outlineSlide.title.slice(0, 40)}"`);
 
         // Build custom density limits from PitchLens overrides
         const customLimits: DensityLimits = {
@@ -253,7 +286,8 @@ ${slideKbContext}`;
           ...(syncDensityOverrides?.maxTableRows && { maxTableRows: syncDensityOverrides.maxTableRows }),
         };
 
-        // Run content review (same Haiku pass as chat generation path)
+        // Run content review (Haiku — lightweight density/quality check)
+        const tReview = Date.now();
         let finalTitle = slideContent.title;
         let finalBody = slideContent.body;
         try {
@@ -284,6 +318,7 @@ ${slideKbContext}`;
           // Content review failed — log explicitly and keep original content
           this.logger.warn(`Content review error for sync slide ${i + 1}: ${reviewErr instanceof Error ? reviewErr.message : 'unknown'}`);
         }
+        this.logger.debug(`[TIMING] Slide ${i + 1} content review (Haiku): ${((Date.now() - tReview) / 1000).toFixed(1)}s`);
 
         // Density validation: truncate table rows if over limit
         const densityResult = validateSlideContent({ title: finalTitle, body: finalBody }, customLimits);
@@ -306,7 +341,16 @@ ${slideKbContext}`;
         });
 
         priorSlides.push({ title: finalTitle, body: finalBody });
+
+        const slideTotal = Date.now() - tSlide;
+        slideTimings.push(slideTotal);
       }
+
+      timings['slides_loop'] = Date.now() - tSlidesLoop;
+      const avgSlide = slideTimings.length > 0 ? (slideTimings.reduce((a, b) => a + b, 0) / slideTimings.length / 1000).toFixed(1) : '0';
+      const minSlide = slideTimings.length > 0 ? (Math.min(...slideTimings) / 1000).toFixed(1) : '0';
+      const maxSlide = slideTimings.length > 0 ? (Math.max(...slideTimings) / 1000).toFixed(1) : '0';
+      this.logger.log(`[TIMING] Slide generation loop: ${((Date.now() - tSlidesLoop) / 1000).toFixed(1)}s total — ${outline.slides.length} slides, avg=${avgSlide}s, min=${minSlide}s, max=${maxSlide}s`);
 
       // 12. Multi-Agent Quality Review (Style + Narrative + Fact Check — all Opus 4.6)
       const allSyncSlides = await this.prisma.slide.findMany({
@@ -326,6 +370,7 @@ ${slideKbContext}`;
 
       const syncThemeCategory = getThemeCategoryByName(theme?.name ?? '');
 
+      const tQuality = Date.now();
       try {
         const qualityResult = await this.qualityAgents.reviewPresentation(syncSlidesForReview, {
           themeCategory: syncThemeCategory,
@@ -347,11 +392,13 @@ ${slideKbContext}`;
           }
         }
 
+        timings['quality_agents'] = Date.now() - tQuality;
         this.logger.log(
-          `Sync quality review: style=${qualityResult.metrics.avgStyleScore.toFixed(2)} narrative=${qualityResult.metrics.narrativeScore.toFixed(2)} facts=${qualityResult.metrics.avgFactScore.toFixed(2)} fixes=${qualityResult.fixes.length}`,
+          `[TIMING] Quality agents: ${((Date.now() - tQuality) / 1000).toFixed(1)}s — style=${qualityResult.metrics.avgStyleScore.toFixed(2)} narrative=${qualityResult.metrics.narrativeScore.toFixed(2)} facts=${qualityResult.metrics.avgFactScore.toFixed(2)} fixes=${qualityResult.fixes.length}`,
         );
       } catch (qualityErr) {
-        this.logger.warn(`Sync quality review failed (non-fatal): ${qualityErr}`);
+        timings['quality_agents'] = Date.now() - tQuality;
+        this.logger.warn(`Sync quality review failed (non-fatal) after ${((Date.now() - tQuality) / 1000).toFixed(1)}s: ${qualityErr}`);
       }
 
       // 13. Mark complete + deduct credits
@@ -378,7 +425,19 @@ ${slideKbContext}`;
           );
       }
 
-      // 13. Return full presentation with slides and theme
+      // Final timing summary
+      const totalMs = Date.now() - t0;
+      timings['total'] = totalMs;
+      this.logger.log(
+        `[TIMING] === GENERATION COMPLETE === ${(totalMs / 1000).toFixed(1)}s total | ` +
+        `outline=${((timings['outline'] ?? 0) / 1000).toFixed(1)}s | ` +
+        `slides=${((timings['slides_loop'] ?? 0) / 1000).toFixed(1)}s (${outline.slides.length} slides) | ` +
+        `quality=${((timings['quality_agents'] ?? 0) / 1000).toFixed(1)}s | ` +
+        `rag=${((timings['rag_retrieval'] ?? 0) / 1000).toFixed(1)}s | ` +
+        `presentation=${presentation.id}`,
+      );
+
+      // 14. Return full presentation with slides and theme
       return this.prisma.presentation.findUnique({
         where: { id: presentation.id },
         include: {

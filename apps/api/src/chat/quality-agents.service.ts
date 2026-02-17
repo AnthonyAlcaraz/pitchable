@@ -94,22 +94,27 @@ export class QualityAgentsService {
       presentationId: string;
     },
   ): Promise<QualityReviewResult> {
+    const tQStart = Date.now();
     this.logger.log(
       `Quality review: ${slides.length} slides, theme="${options.themeName}", type="${options.presentationType}"`,
     );
 
     // Run Style Enforcer + Fact Checker in parallel (both are per-slide)
+    const tStyleFact = Date.now();
     const [styleResults, factCheckResults] = await Promise.all([
       this.runStyleEnforcer(slides, options.themeCategory, options.themeName, options.themeColors),
       this.runFactChecker(slides, options.userId, options.presentationId),
     ]);
+    this.logger.log(`[TIMING] Style+FactCheck (parallel): ${((Date.now() - tStyleFact) / 1000).toFixed(1)}s — ${styleResults.length} style, ${factCheckResults.length} fact checks`);
 
     // Run Narrative Coherence (needs full deck context)
+    const tNarrative = Date.now();
     const narrativeResult = await this.runNarrativeCoherence(
       slides,
       options.presentationType,
       options.frameworkName,
     );
+    this.logger.log(`[TIMING] Narrative coherence: ${((Date.now() - tNarrative) / 1000).toFixed(1)}s`);
 
     // Collect auto-fixes from Style Enforcer
     const fixes: QualityReviewResult['fixes'] = [];
@@ -180,7 +185,7 @@ export class QualityAgentsService {
       avgFactScore >= FACT_CHECK_PASS_THRESHOLD;
 
     this.logger.log(
-      `Quality review complete: style=${avgStyleScore.toFixed(2)}, narrative=${narrativeScore.toFixed(2)}, facts=${avgFactScore.toFixed(2)}, fixes=${fixes.length}, passed=${passed}`,
+      `[TIMING] Quality review complete in ${((Date.now() - tQStart) / 1000).toFixed(1)}s: style=${avgStyleScore.toFixed(2)}, narrative=${narrativeScore.toFixed(2)}, facts=${avgFactScore.toFixed(2)}, fixes=${fixes.length}, passed=${passed}`,
     );
 
     return {
