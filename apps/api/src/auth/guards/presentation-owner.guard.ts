@@ -11,6 +11,7 @@ import type { RequestUser } from '../decorators/current-user.decorator.js';
 /**
  * Guard that verifies the authenticated user owns the presentation
  * referenced by :presentationId in the route params.
+ * Allows "new" as a special value — the controller handles creation.
  */
 @Injectable()
 export class PresentationOwnerGuard implements CanActivate {
@@ -24,6 +25,11 @@ export class PresentationOwnerGuard implements CanActivate {
 
     if (!presentationId || !user?.userId) {
       throw new ForbiddenException('Missing authentication or presentation ID');
+    }
+
+    // Allow "new" — the controller will create the presentation
+    if (presentationId === 'new') {
+      return true;
     }
 
     const presentation = await this.prisma.presentation.findUnique({

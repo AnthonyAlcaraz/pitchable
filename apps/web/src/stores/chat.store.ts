@@ -166,6 +166,12 @@ export const useChatStore = create<ChatState>((set, get) => ({
               a.click();
               document.body.removeChild(a);
             }
+          } else if (metadata?.action === 'presentation_created') {
+            // Backend created the presentation — update the URL to use the real ID
+            const newId = metadata.presentationId as string;
+            if (newId) {
+              window.history.replaceState(null, '', "/workspace/" + newId);
+            }
           }
         } else if (event.type === 'thinking') {
           set({ thinkingText: event.content });

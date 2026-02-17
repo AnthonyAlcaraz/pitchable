@@ -594,35 +594,14 @@ export class ChatService {
   private detectGenerationIntent(content: string): GenerationConfig | null {
     const lower = content.toLowerCase();
 
-    const generationTriggers = [
-      'create a presentation',
-      'create a deck',
-      'create a pitch',
-      'create a slide',
-      'create slides',
-      'make a presentation',
-      'make a deck',
-      'make a pitch',
-      'make slides',
-      'generate a presentation',
-      'generate a deck',
-      'generate slides',
-      'generate the deck',
-      'generate the presentation',
-      'generate the slides',
-      'build a presentation',
-      'build a deck',
-      'build slides',
-      'pitch deck about',
-      'presentation about',
-      'presentation on',
-      'slides about',
-      'slides on',
-      'deck about',
-      'deck on',
+    // Regex patterns allow modifiers between verb and noun
+    // e.g. "create a 6-slide pitch", "make a short investor deck"
+    const generationPatterns: RegExp[] = [
+      /\b(create|make|generate|build)\b.*\b(presentation|deck|pitch|slides?)\b/,
+      /\b(pitch deck|presentation|slides?|deck)\s+(about|on|for)\b/,
     ];
 
-    const isGeneration = generationTriggers.some((trigger) => lower.includes(trigger));
+    const isGeneration = generationPatterns.some((pattern) => pattern.test(lower));
     if (!isGeneration) return null;
 
     let presentationType = 'STANDARD';
