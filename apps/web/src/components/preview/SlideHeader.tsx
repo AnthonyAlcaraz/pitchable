@@ -1,4 +1,5 @@
-import { ChevronLeft, ChevronRight, Maximize2, Download } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { ChevronLeft, ChevronRight, Maximize2, Download, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface SlideHeaderProps {
@@ -11,6 +12,13 @@ interface SlideHeaderProps {
   onExport?: (format: string) => void;
 }
 
+const EXPORT_FORMATS = [
+  { key: 'pdf', label: 'PDF' },
+  { key: 'pptx', label: 'PowerPoint' },
+  { key: 'html', label: 'Reveal.js (HTML)' },
+  { key: 'figma', label: 'Figma Plugin JSON' },
+] as const;
+
 export function SlideHeader({
   title,
   currentSlide,
@@ -20,6 +28,21 @@ export function SlideHeader({
   onFullscreen,
   onExport,
 }: SlideHeaderProps) {
+  const [showMenu, setShowMenu] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setShowMenu(false);
+      }
+    }
+    if (showMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [showMenu]);
+
   return (
     <div className="flex h-10 items-center justify-between border-b border-border px-3">
       <span className="truncate text-sm font-medium text-foreground">{title}</span>
@@ -66,13 +89,33 @@ export function SlideHeader({
         </button>
 
         {onExport && (
-          <button
-            onClick={() => onExport('pdf')}
-            className="rounded p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-            title="Export as PDF"
-          >
-            <Download className="h-4 w-4" />
-          </button>
+          <div className="relative" ref={menuRef}>
+            <button
+              onClick={() => setShowMenu((v) => !v)}
+              className="flex items-center gap-0.5 rounded p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+              title="Export presentation"
+            >
+              <Download className="h-4 w-4" />
+              <ChevronDown className="h-3 w-3" />
+            </button>
+
+            {showMenu && (
+              <div className="absolute right-0 top-full z-50 mt-1 min-w-[10rem] rounded-md border border-border bg-popover py-1 shadow-md">
+                {EXPORT_FORMATS.map((fmt) => (
+                  <button
+                    key={fmt.key}
+                    onClick={() => {
+                      onExport(fmt.key);
+                      setShowMenu(false);
+                    }}
+                    className="flex w-full items-center px-3 py-1.5 text-left text-sm text-popover-foreground transition-colors hover:bg-accent"
+                  >
+                    {fmt.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         )}
       </div>
     </div>

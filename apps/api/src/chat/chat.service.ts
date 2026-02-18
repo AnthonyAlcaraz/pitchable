@@ -323,11 +323,12 @@ export class ChatService {
           PDF: ExportFormat.PDF,
           HTML: ExportFormat.REVEAL_JS,
           REVEALJS: ExportFormat.REVEAL_JS,
+          FIGMA: ExportFormat.FIGMA,
         };
         const format = formatMap[formatArg];
 
         if (!format) {
-          const msg = `Unknown format "${formatArg}". Supported: pptx, pdf, html`;
+          const msg = `Unknown format "${formatArg}". Supported: pptx, pdf, html, figma`;
           yield { type: 'token', content: msg };
           yield { type: 'done', content: '' };
           await this.persistAssistantMessage(presentationId, msg);

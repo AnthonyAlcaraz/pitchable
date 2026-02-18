@@ -9,7 +9,7 @@ import {
   Request,
   Query,
 } from '@nestjs/common';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
 import { FigmaService } from './figma.service.js';
 import { FigmaImageSyncService } from './figma-image-sync.service.js';
 import { ConnectFigmaDto } from './dto/connect-figma.dto.js';

@@ -43,7 +43,7 @@ export function getAvailableCommands(): {
 }[] {
   return [
     { command: '/theme', description: 'Change presentation theme (e.g. /theme pitchable-dark)' },
-    { command: '/export', description: 'Export presentation (e.g. /export pptx)' },
+    { command: '/export', description: 'Export presentation (e.g. /export pptx, /export figma)' },
     { command: '/email', description: 'Email presentation as PDF or PPTX (e.g. /email pdf, /email pptx user@example.com)' },
     { command: '/outline', description: 'Regenerate the outline' },
     { command: '/regenerate', description: 'Regenerate a slide (e.g. /regenerate slide 3)' },

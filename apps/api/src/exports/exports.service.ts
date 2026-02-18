@@ -13,6 +13,47 @@ import { RevealJsExporterService } from './revealjs-exporter.service.js';
 import { PptxGenJsExporterService } from './pptxgenjs-exporter.service.js';
 import { S3Service } from '../knowledge-base/storage/s3.service.js';
 import { ExportFormat, JobStatus } from '../../generated/prisma/enums.js';
+import { type ColorPalette } from './slide-visual-theme.js';
+import type { PresentationModel } from '../../generated/prisma/models/Presentation.js';
+import type { SlideModel } from '../../generated/prisma/models/Slide.js';
+import type { ThemeModel } from '../../generated/prisma/models/Theme.js';
+
+// ── Figma export payload types ────────────────────────────
+
+interface FigmaExportSlide {
+  slideNumber: number;
+  slideType: string;
+  title: string;
+  bodyLines: string[];
+  imageUrl: string | null;
+  speakerNotes: string | null;
+  sectionLabel: string | null;
+  backgroundColor: string;
+  textColor: string;
+  accentColor: string;
+}
+
+interface FigmaExportPayload {
+  version: 1;
+  presentationId: string;
+  title: string;
+  slideCount: number;
+  theme: {
+    name: string;
+    headingFont: string;
+    bodyFont: string;
+    colors: {
+      primary: string;
+      secondary: string;
+      accent: string;
+      background: string;
+      text: string;
+      surface: string;
+    };
+  };
+  slides: FigmaExportSlide[];
+  dimensions: { width: 1920; height: 1080 };
+}
 
 /** Strip characters unsafe for Windows filenames and shell arg passing. */
 function safeFilename(title: string): string {
@@ -171,6 +212,14 @@ export class ExportsService {
           break;
         }
 
+        case ExportFormat.FIGMA: {
+          const payload = this.prepareFigmaExport(presentation, slides, theme);
+          buffer = Buffer.from(JSON.stringify(payload, null, 2), 'utf-8');
+          contentType = 'application/json';
+          filename = `${safeFilename(presentation.title)}.json`;
+          break;
+        }
+
         default:
           throw new Error(`Unsupported export format: ${job.format}`);
       }
@@ -299,6 +348,13 @@ export class ExportsService {
         filename = `${safeFilename(presentation.title)}.html`;
         break;
       }
+      case ExportFormat.FIGMA: {
+        const payload = this.prepareFigmaExport(presentation, slides, theme);
+        buffer = Buffer.from(JSON.stringify(payload, null, 2), 'utf-8');
+        contentType = 'application/json';
+        filename = `${safeFilename(presentation.title)}.json`;
+        break;
+      }
       default:
         throw new Error(`Unsupported export format: ${job.format}`);
     }
@@ -351,6 +407,7 @@ export class ExportsService {
       [ExportFormat.PDF]: 'pdf',
       [ExportFormat.REVEAL_JS]: 'html',
       [ExportFormat.GOOGLE_SLIDES]: 'json',
+      [ExportFormat.FIGMA]: 'json',
     };
     const ext = extensionMap[job.format] ?? 'bin';
     const title = job.presentation?.title ?? 'presentation';
@@ -376,5 +433,68 @@ export class ExportsService {
       where: { presentationId },
       orderBy: { createdAt: 'desc' },
     });
+  }
+
+  /**
+   * Build a structured JSON payload for Figma plugin import.
+   * Contains all presentation data needed to reconstruct slides in Figma.
+   */
+  private prepareFigmaExport(
+    presentation: PresentationModel,
+    slides: SlideModel[],
+    theme: ThemeModel,
+  ): FigmaExportPayload {
+    const palette = theme.colorPalette as unknown as ColorPalette;
+
+    const ACCENT_BG_TYPES = new Set(['TITLE', 'CTA']);
+
+    const figmaSlides: FigmaExportSlide[] = slides.map((slide) => {
+      const useAccentBg = ACCENT_BG_TYPES.has(slide.slideType);
+      const backgroundColor = useAccentBg ? palette.primary : palette.background;
+      const textColor = useAccentBg ? '#ffffff' : palette.text;
+      const accentColor = palette.accent;
+
+      const bodyLines = slide.body
+        ? slide.body
+            .split('\n')
+            .map((line) => line.replace(/^[-*]\s+/, '').trim())
+            .filter(Boolean)
+        : [];
+
+      return {
+        slideNumber: slide.slideNumber,
+        slideType: slide.slideType,
+        title: slide.title,
+        bodyLines,
+        imageUrl: slide.imageUrl ?? null,
+        speakerNotes: slide.speakerNotes ?? null,
+        sectionLabel: slide.sectionLabel ?? null,
+        backgroundColor,
+        textColor,
+        accentColor,
+      };
+    });
+
+    return {
+      version: 1,
+      presentationId: presentation.id,
+      title: presentation.title,
+      slideCount: slides.length,
+      theme: {
+        name: theme.name,
+        headingFont: theme.headingFont,
+        bodyFont: theme.bodyFont,
+        colors: {
+          primary: palette.primary,
+          secondary: palette.secondary,
+          accent: palette.accent,
+          background: palette.background,
+          text: palette.text,
+          surface: palette.surface,
+        },
+      },
+      slides: figmaSlides,
+      dimensions: { width: 1920, height: 1080 },
+    };
   }
 }
