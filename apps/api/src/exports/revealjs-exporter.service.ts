@@ -137,6 +137,24 @@ export class RevealJsExporterService {
 ${isMcKinsey ? generateRevealMcKinseyCSS(palette) : generateRevealBackgroundCSS(palette, bg, gradientEnd)}
     /* Accent color rotation on bold text */
 ${isMcKinsey ? '' : generateRevealAccentRotationCSS(palette.accent, palette.primary, palette.success, palette.secondary)}
+    /* New slide types */
+    .showcase { max-width: 55%; }
+    .showcase strong { font-size: 1.3em; display: block; margin-bottom: 8px; }
+    .showcase span { font-size: 0.85em; opacity: 0.85; display: block; }
+    .logo-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-top: 16px; }
+    .logo-badge { background: ${palette.surface}; border: 1px solid ${palette.border}; border-radius: 10px; padding: 14px 16px; text-align: center; font-size: 0.8em; font-weight: 600; }
+    .market-sizing { display: flex; align-items: center; justify-content: center; position: relative; min-height: 300px; margin-top: 12px; }
+    .market-ring { border: 2px solid ${palette.accent}; border-radius: 50%; display: flex; align-items: center; justify-content: center; position: absolute; }
+    .market-ring.tam { width: 320px; height: 320px; opacity: 0.3; }
+    .market-ring.sam { width: 220px; height: 220px; opacity: 0.5; }
+    .market-ring.som { width: 120px; height: 120px; opacity: 1.0; background: rgba(56,189,248,0.08); }
+    .ring-label { text-align: center; font-size: 0.55em; line-height: 1.3; }
+    .ring-label strong { font-size: 1.6em; display: block; }
+    .split-statement { display: grid; grid-template-columns: 30% 1fr; gap: 32px; align-items: center; min-height: 250px; }
+    .statement { font-size: 1.5em; font-weight: 800; line-height: 1.15; }
+    .evidence { font-size: 0.8em; }
+    .evidence strong { display: block; font-size: 1.05em; margin-bottom: 2px; margin-top: 12px; }
+    .evidence hr { border: none; border-top: 1px solid ${palette.border}; margin: 10px 0; }
   </style>
 </head>
 <body>
@@ -182,7 +200,13 @@ ${slideSections}
     }
 
     if (slide.body) {
-      lines.push(`          <div>${this.convertBodyToHtml(slide.body)}</div>`);
+      // HTML-structured slide types pass through raw (they contain <div> layouts)
+      const htmlStructuredTypes = ['TEAM', 'FEATURE_GRID', 'METRICS_HIGHLIGHT', 'PRODUCT_SHOWCASE', 'LOGO_WALL', 'MARKET_SIZING', 'SPLIT_STATEMENT'];
+      if (htmlStructuredTypes.includes(slide.slideType)) {
+        lines.push(`          <div>${slide.body}</div>`);
+      } else {
+        lines.push(`          <div>${this.convertBodyToHtml(slide.body)}</div>`);
+      }
     }
 
     lines.push('        </div>');

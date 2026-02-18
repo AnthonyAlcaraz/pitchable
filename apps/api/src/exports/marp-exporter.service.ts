@@ -400,8 +400,8 @@ export class MarpExporterService {
     const bgVariant = getSlideBackground(type, slide.slideNumber, bgColor);
 
     // Layout class by type
-    const centerTypes = ['QUOTE', 'COMPARISON'];
-    const spreadTypes = ['DATA_METRICS', 'METRICS_HIGHLIGHT', 'ARCHITECTURE', 'PROCESS', 'FEATURE_GRID', 'TIMELINE'];
+    const centerTypes = ['QUOTE', 'COMPARISON', 'MARKET_SIZING', 'LOGO_WALL'];
+    const spreadTypes = ['DATA_METRICS', 'METRICS_HIGHLIGHT', 'ARCHITECTURE', 'PROCESS', 'FEATURE_GRID', 'TIMELINE', 'PRODUCT_SHOWCASE', 'SPLIT_STATEMENT'];
     const layoutClass = centerTypes.includes(type) ? ' content-center'
       : spreadTypes.includes(type) ? ' content-spread'
       : '';
@@ -471,6 +471,9 @@ export class MarpExporterService {
       } else if (type === 'ARCHITECTURE' && imageLayout !== 'BACKGROUND') {
         // Contain (not cover) to preserve diagram integrity
         lines.push(`![bg right:40% contain](${slide.imageUrl})`);
+      } else if (type === 'PRODUCT_SHOWCASE') {
+        // Right-side product mockup — larger (45%) and contained to show full screenshot
+        lines.push(`![bg right:45% contain](${slide.imageUrl})`);
       } else if (imageLayout === 'BACKGROUND') {
         // User chose background layout for all slides
         lines.push(`![bg opacity:0.15](${slide.imageUrl})`);
@@ -516,6 +519,32 @@ h3 { margin-top: 10px; font-size: 0.8em; }
 .card strong { font-size: 0.95em; display: block; margin-bottom: 6px; }
 .card span { font-size: 0.7em; line-height: 1.3; opacity: 0.85; }
 </style>`,
+      PRODUCT_SHOWCASE: `<style scoped>
+.showcase { max-width: 55%; }
+.showcase strong { font-size: 1.3em; display: block; margin-bottom: 8px; line-height: 1.2; }
+.showcase span { font-size: 0.8em; line-height: 1.4; opacity: 0.85; display: block; }
+</style>`,
+      LOGO_WALL: `<style scoped>
+.logo-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-top: 16px; }
+.logo-badge { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); border-radius: 10px; padding: 14px 16px; text-align: center; font-size: 0.75em; font-weight: 600; letter-spacing: 0.02em; }
+</style>`,
+      MARKET_SIZING: `<style scoped>
+.market-sizing { display: flex; align-items: center; justify-content: center; margin-top: 12px; position: relative; min-height: 320px; }
+.market-ring { border: 2px solid var(--accent, #38bdf8); border-radius: 50%; display: flex; align-items: center; justify-content: center; position: absolute; }
+.market-ring.tam { width: 340px; height: 340px; opacity: 0.3; }
+.market-ring.sam { width: 230px; height: 230px; opacity: 0.5; }
+.market-ring.som { width: 130px; height: 130px; opacity: 1.0; background: rgba(56,189,248,0.08); }
+.ring-label { text-align: center; font-size: 0.55em; line-height: 1.3; padding: 8px; }
+.ring-label strong { font-size: 1.6em; display: block; margin-bottom: 2px; }
+.revenue-chain { margin-top: 16px; font-size: 0.7em; text-align: center; opacity: 0.8; }
+</style>`,
+      SPLIT_STATEMENT: `<style scoped>
+.split-statement { display: grid; grid-template-columns: 30% 1fr; gap: 32px; align-items: center; min-height: 280px; }
+.statement { font-size: 1.6em; font-weight: 800; line-height: 1.15; }
+.evidence { font-size: 0.75em; }
+.evidence strong { display: block; font-size: 1.1em; margin-bottom: 2px; margin-top: 12px; }
+.evidence hr { border: none; border-top: 1px solid rgba(255,255,255,0.15); margin: 10px 0; }
+</style>`,
     };
     if (scopedCSS[type]) {
       lines.push(scopedCSS[type]);
@@ -528,7 +557,7 @@ h3 { margin-top: 10px; font-size: 0.8em; }
       const bodyToRender = slide.body.replace(/<style scoped>[\s\S]*?<\/style>\s*/g, '').trim() || slide.body;
 
       // Types that handle their own layout (scoped CSS grids, lead class, etc.) skip glass-card
-      const skipGlassCard = ['TITLE', 'CTA', 'VISUAL_HUMOR', 'TEAM', 'TIMELINE', 'METRICS_HIGHLIGHT', 'FEATURE_GRID'];
+      const skipGlassCard = ['TITLE', 'CTA', 'VISUAL_HUMOR', 'TEAM', 'TIMELINE', 'METRICS_HIGHLIGHT', 'FEATURE_GRID', 'PRODUCT_SHOWCASE', 'LOGO_WALL', 'MARKET_SIZING', 'SPLIT_STATEMENT'];
       if (type === 'QUOTE') {
         // Wrap body in blockquote
         const quoteLines = bodyToRender

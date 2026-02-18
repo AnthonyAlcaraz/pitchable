@@ -44,7 +44,11 @@ type SlideType =
   | 'TIMELINE'
   | 'SECTION_DIVIDER'
   | 'METRICS_HIGHLIGHT'
-  | 'FEATURE_GRID';
+  | 'FEATURE_GRID'
+  | 'PRODUCT_SHOWCASE'
+  | 'LOGO_WALL'
+  | 'MARKET_SIZING'
+  | 'SPLIT_STATEMENT';
 
 // ── Background Variant Pool ────────────────────────────────
 
@@ -76,6 +80,10 @@ const TYPE_TO_VARIANT: Record<SlideType, number | 'cycle'> = {
   SECTION_DIVIDER: 0, // bg-radial-glow (overridden by spot directives)
   METRICS_HIGHLIGHT: 4, // bg-circuit
   FEATURE_GRID: 3,    // bg-subtle-grid
+  PRODUCT_SHOWCASE: 2,   // bg-wave (product image dominates, subtle bg)
+  LOGO_WALL: 5,          // bg-corner-accent
+  MARKET_SIZING: 4,      // bg-circuit (data-oriented)
+  SPLIT_STATEMENT: 1,    // bg-diagonal-lines (editorial feel)
 };
 
 // ── Light-Background Variant Pool (McKinsey / Consulting) ───
@@ -103,6 +111,10 @@ const LIGHT_TYPE_TO_VARIANT: Record<SlideType, number> = {
   SECTION_DIVIDER: 1, // bg-section-divider
   METRICS_HIGHLIGHT: 2, // bg-callout
   FEATURE_GRID: 0,    // bg-clean
+  PRODUCT_SHOWCASE: 0,    // bg-clean (product image carries visual weight)
+  LOGO_WALL: 0,           // bg-clean
+  MARKET_SIZING: 0,       // bg-clean
+  SPLIT_STATEMENT: 0,     // bg-clean
 };
 
 

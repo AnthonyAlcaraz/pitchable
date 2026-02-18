@@ -811,6 +811,93 @@ export const DECK_ARCHETYPES: DeckArchetypeConfig[] = [
       'NEVER end without a summary results table.',
     ],
   },
+  // ── 11. PRE_SEED_PITCH ──────────────────────────────────────
+  {
+    id: 'PRE_SEED_PITCH',
+    name: 'Pre-Seed Pitch',
+    description:
+      'Narrative-driven pre-seed deck. Longer than Kawasaki 10/20/30, emphasizes vision, product showcase, and founder-market fit over hard metrics. Inspired by ElevenLabs, Jimini, micro1, and other successful pre-seed decks.',
+    bookSources: [
+      'The Art of the Start (Guy Kawasaki)',
+      'Pitch Anything (Oren Klaff)',
+      'Lean Startup (Eric Ries)',
+    ],
+    defaultFrameworks: ['WORLD_IS_BROKEN', 'PRODUCT_FIRST', 'FOUNDER_INSIGHT'],
+    defaultThemes: ['pitchable-dark', 'yc-startup', 'light-minimal'],
+    defaultTone: 'BOLD',
+    defaultAudience: 'INVESTORS',
+    defaultGoal: 'RAISE_FUNDING',
+    densityProfile: {
+      maxBulletsPerSlide: 4,
+      maxWordsPerSlide: 50,
+      maxTableRows: 4,
+      maxConceptsPerSlide: 1,
+      maxNestedListDepth: 1,
+    },
+    slideRange: { min: 10, max: 16 },
+    narrativeRules: [
+      'Pre-seed = story over spreadsheets. Lead with vision and insight, not traction (you may not have much).',
+      'Title slide must be a bold, memorable one-line pitch. No subtitles, no clutter.',
+      'PRODUCT must be shown early (slides 2-4). Use PRODUCT_SHOWCASE to display app screenshots, mockups, or demo flows. Show-don\'t-tell.',
+      'Problem slides must expose a STRUCTURAL flaw, not a surface complaint. "X costs $100/min" beats "X is expensive".',
+      'Solution must feel inevitable, not incremental. Frame as a new paradigm or category, not a feature list.',
+      'Team slide must establish founder-market fit: why YOU saw this and others didn\'t. Personal credentials > company logos.',
+      'Market size can use top-down TAM/SAM/SOM OR bottom-up unit economics. Both are valid at pre-seed.',
+      'The Ask must be specific: "$X at $Y valuation to reach Z milestone." No vague "seeking funding" language.',
+      'LOGO_WALL is optional but powerful if you have early partners, advisors, or design partners.',
+      'Use SPLIT_STATEMENT for bold claims that need supporting evidence. Left = emotional hook, right = proof.',
+    ],
+    qualityGates: [
+      {
+        agent: 'narrative',
+        threshold: 0.7,
+        extraRules: [
+          'Verify product is shown in first 4 slides (PRODUCT_SHOWCASE or ARCHITECTURE).',
+          'Verify problem slide contains a specific cost, time, or failure metric.',
+          'Verify The Ask specifies an exact dollar amount and key milestone.',
+          'Verify team slide establishes founder-market fit (domain expertise, personal story).',
+        ],
+      },
+      {
+        agent: 'style',
+        extraRules: [
+          'Pre-seed decks should feel ambitious but grounded. Flag excessive hype without evidence.',
+          'Image prompts should be product-focused (screenshots, mockups) not stock photos.',
+          'Flag any slide that lists features without connecting them to the problem.',
+        ],
+      },
+    ],
+    slideTypeDistribution: [
+      {
+        slideType: 'PRODUCT_SHOWCASE',
+        min: 1,
+        description: 'Product screenshots or demo flow',
+      },
+      {
+        slideType: 'PROBLEM',
+        min: 1,
+        description: 'Structural flaw in the status quo',
+      },
+      {
+        slideType: 'TEAM',
+        min: 1,
+        description: 'Founders with domain credentials',
+      },
+      {
+        slideType: 'SPLIT_STATEMENT',
+        min: 1,
+        description: 'Bold claim with supporting proof',
+      },
+    ],
+    antiPatterns: [
+      'NEVER use Kawasaki 10-slide constraint. Pre-seed decks need 10-16 slides for the full narrative.',
+      'NEVER lead with traction metrics if you have none. Lead with vision and product instead.',
+      'NEVER use generic market claims without a specific dollar amount or source.',
+      'NEVER skip the product showcase. Investors at pre-seed want to see what you\'ve built.',
+      'NEVER position the deck like a Series A (detailed financials, cohort analysis). Keep it vision-forward.',
+      'NEVER end with "Questions?" — end with a specific ask and timeline.',
+    ],
+  },
 ];
 
 // ── Lookup Functions ────────────────────────────────────────

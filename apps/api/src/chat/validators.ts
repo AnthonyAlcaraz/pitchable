@@ -21,8 +21,9 @@ export function isValidOutline(data: unknown): data is GeneratedOutline {
     if (typeof s['slideNumber'] !== 'number') return false;
     if (typeof s['title'] !== 'string' || s['title'].length === 0) return false;
     if (!Array.isArray(s['bulletPoints'])) return false;
-    // SECTION_DIVIDER slides are intentionally minimal - allow empty bulletPoints
-    if (s['slideType'] !== 'SECTION_DIVIDER' && s['bulletPoints'].length === 0) return false;
+    // SECTION_DIVIDER and LOGO_WALL slides are intentionally minimal - allow empty bulletPoints
+    const minimalTypes = ['SECTION_DIVIDER', 'LOGO_WALL'];
+    if (!minimalTypes.includes(s['slideType'] as string) && s['bulletPoints'].length === 0) return false;
     if (typeof s['slideType'] !== 'string') return false;
   }
 

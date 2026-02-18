@@ -369,6 +369,99 @@ Allocate 65% of content to stories (personal, customer, vision), 25% to data/evi
     bestForGoals: ['INSPIRE', 'EDUCATE', 'SELL_PRODUCT'],
     idealSlideRange: { min: 8, max: 12 },
   },
+  {
+    id: 'WORLD_IS_BROKEN',
+    name: 'World Is Broken',
+    shortDescription:
+      'Expose a fundamental flaw in the status quo that everyone accepts, then present your paradigm shift as the fix.',
+    detailedGuidance: `Structure the presentation as a paradigm-breaking narrative:
+1. STATUS QUO: Show what exists today. Name the dominant approach. Be specific about how the industry currently works — tools, processes, costs, timelines.
+2. FUNDAMENTAL LIMIT: Reveal the root-level flaw that makes the status quo permanently broken. This is NOT a surface-level complaint — it's a structural insight. "Dubbing costs $100/min because it requires human voice actors" or "Therapy hasn't improved in decades because it's bounded by clinician hours."
+3. NEW PARADIGM: Introduce your approach as a category-level shift, not an incremental improvement. Frame it as inevitable — "The future will be powered by X." Define the new primitives.
+4. PROOF IT WORKS: Show evidence — demos, benchmarks, early results, research papers. The audience must believe the paradigm shift is real, not theoretical.
+5. MARKET SIZE: How big is the world you're building? TAM/SAM/SOM with the new paradigm as the lens.
+6. TEAM: Why are YOU the ones to build this? Domain credentials, research pedigree, unique insight.
+7. THE ASK: Funding amount, milestones, use of funds.
+
+Tone: Ambitious but grounded. You're not complaining about the status quo — you're explaining why it's structurally incapable of solving the problem. Then you show you've already started building the replacement. Think founding-era ElevenLabs, DeepMind, or OpenAI pitch energy.`,
+    slideStructure: [
+      'Title / One-Line Vision',
+      'Status Quo (How It Works Today)',
+      'The Fundamental Limit',
+      'New Paradigm (Your Approach)',
+      'Proof It Works (Demo / Data)',
+      'Market Size (TAM/SAM/SOM)',
+      'Team & Credentials',
+      'The Ask / Call to Action',
+    ],
+    bestFor: ['INVESTORS'],
+    bestForGoals: ['RAISE_FUNDING'],
+    idealSlideRange: { min: 10, max: 16 },
+  },
+  {
+    id: 'PRODUCT_FIRST',
+    name: 'Product First',
+    shortDescription:
+      'Lead with the product experience. Show it working, then explain why it matters and how it was built.',
+    detailedGuidance: `Structure the presentation with the product as the opening act:
+1. TITLE + PRODUCT SHOWCASE: Open with the product. Show screenshots, a demo flow, or the core UX. Let the audience SEE what you've built before you explain anything. The product is the hook.
+2. WHY THIS MATTERS: Now that they've seen the product, explain the problem it solves. The audience is already intrigued — give them the "why" behind what they just saw.
+3. HOW IT WORKS: Technical architecture, key technology decisions, what makes it defensible. Go one level deeper than the product surface.
+4. TRACTION / PROOF: Early metrics, user feedback, waitlist numbers, partnerships. Evidence that the product resonates.
+5. MARKET: How big is the opportunity? Who are the customers?
+6. TEAM: Why you? What unique insight or experience led you to build this?
+7. THE ASK: Funding, next milestones.
+
+This framework works when the product speaks for itself — consumer apps with beautiful UX, dev tools with elegant workflows, or any product where a 10-second demo is worth 10 slides of explanation. The risk: if the product isn't visually impressive or intuitively understandable, use a different framework.
+
+Tone: Confident, show-don't-tell. Minimal text. Let screenshots and product flows do the heavy lifting. Think Series (iMessage AI demo), Storiaverse (app walkthrough), or Superhuman's original pitch.`,
+    slideStructure: [
+      'Title / Bold Tagline',
+      'Product Showcase (Screenshots / Demo)',
+      'Why This Matters (Problem)',
+      'How It Works (Architecture)',
+      'Traction / Early Proof',
+      'Market Opportunity',
+      'Team',
+      'The Ask / Call to Action',
+    ],
+    bestFor: ['INVESTORS', 'CUSTOMERS'],
+    bestForGoals: ['RAISE_FUNDING', 'SELL_PRODUCT'],
+    idealSlideRange: { min: 8, max: 14 },
+  },
+  {
+    id: 'FOUNDER_INSIGHT',
+    name: 'Founder Insight',
+    shortDescription:
+      'The founder discovered something others missed. Lead with the personal insight, then prove it scales.',
+    detailedGuidance: `Structure the presentation around the founder's unique discovery:
+1. THE DISCOVERY: Open with the founder's personal "aha" moment. A specific experience, observation, or frustration that revealed an overlooked truth. "I was working at X when I realized..." or "After 10 years in Y, I saw that..."
+2. PROBLEM VALIDATED: Prove the personal insight is universal. Show data, market research, or customer interviews confirming the problem exists at scale. The founder's anecdote becomes a market thesis.
+3. UNIQUE APPROACH: Your solution, shaped by the founder's insight. Explain why someone WITHOUT this specific insight would never build it this way. The insight IS the moat.
+4. SOLUTION IN ACTION: Product demo, customer stories, or case studies showing the approach works in practice.
+5. EARLY TRACTION: Metrics proving market pull. Waitlist, revenue, partnerships, pilot results.
+6. WHY US (FOUNDER-MARKET FIT): Deep credentials. The team's background explains why THEY saw this problem first. Domain expertise, industry connections, research history.
+7. MARKET & GROWTH: Opportunity size and go-to-market strategy.
+8. THE ASK: Funding and milestones.
+
+This framework is strongest when the founder's personal story creates emotional conviction. Investors bet on people who have unique insight — this framework makes that insight the centerpiece. Use when: solo founders, domain expert pivots, or when the founder's background IS the unfair advantage.
+
+Tone: Personal, authentic, conviction-driven. First-person voice is welcome. The founder's passion and domain depth should shine through every slide.`,
+    slideStructure: [
+      'Title / Personal Hook',
+      'The Discovery (Founder Insight)',
+      'Problem Validated (Data)',
+      'Unique Approach (Solution)',
+      'Solution in Action (Demo / Proof)',
+      'Early Traction',
+      'Why Us (Founder-Market Fit)',
+      'Market & Growth',
+      'The Ask / Call to Action',
+    ],
+    bestFor: ['INVESTORS'],
+    bestForGoals: ['RAISE_FUNDING', 'INSPIRE'],
+    idealSlideRange: { min: 10, max: 14 },
+  },
 ];
 
 /**

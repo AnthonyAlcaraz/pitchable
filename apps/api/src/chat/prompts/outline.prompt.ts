@@ -71,6 +71,10 @@ TIMELINE — Numbered milestone list with accent bar. Shows roadmap phases, evol
 SECTION_DIVIDER — Full-bleed accent-colored section break with centered 1-3 word title. Body is always empty. Use to break decks of 12+ slides into major sections. Place before each topic shift. No pagination, no image, no notes.
 METRICS_HIGHLIGHT — 2-4 oversized stat numbers in a horizontal CSS Grid layout. Use for impressive standalone KPIs, traction metrics, or financial headlines (NOT for detailed tables — that's DATA_METRICS).
 FEATURE_GRID — 2x2 CSS Grid card layout showing 3-4 parallel capabilities, use cases, or product features. Each card has a bold title + one sentence description. Use when features/capabilities deserve equal visual weight.
+PRODUCT_SHOWCASE — Split layout: left has bold headline + 1-sentence description, right has a large product screenshot/mockup (AI-generated via imagePromptHint). Use when showing what the product looks like in action — app screens, dashboards, user flows. Title should be a benefit statement, not "Product Demo". Body is minimal text; the image carries the weight.
+LOGO_WALL — Grid of customer/partner/investor name badges. Title frames the social proof ("Trusted by 50+ enterprises" or "Backed by leading VCs"). Body contains styled text badges in a grid — no images needed. Use for credibility slides showing partnerships, customers, or investor backing. Max 12 logos.
+MARKET_SIZING — TAM/SAM/SOM concentric market visualization. Title states the market size claim. Body contains structured data that renders as nested circles or a revenue derivation chain. Use for market opportunity slides in investor decks. Must include specific dollar amounts and sources.
+SPLIT_STATEMENT — Bold provocative statement on left (30%), supporting evidence on right (70%). Left side is the emotional hook — one sentence, large font. Right side has 2-4 proof points with data. Think editorial magazine layout. Use for slides where a bold claim needs immediate backing.
 
 SLIDE TYPE SELECTION RULES:
 - Use DATA_METRICS or CONTENT (with tables) when the outline item contains 3+ data points that can be organized in columns
@@ -78,12 +82,17 @@ SLIDE TYPE SELECTION RULES:
 - Use PROCESS only for sequential workflows (3-6 steps)
 - Use QUOTE when featuring a specific person's statement
 - Prefer DATA_METRICS/CONTENT over PROBLEM/SOLUTION for data-heavy slides
-- A well-structured deck typically has: 1 TITLE, 2-4 DATA_METRICS/CONTENT with tables, 1-2 PROBLEM/SOLUTION, 0-1 COMPARISON, 0-1 QUOTE, 0-2 VISUAL_HUMOR, 0-1 TEAM, 0-1 TIMELINE, 0-2 SECTION_DIVIDER, 0-1 METRICS_HIGHLIGHT, 0-1 FEATURE_GRID, 1 CTA
+- A well-structured deck typically has: 1 TITLE, 2-4 DATA_METRICS/CONTENT with tables, 1-2 PROBLEM/SOLUTION, 0-1 COMPARISON, 0-1 QUOTE, 0-2 VISUAL_HUMOR, 0-1 TEAM, 0-1 TIMELINE, 0-2 SECTION_DIVIDER, 0-1 METRICS_HIGHLIGHT, 0-1 FEATURE_GRID, 0-1 PRODUCT_SHOWCASE, 0-1 LOGO_WALL, 0-1 MARKET_SIZING, 0-1 SPLIT_STATEMENT, 1 CTA
 - Use TEAM when presenting founders, leadership, or advisory board members
 - Use TIMELINE for roadmap or milestones (NOT for how-to steps — that's PROCESS)
 - Use SECTION_DIVIDER to break decks of 12+ slides into sections. Place before each major topic shift
 - Use METRICS_HIGHLIGHT for 2-4 impressive standalone numbers/KPIs (NOT for detailed tables — that's DATA_METRICS)
 - Use FEATURE_GRID for 3-4 parallel capabilities or product features shown with equal visual weight
+- Use PRODUCT_SHOWCASE when showing product UI, app screenshots, or demo flows. Place early (slides 2-5) for consumer/product-led decks. imagePromptHint is MANDATORY for this type.
+- Use LOGO_WALL for social proof: customer logos, investor names, partner brands. Place in the proof/credibility section. Max 12 logos.
+- Use MARKET_SIZING for TAM/SAM/SOM market opportunity slides. Must include specific dollar amounts. Renders as concentric circles visualization. One per deck max.
+- Use SPLIT_STATEMENT for bold provocative claims that need immediate evidence. Left = emotional hook (large text), right = supporting data. Great for problem slides, insight reveals, or thesis statements. Use instead of PROBLEM when the pain is more emotional than analytical.
+- NARRATIVE RHYTHM: Alternate between emotional slides (SPLIT_STATEMENT, QUOTE, PRODUCT_SHOWCASE) and analytical slides (DATA_METRICS, COMPARISON, MARKET_SIZING) to maintain audience engagement. Never place 3+ analytical slides in a row.
 - Use VISUAL_HUMOR sparingly (max 1-2 per deck) as a breather between dense slides — only when tone is conversational, bold, inspirational, or storytelling. Never use for formal or analytical presentations.
 
 NARRATIVE ARC (CRITICAL):
@@ -177,7 +186,23 @@ INVESTOR DECK PRINCIPLES:
 - Each slide should make the audience WANT to see the next one
 - Problem slides use urgency and specificity. Solution slides use ambition and clarity.
 - Evidence before ask. Never ask for money before proving you deserve it.
-- The competitive landscape slide positions by CATEGORY (how competitors think about the space), not by feature checklist.`;
+- The competitive landscape slide positions by CATEGORY (how competitors think about the space), not by feature checklist.
+
+PRE-SEED ALTERNATIVE (use when the archetype is PRE_SEED_PITCH or when the company has no revenue):
+1. TITLE — Bold one-line pitch. No subtitle clutter.
+2. SPLIT_STATEMENT — The problem as an emotional statement + supporting evidence points.
+3. PRODUCT_SHOWCASE — Show the product early. Screenshot, mockup, or demo flow.
+4. SOLUTION — Your approach as a paradigm shift, not a feature list.
+5. FEATURE_GRID — 3-4 key capabilities with equal visual weight.
+6. MARKET_SIZING — TAM/SAM/SOM concentric visualization with dollar amounts.
+7. CONTENT — Business model or go-to-market strategy.
+8. DATA_METRICS or METRICS_HIGHLIGHT — Traction (even if early: waitlist, pilots, LOIs).
+9. TEAM — Founders with domain credentials and founder-market fit story.
+10. LOGO_WALL — Partners, advisors, or early customers (if available).
+11. COMPARISON — Competitive positioning by approach, not features.
+12. DATA_METRICS — The Ask: specific amount + milestones.
+13. CTA — Bold closing statement + contact info.
+Pre-seed decks can use 10-16 slides. Prioritize narrative over data density.`;
 
     case 'TECHNICAL':
       return `Technical presentation structure:

@@ -122,8 +122,8 @@ TOTAL body must stay under ${maxWords} words. Move details to speaker notes.
 SELF-VALIDATION CHECKLIST (verify ALL before responding):
 □ Body starts with a lead sentence containing **bold** on the key figure
 □ Body contains EITHER a table (| col | col |) OR bullet list — never both
-□ Body ends with ### takeaway line (MANDATORY for all types except TITLE, CTA, VISUAL_HUMOR, QUOTE, SECTION_DIVIDER)
-□ Sources: line present at the very end (MANDATORY for DATA_METRICS, CONTENT, PROBLEM, SOLUTION, COMPARISON, PROCESS — skip for TEAM, TIMELINE, SECTION_DIVIDER, METRICS_HIGHLIGHT, FEATURE_GRID)
+□ Body ends with ### takeaway line (MANDATORY for all types except TITLE, CTA, VISUAL_HUMOR, QUOTE, SECTION_DIVIDER, LOGO_WALL, SPLIT_STATEMENT, PRODUCT_SHOWCASE)
+□ Sources: line present at the very end (MANDATORY for DATA_METRICS, CONTENT, PROBLEM, SOLUTION, COMPARISON, PROCESS, MARKET_SIZING — skip for TEAM, TIMELINE, SECTION_DIVIDER, METRICS_HIGHLIGHT, FEATURE_GRID, LOGO_WALL, SPLIT_STATEMENT, PRODUCT_SHOWCASE)
 □ Total word count ≤ ${maxWords}
 If ANY checkbox fails, rewrite before outputting.
 
@@ -282,6 +282,69 @@ FEATURE_GRID: Body must contain a <div class="grid"> with exactly 3-4 cards insi
 </div>
 
 ### One architecture powers all four domains"
+
+PRODUCT_SHOWCASE: Left side: bold headline + 1-sentence product description. Right side: product screenshot/mockup (via imagePromptHint). imagePromptHint is MANDATORY — describe the product interface, app screen, or dashboard. Body uses <div class="showcase"> wrapper. Keep text minimal — the product visual is the star. DO NOT include any <style> tags.
+  Example body:
+  "<div class=\"showcase\">
+
+**The first major therapy innovation in decades**
+<span>AI-powered therapy sessions that adapt to each patient in real-time, combining clinician expertise with LLM intelligence.</span>
+
+</div>"
+  imagePromptHint: "A modern mobile app interface showing a therapy chat session with a calming blue gradient background, clean typography, message bubbles, and a wellness toolkit tab at the bottom, rendered as a high-fidelity phone mockup on a light background"
+
+LOGO_WALL: Grid of customer, partner, or investor names rendered as styled text badges. Title frames the social proof ("Trusted by 50+ companies" or "Backed by top-tier VCs"). Body must contain a <div class="logo-grid"> with <div class="logo-badge"> items. Max 12 logos, 3-4 per row. No imagePromptHint (always ""). No ### takeaway. No Sources line. DO NOT include any <style> tags.
+  Example body:
+  "<div class=\"logo-grid\">
+<div class=\"logo-badge\">Sequoia Capital</div>
+<div class=\"logo-badge\">Y Combinator</div>
+<div class=\"logo-badge\">a16z</div>
+<div class=\"logo-badge\">Accel</div>
+<div class=\"logo-badge\">Lightspeed</div>
+<div class=\"logo-badge\">Index Ventures</div>
+</div>"
+
+MARKET_SIZING: TAM/SAM/SOM market size visualization. Body must contain a <div class="market-sizing"> with three nested <div class="market-ring"> elements (tam, sam, som classes). Each ring has a <div class="ring-label"> with the dollar figure and market name. Optionally include a <div class="revenue-chain"> showing volume × price = revenue derivation. End with Sources line. DO NOT include any <style> tags.
+  Example body:
+  "<div class=\"market-sizing\">
+<div class=\"market-ring tam\">
+<div class=\"ring-label\">**$50B+**<br>Content Creators Worldwide<br>Total Addressable Market</div>
+</div>
+<div class=\"market-ring sam\">
+<div class=\"ring-label\">**$2B**<br>Professional Creators<br>Serviceable Available Market</div>
+</div>
+<div class=\"market-ring som\">
+<div class=\"ring-label\">**$110M**<br>Creators with Captions<br>Serviceable Obtainable Market</div>
+</div>
+</div>
+
+Sources: Company analysis, Gartner 2024"
+
+SPLIT_STATEMENT: Left side (30%): bold provocative statement — the emotional hook. Right side (70%): 2-4 supporting evidence points with bold headings and 1-sentence descriptions, separated by horizontal rules. The statement should be punchy and memorable (max 10 words). Body must contain a <div class="split-statement"> with <div class="statement"> and <div class="evidence"> wrappers. No ### takeaway. DO NOT include any <style> tags.
+  Example body:
+  "<div class=\"split-statement\">
+<div class=\"statement\">
+
+Buying is easy, selling is hard.
+
+</div>
+<div class=\"evidence\">
+
+**Time**
+People don't have time to resell their belongings.
+
+---
+
+**Knowledge**
+People don't know what their stuff is worth, opting to discard or do nothing.
+
+---
+
+**Boring**
+The second-hand consumer experience lacks entertainment, social connection, and gamification.
+
+</div>
+</div>"
 
 PRESENTATION TYPE: ${presentationType}
 ${themeBlock}
