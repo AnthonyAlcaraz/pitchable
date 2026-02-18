@@ -335,6 +335,7 @@ export class MarpExporterService {
       '  ul { list-style-type: disc; }',
       '  ul ul { list-style-type: circle; }',
       '  li { margin-bottom: 0.15em; line-height: 1.3; }',
+      '  li::marker { color: var(--accent); }',
       // Layout classes for content centering/spreading
       '  section.content-center { justify-content: center; }',
       '  section.content-spread { justify-content: space-between; }',
@@ -371,11 +372,12 @@ export class MarpExporterService {
       '  }',
       // AMI Labs: large number anchor for data slides
       '  .big-number {',
-      '    font-size: 2.8em;',
+      '    font-size: 3.5em;',
       '    font-weight: 800;',
       `    color: ${safeAccent};`,
       '    line-height: 1.0;',
       '    margin-bottom: 4px;',
+      `    text-shadow: 0 0 40px ${hexWithAlpha(safeAccent, 0.25)};`,
       '  }',
       '  img { max-height: 280px; margin: 4px auto; }',
       '---',
@@ -486,6 +488,12 @@ export class MarpExporterService {
 
     // Inject scoped CSS for grid-based slide types (keeps LLM body simple)
     const scopedCSS: Record<string, string> = {
+      QUOTE: `<style scoped>
+blockquote { position: relative; border-left: 5px solid var(--accent, #38bdf8); padding: 20px 28px 20px 36px; font-size: 1.15em; font-style: italic; line-height: 1.6; margin: 12px 0; }
+blockquote::before { content: "\\201C"; font-size: 5em; position: absolute; left: 8px; top: -12px; color: var(--accent, #38bdf8); opacity: 0.25; font-family: Georgia, serif; line-height: 1; }
+blockquote p { font-size: 1em; margin: 4px 0; }
+blockquote + p { font-size: 0.7em; letter-spacing: 0.04em; margin-top: 16px; opacity: 0.75; }
+</style>`,
       TEAM: `<style scoped>
 .team-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 12px; }
 .team-card { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 16px; text-align: center; }
@@ -494,21 +502,24 @@ export class MarpExporterService {
 .team-card span { font-size: 0.7em; opacity: 0.7; display: block; margin-top: 4px; }
 </style>`,
       TIMELINE: `<style scoped>
-ol { counter-reset: phase; list-style: none; padding-left: 0; border-left: 3px solid var(--accent, #38bdf8); margin-left: 20px; }
-ol li { counter-increment: phase; position: relative; padding: 8px 0 8px 28px; font-size: 0.8em; }
-ol li::before { content: counter(phase, decimal-leading-zero); position: absolute; left: -16px; background: var(--accent, #38bdf8); color: #fff; width: 28px; height: 28px; border-radius: 50%; text-align: center; line-height: 28px; font-weight: 700; font-size: 0.75em; }
+ol { display: flex; list-style: none; padding: 0; margin: 24px 0 0; position: relative; gap: 0; }
+ol::before { content: ''; position: absolute; top: 22px; left: 8%; right: 8%; height: 3px; background: var(--accent, #38bdf8); opacity: 0.4; }
+ol li { flex: 1; text-align: center; position: relative; padding-top: 50px; font-size: 0.72em; line-height: 1.3; }
+ol li::before { content: ''; position: absolute; top: 13px; left: 50%; transform: translateX(-50%); width: 18px; height: 18px; background: var(--accent, #38bdf8); border-radius: 50%; z-index: 1; }
+ol li strong { display: block; font-size: 1.05em; margin-bottom: 2px; }
+h3 { margin-top: 16px; font-size: 0.8em; }
 </style>`,
       METRICS_HIGHLIGHT: `<style scoped>
 .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-top: 12px; text-align: center; }
 .stat-card { padding: 12px; }
-.stat-card .big-number { font-size: 2.4em; line-height: 1; }
+.stat-card .big-number { font-size: 2.8em; line-height: 1; }
 .stat-card p { font-size: 0.6em; opacity: 0.8; margin-top: 4px; }
 h3 { margin-top: 12px; font-size: 0.8em; }
 </style>`,
       DATA_METRICS: `<style scoped>
 .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-top: 12px; text-align: center; }
 .stat-card { padding: 12px; }
-.stat-card .big-number { font-size: 2.4em; line-height: 1; }
+.stat-card .big-number { font-size: 2.8em; line-height: 1; }
 .stat-card p { font-size: 0.6em; opacity: 0.8; margin-top: 4px; }
 h3 { margin-top: 10px; font-size: 0.8em; }
 .source { font-size: 0.5em; }
