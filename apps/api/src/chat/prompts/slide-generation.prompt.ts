@@ -304,19 +304,21 @@ LOGO_WALL: Grid of customer, partner, or investor names rendered as styled text 
 <div class=\"logo-badge\">Index Ventures</div>
 </div>"
 
-MARKET_SIZING: TAM/SAM/SOM market size visualization. Body must contain a <div class="market-sizing"> with three nested <div class="market-ring"> elements (tam, sam, som classes). Each ring has a <div class="ring-label"> with the dollar figure and market name. Optionally include a <div class="revenue-chain"> showing volume × price = revenue derivation. End with Sources line. DO NOT include any <style> tags.
+MARKET_SIZING: TAM/SAM/SOM market size visualization. Body must contain a <div class="market-sizing"> with three nested <div class="market-ring"> elements (tam, sam, som classes). Each ring has a <div class="ring-label"> containing <strong> for the dollar figure and <span> for the market name (keep labels SHORT — max 3 words per line). TAM label appears at ring top, SAM at ring bottom, SOM centered. Optionally include a <div class="revenue-chain"> after the market-sizing div. End with Sources line. DO NOT include any <style> tags.
   Example body:
   "<div class=\"market-sizing\">
 <div class=\"market-ring tam\">
-<div class=\"ring-label\">**$50B+**<br>Content Creators Worldwide<br>Total Addressable Market</div>
+<div class=\"ring-label\"><strong>$50B+</strong><span>TAM</span></div>
 </div>
 <div class=\"market-ring sam\">
-<div class=\"ring-label\">**$2B**<br>Professional Creators<br>Serviceable Available Market</div>
+<div class=\"ring-label\"><strong>$2B</strong><span>SAM</span></div>
 </div>
 <div class=\"market-ring som\">
-<div class=\"ring-label\">**$110M**<br>Creators with Captions<br>Serviceable Obtainable Market</div>
+<div class=\"ring-label\"><strong>$110M</strong><span>SOM</span></div>
 </div>
 </div>
+
+<div class=\"revenue-chain\">50M creators × $2.20/mo = $110M SOM</div>
 
 Sources: Company analysis, Gartner 2024"
 

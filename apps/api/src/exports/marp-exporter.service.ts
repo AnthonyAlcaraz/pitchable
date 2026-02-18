@@ -529,13 +529,14 @@ h3 { margin-top: 10px; font-size: 0.8em; }
 .logo-badge { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); border-radius: 10px; padding: 14px 16px; text-align: center; font-size: 0.75em; font-weight: 600; letter-spacing: 0.02em; }
 </style>`,
       MARKET_SIZING: `<style scoped>
-.market-sizing { display: flex; align-items: center; justify-content: center; margin-top: 12px; position: relative; min-height: 320px; }
-.market-ring { border: 2px solid var(--accent, #38bdf8); border-radius: 50%; display: flex; align-items: center; justify-content: center; position: absolute; }
-.market-ring.tam { width: 340px; height: 340px; opacity: 0.3; }
-.market-ring.sam { width: 230px; height: 230px; opacity: 0.5; }
-.market-ring.som { width: 130px; height: 130px; opacity: 1.0; background: rgba(56,189,248,0.08); }
-.ring-label { text-align: center; font-size: 0.55em; line-height: 1.3; padding: 8px; }
-.ring-label strong { font-size: 1.6em; display: block; margin-bottom: 2px; }
+.market-sizing { display: flex; align-items: center; justify-content: center; margin-top: 12px; position: relative; min-height: 360px; }
+.market-ring { border: 2px solid var(--accent, #38bdf8); border-radius: 50%; display: flex; position: absolute; }
+.market-ring.tam { width: 340px; height: 340px; opacity: 0.4; align-items: flex-start; justify-content: center; padding-top: 16px; }
+.market-ring.sam { width: 230px; height: 230px; opacity: 0.6; align-items: flex-end; justify-content: center; padding-bottom: 12px; }
+.market-ring.som { width: 130px; height: 130px; opacity: 1.0; background: rgba(56,189,248,0.10); align-items: center; justify-content: center; }
+.ring-label { text-align: center; font-size: 0.55em; line-height: 1.2; }
+.ring-label strong { font-size: 1.5em; display: block; margin-bottom: 1px; color: var(--accent, #38bdf8); }
+.ring-label span { opacity: 0.7; font-size: 0.9em; }
 .revenue-chain { margin-top: 16px; font-size: 0.7em; text-align: center; opacity: 0.8; }
 </style>`,
       SPLIT_STATEMENT: `<style scoped>

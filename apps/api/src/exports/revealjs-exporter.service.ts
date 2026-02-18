@@ -143,13 +143,14 @@ ${isMcKinsey ? '' : generateRevealAccentRotationCSS(palette.accent, palette.prim
     .showcase span { font-size: 0.85em; opacity: 0.85; display: block; }
     .logo-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-top: 16px; }
     .logo-badge { background: ${palette.surface}; border: 1px solid ${palette.border}; border-radius: 10px; padding: 14px 16px; text-align: center; font-size: 0.8em; font-weight: 600; }
-    .market-sizing { display: flex; align-items: center; justify-content: center; position: relative; min-height: 300px; margin-top: 12px; }
-    .market-ring { border: 2px solid ${palette.accent}; border-radius: 50%; display: flex; align-items: center; justify-content: center; position: absolute; }
-    .market-ring.tam { width: 320px; height: 320px; opacity: 0.3; }
-    .market-ring.sam { width: 220px; height: 220px; opacity: 0.5; }
-    .market-ring.som { width: 120px; height: 120px; opacity: 1.0; background: rgba(56,189,248,0.08); }
-    .ring-label { text-align: center; font-size: 0.55em; line-height: 1.3; }
-    .ring-label strong { font-size: 1.6em; display: block; }
+    .market-sizing { display: flex; align-items: center; justify-content: center; position: relative; min-height: 340px; margin-top: 12px; }
+    .market-ring { border: 2px solid ${palette.accent}; border-radius: 50%; display: flex; position: absolute; }
+    .market-ring.tam { width: 320px; height: 320px; opacity: 0.4; align-items: flex-start; justify-content: center; padding-top: 16px; }
+    .market-ring.sam { width: 220px; height: 220px; opacity: 0.6; align-items: flex-end; justify-content: center; padding-bottom: 12px; }
+    .market-ring.som { width: 120px; height: 120px; opacity: 1.0; background: rgba(56,189,248,0.10); align-items: center; justify-content: center; }
+    .ring-label { text-align: center; font-size: 0.55em; line-height: 1.2; }
+    .ring-label strong { font-size: 1.5em; display: block; color: ${palette.accent}; }
+    .ring-label span { opacity: 0.7; font-size: 0.9em; }
     .split-statement { display: grid; grid-template-columns: 30% 1fr; gap: 32px; align-items: center; min-height: 250px; }
     .statement { font-size: 1.5em; font-weight: 800; line-height: 1.15; }
     .evidence { font-size: 0.8em; }
