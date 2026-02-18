@@ -11,7 +11,7 @@ import {
   ImagePromptBuilderService,
   type ThemeColors,
 } from './image-prompt-builder.service.js';
-import { JobStatus } from '../../generated/prisma/enums.js';
+import { JobStatus, ImageSource } from '../../generated/prisma/enums.js';
 import type { ImageJobModel } from '../../generated/prisma/models.js';
 import type { ImageGenerationJobData } from './image-generation.processor.js';
 
@@ -117,6 +117,17 @@ export class ImagesService {
     let jobIndex = 0;
 
     for (const slide of eligibleSlides) {
+      // Skip slides with Figma-sourced images (managed externally)
+      if (
+        (slide as Record<string, unknown>).imageSource === ImageSource.FIGMA &&
+        slide.imageUrl
+      ) {
+        this.logger.log(
+          `Skipping slide ${slide.id} (Figma-sourced image)`,
+        );
+        continue;
+      }
+
       // Skip slides that already have an image
       if (slide.imageUrl) {
         this.logger.log(

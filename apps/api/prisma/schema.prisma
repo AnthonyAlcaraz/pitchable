@@ -39,6 +39,7 @@ model User {
   pitchLenses        PitchLens[]
   presentations      Presentation[]
   subscription       Subscription?
+  figmaIntegration   FigmaIntegration?
 
   @@index([email])
 }
@@ -96,6 +97,10 @@ model Slide {
   imageUrl       String?
   imageLocalPath String?
   imagePrompt    String?
+  imageSource    ImageSource @default(AI_GENERATED)
+  figmaFileKey   String?
+  figmaNodeId    String?
+  figmaNodeName  String?
   sectionLabel   String?
   createdAt      DateTime     @default(now())
   imageJobs      ImageJob[]
@@ -301,6 +306,8 @@ model PitchLens {
   maxTableRows        Int?
   showSectionLabels   Boolean        @default(false)
   showOutlineSlide    Boolean        @default(false)
+  figmaFileKey        String?
+  figmaAccessToken    String?
   briefLenses         BriefLens[]
   user                User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   presentations       Presentation[]
@@ -368,6 +375,19 @@ model ApiKey {
 
   @@index([keyPrefix])
   @@index([userId])
+}
+
+model FigmaIntegration {
+  id              String   @id @default(uuid()) @db.Uuid
+  userId          String   @unique @db.Uuid
+  accessToken     String
+  figmaUserId     String?
+  figmaUserName   String?
+  isValid         Boolean  @default(true)
+  lastValidatedAt DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model PresentationView {
@@ -449,6 +469,7 @@ enum ExportFormat {
   PDF
   GOOGLE_SLIDES
   REVEAL_JS
+  FIGMA
 }
 
 enum JobStatus {
@@ -535,6 +556,12 @@ enum StoryFramework {
 enum ImageLayout {
   BACKGROUND
   RIGHT
+}
+
+enum ImageSource {
+  AI_GENERATED
+  FIGMA
+  UPLOADED
 }
 
 enum DeckArchetype {

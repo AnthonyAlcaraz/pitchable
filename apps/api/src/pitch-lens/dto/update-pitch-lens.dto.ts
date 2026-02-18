@@ -107,4 +107,14 @@ export class UpdatePitchLensDto {
   @IsOptional()
   @IsBoolean()
   isDefault?: boolean;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  figmaFileKey?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  figmaAccessToken?: string;
 }
