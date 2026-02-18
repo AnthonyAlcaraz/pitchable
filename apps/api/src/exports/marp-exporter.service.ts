@@ -352,6 +352,10 @@ export class MarpExporterService {
       '    flex-direction: column;',
       '    justify-content: center;',
       '  }',
+      // Overflow safety: stats grids auto-fit to prevent bottom clipping
+      '  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; text-align: center; }',
+      '  .stat-card .big-number { font-size: 2.4em; line-height: 1; }',
+      '  .stat-card p { font-size: 0.6em; opacity: 0.8; margin-top: 2px; }',
       // AMI Labs: section label pill badge
       '  .section-pill {',
       '    display: inline-block;',
@@ -492,11 +496,19 @@ ol li { counter-increment: phase; position: relative; padding: 8px 0 8px 28px; f
 ol li::before { content: counter(phase, decimal-leading-zero); position: absolute; left: -16px; background: var(--accent, #38bdf8); color: #fff; width: 28px; height: 28px; border-radius: 50%; text-align: center; line-height: 28px; font-weight: 700; font-size: 0.75em; }
 </style>`,
       METRICS_HIGHLIGHT: `<style scoped>
-.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-top: 24px; text-align: center; }
-.stat-card { padding: 16px; }
-.stat-card .big-number { font-size: 3em; line-height: 1; }
-.stat-card p { font-size: 0.65em; opacity: 0.8; margin-top: 4px; }
-h3 { margin-top: 20px; }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-top: 12px; text-align: center; }
+.stat-card { padding: 12px; }
+.stat-card .big-number { font-size: 2.4em; line-height: 1; }
+.stat-card p { font-size: 0.6em; opacity: 0.8; margin-top: 4px; }
+h3 { margin-top: 12px; font-size: 0.8em; }
+</style>`,
+      DATA_METRICS: `<style scoped>
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-top: 12px; text-align: center; }
+.stat-card { padding: 12px; }
+.stat-card .big-number { font-size: 2.4em; line-height: 1; }
+.stat-card p { font-size: 0.6em; opacity: 0.8; margin-top: 4px; }
+h3 { margin-top: 10px; font-size: 0.8em; }
+.source { font-size: 0.5em; }
 </style>`,
       FEATURE_GRID: `<style scoped>
 .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-top: 12px; }
