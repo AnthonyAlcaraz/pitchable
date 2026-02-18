@@ -63,6 +63,8 @@ export interface CreatePitchLensInput {
   showSectionLabels?: boolean;
   showOutlineSlide?: boolean;
   isDefault?: boolean;
+  figmaFileKey?: string;
+  figmaAccessToken?: string;
 }
 
 interface PitchLensState {

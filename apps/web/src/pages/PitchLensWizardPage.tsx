@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { usePitchLensStore } from '@/stores/pitch-lens.store';
 import type { CreatePitchLensInput } from '@/stores/pitch-lens.store';
-import { ArrowLeft, ArrowRight, Check, Focus } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, Focus, Figma, ExternalLink } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const STEPS = ['Name', 'Audience', 'Goal', 'Context', 'Tone', 'Framework', 'Review'] as const;
@@ -73,6 +73,8 @@ export function PitchLensWizardPage() {
     customGuidance: '',
     showSectionLabels: false,
     showOutlineSlide: false,
+    figmaFileKey: '',
+    figmaAccessToken: '',
   });
 
   // Load existing lens for editing
@@ -98,6 +100,8 @@ export function PitchLensWizardPage() {
         customGuidance: currentLens.customGuidance ?? '',
         showSectionLabels: (currentLens as Record<string, unknown>).showSectionLabels as boolean ?? false,
         showOutlineSlide: (currentLens as Record<string, unknown>).showOutlineSlide as boolean ?? false,
+        figmaFileKey: (currentLens as Record<string, unknown>).figmaFileKey as string ?? '',
+        figmaAccessToken: (currentLens as Record<string, unknown>).figmaAccessToken as string ? '********' : '',
       });
     }
   }, [editId, currentLens]);
@@ -313,6 +317,52 @@ export function PitchLensWizardPage() {
                 ))}
               </div>
             </div>
+
+            {/* Figma Integration (optional) */}
+            <div className="border-t border-border pt-4">
+              <div className="mb-3 flex items-center gap-2">
+                <Figma className="h-4 w-4 text-muted-foreground" />
+                <label className="text-sm font-medium text-foreground">Figma Integration (optional)</label>
+              </div>
+              <p className="mb-3 text-xs text-muted-foreground">
+                Connect a Figma file to pull designer-made graphics into slides generated with this lens.
+              </p>
+              <div className="space-y-3">
+                <div>
+                  <label className="mb-1 block text-xs text-muted-foreground">Figma File Key or URL</label>
+                  <input
+                    type="text"
+                    value={form.figmaFileKey ?? ''}
+                    onChange={(e) => setForm({ ...form, figmaFileKey: e.target.value })}
+                    placeholder="e.g., https://www.figma.com/file/ABC123/... or ABC123"
+                    className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs text-muted-foreground">
+                    Figma Access Token{' '}
+                    <a
+                      href="https://www.figma.com/developers/api#access-tokens"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-primary hover:underline"
+                    >
+                      (get one <ExternalLink className="inline h-2.5 w-2.5" />)
+                    </a>
+                  </label>
+                  <input
+                    type="password"
+                    value={form.figmaAccessToken ?? ''}
+                    onChange={(e) => setForm({ ...form, figmaAccessToken: e.target.value })}
+                    placeholder="figd_..."
+                    className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                  />
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Overrides global Figma token from Settings for this lens only.
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
         )}
 
@@ -492,6 +542,23 @@ export function PitchLensWizardPage() {
               <p className="text-xs text-muted-foreground">Outline Slide</p>
               <p className="text-sm font-medium text-foreground">{form.showOutlineSlide ? 'Enabled' : 'Disabled'}</p>
             </div>
+
+            {(form.figmaFileKey || form.figmaAccessToken) && (
+              <div className="border-t border-border pt-3">
+                <div className="flex items-center gap-1.5">
+                  <Figma className="h-3.5 w-3.5 text-muted-foreground" />
+                  <p className="text-xs text-muted-foreground">Figma Integration</p>
+                </div>
+                {form.figmaFileKey && (
+                  <p className="mt-1 text-sm font-medium text-foreground">
+                    File: {form.figmaFileKey.length > 30 ? `${form.figmaFileKey.slice(0, 30)}...` : form.figmaFileKey}
+                  </p>
+                )}
+                <p className="text-sm text-foreground">
+                  Token: {form.figmaAccessToken ? 'Provided' : 'Not set'}
+                </p>
+              </div>
+            )}
           </div>
         )}
 

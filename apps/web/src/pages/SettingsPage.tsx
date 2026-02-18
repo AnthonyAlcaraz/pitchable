@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { useAuthStore } from '@/stores/auth.store'
 import { CreditCard, User, Shield, Key } from 'lucide-react'
+import { FigmaIntegrationCard } from '@/components/settings/FigmaIntegrationCard'
 
 export function SettingsPage() {
   const user = useAuthStore((s) => s.user)
@@ -74,6 +75,9 @@ export function SettingsPage() {
             Manage API Keys &rarr;
           </Link>
         </section>
+
+        {/* Integrations section */}
+        <FigmaIntegrationCard />
 
         {/* Security section */}
         <section className="rounded-lg border border-border bg-card p-6">

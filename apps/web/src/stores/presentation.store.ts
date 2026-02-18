@@ -10,6 +10,10 @@ export interface SlideData {
   slideType: string;
   imageUrl: string | null;
   imagePrompt: string | null;
+  imageSource: 'AI_GENERATED' | 'FIGMA' | 'UPLOADED';
+  figmaFileKey: string | null;
+  figmaNodeId: string | null;
+  figmaNodeName: string | null;
   createdAt: string;
 }
 
