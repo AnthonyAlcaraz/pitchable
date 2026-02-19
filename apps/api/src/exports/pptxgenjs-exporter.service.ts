@@ -327,10 +327,37 @@ export class PptxGenJsExporterService {
         this.addOutlineSlide(pres, cachedSlide, safePalette, theme, totalSlides);
         break;
       case 'PROBLEM':
-        this.addAccentBarSlide(pres, cachedSlide, safePalette, theme, totalSlides, safePalette.error);
+        this.addProblemSlide(pres, cachedSlide, safePalette, theme, totalSlides);
         break;
       case 'SOLUTION':
-        this.addAccentBarSlide(pres, cachedSlide, safePalette, theme, totalSlides, safePalette.success);
+        this.addSolutionSlide(pres, cachedSlide, safePalette, theme, totalSlides);
+        break;
+      case 'TEAM':
+        this.addTeamSlide(pres, cachedSlide, safePalette, theme, totalSlides);
+        break;
+      case 'TIMELINE':
+        this.addTimelineSlide(pres, cachedSlide, safePalette, theme, totalSlides);
+        break;
+      case 'SECTION_DIVIDER':
+        this.addSectionDividerSlide(pres, cachedSlide, safePalette, theme, totalSlides);
+        break;
+      case 'METRICS_HIGHLIGHT':
+        this.addMetricsHighlightSlide(pres, cachedSlide, safePalette, theme, totalSlides);
+        break;
+      case 'FEATURE_GRID':
+        this.addFeatureGridSlide(pres, cachedSlide, safePalette, theme, totalSlides);
+        break;
+      case 'PRODUCT_SHOWCASE':
+        this.addProductShowcaseSlide(pres, cachedSlide, safePalette, theme, totalSlides);
+        break;
+      case 'LOGO_WALL':
+        this.addLogoWallSlide(pres, cachedSlide, safePalette, theme, totalSlides);
+        break;
+      case 'MARKET_SIZING':
+        this.addMarketSizingSlide(pres, cachedSlide, safePalette, theme, totalSlides);
+        break;
+      case 'SPLIT_STATEMENT':
+        this.addSplitStatementSlide(pres, cachedSlide, safePalette, theme, totalSlides);
         break;
       default:
         this.addContentSlide(pres, cachedSlide, safePalette, theme, totalSlides);
@@ -2366,6 +2393,859 @@ export class PptxGenJsExporterService {
       rectRadius: 0.15,
       line: { color: borderHex, width: 1.0, transparency: 40 },
     });
+  }
+
+  // ── PROBLEM Slide (dedicated layout with error accent) ──
+
+  private addProblemSlide(
+    pres: PptxGenJS,
+    slide: SlideModel,
+    palette: ColorPalette,
+    theme: ThemeModel,
+    totalSlides: number,
+  ): void {
+    const s = pres.addSlide({ masterName: 'PITCHABLE_DARK' });
+
+    this.applyGradientBackground(s, palette, slide.slideNumber);
+    this.applyBackgroundDecoration(s, slide, palette);
+    this.addSectionLabel(s, slide, palette, theme);
+
+    // Left accent bar (error color)
+    s.addShape('rect', {
+      x: 0, y: 0, w: 0.08, h: '100%',
+      fill: { color: hex(palette.error) },
+    });
+
+    // "THE PROBLEM" label
+    s.addText('THE PROBLEM', {
+      x: 0.5, y: 0.2, w: 3, h: 0.3,
+      fontSize: 11, fontFace: theme.bodyFont,
+      color: hex(palette.error), bold: false,
+    });
+
+    const hasImage = !!slide.imageUrl;
+    const contentWidth = hasImage ? '55%' : '85%';
+
+    // Title
+    if (slide.title) {
+      s.addText(slide.title, {
+        x: 0.5, y: 0.5, w: contentWidth, h: 0.7,
+        fontSize: 28, fontFace: theme.headingFont,
+        color: hex(palette.text), bold: true,
+      });
+    }
+
+    // Accent underline (error color)
+    s.addShape('rect', {
+      x: 0.5, y: 1.15, w: 1.5, h: 0.04,
+      fill: { color: hex(palette.error) },
+    });
+
+    // Body
+    if (slide.body) {
+      this.parseRichBody(s, slide.body, palette, theme, {
+        x: 0.5, y: 1.3, w: contentWidth, maxH: '58%', baseFontSize: 18,
+      });
+    }
+
+    if (hasImage) this.addRightImage(s, slide);
+    this.addFooter(s, slide.slideNumber, totalSlides, palette, theme);
+    if (slide.speakerNotes) s.addNotes(slide.speakerNotes);
+  }
+
+  // ── SOLUTION Slide (dedicated layout with success accent) ──
+
+  private addSolutionSlide(
+    pres: PptxGenJS,
+    slide: SlideModel,
+    palette: ColorPalette,
+    theme: ThemeModel,
+    totalSlides: number,
+  ): void {
+    const s = pres.addSlide({ masterName: 'PITCHABLE_DARK' });
+
+    this.applyGradientBackground(s, palette, slide.slideNumber);
+    this.applyBackgroundDecoration(s, slide, palette);
+    this.addSectionLabel(s, slide, palette, theme);
+
+    // Left accent bar (success color)
+    s.addShape('rect', {
+      x: 0, y: 0, w: 0.08, h: '100%',
+      fill: { color: hex(palette.success) },
+    });
+
+    // "THE SOLUTION" label
+    s.addText('THE SOLUTION', {
+      x: 0.5, y: 0.2, w: 3, h: 0.3,
+      fontSize: 11, fontFace: theme.bodyFont,
+      color: hex(palette.success), bold: false,
+    });
+
+    const hasImage = !!slide.imageUrl;
+    const contentWidth = hasImage ? '55%' : '85%';
+
+    // Title
+    if (slide.title) {
+      s.addText(slide.title, {
+        x: 0.5, y: 0.5, w: contentWidth, h: 0.7,
+        fontSize: 28, fontFace: theme.headingFont,
+        color: hex(palette.text), bold: true,
+      });
+    }
+
+    // Accent underline (success color)
+    s.addShape('rect', {
+      x: 0.5, y: 1.15, w: 1.5, h: 0.04,
+      fill: { color: hex(palette.success) },
+    });
+
+    // Body
+    if (slide.body) {
+      this.parseRichBody(s, slide.body, palette, theme, {
+        x: 0.5, y: 1.3, w: contentWidth, maxH: '58%', baseFontSize: 18,
+      });
+    }
+
+    if (hasImage) this.addRightImage(s, slide);
+    this.addFooter(s, slide.slideNumber, totalSlides, palette, theme);
+    if (slide.speakerNotes) s.addNotes(slide.speakerNotes);
+  }
+
+  // ── TEAM Slide (3-col grid, circular avatar placeholders) ──
+
+  private addTeamSlide(
+    pres: PptxGenJS,
+    slide: SlideModel,
+    palette: ColorPalette,
+    theme: ThemeModel,
+    totalSlides: number,
+  ): void {
+    const s = pres.addSlide({ masterName: 'PITCHABLE_DARK' });
+
+    this.applyGradientBackground(s, palette, slide.slideNumber);
+    this.addSectionLabel(s, slide, palette, theme);
+
+    // Title — centered
+    if (slide.title) {
+      s.addText(slide.title, {
+        x: 0.5, y: 0.3, w: '92%', h: 0.7,
+        fontSize: 28, fontFace: theme.headingFont,
+        color: hex(palette.text), bold: true, align: 'center',
+      });
+    }
+
+    // Accent line under title
+    s.addShape('rect', {
+      x: '46%', y: 0.95, w: 1.0, h: 0.04,
+      fill: { color: hex(palette.accent) },
+    });
+
+    // Parse body lines as team members: "Name - Role" or "**Name** Role"
+    const members = (slide.body ?? '').split('\n')
+      .map((l) => l.replace(/^[-*]\s+/, '').trim())
+      .filter(Boolean)
+      .map((line) => {
+        const boldMatch = line.match(/^\*\*(.+?)\*\*\s*[-–:]\s*(.+)/);
+        if (boldMatch) return { name: boldMatch[1], role: boldMatch[2] };
+        const dashMatch = line.match(/^(.+?)\s*[-–:]\s+(.+)/);
+        if (dashMatch) return { name: dashMatch[1], role: dashMatch[2] };
+        return { name: line.replace(/\*\*/g, ''), role: '' };
+      });
+
+    // Grid: max 3 cols, centered
+    const cols = Math.min(members.length, 3);
+    const rows = Math.ceil(members.length / cols);
+    const cardW = 3.5;
+    const cardH = 2.8;
+    const gapX = 0.4;
+    const gapY = 0.3;
+    const totalW = cols * cardW + (cols - 1) * gapX;
+    const startX = (13.33 - totalW) / 2;
+    const startY = 1.2;
+
+    for (let i = 0; i < members.length; i++) {
+      const col = i % cols;
+      const row = Math.floor(i / cols);
+      const x = startX + col * (cardW + gapX);
+      const y = startY + row * (cardH + gapY);
+      const member = members[i];
+
+      // Card background
+      s.addShape('roundRect' as PptxGenJS.ShapeType, {
+        x, y, w: cardW, h: cardH,
+        fill: { color: hex(palette.surface) },
+        rectRadius: 0.12,
+        line: { color: hex(palette.border), width: 0.5, transparency: 50 },
+      });
+
+      // Avatar circle (placeholder)
+      const avatarSize = 0.9;
+      const avatarX = x + (cardW - avatarSize) / 2;
+      s.addShape('ellipse' as PptxGenJS.ShapeType, {
+        x: avatarX, y: y + 0.3, w: avatarSize, h: avatarSize,
+        fill: { color: hex(palette.primary), transparency: 85 },
+      });
+
+      // Initials
+      const initials = member.name.split(/\s+/).map((w) => w[0] ?? '').join('').slice(0, 2).toUpperCase();
+      s.addText(initials, {
+        x: avatarX, y: y + 0.3, w: avatarSize, h: avatarSize,
+        fontSize: 22, fontFace: theme.headingFont,
+        color: hex(palette.primary), bold: true,
+        align: 'center', valign: 'middle',
+      });
+
+      // Name
+      s.addText(member.name, {
+        x: x + 0.2, y: y + 1.4, w: cardW - 0.4, h: 0.4,
+        fontSize: 16, fontFace: theme.headingFont,
+        color: hex(palette.text), bold: true, align: 'center',
+      });
+
+      // Role
+      if (member.role) {
+        s.addText(member.role, {
+          x: x + 0.2, y: y + 1.8, w: cardW - 0.4, h: 0.4,
+          fontSize: 12, fontFace: theme.bodyFont,
+          color: hex(palette.secondary), align: 'center',
+        });
+      }
+    }
+
+    this.addFooter(s, slide.slideNumber, totalSlides, palette, theme);
+    if (slide.speakerNotes) s.addNotes(slide.speakerNotes);
+  }
+
+  // ── TIMELINE Slide (horizontal timeline with connector line) ──
+
+  private addTimelineSlide(
+    pres: PptxGenJS,
+    slide: SlideModel,
+    palette: ColorPalette,
+    theme: ThemeModel,
+    totalSlides: number,
+  ): void {
+    const s = pres.addSlide({ masterName: 'PITCHABLE_DARK' });
+
+    this.applyGradientBackground(s, palette, slide.slideNumber);
+    this.addSectionLabel(s, slide, palette, theme);
+
+    // Title — centered
+    if (slide.title) {
+      s.addText(slide.title, {
+        x: 0.5, y: 0.3, w: '92%', h: 0.7,
+        fontSize: 28, fontFace: theme.headingFont,
+        color: hex(palette.text), bold: true, align: 'center',
+      });
+    }
+
+    // Accent line
+    s.addShape('rect', {
+      x: '46%', y: 0.95, w: 1.0, h: 0.04,
+      fill: { color: hex(palette.accent) },
+    });
+
+    // Parse milestones from body: "Date - Description" or numbered items
+    const milestones = (slide.body ?? '').split('\n')
+      .map((l) => l.replace(/^[-*]\s+/, '').replace(/^\d+[.)]\s*/, '').trim())
+      .filter(Boolean)
+      .map((line) => {
+        const parts = line.match(/^(.+?)\s*[-–:]\s+(.+)/);
+        if (parts) return { date: parts[1].replace(/\*\*/g, ''), desc: parts[2] };
+        return { date: '', desc: line.replace(/\*\*/g, '') };
+      });
+
+    if (milestones.length === 0) {
+      this.addFooter(s, slide.slideNumber, totalSlides, palette, theme);
+      if (slide.speakerNotes) s.addNotes(slide.speakerNotes);
+      return;
+    }
+
+    // Timeline line
+    const lineY = 3.75;
+    const lineStartX = 1.0;
+    const lineEndX = 12.33;
+    s.addShape('line' as PptxGenJS.ShapeType, {
+      x: lineStartX, y: lineY, w: lineEndX - lineStartX, h: 0,
+      line: { color: hex(palette.border), width: 2 },
+    });
+
+    // Milestone nodes
+    const stepW = (lineEndX - lineStartX) / Math.max(milestones.length - 1, 1);
+    for (let i = 0; i < milestones.length; i++) {
+      const cx = milestones.length === 1
+        ? (lineStartX + lineEndX) / 2
+        : lineStartX + i * stepW;
+      const isLast = i === milestones.length - 1;
+      const nodeSize = 0.25;
+
+      // Node circle
+      s.addShape('ellipse' as PptxGenJS.ShapeType, {
+        x: cx - nodeSize / 2, y: lineY - nodeSize / 2, w: nodeSize, h: nodeSize,
+        fill: { color: hex(isLast ? palette.accent : palette.primary) },
+      });
+
+      // Date label (above)
+      if (milestones[i].date) {
+        s.addText(milestones[i].date, {
+          x: cx - 1.2, y: lineY - 0.7, w: 2.4, h: 0.4,
+          fontSize: 12, fontFace: theme.headingFont,
+          color: hex(palette.primary), bold: true, align: 'center',
+        });
+      }
+
+      // Description (below)
+      s.addText(milestones[i].desc, {
+        x: cx - 1.2, y: lineY + 0.3, w: 2.4, h: 0.8,
+        fontSize: 12, fontFace: theme.bodyFont,
+        color: hex(palette.text), align: 'center', valign: 'top',
+        lineSpacingMultiple: 1.2,
+      });
+    }
+
+    this.addFooter(s, slide.slideNumber, totalSlides, palette, theme);
+    if (slide.speakerNotes) s.addNotes(slide.speakerNotes);
+  }
+
+  // ── SECTION_DIVIDER Slide (full-bleed surface bg, large centered title) ──
+
+  private addSectionDividerSlide(
+    pres: PptxGenJS,
+    slide: SlideModel,
+    palette: ColorPalette,
+    theme: ThemeModel,
+    totalSlides: number,
+  ): void {
+    const s = pres.addSlide({ masterName: 'PITCHABLE_ACCENT' });
+
+    // Subtle radial glow
+    s.addShape('ellipse' as PptxGenJS.ShapeType, {
+      x: 3, y: 1.5, w: 7.33, h: 5.0,
+      fill: { color: hex(palette.primary), transparency: 94 },
+    });
+
+    // Accent line — centered
+    s.addShape('rect', {
+      x: '46%', y: '36%', w: 1.0, h: 0.04,
+      fill: { color: hex(palette.primary) },
+    });
+
+    // Section label (small, above title)
+    const label = (slide as Record<string, unknown>).sectionLabel as string | undefined;
+    if (label) {
+      s.addText(label.toUpperCase(), {
+        x: 0.5, y: '30%', w: '92%', h: 0.3,
+        fontSize: 12, fontFace: theme.bodyFont,
+        color: hex(palette.primary), align: 'center',
+      });
+    }
+
+    // Title — large, centered
+    if (slide.title) {
+      s.addText(slide.title, {
+        x: 1.0, y: '38%', w: '85%', h: 1.5,
+        fontSize: 44, fontFace: theme.headingFont,
+        color: hex(palette.text), bold: true,
+        align: 'center', valign: 'middle',
+      });
+    }
+
+    // Subtitle from body (first 2 lines)
+    if (slide.body) {
+      const subtitleLines = slide.body.split('\n')
+        .filter((l) => l.trim())
+        .slice(0, 2)
+        .map((l) => l.replace(/^[-*]\s+/, '').replace(/\*\*/g, '').trim());
+
+      s.addText(subtitleLines.join('\n'), {
+        x: 1.5, y: '58%', w: '80%', h: 0.8,
+        fontSize: 18, fontFace: theme.bodyFont,
+        color: hex(palette.secondary), align: 'center',
+        lineSpacingMultiple: 1.4,
+      });
+    }
+
+    this.addFooter(s, slide.slideNumber, totalSlides, palette, theme);
+    if (slide.speakerNotes) s.addNotes(slide.speakerNotes);
+  }
+
+  // ── METRICS_HIGHLIGHT Slide (big hero number + supporting metrics) ──
+
+  private addMetricsHighlightSlide(
+    pres: PptxGenJS,
+    slide: SlideModel,
+    palette: ColorPalette,
+    theme: ThemeModel,
+    totalSlides: number,
+  ): void {
+    const s = pres.addSlide({ masterName: 'PITCHABLE_DARK' });
+
+    this.applyGradientBackground(s, palette, slide.slideNumber);
+    this.addSectionLabel(s, slide, palette, theme);
+
+    // Parse metrics from body: **value** label pattern
+    const metrics: Array<{ value: string; label: string }> = [];
+    const bodyLines = (slide.body ?? '').split('\n').filter((l) => l.trim());
+    for (const line of bodyLines) {
+      const match = line.match(/^\*\*([^*]+)\*\*\s+(.+)/);
+      if (match) {
+        metrics.push({ value: match[1], label: match[2] });
+      } else {
+        const plain = line.replace(/^[-*]\s+/, '').trim();
+        if (plain) metrics.push({ value: '', label: plain });
+      }
+    }
+
+    // Hero metric (first with a value, or title as value)
+    const hero = metrics.find((m) => m.value) ?? { value: slide.title ?? '', label: '' };
+    const supporting = metrics.filter((m) => m !== hero && m.value);
+
+    // Hero number — big centered
+    if (hero.value) {
+      s.addText(hero.value, {
+        x: 0.5, y: '18%', w: '92%', h: 1.5,
+        fontSize: 72, fontFace: theme.headingFont,
+        color: hex(palette.primary), bold: true,
+        align: 'center', valign: 'middle',
+      });
+    }
+
+    // Hero label
+    const heroLabel = hero.label || slide.title || '';
+    if (heroLabel) {
+      s.addText(heroLabel, {
+        x: 1.0, y: '42%', w: '85%', h: 0.6,
+        fontSize: 24, fontFace: theme.headingFont,
+        color: hex(palette.text), bold: true,
+        align: 'center',
+      });
+    }
+
+    // Accent line
+    s.addShape('rect', {
+      x: '44%', y: '52%', w: 1.5, h: 0.04,
+      fill: { color: hex(palette.accent) },
+    });
+
+    // Supporting text (non-metric lines)
+    const supportText = metrics.filter((m) => !m.value).map((m) => m.label).join('\n');
+    if (supportText) {
+      s.addText(supportText, {
+        x: 1.5, y: '55%', w: '80%', h: 0.6,
+        fontSize: 16, fontFace: theme.bodyFont,
+        color: hex(palette.secondary), align: 'center',
+        lineSpacingMultiple: 1.3,
+      });
+    }
+
+    // Supporting metrics row (up to 3)
+    if (supporting.length > 0) {
+      const metricCols = Math.min(supporting.length, 3);
+      const colW = 10.33 / metricCols;
+      const startX = (13.33 - metricCols * colW) / 2;
+
+      for (let i = 0; i < metricCols; i++) {
+        const mx = startX + i * colW;
+
+        s.addText(supporting[i].value, {
+          x: mx, y: '68%', w: colW, h: 0.6,
+          fontSize: 32, fontFace: theme.headingFont,
+          color: hex(palette.primary), bold: true,
+          align: 'center',
+        });
+
+        s.addText(supporting[i].label, {
+          x: mx, y: '78%', w: colW, h: 0.3,
+          fontSize: 12, fontFace: theme.bodyFont,
+          color: hex(palette.secondary), align: 'center',
+        });
+      }
+    }
+
+    this.addFooter(s, slide.slideNumber, totalSlides, palette, theme);
+    if (slide.speakerNotes) s.addNotes(slide.speakerNotes);
+  }
+
+  // ── FEATURE_GRID Slide (2x2 or 2x3 cards with icon placeholders) ──
+
+  private addFeatureGridSlide(
+    pres: PptxGenJS,
+    slide: SlideModel,
+    palette: ColorPalette,
+    theme: ThemeModel,
+    totalSlides: number,
+  ): void {
+    const s = pres.addSlide({ masterName: 'PITCHABLE_DARK' });
+
+    this.applyGradientBackground(s, palette, slide.slideNumber);
+    this.addSectionLabel(s, slide, palette, theme);
+
+    // Title — centered
+    if (slide.title) {
+      s.addText(slide.title, {
+        x: 0.5, y: 0.3, w: '92%', h: 0.7,
+        fontSize: 28, fontFace: theme.headingFont,
+        color: hex(palette.text), bold: true, align: 'center',
+      });
+    }
+
+    // Accent line
+    s.addShape('rect', {
+      x: '46%', y: 0.95, w: 1.0, h: 0.04,
+      fill: { color: hex(palette.accent) },
+    });
+
+    // Parse features from body
+    const features = (slide.body ?? '').split('\n')
+      .map((l) => l.replace(/^[-*]\s+/, '').trim())
+      .filter(Boolean)
+      .map((line) => {
+        const boldMatch = line.match(/^\*\*(.+?)\*\*\s*[-–:]?\s*(.*)/);
+        if (boldMatch) return { title: boldMatch[1], desc: boldMatch[2] || '' };
+        const dashMatch = line.match(/^(.+?)\s*[-–:]\s+(.+)/);
+        if (dashMatch) return { title: dashMatch[1], desc: dashMatch[2] };
+        return { title: line.replace(/\*\*/g, ''), desc: '' };
+      });
+
+    // Grid: 2 cols for <=4, 3 cols for >4
+    const cols = features.length <= 4 ? 2 : 3;
+    const rows = Math.ceil(features.length / cols);
+    const cardW = cols === 2 ? 5.5 : 3.6;
+    const cardH = rows === 1 ? 3.0 : 2.2;
+    const gapX = 0.4;
+    const gapY = 0.3;
+    const totalW = cols * cardW + (cols - 1) * gapX;
+    const startX = (13.33 - totalW) / 2;
+    const startY = 1.2;
+
+    for (let i = 0; i < features.length; i++) {
+      const col = i % cols;
+      const row = Math.floor(i / cols);
+      const x = startX + col * (cardW + gapX);
+      const y = startY + row * (cardH + gapY);
+      const feat = features[i];
+
+      // Card background
+      s.addShape('roundRect' as PptxGenJS.ShapeType, {
+        x, y, w: cardW, h: cardH,
+        fill: { color: hex(palette.surface) },
+        rectRadius: 0.12,
+        line: { color: hex(palette.border), width: 0.5, transparency: 50 },
+      });
+
+      // Icon placeholder (colored square)
+      s.addShape('roundRect' as PptxGenJS.ShapeType, {
+        x: x + 0.3, y: y + 0.3, w: 0.5, h: 0.5,
+        fill: { color: hex(palette.accent), transparency: 80 },
+        rectRadius: 0.06,
+      });
+
+      // Feature title
+      s.addText(feat.title, {
+        x: x + 0.3, y: y + 0.95, w: cardW - 0.6, h: 0.35,
+        fontSize: 16, fontFace: theme.headingFont,
+        color: hex(palette.text), bold: true,
+      });
+
+      // Feature description
+      if (feat.desc) {
+        s.addText(feat.desc, {
+          x: x + 0.3, y: y + 1.3, w: cardW - 0.6, h: cardH - 1.6,
+          fontSize: 12, fontFace: theme.bodyFont,
+          color: hex(palette.secondary), valign: 'top',
+          lineSpacingMultiple: 1.2,
+        });
+      }
+    }
+
+    this.addFooter(s, slide.slideNumber, totalSlides, palette, theme);
+    if (slide.speakerNotes) s.addNotes(slide.speakerNotes);
+  }
+
+  // ── PRODUCT_SHOWCASE Slide (left feature list + right large image) ──
+
+  private addProductShowcaseSlide(
+    pres: PptxGenJS,
+    slide: SlideModel,
+    palette: ColorPalette,
+    theme: ThemeModel,
+    totalSlides: number,
+  ): void {
+    const s = pres.addSlide({ masterName: 'PITCHABLE_DARK' });
+
+    this.applyGradientBackground(s, palette, slide.slideNumber);
+    this.addSectionLabel(s, slide, palette, theme);
+
+    // Title — left side
+    if (slide.title) {
+      s.addText(slide.title, {
+        x: 0.5, y: 0.3, w: '45%', h: 0.7,
+        fontSize: 28, fontFace: theme.headingFont,
+        color: hex(palette.text), bold: true,
+      });
+    }
+
+    // Accent underline
+    s.addShape('rect', {
+      x: 0.5, y: 0.95, w: 1.5, h: 0.04,
+      fill: { color: hex(palette.accent) },
+    });
+
+    // Feature list with checkmarks (left side)
+    const features = (slide.body ?? '').split('\n')
+      .map((l) => l.replace(/^[-*]\s+/, '').replace(/\*\*/g, '').trim())
+      .filter(Boolean);
+
+    let featureY = 1.2;
+    for (const feat of features) {
+      // Checkmark
+      s.addText('\u2713', {
+        x: 0.5, y: featureY, w: 0.4, h: 0.35,
+        fontSize: 16, fontFace: theme.bodyFont,
+        color: hex(palette.success), bold: true,
+      });
+
+      // Feature text
+      s.addText(feat, {
+        x: 1.0, y: featureY, w: 5.0, h: 0.35,
+        fontSize: 16, fontFace: theme.bodyFont,
+        color: hex(palette.text), valign: 'middle',
+      });
+
+      featureY += 0.5;
+    }
+
+    // Large product image (right side)
+    if (slide.imageUrl) {
+      try {
+        s.addImage({
+          data: slide.imageUrl,
+          x: '52%', y: 0.3, w: '44%', h: '80%',
+          rounding: true,
+        });
+      } catch {
+        // Image failed — slide still renders with features
+      }
+    }
+
+    this.addFooter(s, slide.slideNumber, totalSlides, palette, theme);
+    if (slide.speakerNotes) s.addNotes(slide.speakerNotes);
+  }
+
+  // ── LOGO_WALL Slide (grid of logo placeholder cards) ──
+
+  private addLogoWallSlide(
+    pres: PptxGenJS,
+    slide: SlideModel,
+    palette: ColorPalette,
+    theme: ThemeModel,
+    totalSlides: number,
+  ): void {
+    const s = pres.addSlide({ masterName: 'PITCHABLE_DARK' });
+
+    this.applyGradientBackground(s, palette, slide.slideNumber);
+    this.addSectionLabel(s, slide, palette, theme);
+
+    // Title — centered
+    if (slide.title) {
+      s.addText(slide.title, {
+        x: 0.5, y: 0.3, w: '92%', h: 0.7,
+        fontSize: 28, fontFace: theme.headingFont,
+        color: hex(palette.text), bold: true, align: 'center',
+      });
+    }
+
+    // Accent line
+    s.addShape('rect', {
+      x: '46%', y: 0.95, w: 1.0, h: 0.04,
+      fill: { color: hex(palette.accent) },
+    });
+
+    // Parse company names from body
+    const companies = (slide.body ?? '').split('\n')
+      .map((l) => l.replace(/^[-*]\s+/, '').replace(/\*\*/g, '').trim())
+      .filter(Boolean);
+
+    // Grid: 4 cols for <=8, 5 cols for >8
+    const cols = companies.length <= 8 ? 4 : 5;
+    const rows = Math.ceil(companies.length / cols);
+    const cardW = 2.4;
+    const cardH = 1.3;
+    const gapX = 0.4;
+    const gapY = 0.35;
+    const totalW = cols * cardW + (cols - 1) * gapX;
+    const startX = (13.33 - totalW) / 2;
+    const totalH = rows * cardH + (rows - 1) * gapY;
+    const startY = Math.max(1.2, (7.5 - totalH) / 2 + 0.3);
+
+    for (let i = 0; i < companies.length; i++) {
+      const col = i % cols;
+      const row = Math.floor(i / cols);
+      const x = startX + col * (cardW + gapX);
+      const y = startY + row * (cardH + gapY);
+
+      // Card background
+      s.addShape('roundRect' as PptxGenJS.ShapeType, {
+        x, y, w: cardW, h: cardH,
+        fill: { color: hex(palette.surface) },
+        rectRadius: 0.1,
+        line: { color: hex(palette.border), width: 0.5, transparency: 50 },
+      });
+
+      // Company name — centered
+      s.addText(companies[i], {
+        x, y, w: cardW, h: cardH,
+        fontSize: 13, fontFace: theme.headingFont,
+        color: hex(palette.secondary), bold: true,
+        align: 'center', valign: 'middle',
+      });
+    }
+
+    this.addFooter(s, slide.slideNumber, totalSlides, palette, theme);
+    if (slide.speakerNotes) s.addNotes(slide.speakerNotes);
+  }
+
+  // ── MARKET_SIZING Slide (left text + right concentric circles TAM/SAM/SOM) ──
+
+  private addMarketSizingSlide(
+    pres: PptxGenJS,
+    slide: SlideModel,
+    palette: ColorPalette,
+    theme: ThemeModel,
+    totalSlides: number,
+  ): void {
+    const s = pres.addSlide({ masterName: 'PITCHABLE_DARK' });
+
+    this.applyGradientBackground(s, palette, slide.slideNumber);
+    this.addSectionLabel(s, slide, palette, theme);
+
+    // Title — left side
+    if (slide.title) {
+      s.addText(slide.title, {
+        x: 0.5, y: 0.3, w: '45%', h: 0.7,
+        fontSize: 28, fontFace: theme.headingFont,
+        color: hex(palette.text), bold: true,
+      });
+    }
+
+    // Accent line
+    s.addShape('rect', {
+      x: 0.5, y: 0.95, w: 1.5, h: 0.04,
+      fill: { color: hex(palette.accent) },
+    });
+
+    // Body text (left side)
+    if (slide.body) {
+      this.parseRichBody(s, slide.body, palette, theme, {
+        x: 0.5, y: 1.15, w: '40%', maxH: '60%', baseFontSize: 16,
+      });
+    }
+
+    // Concentric circles (right side — centered at ~9.5, 3.75)
+    const cx = 9.5;
+    const cy = 3.75;
+
+    // TAM (outermost)
+    const tamD = 5.5;
+    s.addShape('ellipse' as PptxGenJS.ShapeType, {
+      x: cx - tamD / 2, y: cy - tamD / 2, w: tamD, h: tamD,
+      fill: { color: hex(palette.primary), transparency: 92 },
+      line: { color: hex(palette.primary), width: 1.5, transparency: 50 },
+    });
+    s.addText('TAM', {
+      x: cx - 0.5, y: cy - tamD / 2 + 0.2, w: 1.0, h: 0.3,
+      fontSize: 12, fontFace: theme.headingFont,
+      color: hex(palette.primary), bold: true, align: 'center',
+    });
+
+    // SAM (middle)
+    const samD = 3.7;
+    s.addShape('ellipse' as PptxGenJS.ShapeType, {
+      x: cx - samD / 2, y: cy - samD / 2, w: samD, h: samD,
+      fill: { color: hex(palette.primary), transparency: 88 },
+      line: { color: hex(palette.primary), width: 1.5, transparency: 40 },
+    });
+    s.addText('SAM', {
+      x: cx - 0.5, y: cy - samD / 2 + 0.2, w: 1.0, h: 0.3,
+      fontSize: 12, fontFace: theme.headingFont,
+      color: hex(palette.primary), bold: true, align: 'center',
+    });
+
+    // SOM (inner)
+    const somD = 2.1;
+    s.addShape('ellipse' as PptxGenJS.ShapeType, {
+      x: cx - somD / 2, y: cy - somD / 2, w: somD, h: somD,
+      fill: { color: hex(palette.primary), transparency: 80 },
+      line: { color: hex(palette.primary), width: 1.5, transparency: 30 },
+    });
+    s.addText('SOM', {
+      x: cx - 0.5, y: cy - 0.15, w: 1.0, h: 0.3,
+      fontSize: 12, fontFace: theme.headingFont,
+      color: hex(palette.primary), bold: true, align: 'center',
+    });
+
+    this.addFooter(s, slide.slideNumber, totalSlides, palette, theme);
+    if (slide.speakerNotes) s.addNotes(slide.speakerNotes);
+  }
+
+  // ── SPLIT_STATEMENT Slide (two-tone split: left bold, right body) ──
+
+  private addSplitStatementSlide(
+    pres: PptxGenJS,
+    slide: SlideModel,
+    palette: ColorPalette,
+    theme: ThemeModel,
+    totalSlides: number,
+  ): void {
+    const s = pres.addSlide({ masterName: 'PITCHABLE_DARK' });
+
+    // Left panel — primary color
+    s.addShape('rect', {
+      x: 0, y: 0, w: '50%', h: '100%',
+      fill: { color: hex(palette.primary) },
+    });
+
+    // Right panel — background color
+    s.addShape('rect', {
+      x: '50%', y: 0, w: '50%', h: '100%',
+      fill: { color: hex(palette.background) },
+    });
+
+    // Subtle radial glow on left
+    s.addShape('ellipse' as PptxGenJS.ShapeType, {
+      x: 0.5, y: 1.5, w: 5.0, h: 4.5,
+      fill: { color: hex(palette.accent), transparency: 92 },
+    });
+
+    // Section label (left side, if present)
+    const label = (slide as Record<string, unknown>).sectionLabel as string | undefined;
+    if (label) {
+      s.addText(label.toUpperCase(), {
+        x: 0.6, y: '26%', w: 5.5, h: 0.3,
+        fontSize: 11, fontFace: theme.bodyFont,
+        color: hex(palette.background),
+      });
+    }
+
+    // Left side — bold statement (title)
+    if (slide.title) {
+      s.addText(slide.title, {
+        x: 0.6, y: '32%', w: 5.5, h: 2.0,
+        fontSize: 36, fontFace: theme.headingFont,
+        color: hex(palette.background), bold: true,
+        valign: 'top', lineSpacingMultiple: 1.2,
+      });
+    }
+
+    // Right side — supporting body text
+    if (slide.body) {
+      this.parseRichBody(s, slide.body, palette, theme, {
+        x: 7.3, y: '32%', w: 5.0, maxH: '50%', baseFontSize: 16,
+      });
+    }
+
+    this.addFooter(s, slide.slideNumber, totalSlides, palette, theme);
+    if (slide.speakerNotes) s.addNotes(slide.speakerNotes);
   }
 
 }
