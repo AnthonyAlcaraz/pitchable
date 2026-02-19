@@ -28,8 +28,8 @@ COPY . .
 # Generate Prisma client
 RUN cd apps/api && npx prisma generate
 
-# Build only needed packages (skip figma-plugin) via Turborepo
-RUN npx turbo run build --filter='!@pitchable/figma-plugin'
+# Build only the packages we need (api + web + shared)
+RUN npx turbo run build --filter='@deckpilot/api' --filter='@deckpilot/web'
 
 # ── Stage 3: Production image ─────────────────────────────────
 FROM node:22-slim AS prod
