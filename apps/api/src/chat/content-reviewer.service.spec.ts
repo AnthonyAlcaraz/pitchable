@@ -81,7 +81,7 @@ describe('ContentReviewerService', () => {
 
       expect(llm.completeJson).toHaveBeenCalledWith(
         expect.any(Array),
-        'claude-haiku-4-5-20251001',
+        'claude-sonnet-4-6',
         expect.any(Function), // isValidReviewResult validator
         2, // maxRetries
       );

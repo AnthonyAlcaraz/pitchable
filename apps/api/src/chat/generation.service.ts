@@ -148,7 +148,7 @@ export class GenerationService {
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt },
         ],
-        LlmModel.OPUS,
+        LlmModel.SONNET,
         isValidOutline,
         2,
       );
@@ -994,7 +994,7 @@ export class GenerationService {
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt },
         ],
-        LlmModel.OPUS,
+        LlmModel.SONNET,
         isValidSlideContent,
         2,
       );

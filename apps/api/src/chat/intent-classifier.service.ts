@@ -59,7 +59,7 @@ export class IntentClassifierService {
             content: `Presentation has slides: ${hasSlides ? 'yes' : 'no (empty deck)'}.\nUser message: "${message}"`,
           },
         ],
-        LlmModel.HAIKU,
+        LlmModel.SONNET,
       );
 
       return {

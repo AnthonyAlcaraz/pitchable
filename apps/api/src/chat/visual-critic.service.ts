@@ -44,7 +44,7 @@ export class VisualCriticService {
             content: `Review this ${slideCount}-slide presentation Marp markdown for visual quality, aesthetics, and diversity:\n\n${truncated}`,
           },
         ],
-        LlmModel.HAIKU,
+        LlmModel.SONNET,
         isValidVisualCriticResult,
         2,
       );

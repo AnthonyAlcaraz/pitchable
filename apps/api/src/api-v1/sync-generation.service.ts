@@ -190,7 +190,7 @@ export class SyncGenerationService {
           { role: 'system', content: outlineSystemPrompt },
           { role: 'user', content: outlineUserPrompt },
         ],
-        LlmModel.OPUS,
+        LlmModel.SONNET,
         isValidOutline,
         2,
       );
@@ -319,7 +319,7 @@ ${slideKbContext}`;
             { role: 'system', content: slideSystemPrompt },
             { role: 'user', content: slideUserPrompt },
           ],
-          LlmModel.OPUS,
+          LlmModel.SONNET,
           isValidSlideContent,
           2,
         );

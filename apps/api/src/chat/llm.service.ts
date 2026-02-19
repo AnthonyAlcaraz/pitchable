@@ -47,7 +47,7 @@ export class LlmService {
     });
     this.defaultModel = configService.get<string>(
       'ANTHROPIC_MODEL',
-      LlmModel.OPUS,
+      LlmModel.SONNET,
     );
   }
 
