@@ -13,6 +13,7 @@ import type {
 import { hexToRgb, setFill, loadFont, createStyledText, SLIDE_W, SLIDE_H, PADDING, GAP } from './utils';
 import { getLayoutForType } from './layouts/index';
 import { applyTheme } from './builders/theme-builder';
+import { startSync, stopSync } from './sync';
 
 // ── V1 Layout config (backward compat) ──────────────────
 
@@ -230,6 +231,16 @@ figma.ui.onmessage = async (msg: {
   createStyles?: boolean;
   layoutQuality?: 'simple' | 'full';
 }) => {
+  // Handle sync messages
+  if (msg.type === 'start-sync') {
+    startSync(msg.presentationId, msg.apiUrl, msg.apiKey);
+    return;
+  }
+  if (msg.type === 'stop-sync') {
+    stopSync();
+    return;
+  }
+
   if (msg.type !== 'import') return;
 
   const { apiUrl, apiKey, presentationId } = msg;

@@ -8,9 +8,21 @@
       font-family: Inter, -apple-system, BlinkMacSystemFont, sans-serif;
       font-size: 13px;
       color: #333;
-      padding: 16px;
+      padding: 0;
       background: #fff;
     }
+
+    /* Tabs */
+    .tabs { display: flex; border-bottom: 1px solid #e5e7eb; }
+    .tab {
+      flex: 1; padding: 10px; text-align: center; font-size: 13px; font-weight: 600;
+      cursor: pointer; color: #6b7280; border-bottom: 2px solid transparent;
+      transition: all 0.15s;
+    }
+    .tab.active { color: #4f46e5; border-bottom-color: #4f46e5; }
+    .tab-content { display: none; padding: 16px; }
+    .tab-content.active { display: block; }
+
     h2 { font-size: 15px; font-weight: 600; margin-bottom: 12px; }
     label { display: block; font-weight: 500; margin-bottom: 4px; color: #555; }
     input[type="url"], input[type="password"], input[type="text"] {
@@ -38,6 +50,8 @@
     }
     button:hover { background: #4338ca; }
     button:disabled { background: #a5b4fc; cursor: not-allowed; }
+    button.danger { background: #ef4444; }
+    button.danger:hover { background: #dc2626; }
 
     .options {
       margin-bottom: 14px;
@@ -71,65 +85,136 @@
     .progress-text { font-size: 12px; color: #6b7280; }
 
     .help { margin-top: 16px; font-size: 11px; color: #9ca3af; line-height: 1.5; }
+
+    .sync-indicator {
+      display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+      margin-right: 6px; vertical-align: middle;
+    }
+    .sync-indicator.green { background: #22c55e; }
+    .sync-indicator.yellow { background: #eab308; }
+    .sync-indicator.red { background: #ef4444; }
+    .sync-indicator.gray { background: #9ca3af; }
   </style>
 </head>
 <body>
-  <h2>Import from Pitchable</h2>
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('import')">Import</div>
+    <div class="tab" onclick="switchTab('sync')">Sync</div>
+  </div>
 
-  <label for="apiUrl">API URL</label>
-  <input id="apiUrl" type="url" placeholder="https://api.pitchable.app" value="http://localhost:3001">
+  <!-- Import Tab -->
+  <div id="tab-import" class="tab-content active">
+    <h2>Import from Pitchable</h2>
 
-  <label for="apiKey">API Key</label>
-  <input id="apiKey" type="password" placeholder="Your Pitchable API key">
+    <label for="apiUrl">API URL</label>
+    <input id="apiUrl" type="url" placeholder="https://api.pitchable.app" value="http://localhost:3001">
 
-  <label for="presentationId">Presentation ID</label>
-  <input id="presentationId" type="text" placeholder="e.g. a1b2c3d4-...">
+    <label for="apiKey">API Key</label>
+    <input id="apiKey" type="password" placeholder="Your Pitchable API key">
 
-  <div class="options">
-    <h3>Import Options</h3>
-    <div class="option-row">
-      <input type="checkbox" id="createStyles" checked>
-      <label for="createStyles">Create Figma Styles</label>
+    <label for="presentationId">Presentation ID</label>
+    <input id="presentationId" type="text" placeholder="e.g. a1b2c3d4-...">
+
+    <div class="options">
+      <h3>Import Options</h3>
+      <div class="option-row">
+        <input type="checkbox" id="createStyles" checked>
+        <label for="createStyles">Create Figma Styles</label>
+      </div>
+      <div class="option-row desc">Adds local PaintStyles and TextStyles from the theme.</div>
+
+      <div style="margin-top: 8px;">
+        <div class="option-row">
+          <input type="radio" id="layoutFull" name="layoutQuality" value="full" checked>
+          <label for="layoutFull">Full Layout</label>
+        </div>
+        <div class="option-row desc">Rich layouts with backgrounds, gradients, cards, and structured text.</div>
+        <div class="option-row">
+          <input type="radio" id="layoutSimple" name="layoutQuality" value="simple">
+          <label for="layoutSimple">Simple Layout</label>
+        </div>
+        <div class="option-row desc">Basic text and images (faster, lighter).</div>
+      </div>
     </div>
-    <div class="option-row desc">Adds local PaintStyles and TextStyles from the theme.</div>
 
-    <div style="margin-top: 8px;">
-      <div class="option-row">
-        <input type="radio" id="layoutFull" name="layoutQuality" value="full" checked>
-        <label for="layoutFull">Full Layout</label>
-      </div>
-      <div class="option-row desc">Rich layouts with backgrounds, gradients, cards, and structured text.</div>
-      <div class="option-row">
-        <input type="radio" id="layoutSimple" name="layoutQuality" value="simple">
-        <label for="layoutSimple">Simple Layout</label>
-      </div>
-      <div class="option-row desc">Basic text and images (faster, lighter).</div>
+    <button id="importBtn" onclick="startImport()">Import Presentation</button>
+
+    <div id="status" class="status"></div>
+    <div class="progress-container" id="progressContainer" style="display:none">
+      <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+      <div class="progress-text" id="progressText"></div>
+    </div>
+
+    <div class="help">
+      Get your API key from Pitchable Settings &gt; API Keys.<br>
+      The presentation ID is in the URL: /presentations/<strong>{id}</strong>
     </div>
   </div>
 
-  <button id="importBtn" onclick="startImport()">Import Presentation</button>
+  <!-- Sync Tab -->
+  <div id="tab-sync" class="tab-content">
+    <h2>Live Sync</h2>
+    <p style="font-size: 12px; color: #6b7280; margin-bottom: 12px;">
+      Keep your Figma slides in sync with Pitchable changes. Polls every 30 seconds.
+    </p>
 
-  <div id="status" class="status"></div>
-  <div class="progress-container" id="progressContainer" style="display:none">
-    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
-    <div class="progress-text" id="progressText"></div>
-  </div>
+    <label for="syncApiUrl">API URL</label>
+    <input id="syncApiUrl" type="url" placeholder="https://api.pitchable.app" value="http://localhost:3001">
 
-  <div class="help">
-    Get your API key from Pitchable Settings &gt; API Keys.<br>
-    The presentation ID is in the URL: /presentations/<strong>{id}</strong>
+    <label for="syncApiKey">API Key</label>
+    <input id="syncApiKey" type="password" placeholder="Your Pitchable API key">
+
+    <label for="syncPresentationId">Presentation ID</label>
+    <input id="syncPresentationId" type="text" placeholder="e.g. a1b2c3d4-...">
+
+    <div style="display: flex; gap: 8px; margin-top: 4px;">
+      <button id="syncStartBtn" onclick="toggleSync()" style="flex:1">Start Sync</button>
+    </div>
+
+    <div id="syncStatus" class="status" style="margin-top: 12px;"></div>
+    <div id="syncIndicatorRow" style="margin-top: 8px; font-size: 12px; color: #6b7280; display: none;">
+      <span class="sync-indicator gray" id="syncDot"></span>
+      <span id="syncStatusText">Not syncing</span>
+    </div>
+
+    <div class="help">
+      Import your presentation first (Import tab), then start sync to keep text and images updated.
+    </div>
   </div>
 
   <script>
+    let isSyncing = false;
     const statusEl = document.getElementById('status');
     const progressContainer = document.getElementById('progressContainer');
     const progressFill = document.getElementById('progressFill');
     const progressText = document.getElementById('progressText');
     const importBtn = document.getElementById('importBtn');
 
+    function switchTab(tab) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+      document.querySelector(`.tab-content#tab-${tab}`).classList.add('active');
+      event.target.classList.add('active');
+    }
+
     function setStatus(msg, type) {
       statusEl.textContent = msg;
       statusEl.className = 'status ' + type;
+    }
+
+    function setSyncStatus(msg, type) {
+      const el = document.getElementById('syncStatus');
+      el.textContent = msg;
+      el.className = 'status ' + type;
+    }
+
+    function setSyncDot(color, text) {
+      const dot = document.getElementById('syncDot');
+      const row = document.getElementById('syncIndicatorRow');
+      const statusText = document.getElementById('syncStatusText');
+      dot.className = 'sync-indicator ' + color;
+      statusText.textContent = text;
+      row.style.display = 'block';
     }
 
     function startImport() {
@@ -150,15 +235,39 @@
       setStatus('Creating export job...', 'info');
 
       parent.postMessage({
-        pluginMessage: {
-          type: 'import',
-          apiUrl,
-          apiKey,
-          presentationId,
-          createStyles,
-          layoutQuality,
-        }
+        pluginMessage: { type: 'import', apiUrl, apiKey, presentationId, createStyles, layoutQuality }
       }, '*');
+    }
+
+    function toggleSync() {
+      const btn = document.getElementById('syncStartBtn');
+
+      if (isSyncing) {
+        parent.postMessage({ pluginMessage: { type: 'stop-sync' } }, '*');
+        isSyncing = false;
+        btn.textContent = 'Start Sync';
+        btn.classList.remove('danger');
+        setSyncDot('gray', 'Not syncing');
+        return;
+      }
+
+      const apiUrl = document.getElementById('syncApiUrl').value.trim().replace(/\/$/, '');
+      const apiKey = document.getElementById('syncApiKey').value.trim();
+      const presentationId = document.getElementById('syncPresentationId').value.trim();
+
+      if (!apiUrl || !apiKey || !presentationId) {
+        setSyncStatus('Please fill in all fields.', 'error');
+        return;
+      }
+
+      parent.postMessage({
+        pluginMessage: { type: 'start-sync', apiUrl, apiKey, presentationId }
+      }, '*');
+
+      isSyncing = true;
+      btn.textContent = 'Stop Sync';
+      btn.classList.add('danger');
+      setSyncDot('yellow', 'Connecting...');
     }
 
     window.onmessage = (event) => {
@@ -182,6 +291,28 @@
           setStatus(msg.text, 'success');
           importBtn.disabled = false;
           progressFill.style.width = '100%';
+          break;
+        case 'sync-started':
+          setSyncDot('green', 'Syncing');
+          setSyncStatus('Sync started. Polling every 30s.', 'success');
+          break;
+        case 'sync-stopped':
+          setSyncDot('gray', 'Not syncing');
+          setSyncStatus('Sync stopped.', 'info');
+          isSyncing = false;
+          document.getElementById('syncStartBtn').textContent = 'Start Sync';
+          document.getElementById('syncStartBtn').classList.remove('danger');
+          break;
+        case 'sync-update':
+          setSyncDot('green', 'Synced ' + msg.count + ' slide(s)');
+          setSyncStatus(msg.text, 'success');
+          break;
+        case 'sync-status':
+          setSyncDot('green', msg.text);
+          break;
+        case 'sync-error':
+          setSyncDot('red', 'Error');
+          setSyncStatus(msg.text, 'error');
           break;
       }
     };
