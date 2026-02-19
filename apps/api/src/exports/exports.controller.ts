@@ -14,6 +14,7 @@ import { ExportFormat } from '../../generated/prisma/enums.js';
 
 interface CreateExportBody {
   format: ExportFormat;
+  renderEngine?: 'marp' | 'figma';
 }
 
 @UseGuards(JwtAuthGuard)

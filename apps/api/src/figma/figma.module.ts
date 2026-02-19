@@ -7,11 +7,12 @@ import { FigmaImageSyncService } from './figma-image-sync.service.js';
 import { FigmaController } from './figma.controller.js';
 import { FigmaTemplateController } from './figma-template.controller.js';
 import { FigmaTemplateService } from './figma-template.service.js';
+import { FigmaRendererService } from './figma-renderer.service.js';
 
 @Module({
   imports: [PrismaModule, EventsModule, KnowledgeBaseModule],
   controllers: [FigmaController, FigmaTemplateController],
-  providers: [FigmaService, FigmaImageSyncService, FigmaTemplateService],
-  exports: [FigmaService, FigmaImageSyncService, FigmaTemplateService],
+  providers: [FigmaService, FigmaImageSyncService, FigmaTemplateService, FigmaRendererService],
+  exports: [FigmaService, FigmaImageSyncService, FigmaTemplateService, FigmaRendererService],
 })
 export class FigmaModule {}

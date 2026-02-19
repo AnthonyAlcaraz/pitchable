@@ -12,6 +12,7 @@ import { MarpExporterService } from './marp-exporter.service.js';
 import { RevealJsExporterService } from './revealjs-exporter.service.js';
 import { PptxGenJsExporterService } from './pptxgenjs-exporter.service.js';
 import { S3Service } from '../knowledge-base/storage/s3.service.js';
+import { FigmaRendererService } from '../figma/figma-renderer.service.js';
 import { ExportFormat, JobStatus } from '../../generated/prisma/enums.js';
 import { type ColorPalette } from './slide-visual-theme.js';
 import type { PresentationModel } from '../../generated/prisma/models/Presentation.js';
@@ -76,6 +77,7 @@ export class ExportsService {
     private readonly revealJsExporter: RevealJsExporterService,
     private readonly pptxGenJsExporter: PptxGenJsExporterService,
     private readonly s3: S3Service,
+    private readonly figmaRenderer: FigmaRendererService,
   ) {}
 
   async createExportJob(
