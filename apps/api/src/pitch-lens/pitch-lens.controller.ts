@@ -69,6 +69,14 @@ export class PitchLensController {
     return this.pitchLensService.listFrameworks();
   }
 
+  @Get(':id/recommended-engine')
+  async getRecommendedEngine(
+    @CurrentUser() user: RequestUser,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.pitchLensService.getRecommendedEngine(id, user.userId);
+  }
+
   @Get(':id')
   async findOne(
     @CurrentUser() user: RequestUser,

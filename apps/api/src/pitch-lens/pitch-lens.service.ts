@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { ThemesService } from '../themes/themes.service.js';
+import { TemplateSelectorService } from '../exports/template-selector.service.js';
 import type { CreatePitchLensDto } from './dto/create-pitch-lens.dto.js';
 import type { UpdatePitchLensDto } from './dto/update-pitch-lens.dto.js';
 import type { RecommendFrameworksDto } from './dto/recommend-frameworks.dto.js';
@@ -28,6 +29,7 @@ export class PitchLensService {
     private readonly prisma: PrismaService,
     private readonly themesService: ThemesService,
     private readonly archetypeResolver: ArchetypeResolverService,
+    private readonly templateSelector: TemplateSelectorService,
   ) {}
 
   async create(userId: string, dto: CreatePitchLensDto) {
@@ -221,6 +223,47 @@ export class PitchLensService {
 
   getArchetypeDefaults(archetypeId: string) {
     return this.archetypeResolver.getDefaults(archetypeId as DeckArchetype);
+  }
+
+  /**
+   * Get the recommended render engine for a Pitch Lens (for frontend preview).
+   */
+  async getRecommendedEngine(id: string, userId: string) {
+    const lens = await this.prisma.pitchLens.findUnique({
+      where: { id },
+      include: {
+        presentations: {
+          take: 1,
+          orderBy: { updatedAt: 'desc' },
+          select: { themeId: true, theme: { select: { name: true } } },
+        },
+      },
+    });
+
+    if (!lens) throw new NotFoundException('Pitch Lens not found');
+    if (lens.userId !== userId) throw new ForbiddenException();
+
+    // Use the most recent presentation's theme, or default
+    const themeName = lens.presentations[0]?.theme?.name ?? 'pitchable-dark';
+    const themeMeta = this.themesService.getThemeMeta(themeName);
+
+    const selection = this.templateSelector.selectRenderEngine({
+      format: 'PPTX',
+      themeName,
+      themeCategory: themeMeta?.category ?? 'dark',
+      defaultLayoutProfile: themeMeta?.defaultLayoutProfile ?? 'startup',
+      figmaTemplateId: lens.figmaTemplateId,
+      audienceType: lens.audienceType,
+      pitchGoal: lens.pitchGoal,
+      toneStyle: lens.toneStyle,
+      deckArchetype: lens.deckArchetype,
+    });
+
+    return {
+      engine: selection.engine,
+      layoutProfile: selection.layoutProfile,
+      reason: selection.reason,
+    };
   }
 
   /**
