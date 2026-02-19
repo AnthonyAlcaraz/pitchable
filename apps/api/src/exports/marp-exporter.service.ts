@@ -22,6 +22,10 @@ import {
   generateMarpMcKinseyTableCSS,
   generateMarpMcKinseyLeadCSS,
 } from './slide-visual-theme.js';
+import {
+  FIGMA_GRADE_TYPES,
+  buildHtmlSlideContent,
+} from './html-slide-templates.js';
 
 const execFileAsync = promisify(execFile);
 
@@ -473,13 +477,13 @@ export class MarpExporterService {
     );
 
     for (const slide of sortedSlides) {
-      sections.push(this.buildSlideMarkdown(slide, bg, imageLayout, safePrimary, profile));
+      sections.push(this.buildSlideMarkdown(slide, bg, imageLayout, safePrimary, profile, palette));
     }
 
     return sections.join('\n\n---\n\n');
   }
 
-  private buildSlideMarkdown(slide: SlideModel, bgColor?: string, imageLayout?: string, primaryColor?: string, profile?: LayoutProfileConfig): string {
+  private buildSlideMarkdown(slide: SlideModel, bgColor?: string, imageLayout?: string, primaryColor?: string, profile?: LayoutProfileConfig, palette?: ColorPalette): string {
     const lines: string[] = [];
     const type = slide.slideType;
     const bgVariant = getSlideBackground(type, slide.slideNumber, bgColor);
@@ -519,6 +523,21 @@ export class MarpExporterService {
     } else {
       lines.push(`<!-- _class: ${bgVariant.className}${layoutClass} -->`);
       lines.push('');
+    }
+
+    // Figma-grade HTML+SVG dispatch for complex slide types
+    if (FIGMA_GRADE_TYPES.has(type) && palette) {
+      lines.push(buildHtmlSlideContent(
+        { title: slide.title, body: slide.body || '', slideType: type },
+        palette,
+      ));
+      lines.push('');
+      if (slide.speakerNotes) {
+        lines.push('<!--');
+        lines.push(slide.speakerNotes);
+        lines.push('-->');
+      }
+      return lines.join('\n');
     }
 
     // Section label (AMI Labs style - colored pill badge; disabled in consulting profile)
@@ -713,6 +732,7 @@ h3 { margin-top: 10px; font-size: 0.8em; }
         '@marp-team/marp-cli',
         shellSafePath(tempMdPath),
         '--images', 'jpeg',
+        '--html',
         '--jpeg-quality', '85',
         '--allow-local-files',
         '--no-stdin',
@@ -786,6 +806,7 @@ h3 { margin-top: 10px; font-size: 0.8em; }
         '@marp-team/marp-cli',
         shellSafePath(tempMdPath),
         '--pdf',
+        '--html',
         '--allow-local-files',
         '--no-stdin',
         '-o',
