@@ -120,6 +120,9 @@ importers:
       mime-types:
         specifier: ^3.0.2
         version: 3.0.2
+      multer:
+        specifier: ^2.0.0
+        version: 2.0.2
       officeparser:
         specifier: ^6.0.4
         version: 6.0.4
