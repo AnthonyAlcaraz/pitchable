@@ -75,7 +75,7 @@ export class RendererChooserService {
           { role: 'system', content: SYSTEM_PROMPT },
           { role: 'user', content: `Analyze these slides:\n\n${slideDescriptions}` },
         ],
-        LlmModel.HAIKU,
+        LlmModel.SONNET,
         isValidResponse as JsonValidator<RendererChooserResponse>,
         1,
       );
