@@ -28,19 +28,18 @@ COPY . .
 # Generate Prisma client
 RUN cd apps/api && npx prisma generate
 
+# Prisma generate in Docker doesn't always create package.json with "type":"module".
+# Without it, tsc compiles the generated .ts files as CJS instead of ESM.
+# We must ensure it exists BEFORE tsc runs so it compiles to ESM like local dev.
+RUN echo '{"type":"module"}' > apps/api/generated/prisma/package.json
+
 # Build only the packages we need (api + web)
 RUN npx turbo run build --filter='@deckpilot/api' --filter='@deckpilot/web'
 
-# Prisma generates ESM TypeScript (package.json has "type":"module").
-# tsc compiles these to ESM JS in dist/generated/prisma/, but doesn't copy
-# the package.json. Node.js needs it there to treat .js files as ESM at runtime.
-# prisma generate doesn't create package.json in Docker, so we write it directly.
-RUN echo '{"type":"module"}' > apps/api/dist/generated/prisma/package.json \
-    && echo "=== generated/prisma/ contents ===" \
-    && ls -la apps/api/generated/prisma/ \
-    && echo "=== dist/generated/prisma/ contents ===" \
-    && ls -la apps/api/dist/generated/prisma/ \
-    && echo "=== dist/generated/prisma/client.js format check ===" \
+# tsc doesn't copy package.json files to dist/. Node.js needs it there
+# to treat the ESM-compiled .js files as ESM at runtime.
+RUN cp apps/api/generated/prisma/package.json apps/api/dist/generated/prisma/package.json \
+    && echo "=== dist/generated/prisma/client.js (first 5 lines) ===" \
     && head -5 apps/api/dist/generated/prisma/client.js
 
 # ── Stage 3: Production image ─────────────────────────────────
