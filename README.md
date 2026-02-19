@@ -1,8 +1,51 @@
 # Pitchable
 
+**Live at [pitch-able.ai](https://pitch-able.ai)**
+
 AI-powered presentation platform that transforms topics and documents into consulting-grade slide decks. Chat-driven generation with real-time streaming, 16 themes, 12 story frameworks, and multi-format export.
 
-Built with NestJS 11, React 19, Prisma 7, and Claude Opus 4.6.
+Built with NestJS 11, React 19, Prisma 7, and Claude Sonnet 4.6.
+
+## Quick Start (Development)
+
+```bash
+# 1. Clone and install
+git clone https://github.com/AnthonyAlcaraz/pitchable.git slide-saas
+cd slide-saas
+pnpm install
+
+# 2. Start Postgres + Redis
+docker compose -f docker-compose.dev.yml up -d
+
+# 3. Configure environment
+cp .env.example apps/api/.env
+# Edit apps/api/.env — set at minimum: ANTHROPIC_API_KEY
+
+# 4. Database setup
+cd apps/api
+npx prisma db push
+npx prisma generate
+
+# 5. Build and start
+npx tsc
+node dist/src/main.js          # API on port 3000
+cd ../web && pnpm dev           # Frontend on port 5173
+```
+
+The app works without AI keys — you just won't get AI generation features.
+
+## Pricing Tiers
+
+| Tier | Price | Credits | Slides/Deck | Images | Decks/Month |
+|------|-------|---------|-------------|--------|-------------|
+| FREE | $0 | 5 (one-time signup) | 4 (sample preview) | 0 | 2 |
+| STARTER | $19/mo | 40/month | 15 | 40/month | 10 |
+| PRO | $49/mo | 100/month | Unlimited | 100/month | Unlimited |
+| ENTERPRISE | Custom | Custom | Unlimited | Custom | Unlimited |
+
+**Credit costs:** Deck generation = 2 credits, Image generation = 1 credit/image, Export = free.
+
+Free tier generates a 4-slide sample preview with an upgrade CTA. No AI images on free tier.
 
 ## Features
 
@@ -59,7 +102,7 @@ Each framework defines a slide structure, target audience, and detailed generati
 - **"Use this template"** -- fork any public presentation into your workspace
 
 ### Knowledge Base (RAG)
-Upload PDF, DOCX, TXT, or Markdown documents. Documents are chunked, embedded with OpenAI text-embedding-3-small, and stored in PostgreSQL with pgvector. Hybrid retrieval combines vector similarity with keyword search for grounding slide content.
+Upload PDF, DOCX, TXT, or Markdown documents. Documents are chunked, embedded with OpenAI text-embedding-3-small, and stored in PostgreSQL. Hybrid retrieval combines vector similarity with keyword search for grounding slide content.
 
 ### Export Pipeline
 
@@ -72,13 +115,13 @@ Upload PDF, DOCX, TXT, or Markdown documents. Documents are chunked, embedded wi
 All exporters share `slide-visual-theme.ts` which maps slide types to background variants (radial glow, diagonal lines, wave, grid, circuit, corner accent) with automatic light/dark palette detection. McKinsey theme gets a separate clean variant pool (white, navy divider, callout).
 
 ### Image Generation
-AI images via Replicate's Nano Banana Pro model, hosted on Imgur. An image critic (Haiku) validates quality before inclusion. Image layout (background overlay vs right-side panel) and frequency configurable per Pitch Lens or via `/config`.
+AI images via Replicate's Nano Banana Pro model, hosted on Imgur. An image critic validates quality before inclusion. Image layout (background overlay vs right-side panel) and frequency configurable per Pitch Lens or via `/config`.
 
 ### Content Quality System
 - **David Phillips Rules** -- max 6 objects/slide, one message/slide, phrases not sentences, size = importance, contrast sequencing
 - **Density Validator** -- configurable limits: bullets (2-6, default 4), words (30-120, default 50), table rows (2-8, default 4), concepts (1), nested depth (1)
 - **One Data Block Rule** -- each slide uses EITHER a table OR bullet list, never both
-- **Content Reviewer** -- Haiku-based quality gate checking density limits, data block rule, and overall coherence
+- **Content Reviewer** -- AI quality gate checking density limits, data block rule, and overall coherence
 - **Color Contrast** -- WCAG AA/AAA enforcement via `ensureContrast()` with auto-adjustment to meet 7:1 ratio
 - **Typography Validator** -- font whitelist (Georgia, Arial, Inter, Poppins, etc.), pairing validation, size constraints
 
@@ -99,21 +142,26 @@ AI images via Replicate's Nano Banana Pro model, hosted on Imgur. An image criti
 |-------|-----------|
 | Backend | NestJS 11, TypeScript 5.9, Node.js |
 | Frontend | React 19, Vite 7, Tailwind CSS 4, Zustand 5 |
-| Database | PostgreSQL 16 (pgvector), Prisma 7 ORM |
+| Database | PostgreSQL 17, Prisma 7 ORM |
 | Queue | BullMQ + Redis 7 |
-| AI | Claude Opus 4.6 / Sonnet 4.5 / Haiku 4.5, OpenAI embeddings, Replicate images |
+| AI | Claude Sonnet 4.6, OpenAI embeddings, Replicate Nano Banana Pro |
 | Real-time | Socket.IO + SSE |
 | Monorepo | Turborepo + pnpm workspaces |
 
-### AI Model Routing
+### AI Model Usage
 
-| Model | Purpose | Cost |
-|-------|---------|------|
-| Claude Opus 4.6 | Slide content generation | $5/$25/MTok |
-| Claude Sonnet 4.5 | Outline, chat, modifications | $3/$15/MTok |
-| Claude Haiku 4.5 | Intent classifier, content review, image critic | $0.80/$4/MTok |
-| Nano Banana Pro | Image generation (Replicate) | ~$0.13/image |
-| text-embedding-3-small | Document embeddings (OpenAI) | ~$0.02/1M tokens |
+All AI calls use Claude Sonnet 4.6 (`claude-sonnet-4-6`, $3/$15 per MTok).
+
+| Operation | Model | Approx Cost |
+|-----------|-------|-------------|
+| Outline generation | Sonnet 4.6 | ~$0.01 |
+| Per slide content | Sonnet 4.6 | ~$0.02 |
+| Content review | Sonnet 4.6 | ~$0.01/slide |
+| Quality agents (3) | Sonnet 4.6 | ~$0.03 total |
+| Image generation | Nano Banana Pro | ~$0.13/image |
+| Document embeddings | text-embedding-3-small | ~$0.02/1M tokens |
+| **Full 10-slide deck (LLM only)** | | **~$0.24** |
+| **Full deck + 10 images** | | **~$1.58** |
 
 ## Project Structure
 
@@ -173,7 +221,7 @@ User (1) ──> (*) Presentation ──> (*) Slide
                     ├── ExportJob
                     └── ChatMessage / FeedbackEntry
 
-PitchBrief (1) ──> (*) Document ──> (*) DocumentChunk (pgvector)
+PitchBrief (1) ──> (*) Document ──> (*) DocumentChunk
 PitchLens ──> Framework Config + Density Limits + Image Settings
 User (1) ──> (*) ApiKey (scoped, argon2-hashed, rate-limited)
 User (1) ──> (*) CreditTransaction
@@ -181,56 +229,27 @@ User (1) ──> (*) CreditTransaction
 
 **Key enums:** UserTier, PresentationType, SlideType, StoryFramework, AudienceType, PitchGoal, ToneStyle, CompanyStage, TechnicalLevel, ImageLayout, ExportFormat, DocumentSourceType
 
-## Getting Started
+## Environment Variables
 
-### Prerequisites
-- Node.js 20+
-- pnpm 10+
-- PostgreSQL 16+ with pgvector extension
-- Redis 7+
-- Docker & Docker Compose (optional, for infrastructure)
+See `.env.example` for a complete list with defaults. Required variables:
 
-### Setup
+| Variable | Description |
+|----------|-------------|
+| DATABASE_URL | PostgreSQL connection string |
+| JWT_ACCESS_SECRET | JWT signing secret |
+| JWT_REFRESH_SECRET | JWT refresh token secret |
 
-```bash
-# Clone and install
-git clone <repo-url> slide-saas
-cd slide-saas
-pnpm install
+Optional (app runs without these, features degrade gracefully):
 
-# Start infrastructure (optional)
-docker compose up -d
-
-# Configure environment
-cp apps/api/.env.example apps/api/.env
-# Set: DATABASE_URL, JWT secrets, ANTHROPIC_API_KEY, OPENAI_API_KEY,
-#       REPLICATE_API_TOKEN, IMGUR_CLIENT_ID, RESEND_API_KEY, STRIPE keys
-
-# Database setup
-cd apps/api
-npx prisma db push
-npx prisma generate
-
-# Build and start
-npx tsc
-node dist/src/main.js          # API on port 3000
-cd ../web && pnpm dev           # Frontend on port 5173
-```
-
-### Environment Variables
-
-| Variable | Required | Description |
-|----------|----------|-------------|
-| DATABASE_URL | Yes | PostgreSQL connection string |
-| JWT_ACCESS_SECRET | Yes | JWT signing secret |
-| JWT_REFRESH_SECRET | Yes | JWT refresh token secret |
-| ANTHROPIC_API_KEY | Yes | Claude API access |
-| OPENAI_API_KEY | Yes | Embeddings (text-embedding-3-small) |
-| REPLICATE_API_TOKEN | Yes | Image generation (Nano Banana Pro) |
-| IMGUR_CLIENT_ID | Yes | Image hosting |
-| RESEND_API_KEY | Yes | Email delivery |
-| STRIPE_SECRET_KEY | Optional | Billing integration |
-| REDIS_URL | Optional | Defaults to localhost:6379 |
+| Variable | Description |
+|----------|-------------|
+| ANTHROPIC_API_KEY | Claude API access (no AI generation without this) |
+| OPENAI_API_KEY | Embeddings for RAG (text-embedding-3-small) |
+| REPLICATE_API_TOKEN | Image generation (Nano Banana Pro) |
+| IMGUR_CLIENT_ID | Image hosting |
+| RESEND_API_KEY | Email delivery |
+| STRIPE_SECRET_KEY | Billing integration |
+| REDIS_URL | Defaults to localhost:6379 |
 
 ## API Endpoints
 
@@ -352,6 +371,25 @@ Streamable HTTP at `POST /mcp`. Auth via `x-api-key`. Tools: `generate_presentat
 | `/settings` | Yes | Account settings |
 | `/settings/api-keys` | Yes | API key management |
 
+## Deployment
+
+Deployed on **Railway** with Cloudflare DNS.
+
+| Service | Provider |
+|---------|----------|
+| API + Frontend | Railway (auto-deploy from `main`) |
+| Database | Railway PostgreSQL |
+| Redis | Railway Redis |
+| DNS + CDN | Cloudflare |
+| Domain | pitch-able.ai |
+
+Railway auto-deploys on push to `main`. Health check at `/health`.
+
+```bash
+# Verify deployment
+curl https://pitch-able.ai/health
+```
+
 ## Development
 
 ```bash
@@ -360,6 +398,9 @@ cd apps/api && npx tsc --noEmit
 
 # Full build
 pnpm build
+
+# Start production server
+cd apps/api && npm run start:prod
 
 # Prisma studio (visual DB browser)
 cd apps/api && npx prisma studio
@@ -377,7 +418,7 @@ pnpm format
 - **Theme-aware color contrast** -- `ensureContrast()` dynamically adjusts text colors against any background, replacing hardcoded RGBA values with palette-derived colors
 - **Dual background variant pools** -- dark themes get decorative patterns (radial glow, diagonal lines, wave, grid, circuit, corner accent), light themes get clean variants (white, navy divider, callout tint)
 - **Shared visual theme module** -- `slide-visual-theme.ts` centralizes background mapping for all 3 exporters (Marp, PptxGenJS, Reveal.js)
-- **Configurable density pipeline** -- PitchLens density settings flow through prompts, content reviewer, and validator: `PitchLens → buildSlideGenerationSystemPrompt(densityOverrides) → contentReviewer(customLimits) → validateSlideContent(customLimits)`
+- **Configurable density pipeline** -- PitchLens density settings flow through prompts, content reviewer, and validator: `PitchLens -> buildSlideGenerationSystemPrompt(densityOverrides) -> contentReviewer(customLimits) -> validateSlideContent(customLimits)`
 - **One data block rule** -- enforced in both LLM prompts and content reviewer: each slide uses EITHER a table OR bullets, never both
 - **McKinsey rendering mode** -- theme name triggers complete visual override: 5-zone layout, Georgia serif, navy dividers, action sentence titles, horizontal-only table borders
 - **Separate Gallery module** -- public endpoints in own NestJS module with no class-level auth guard
@@ -385,6 +426,7 @@ pnpm format
 - **MCP via Streamable HTTP** -- runs inside NestJS (not separate process), sharing services with REST API
 - **Dual auth paths** -- JWT for browser sessions, API keys for programmatic access (REST + MCP), both resolve to same `RequestUser` shape
 - **API key security** -- argon2-hashed, prefix-based lookup, debounced `lastUsedAt`, in-memory sliding-window rate limiting
+- **Free tier sample mode** -- FREE users get 4-slide previews with upgrade CTA, no images; prevents full deck generation on free credits
 
 ## License
 
