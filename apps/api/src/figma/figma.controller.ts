@@ -13,6 +13,7 @@ import {
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
 import { FigmaService } from './figma.service.js';
 import { FigmaImageSyncService } from './figma-image-sync.service.js';
+import { PrismaService } from '../prisma/prisma.service.js';
 import { ConnectFigmaDto } from './dto/connect-figma.dto.js';
 import { AssignFigmaFrameDto } from './dto/assign-figma-frame.dto.js';
 
@@ -26,6 +27,7 @@ export class FigmaController {
   constructor(
     private readonly figmaService: FigmaService,
     private readonly figmaImageSync: FigmaImageSyncService,
+    private readonly prisma: PrismaService,
   ) {}
 
   /** Save Figma personal access token (user-level). */
@@ -121,5 +123,60 @@ export class FigmaController {
       lensId,
     );
     return { imageUrl };
+  }
+
+  /**
+   * Get changed slides since a given timestamp (for plugin sync polling).
+   */
+  @Get('sync/:presentationId/changes')
+  async getSyncChanges(
+    @Param('presentationId') presentationId: string,
+    @Query('since') since?: string,
+  ) {
+    const sinceDate = since ? new Date(since) : new Date(0);
+
+    const presentation = await this.prisma.presentation.findUnique({
+      where: { id: presentationId },
+      select: { id: true, updatedAt: true },
+    });
+
+    if (!presentation) {
+      throw new BadRequestException(`Presentation ${presentationId} not found`);
+    }
+
+    const slides = await this.prisma.slide.findMany({
+      where: {
+        presentationId,
+        updatedAt: { gt: sinceDate },
+      },
+      orderBy: { slideNumber: 'asc' },
+      select: {
+        id: true,
+        slideNumber: true,
+        slideType: true,
+        title: true,
+        body: true,
+        speakerNotes: true,
+        imageUrl: true,
+        updatedAt: true,
+      },
+    });
+
+    const changes = slides.map((slide) => ({
+      slideId: slide.id,
+      slideNumber: slide.slideNumber,
+      slideType: slide.slideType,
+      changedFields: ['title', 'body', 'speakerNotes', 'imageUrl'],
+      title: slide.title,
+      body: slide.body,
+      speakerNotes: slide.speakerNotes,
+      imageUrl: slide.imageUrl,
+    }));
+
+    return {
+      presentationId,
+      lastModified: presentation.updatedAt.toISOString(),
+      changes,
+    };
   }
 }
