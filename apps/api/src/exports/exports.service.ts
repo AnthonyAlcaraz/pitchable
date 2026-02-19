@@ -21,6 +21,34 @@ import type { ThemeModel } from '../../generated/prisma/models/Theme.js';
 
 // ── Figma export payload types ────────────────────────────
 
+type StructuredBodyBlock =
+  | { type: 'bullets'; items: Array<{ text: string; bold?: boolean }> }
+  | { type: 'numbered'; items: Array<{ text: string; bold?: boolean }> }
+  | { type: 'paragraph'; text: string }
+  | { type: 'table'; headers: string[]; rows: string[][] }
+  | { type: 'metrics'; items: Array<{ label: string; value: string; change?: string }> }
+  | { type: 'subheading'; text: string };
+
+interface FigmaExportSlideV2 extends FigmaExportSlide {
+  structuredBody: StructuredBodyBlock[];
+  backgroundVariant: string;
+}
+
+interface FigmaExportPayloadV2 {
+  version: 2;
+  presentationId: string;
+  title: string;
+  slideCount: number;
+  theme: {
+    name: string;
+    headingFont: string;
+    bodyFont: string;
+    colors: ColorPalette;
+  };
+  slides: FigmaExportSlideV2[];
+  dimensions: { width: 1920; height: 1080 };
+}
+
 interface FigmaExportSlide {
   slideNumber: number;
   slideType: string;
@@ -215,7 +243,7 @@ export class ExportsService {
         }
 
         case ExportFormat.FIGMA: {
-          const payload = this.prepareFigmaExport(presentation, slides, theme);
+          const payload = this.prepareFigmaExportV2(presentation, slides, theme);
           buffer = Buffer.from(JSON.stringify(payload, null, 2), 'utf-8');
           contentType = 'application/json';
           filename = `${safeFilename(presentation.title)}.json`;
@@ -351,7 +379,7 @@ export class ExportsService {
         break;
       }
       case ExportFormat.FIGMA: {
-        const payload = this.prepareFigmaExport(presentation, slides, theme);
+        const payload = this.prepareFigmaExportV2(presentation, slides, theme);
         buffer = Buffer.from(JSON.stringify(payload, null, 2), 'utf-8');
         contentType = 'application/json';
         filename = `${safeFilename(presentation.title)}.json`;
@@ -498,5 +526,181 @@ export class ExportsService {
       slides: figmaSlides,
       dimensions: { width: 1920, height: 1080 },
     };
+  }
+
+  /**
+   * Build a V2 structured JSON payload for the enhanced Figma plugin.
+   * Includes full 10-color palette and structured body blocks.
+   */
+  private prepareFigmaExportV2(
+    presentation: PresentationModel,
+    slides: SlideModel[],
+    theme: ThemeModel,
+  ): FigmaExportPayloadV2 {
+    const palette = theme.colorPalette as unknown as ColorPalette;
+
+    const figmaSlides: FigmaExportSlideV2[] = slides.map((slide) => {
+      const backgroundColor = palette.background;
+      const textColor = palette.text;
+      const accentColor = palette.accent;
+
+      const bodyLines = slide.body
+        ? slide.body
+            .split('\n')
+            .map((line) => line.replace(/^[-*]\s+/, '').trim())
+            .filter(Boolean)
+        : [];
+
+      const structuredBody = this.parseBodyToBlocks(slide.body ?? '');
+
+      return {
+        slideNumber: slide.slideNumber,
+        slideType: slide.slideType,
+        title: slide.title,
+        bodyLines,
+        imageUrl: slide.imageUrl ?? null,
+        speakerNotes: slide.speakerNotes ?? null,
+        sectionLabel: slide.sectionLabel ?? null,
+        backgroundColor,
+        textColor,
+        accentColor,
+        structuredBody,
+        backgroundVariant: 'default',
+      };
+    });
+
+    return {
+      version: 2,
+      presentationId: presentation.id,
+      title: presentation.title,
+      slideCount: slides.length,
+      theme: {
+        name: theme.name,
+        headingFont: theme.headingFont,
+        bodyFont: theme.bodyFont,
+        colors: {
+          primary: palette.primary,
+          secondary: palette.secondary,
+          accent: palette.accent,
+          background: palette.background,
+          text: palette.text,
+          surface: palette.surface,
+          border: palette.border,
+          success: palette.success,
+          warning: palette.warning,
+          error: palette.error,
+        },
+      },
+      slides: figmaSlides,
+      dimensions: { width: 1920, height: 1080 },
+    };
+  }
+
+  /**
+   * Parse markdown-style slide body into structured blocks.
+   */
+  private parseBodyToBlocks(body: string): StructuredBodyBlock[] {
+    if (!body.trim()) return [];
+
+    const blocks: StructuredBodyBlock[] = [];
+    const lines = body.split('\n');
+    let i = 0;
+
+    while (i < lines.length) {
+      const line = lines[i];
+
+      // Subheading: ### or ## prefix
+      if (/^#{2,3}\s+/.test(line)) {
+        blocks.push({ type: 'subheading', text: line.replace(/^#{2,3}\s+/, '').trim() });
+        i++;
+        continue;
+      }
+
+      // Table: | header | header |
+      if (line.trim().startsWith('|') && line.includes('|', 1)) {
+        const headers: string[] = [];
+        const rows: string[][] = [];
+
+        // Parse header row
+        const headerCells = line.split('|').map((c) => c.trim()).filter(Boolean);
+        headers.push(...headerCells);
+        i++;
+
+        // Skip separator row (|---|---|)
+        if (i < lines.length && /^\|[\s-|]+\|$/.test(lines[i].trim())) {
+          i++;
+        }
+
+        // Parse data rows
+        while (i < lines.length && lines[i].trim().startsWith('|')) {
+          const cells = lines[i].split('|').map((c) => c.trim()).filter(Boolean);
+          rows.push(cells);
+          i++;
+        }
+
+        blocks.push({ type: 'table', headers, rows });
+        continue;
+      }
+
+      // Numbered list: 1. item
+      if (/^\d+\.\s+/.test(line)) {
+        const items: Array<{ text: string; bold?: boolean }> = [];
+        while (i < lines.length && /^\d+\.\s+/.test(lines[i])) {
+          const text = lines[i].replace(/^\d+\.\s+/, '').trim();
+          const bold = text.startsWith('**') && text.endsWith('**');
+          items.push({
+            text: bold ? text.slice(2, -2) : text,
+            bold: bold || undefined,
+          });
+          i++;
+        }
+        blocks.push({ type: 'numbered', items });
+        continue;
+      }
+
+      // Bullet list: - item or * item
+      if (/^[-*]\s+/.test(line)) {
+        const items: Array<{ text: string; bold?: boolean }> = [];
+        while (i < lines.length && /^[-*]\s+/.test(lines[i])) {
+          const text = lines[i].replace(/^[-*]\s+/, '').trim();
+          const bold = text.startsWith('**') && text.endsWith('**');
+          items.push({
+            text: bold ? text.slice(2, -2) : text,
+            bold: bold || undefined,
+          });
+          i++;
+        }
+        blocks.push({ type: 'bullets', items });
+        continue;
+      }
+
+      // Metrics: **value** label pattern (e.g., "**$1.2B** Revenue")
+      if (/^\*\*[^*]+\*\*\s+/.test(line)) {
+        const items: Array<{ label: string; value: string; change?: string }> = [];
+        while (i < lines.length && /^\*\*[^*]+\*\*\s+/.test(lines[i])) {
+          const match = lines[i].match(/^\*\*([^*]+)\*\*\s+(.+)$/);
+          if (match) {
+            items.push({ value: match[1], label: match[2] });
+          }
+          i++;
+        }
+        if (items.length > 0) {
+          blocks.push({ type: 'metrics', items });
+        }
+        continue;
+      }
+
+      // Empty line — skip
+      if (!line.trim()) {
+        i++;
+        continue;
+      }
+
+      // Default: paragraph
+      blocks.push({ type: 'paragraph', text: line.trim() });
+      i++;
+    }
+
+    return blocks;
   }
 }

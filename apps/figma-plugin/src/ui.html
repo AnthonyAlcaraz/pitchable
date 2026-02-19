@@ -13,7 +13,7 @@
     }
     h2 { font-size: 15px; font-weight: 600; margin-bottom: 12px; }
     label { display: block; font-weight: 500; margin-bottom: 4px; color: #555; }
-    input {
+    input[type="url"], input[type="password"], input[type="text"] {
       width: 100%;
       padding: 8px 10px;
       border: 1px solid #ddd;
@@ -38,6 +38,22 @@
     }
     button:hover { background: #4338ca; }
     button:disabled { background: #a5b4fc; cursor: not-allowed; }
+
+    .options {
+      margin-bottom: 14px;
+      padding: 10px 12px;
+      background: #f9fafb;
+      border-radius: 8px;
+      border: 1px solid #e5e7eb;
+    }
+    .options h3 { font-size: 12px; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+    .option-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+    .option-row:last-child { margin-bottom: 0; }
+    .option-row input[type="checkbox"] { margin: 0; accent-color: #4f46e5; }
+    .option-row input[type="radio"] { margin: 0; accent-color: #4f46e5; }
+    .option-row label { margin: 0; font-weight: 400; font-size: 12px; color: #374151; cursor: pointer; }
+    .option-row .desc { font-size: 11px; color: #9ca3af; margin-left: 20px; }
+
     .status {
       margin-top: 12px;
       padding: 8px 10px;
@@ -48,7 +64,12 @@
     .status.info { display: block; background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; }
     .status.error { display: block; background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
     .status.success { display: block; background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
-    .progress { margin-top: 8px; font-size: 12px; color: #6b7280; }
+
+    .progress-container { margin-top: 10px; }
+    .progress-bar { height: 4px; background: #e5e7eb; border-radius: 2px; overflow: hidden; margin-bottom: 4px; }
+    .progress-fill { height: 100%; background: #4f46e5; border-radius: 2px; transition: width 0.3s ease; width: 0%; }
+    .progress-text { font-size: 12px; color: #6b7280; }
+
     .help { margin-top: 16px; font-size: 11px; color: #9ca3af; line-height: 1.5; }
   </style>
 </head>
@@ -64,10 +85,35 @@
   <label for="presentationId">Presentation ID</label>
   <input id="presentationId" type="text" placeholder="e.g. a1b2c3d4-...">
 
+  <div class="options">
+    <h3>Import Options</h3>
+    <div class="option-row">
+      <input type="checkbox" id="createStyles" checked>
+      <label for="createStyles">Create Figma Styles</label>
+    </div>
+    <div class="option-row desc">Adds local PaintStyles and TextStyles from the theme.</div>
+
+    <div style="margin-top: 8px;">
+      <div class="option-row">
+        <input type="radio" id="layoutFull" name="layoutQuality" value="full" checked>
+        <label for="layoutFull">Full Layout</label>
+      </div>
+      <div class="option-row desc">Rich layouts with backgrounds, gradients, cards, and structured text.</div>
+      <div class="option-row">
+        <input type="radio" id="layoutSimple" name="layoutQuality" value="simple">
+        <label for="layoutSimple">Simple Layout</label>
+      </div>
+      <div class="option-row desc">Basic text and images (faster, lighter).</div>
+    </div>
+  </div>
+
   <button id="importBtn" onclick="startImport()">Import Presentation</button>
 
   <div id="status" class="status"></div>
-  <div id="progress" class="progress"></div>
+  <div class="progress-container" id="progressContainer" style="display:none">
+    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+    <div class="progress-text" id="progressText"></div>
+  </div>
 
   <div class="help">
     Get your API key from Pitchable Settings &gt; API Keys.<br>
@@ -76,7 +122,9 @@
 
   <script>
     const statusEl = document.getElementById('status');
-    const progressEl = document.getElementById('progress');
+    const progressContainer = document.getElementById('progressContainer');
+    const progressFill = document.getElementById('progressFill');
+    const progressText = document.getElementById('progressText');
     const importBtn = document.getElementById('importBtn');
 
     function setStatus(msg, type) {
@@ -88,6 +136,8 @@
       const apiUrl = document.getElementById('apiUrl').value.trim().replace(/\/$/, '');
       const apiKey = document.getElementById('apiKey').value.trim();
       const presentationId = document.getElementById('presentationId').value.trim();
+      const createStyles = document.getElementById('createStyles').checked;
+      const layoutQuality = document.querySelector('input[name="layoutQuality"]:checked').value;
 
       if (!apiUrl || !apiKey || !presentationId) {
         setStatus('Please fill in all fields.', 'error');
@@ -95,6 +145,8 @@
       }
 
       importBtn.disabled = true;
+      progressContainer.style.display = 'block';
+      progressFill.style.width = '0%';
       setStatus('Creating export job...', 'info');
 
       parent.postMessage({
@@ -103,6 +155,8 @@
           apiUrl,
           apiKey,
           presentationId,
+          createStyles,
+          layoutQuality,
         }
       }, '*');
     }
@@ -113,17 +167,21 @@
 
       switch (msg.type) {
         case 'progress':
-          progressEl.textContent = msg.text;
+          progressText.textContent = msg.text;
+          if (msg.total > 0) {
+            const pct = Math.round((msg.current / msg.total) * 100);
+            progressFill.style.width = pct + '%';
+          }
           break;
         case 'error':
           setStatus(msg.text, 'error');
           importBtn.disabled = false;
-          progressEl.textContent = '';
+          progressContainer.style.display = 'none';
           break;
         case 'success':
           setStatus(msg.text, 'success');
           importBtn.disabled = false;
-          progressEl.textContent = '';
+          progressFill.style.width = '100%';
           break;
       }
     };

@@ -1,72 +1,20 @@
 // Pitchable → Figma Plugin
 // Imports a Pitchable presentation as editable Figma frames.
 
-// ── Types (mirrors FigmaExportPayload from backend) ───────
+import type {
+  FigmaExportPayload,
+  FigmaExportSlide,
+  FigmaExportPayloadV2,
+  FigmaExportSlideV2,
+  ThemeConfig,
+  LoadedFonts,
+  FigmaStyles,
+} from './types';
+import { hexToRgb, setFill, loadFont, createStyledText, SLIDE_W, SLIDE_H, PADDING, GAP } from './utils';
+import { getLayoutForType } from './layouts/index';
+import { applyTheme } from './builders/theme-builder';
 
-interface FigmaExportSlide {
-  slideNumber: number;
-  slideType: string;
-  title: string;
-  bodyLines: string[];
-  imageUrl: string | null;
-  speakerNotes: string | null;
-  sectionLabel: string | null;
-  backgroundColor: string;
-  textColor: string;
-  accentColor: string;
-}
-
-interface FigmaExportPayload {
-  version: number;
-  presentationId: string;
-  title: string;
-  slideCount: number;
-  theme: {
-    name: string;
-    headingFont: string;
-    bodyFont: string;
-    colors: {
-      primary: string;
-      secondary: string;
-      accent: string;
-      background: string;
-      text: string;
-      surface: string;
-    };
-  };
-  slides: FigmaExportSlide[];
-  dimensions: { width: number; height: number };
-}
-
-// ── Helpers ────────────────────────────────────────────────
-
-function hexToRgb(hex: string): RGB {
-  const c = hex.replace('#', '');
-  return {
-    r: parseInt(c.slice(0, 2), 16) / 255,
-    g: parseInt(c.slice(2, 4), 16) / 255,
-    b: parseInt(c.slice(4, 6), 16) / 255,
-  };
-}
-
-function setFill(node: GeometryMixin, hex: string): void {
-  node.fills = [{ type: 'SOLID', color: hexToRgb(hex) }];
-}
-
-async function loadFont(family: string, style: string = 'Regular'): Promise<FontName> {
-  const fontName: FontName = { family, style };
-  try {
-    await figma.loadFontAsync(fontName);
-    return fontName;
-  } catch {
-    // Fall back to Inter if the requested font isn't available
-    const fallback: FontName = { family: 'Inter', style };
-    await figma.loadFontAsync(fallback);
-    return fallback;
-  }
-}
-
-// ── Layout config per slide type ──────────────────────────
+// ── V1 Layout config (backward compat) ──────────────────
 
 interface LayoutConfig {
   titleX: number;
@@ -83,11 +31,6 @@ interface LayoutConfig {
   imageW: number;
   imageH: number;
 }
-
-const SLIDE_W = 1920;
-const SLIDE_H = 1080;
-const PADDING = 80;
-const GAP = 320; // gap between frames in Figma canvas
 
 function getLayout(slideType: string): LayoutConfig {
   switch (slideType) {
@@ -119,7 +62,6 @@ function getLayout(slideType: string): LayoutConfig {
         imageX: 0, imageY: 0, imageW: 0, imageH: 0,
       };
     default:
-      // CONTENT, PROBLEM, SOLUTION, TEAM, etc. — title top-left, body left, image right
       return {
         titleX: PADDING, titleY: PADDING, titleW: SLIDE_W * 0.55,
         titleAlign: 'LEFT', titleSize: 44,
@@ -131,9 +73,9 @@ function getLayout(slideType: string): LayoutConfig {
   }
 }
 
-// ── Slide builder ─────────────────────────────────────────
+// ── V1 Slide builder (backward compat) ───────────────────
 
-async function buildSlide(
+async function buildSlideV1(
   slide: FigmaExportSlide,
   payload: FigmaExportPayload,
   headingFont: FontName,
@@ -142,16 +84,14 @@ async function buildSlide(
   xOffset: number,
 ): Promise<FrameNode> {
   const frame = figma.createFrame();
-  frame.name = `Slide ${slide.slideNumber} — ${slide.slideType}`;
+  frame.name = `Slide ${slide.slideNumber} \u2014 ${slide.slideType}`;
   frame.resize(SLIDE_W, SLIDE_H);
   frame.x = xOffset;
   frame.y = 0;
 
   setFill(frame, slide.backgroundColor);
-
   const layout = getLayout(slide.slideType);
 
-  // Section label (small text above title)
   if (slide.sectionLabel) {
     const labelNode = figma.createText();
     labelNode.fontName = bodyFont;
@@ -166,7 +106,6 @@ async function buildSlide(
     frame.appendChild(labelNode);
   }
 
-  // Title
   const titleNode = figma.createText();
   titleNode.fontName = headingBoldFont;
   titleNode.characters = slide.title;
@@ -180,7 +119,6 @@ async function buildSlide(
   titleNode.textAutoResize = 'HEIGHT';
   frame.appendChild(titleNode);
 
-  // Body lines
   if (slide.bodyLines.length > 0) {
     const bodyText = slide.bodyLines.join('\n');
     const bodyNode = figma.createText();
@@ -198,7 +136,6 @@ async function buildSlide(
     frame.appendChild(bodyNode);
   }
 
-  // Image placeholder (if image present and layout has space for it)
   if (slide.imageUrl && layout.imageW > 0) {
     try {
       const response = await fetch(slide.imageUrl);
@@ -212,14 +149,9 @@ async function buildSlide(
       rect.y = layout.imageY;
       rect.resize(layout.imageW, layout.imageH);
       rect.cornerRadius = 12;
-      rect.fills = [{
-        type: 'IMAGE',
-        imageHash,
-        scaleMode: 'FILL',
-      }];
+      rect.fills = [{ type: 'IMAGE', imageHash, scaleMode: 'FILL' }];
       frame.appendChild(rect);
     } catch {
-      // Image fetch failed — create a placeholder rectangle
       const rect = figma.createRectangle();
       rect.name = 'Image Placeholder';
       rect.x = layout.imageX;
@@ -232,7 +164,6 @@ async function buildSlide(
     }
   }
 
-  // Speaker notes as a hidden annotation
   if (slide.speakerNotes) {
     const notesNode = figma.createText();
     notesNode.fontName = bodyFont;
@@ -250,23 +181,64 @@ async function buildSlide(
   return frame;
 }
 
+// ── V2 Slide builder (rich editable layouts) ─────────────
+
+async function buildSlideV2(
+  slide: FigmaExportSlideV2,
+  theme: ThemeConfig,
+  fonts: LoadedFonts,
+  styles: FigmaStyles,
+  xOffset: number,
+): Promise<FrameNode> {
+  const frame = figma.createFrame();
+  frame.name = `Slide ${slide.slideNumber} \u2014 ${slide.slideType}`;
+  frame.resize(SLIDE_W, SLIDE_H);
+  frame.x = xOffset;
+  frame.y = 0;
+
+  // Use the layout registry to render this slide type
+  const layoutFn = getLayoutForType(slide.slideType);
+  await layoutFn(frame, slide, theme, fonts, styles);
+
+  // Speaker notes as a hidden annotation
+  if (slide.speakerNotes) {
+    const notesNode = figma.createText();
+    notesNode.fontName = fonts.body;
+    notesNode.characters = `[Speaker Notes]\n${slide.speakerNotes}`;
+    notesNode.fontSize = 14;
+    setFill(notesNode, '#6b7280');
+    notesNode.x = 0;
+    notesNode.y = SLIDE_H + 20;
+    notesNode.resize(SLIDE_W, 200);
+    notesNode.textAutoResize = 'HEIGHT';
+    notesNode.visible = false;
+    frame.appendChild(notesNode);
+  }
+
+  return frame;
+}
+
 // ── Main plugin flow ──────────────────────────────────────
 
-figma.showUI(__html__, { width: 360, height: 420 });
+figma.showUI(__html__, { width: 400, height: 500 });
 
 figma.ui.onmessage = async (msg: {
   type: string;
   apiUrl: string;
   apiKey: string;
   presentationId: string;
+  createStyles?: boolean;
+  layoutQuality?: 'simple' | 'full';
 }) => {
   if (msg.type !== 'import') return;
 
   const { apiUrl, apiKey, presentationId } = msg;
+  const createStyles = msg.createStyles !== false;
+  const useFullLayout = msg.layoutQuality !== 'simple';
 
   try {
     // Step 1: Create an export job
-    figma.ui.postMessage({ type: 'progress', text: 'Creating Figma export...' });
+    figma.ui.postMessage({ type: 'progress', text: 'Creating Figma export...', current: 0, total: 0 });
 
     const createRes = await fetch(`${apiUrl}/presentations/${presentationId}/export`, {
       method: 'POST',
@@ -285,9 +257,9 @@ figma.ui.onmessage = async (msg: {
     const { jobId } = await createRes.json() as { jobId: string };
 
     // Step 2: Poll for completion
-    figma.ui.postMessage({ type: 'progress', text: 'Processing export...' });
+    figma.ui.postMessage({ type: 'progress', text: 'Processing export...', current: 0, total: 0 });
 
-    let payload: FigmaExportPayload | null = null;
+    let rawPayload: FigmaExportPayload | FigmaExportPayloadV2 | null = null;
     for (let attempt = 0; attempt < 30; attempt++) {
       await new Promise((r) => setTimeout(r, 1000));
 
@@ -304,7 +276,6 @@ figma.ui.onmessage = async (msg: {
       }
 
       if (status.status === 'COMPLETED' && status.fileUrl) {
-        // Download the payload
         const downloadRes = await fetch(`${apiUrl}/exports/${jobId}/download`, {
           headers: { Authorization: `Bearer ${apiKey}` },
           redirect: 'follow',
@@ -314,42 +285,84 @@ figma.ui.onmessage = async (msg: {
           throw new Error(`Download failed (${downloadRes.status})`);
         }
 
-        payload = await downloadRes.json() as FigmaExportPayload;
+        rawPayload = await downloadRes.json() as FigmaExportPayload | FigmaExportPayloadV2;
         break;
       }
 
       figma.ui.postMessage({
         type: 'progress',
         text: `Processing export... (${attempt + 1}s)`,
+        current: 0,
+        total: 0,
       });
     }
 
-    if (!payload) {
+    if (!rawPayload) {
       throw new Error('Export timed out after 30 seconds.');
     }
 
     // Step 3: Load fonts
-    figma.ui.postMessage({ type: 'progress', text: 'Loading fonts...' });
+    figma.ui.postMessage({ type: 'progress', text: 'Loading fonts...', current: 0, total: rawPayload.slideCount });
 
-    const headingFont = await loadFont(payload.theme.headingFont);
-    const headingBoldFont = await loadFont(payload.theme.headingFont, 'Bold');
-    const bodyFont = await loadFont(payload.theme.bodyFont);
+    const headingFont = await loadFont(rawPayload.theme.headingFont);
+    const headingBoldFont = await loadFont(rawPayload.theme.headingFont, 'Bold');
+    const bodyFont = await loadFont(rawPayload.theme.bodyFont);
 
-    // Step 4: Create a new page for the presentation
+    // Step 4: Create a new page
     const page = figma.createPage();
-    page.name = payload.title;
+    page.name = rawPayload.title;
     figma.currentPage = page;
 
-    // Step 5: Create slide frames
-    for (let i = 0; i < payload.slides.length; i++) {
-      const slide = payload.slides[i];
-      figma.ui.postMessage({
-        type: 'progress',
-        text: `Building slide ${i + 1} of ${payload.slideCount}...`,
-      });
+    // Step 5: Route to V1 or V2 engine
+    const isV2 = rawPayload.version === 2 && useFullLayout;
 
-      const xOffset = i * (SLIDE_W + GAP);
-      await buildSlide(slide, payload, headingFont, headingBoldFont, bodyFont, xOffset);
+    if (isV2) {
+      const payload = rawPayload as FigmaExportPayloadV2;
+      const theme: ThemeConfig = {
+        name: payload.theme.name,
+        headingFont: payload.theme.headingFont,
+        bodyFont: payload.theme.bodyFont,
+        colors: payload.theme.colors,
+      };
+      const fonts: LoadedFonts = {
+        heading: headingFont,
+        headingBold: headingBoldFont,
+        body: bodyFont,
+      };
+
+      // Create Figma local styles
+      let styles: FigmaStyles = { paintStyles: new Map(), textStyles: new Map() };
+      if (createStyles) {
+        figma.ui.postMessage({ type: 'progress', text: 'Creating theme styles...', current: 0, total: payload.slideCount });
+        styles = await applyTheme(theme, headingBoldFont, bodyFont);
+      }
+
+      // Build each slide with V2 layout engine
+      for (let i = 0; i < payload.slides.length; i++) {
+        figma.ui.postMessage({
+          type: 'progress',
+          text: `Building slide ${i + 1} of ${payload.slideCount}...`,
+          current: i + 1,
+          total: payload.slideCount,
+        });
+
+        const xOffset = i * (SLIDE_W + GAP);
+        await buildSlideV2(payload.slides[i], theme, fonts, styles, xOffset);
+      }
+    } else {
+      // V1 fallback
+      const payload = rawPayload as FigmaExportPayload;
+      for (let i = 0; i < payload.slides.length; i++) {
+        figma.ui.postMessage({
+          type: 'progress',
+          text: `Building slide ${i + 1} of ${payload.slideCount}...`,
+          current: i + 1,
+          total: payload.slideCount,
+        });
+
+        const xOffset = i * (SLIDE_W + GAP);
+        await buildSlideV1(payload.slides[i], payload, headingFont, headingBoldFont, bodyFont, xOffset);
+      }
     }
 
     // Step 6: Zoom to fit
@@ -357,7 +370,7 @@ figma.ui.onmessage = async (msg: {
 
     figma.ui.postMessage({
       type: 'success',
-      text: `Imported ${payload.slideCount} slides from "${payload.title}".`,
+      text: `Imported ${rawPayload.slideCount} slides from "${rawPayload.title}"${isV2 ? ' (Full Layout)' : ''}.`,
     });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
