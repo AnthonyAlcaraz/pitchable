@@ -14,7 +14,7 @@ export function PitchBriefWizardPage() {
   const { id } = useParams();
   const isEditMode = !!id;
 
-  const { briefs, createBrief, updateBrief, fetchBriefs, uploadDocument, addTextDocument, addUrlDocument } = usePitchBriefStore();
+  const { briefs, createBrief, updateBrief, loadBriefs, uploadDocument, addTextDocument, addUrlDocument } = usePitchBriefStore();
 
   const [step, setStep] = useState(1);
   const [name, setName] = useState('');
@@ -32,9 +32,9 @@ export function PitchBriefWizardPage() {
 
   useEffect(() => {
     if (isEditMode && id) {
-      fetchBriefs();
+      loadBriefs();
     }
-  }, [isEditMode, id, fetchBriefs]);
+  }, [isEditMode, id, loadBriefs]);
 
   useEffect(() => {
     if (isEditMode && id && briefs.length > 0) {
@@ -56,8 +56,8 @@ export function PitchBriefWizardPage() {
           await updateBrief(briefId, { name, description });
           navigate(`/pitch-briefs/${briefId}`);
         } else {
-          const newBrief = await createBrief({ name, description });
-          setBriefId(newBrief.id);
+          const newBriefId = await createBrief({ name, description });
+          setBriefId(newBriefId);
           setStep(2);
         }
       } catch (error) {

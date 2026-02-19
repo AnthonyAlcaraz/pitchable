@@ -2,7 +2,6 @@ import { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { usePitchLensStore } from '@/stores/pitch-lens.store';
 import { ArrowLeft, Plus, Pencil, Star, FileText, Focus } from 'lucide-react';
-import { cn } from '@/lib/utils';
 
 function formatEnum(value: string): string {
   return value.toLowerCase().replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());

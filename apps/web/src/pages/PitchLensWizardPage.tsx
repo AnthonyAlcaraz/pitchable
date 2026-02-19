@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { usePitchLensStore } from '@/stores/pitch-lens.store';
 import { useFigmaTemplateStore } from '@/stores/figma-template.store';
 import type { CreatePitchLensInput } from '@/stores/pitch-lens.store';
-import { ArrowLeft, ArrowRight, Check, Focus, Figma, ExternalLink, Layers } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, Focus, Figma, ExternalLink } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const STEPS = ['Name', 'Audience', 'Goal', 'Context', 'Tone', 'Framework', 'Review'] as const;
@@ -57,7 +57,7 @@ function formatEnum(value: string): string {
 export function PitchLensWizardPage() {
   const { id: editId } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { createLens, updateLens, loadLens, currentLens, getRecommendations, recommendations, loadFrameworks, allFrameworks } = usePitchLensStore();
+  const { createLens, updateLens, loadLens, currentLens, getRecommendations, recommendations, loadFrameworks } = usePitchLensStore();
   const { templates: figmaTemplates, loadTemplates: loadFigmaTemplates } = useFigmaTemplateStore();
 
   const [step, setStep] = useState(0);
@@ -102,10 +102,10 @@ export function PitchLensWizardPage() {
         technicalLevel: currentLens.technicalLevel,
         selectedFramework: currentLens.selectedFramework,
         customGuidance: currentLens.customGuidance ?? '',
-        showSectionLabels: (currentLens as Record<string, unknown>).showSectionLabels as boolean ?? false,
-        showOutlineSlide: (currentLens as Record<string, unknown>).showOutlineSlide as boolean ?? false,
-        figmaFileKey: (currentLens as Record<string, unknown>).figmaFileKey as string ?? '',
-        figmaAccessToken: (currentLens as Record<string, unknown>).figmaAccessToken as string ? '********' : '',
+        showSectionLabels: (currentLens as unknown as Record<string, unknown>).showSectionLabels as boolean ?? false,
+        showOutlineSlide: (currentLens as unknown as Record<string, unknown>).showOutlineSlide as boolean ?? false,
+        figmaFileKey: (currentLens as unknown as Record<string, unknown>).figmaFileKey as string ?? '',
+        figmaAccessToken: (currentLens as unknown as Record<string, unknown>).figmaAccessToken as string ? '********' : '',
       });
     }
   }, [editId, currentLens]);

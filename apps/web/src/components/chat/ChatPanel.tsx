@@ -10,7 +10,7 @@ interface ChatPanelProps {
   lensId?: string;
 }
 
-export function ChatPanel({ presentationId, briefId, lensId }: ChatPanelProps) {
+export function ChatPanel({ presentationId, briefId: _briefId, lensId: _lensId }: ChatPanelProps) {
   const {
     messages,
     streamingContent,

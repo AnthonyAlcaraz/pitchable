@@ -55,7 +55,7 @@ export function ChatMessage({
         </div>
 
         {/* Render slide preview cards for outline messages */}
-        {messageType === 'outline' && metadata?.slides && (
+        {messageType === 'outline' && Array.isArray(metadata?.slides) && (
           <div className="mt-3 flex flex-wrap gap-2">
             {(metadata.slides as Array<{ slideNumber: number; title: string; bulletPoints: string[]; slideType: string }>).slice(0, 4).map((slide) => (
               <SlidePreviewCard

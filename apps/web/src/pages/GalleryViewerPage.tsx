@@ -156,6 +156,10 @@ export function GalleryViewerPage() {
         slideType: slide.slideType,
         imageUrl: slide.imageUrl,
         imagePrompt: null,
+        imageSource: 'AI_GENERATED' as const,
+        figmaFileKey: null,
+        figmaNodeId: null,
+        figmaNodeName: null,
         createdAt: '',
       }
     : null;
@@ -267,6 +271,10 @@ export function GalleryViewerPage() {
                 slideType: s.slideType,
                 imageUrl: s.imageUrl,
                 imagePrompt: null,
+                imageSource: 'AI_GENERATED' as const,
+                figmaFileKey: null,
+                figmaNodeId: null,
+                figmaNodeName: null,
                 createdAt: '',
               };
               return (

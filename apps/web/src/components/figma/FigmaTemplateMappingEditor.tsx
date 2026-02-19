@@ -111,7 +111,7 @@ export function FigmaTemplateMappingEditor({
   async function handleAutoMap() {
     setAutoMapping(true);
     try {
-      const result = await autoMap(templateId);
+      await autoMap(templateId);
       // Result shows how many were mapped
     } catch {
       // Error handled by store

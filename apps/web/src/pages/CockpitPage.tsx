@@ -50,7 +50,7 @@ export function CockpitPage() {
   const [selectedLensId, setSelectedLensId] = useState('');
   const [selectedSourceId, setSelectedSourceId] = useState('');
   const [forkTarget, setForkTarget] = useState<PresentationListItem | null>(null);
-  const [deckStats, setDeckStats] = useState<{ decksUsed: number; decksLimit: number | null } | null>(null);
+  const [, setDeckStats] = useState<{ decksUsed: number; decksLimit: number | null } | null>(null);
 
   useEffect(() => {
     loadPresentations();

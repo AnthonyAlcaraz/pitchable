@@ -2,14 +2,13 @@ import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePitchLensStore } from '@/stores/pitch-lens.store';
 import { Plus, Focus, Star, Trash2 } from 'lucide-react';
-import { cn } from '@/lib/utils';
 
 function formatEnum(value: string): string {
   return value.toLowerCase().replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
 export function PitchLensListPage() {
-  const { lenses, isLoading, loadLenses, deleteLens, setDefault } = usePitchLensStore();
+  const { lenses, isLoading, loadLenses, deleteLens } = usePitchLensStore();
   const navigate = useNavigate();
 
   useEffect(() => { loadLenses(); }, [loadLenses]);

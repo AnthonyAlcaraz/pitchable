@@ -99,7 +99,7 @@ export const useFigmaTemplateStore = create<FigmaTemplateState>((set, get) => ({
   },
 
   async mapFrame(templateId: string, input: MapFrameInput) {
-    const mapping = await api.post<FigmaTemplateMapping>(
+    await api.post<FigmaTemplateMapping>(
       `/figma/templates/${templateId}/map`,
       input,
     );

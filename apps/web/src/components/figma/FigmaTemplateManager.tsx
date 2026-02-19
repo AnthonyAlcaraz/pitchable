@@ -4,7 +4,6 @@ import {
   Trash2,
   Loader2,
   Layers,
-  ExternalLink,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useFigmaTemplateStore } from '@/stores/figma-template.store';

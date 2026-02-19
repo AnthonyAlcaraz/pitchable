@@ -87,9 +87,6 @@ export function EditableSlide({ slide, presentationId, theme, className, lensId 
 
   // Parse bullet points from body
   const bodyLines = slide.body.split('\n').filter((l) => l.trim().length > 0);
-  const hasBullets = bodyLines.some(
-    (l) => l.trim().startsWith('-') || l.trim().startsWith('•'),
-  );
 
   return (
     <div

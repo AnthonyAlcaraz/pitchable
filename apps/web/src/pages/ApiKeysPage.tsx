@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useApiKeysStore } from '@/stores/api-keys.store';
-import type { ApiKeyListItem } from '@/stores/api-keys.store';
-import { Key, Plus, Copy, RotateCw, Trash2, Check, AlertTriangle, Shield } from 'lucide-react';
+import { Key, Plus, Copy, RotateCw, Trash2, Check, AlertTriangle } from 'lucide-react';
 
 const AVAILABLE_SCOPES = [
   { value: 'presentations:read', label: 'Read Presentations', description: 'List and view presentations, briefs, lenses, credits' },

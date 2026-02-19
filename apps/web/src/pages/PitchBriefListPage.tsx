@@ -12,7 +12,7 @@ const STATUS_COLORS: Record<string, string> = {
 
 export function PitchBriefListPage() {
   const navigate = useNavigate();
-  const { briefs, loading, loadBriefs, deleteBrief, createBrief } = usePitchBriefStore();
+  const { briefs, isLoading, loadBriefs, deleteBrief, createBrief } = usePitchBriefStore();
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -42,7 +42,7 @@ export function PitchBriefListPage() {
     }
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
