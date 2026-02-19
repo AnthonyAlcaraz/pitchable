@@ -25,6 +25,67 @@ import {
 
 const execFileAsync = promisify(execFile);
 
+// ── Layout profiles ──────────────────────────────────────────
+export type LayoutProfile = 'corporate' | 'startup' | 'creative' | 'consulting' | 'technical';
+
+interface LayoutProfileConfig {
+  /** Show glass-card wrappers on content slides */
+  glassCards: boolean;
+  /** Enable bokeh/radial-glow background variants */
+  bokeh: boolean;
+  /** Font size multiplier (1.0 = default 28px body) */
+  fontScale: number;
+  /** Force serif heading fonts (consulting style) */
+  serifHeadings: boolean;
+  /** Opacity multiplier for background decorations (0 = off, 1 = full) */
+  bgDecorationOpacity: number;
+  /** Enable section pill badges */
+  sectionPills: boolean;
+}
+
+const LAYOUT_PROFILE_CONFIGS: Record<LayoutProfile, LayoutProfileConfig> = {
+  corporate: {
+    glassCards: false,
+    bokeh: false,
+    fontScale: 1.0,
+    serifHeadings: false,
+    bgDecorationOpacity: 0.3,
+    sectionPills: true,
+  },
+  startup: {
+    glassCards: true,
+    bokeh: true,
+    fontScale: 1.0,
+    serifHeadings: false,
+    bgDecorationOpacity: 1.0,
+    sectionPills: true,
+  },
+  creative: {
+    glassCards: true,
+    bokeh: true,
+    fontScale: 1.05,
+    serifHeadings: false,
+    bgDecorationOpacity: 1.2,
+    sectionPills: true,
+  },
+  consulting: {
+    glassCards: false,
+    bokeh: false,
+    fontScale: 0.95,
+    serifHeadings: true,
+    bgDecorationOpacity: 0,
+    sectionPills: false,
+  },
+  technical: {
+    glassCards: true,
+    bokeh: false,
+    fontScale: 0.95,
+    serifHeadings: false,
+    bgDecorationOpacity: 0.5,
+    sectionPills: true,
+  },
+};
+
 /** Quote paths with double-quotes for shell safety (handles spaces, ampersands, etc.). */
 function shellSafePath(p: string): string {
   return `"${p.replace(/\\/g, '/')}"`;
@@ -108,10 +169,14 @@ export class MarpExporterService {
     slides: SlideModel[],
     theme: ThemeModel,
     imageLayout?: string,
+    layoutProfile: LayoutProfile = 'startup',
   ): string {
     const palette = theme.colorPalette as unknown as ColorPalette;
     const sections: string[] = [];
+    const profile = LAYOUT_PROFILE_CONFIGS[layoutProfile];
+    // McKinsey theme always forces consulting profile behavior
     const isMcKinsey = theme.name === 'mckinsey-executive';
+    const isConsulting = isMcKinsey || layoutProfile === 'consulting';
 
     // ── Contrast-safe color computation ───────────────────
     const bg = palette.background;
@@ -157,13 +222,13 @@ export class MarpExporterService {
     const blockquoteBg = hexWithAlpha(palette.surface, 0.5);
     const tableBg = hexWithAlpha(bg, 0.9);
 
-    // McKinsey uses serif heading + sans-serif body; fallback stacks differ
-    const headingFontStack = isMcKinsey
+    // Consulting profile + McKinsey use serif heading; all others sans-serif
+    const useSerif = isConsulting || profile.serifHeadings;
+    const headingFontStack = useSerif
       ? `'${theme.headingFont}', serif`
       : `'${theme.headingFont}', sans-serif`;
-    const bodyFontStack = isMcKinsey
-      ? `'${theme.bodyFont}', sans-serif`
-      : `'${theme.bodyFont}', sans-serif`;
+    const bodyFontStack = `'${theme.bodyFont}', sans-serif`;
+    const baseFontSize = Math.round(28 * profile.fontScale);
 
     // Marp frontmatter with contrast-validated, theme-aware CSS
     const frontmatter = [
@@ -180,7 +245,7 @@ export class MarpExporterService {
       `    --surface: ${palette.surface};`,
       `    color: ${safeText};`,
       `    font-family: ${bodyFontStack};`,
-      `    font-size: ${isMcKinsey ? '24px' : '28px'};`,
+      `    font-size: ${baseFontSize}px;`,
       '    overflow: hidden;',
       '    padding: 32px 40px 40px 40px;',
       '    display: flex;',
@@ -199,7 +264,7 @@ export class MarpExporterService {
       '  h1 {',
       `    color: ${safePrimary};`,
       `    font-family: ${headingFontStack};`,
-      `    font-size: ${isMcKinsey ? '1.6em' : '1.6em'};`,
+      `    font-size: 1.6em;`,
       '    margin-top: 0;',
       '    margin-bottom: 0.2em;',
       '  }',
@@ -225,11 +290,11 @@ export class MarpExporterService {
       `    color: ${safeText};`,
       '  }',
       '  strong {',
-      `    color: ${isMcKinsey ? safePrimary : safeAccent};`,
+      `    color: ${isConsulting ? safePrimary : safeAccent};`,
       '  }',
       // Ensure bold text inside table cells contrasts against cell backgrounds
-      `  td strong { color: ${ensureContrast(isMcKinsey ? palette.primary : palette.accent, palette.surface, 4.5)}; }`,
-      `  tr:nth-child(even) td strong { color: ${ensureContrast(isMcKinsey ? palette.primary : palette.accent, bg, 4.5)}; }`,
+      `  td strong { color: ${ensureContrast(isConsulting ? palette.primary : palette.accent, palette.surface, 4.5)}; }`,
+      `  tr:nth-child(even) td strong { color: ${ensureContrast(isConsulting ? palette.primary : palette.accent, bg, 4.5)}; }`,
       `  th strong { color: ${ensureContrast('#FFFFFF', tableHeaderBg, 4.5)}; }`,
       '  em {',
       `    color: ${safeSecondary};`,
@@ -240,8 +305,8 @@ export class MarpExporterService {
       '  }',
     ];
 
-    // Table + blockquote CSS: McKinsey gets clean horizontal-only borders
-    if (isMcKinsey) {
+    // Table + blockquote CSS: consulting profile gets clean horizontal-only borders
+    if (isConsulting) {
       frontmatter.push(generateMarpMcKinseyTableCSS(palette));
     } else {
       frontmatter.push(
@@ -292,17 +357,17 @@ export class MarpExporterService {
       `    background-color: ${palette.surface};`,
       `    color: ${safeCodeText};`,
       '    padding: 0.2em 0.4em;',
-      `    border-radius: ${isMcKinsey ? '2px' : '4px'};`,
+      `    border-radius: ${isConsulting ? '2px' : '4px'};`,
       '    font-size: 0.85em;',
       '  }',
       '  pre {',
       `    background-color: ${palette.surface};`,
       `    color: ${safeCodeText};`,
       '    padding: 0.8em;',
-      `    border-radius: ${isMcKinsey ? '2px' : '6px'};`,
+      `    border-radius: ${isConsulting ? '2px' : '6px'};`,
       '  }',
       '  .source {',
-      `    font-size: ${isMcKinsey ? '0.45em' : '0.55em'};`,
+      `    font-size: ${isConsulting ? '0.45em' : '0.55em'};`,
       `    color: ${safeSecondary};`,
       '  }',
       `  .gold { color: ${safeAccent}; }`,
@@ -314,12 +379,26 @@ export class MarpExporterService {
       '  }',
     );
 
-    // Background variants + accent rotation + lead styling (theme-conditional)
-    if (isMcKinsey) {
+    // Background variants + accent rotation + lead styling (profile-conditional)
+    if (isConsulting) {
       frontmatter.push(generateMarpMcKinseyCSS(palette));
-      // No accent rotation — McKinsey uses uniform navy bold
+      // No accent rotation — consulting uses uniform primary bold
       frontmatter.push(generateMarpMcKinseyLeadCSS(palette));
+    } else if (!profile.bokeh) {
+      // Corporate/technical: backgrounds but no bokeh radial glows
+      const bgShades = isDarkBackground(bg) ? generateBackgroundShades(bg, safeText) : undefined;
+      frontmatter.push(generateMarpBackgroundCSS(palette, bg, gradientEnd, bgShades));
+      frontmatter.push(generateMarpAccentRotationCSS(safeAccent, safePrimary, safeSuccess, safeSecondary));
+      frontmatter.push(generateLeadEnhancementCSS(safeAccent, safeText));
+      // Tone down radial-glow by overriding its opacity
+      if (profile.bgDecorationOpacity < 1.0) {
+        frontmatter.push(
+          `  section.bg-radial-glow::before { opacity: ${(0.15 * profile.bgDecorationOpacity).toFixed(2)} !important; }`,
+          `  section.bg-radial-glow::after { opacity: ${(0.10 * profile.bgDecorationOpacity).toFixed(2)} !important; }`,
+        );
+      }
     } else {
+      // Startup/creative: full background effects
       const bgShades = isDarkBackground(bg) ? generateBackgroundShades(bg, safeText) : undefined;
       frontmatter.push(generateMarpBackgroundCSS(palette, bg, gradientEnd, bgShades));
       frontmatter.push(generateMarpAccentRotationCSS(safeAccent, safePrimary, safeSuccess, safeSecondary));
@@ -328,7 +407,7 @@ export class MarpExporterService {
 
     frontmatter.push(
       '  section::after {',
-      `    color: ${isMcKinsey ? '#A0A0A0' : palette.border};`,
+      `    color: ${isConsulting ? '#A0A0A0' : palette.border};`,
       '    font-size: 0.6em;',
       '  }',
       '  ul, ol { margin-top: 0.2em; margin-bottom: 0.2em; padding-left: 1.2em; }',
@@ -339,14 +418,18 @@ export class MarpExporterService {
       // Layout classes for content centering/spreading
       '  section.content-center { justify-content: center; }',
       '  section.content-spread { justify-content: space-between; }',
-      // AMI Labs: glass card effect
+      // Glass card effect (controlled by layout profile)
       '  .glass-card {',
-      '    background: rgba(255, 255, 255, 0.06);',
-      '    backdrop-filter: blur(12px);',
-      '    -webkit-backdrop-filter: blur(12px);',
-      '    border: 1px solid rgba(255, 255, 255, 0.12);',
-      '    border-radius: 16px;',
-      '    padding: 20px 24px;',
+      ...(profile.glassCards ? [
+        '    background: rgba(255, 255, 255, 0.06);',
+        '    backdrop-filter: blur(12px);',
+        '    -webkit-backdrop-filter: blur(12px);',
+        '    border: 1px solid rgba(255, 255, 255, 0.12);',
+        '    border-radius: 16px;',
+        '    padding: 20px 24px;',
+      ] : [
+        '    padding: 12px 0;',
+      ]),
       '    margin: 8px -8px 0 -8px;',
       '    flex-grow: 1;',
       '    display: flex;',
@@ -390,13 +473,13 @@ export class MarpExporterService {
     );
 
     for (const slide of sortedSlides) {
-      sections.push(this.buildSlideMarkdown(slide, bg, imageLayout, safePrimary));
+      sections.push(this.buildSlideMarkdown(slide, bg, imageLayout, safePrimary, profile));
     }
 
     return sections.join('\n\n---\n\n');
   }
 
-  private buildSlideMarkdown(slide: SlideModel, bgColor?: string, imageLayout?: string, primaryColor?: string): string {
+  private buildSlideMarkdown(slide: SlideModel, bgColor?: string, imageLayout?: string, primaryColor?: string, profile?: LayoutProfileConfig): string {
     const lines: string[] = [];
     const type = slide.slideType;
     const bgVariant = getSlideBackground(type, slide.slideNumber, bgColor);
@@ -438,9 +521,10 @@ export class MarpExporterService {
       lines.push('');
     }
 
-    // Section label (AMI Labs style - colored pill badge)
+    // Section label (AMI Labs style - colored pill badge; disabled in consulting profile)
+    const showPills = profile?.sectionPills !== false;
     const sectionLabel = (slide as Record<string, unknown>).sectionLabel as string | undefined;
-    if (sectionLabel && type !== 'TITLE' && type !== 'CTA' && type !== 'SECTION_DIVIDER') {
+    if (showPills && sectionLabel && type !== 'TITLE' && type !== 'CTA' && type !== 'SECTION_DIVIDER') {
       lines.push(`<span class="section-pill">${sectionLabel.toUpperCase()}</span>`);
       lines.push('');
     }
