@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import type { LayoutProfile } from './marp-exporter.service.js';
 
-export type RenderEngine = 'marp' | 'figma-renderer';
+export type RenderEngine = 'marp';
 
 export interface RenderEngineSelection {
   engine: RenderEngine;
@@ -34,17 +34,18 @@ const ARCHETYPE_PROFILE_MAP: Record<string, LayoutProfile> = {
 @Injectable()
 export class TemplateSelectorService {
   selectRenderEngine(ctx: SelectionContext): RenderEngineSelection {
-    // Rule 1: If user has a Figma template and format is PPTX → use Figma renderer
-    if (ctx.figmaTemplateId && ctx.format === 'PPTX') {
+    const layoutProfile = this.resolveLayoutProfile(ctx);
+
+    // Rule 1: Figma template linked — Marp with Figma backgrounds
+    if (ctx.figmaTemplateId) {
       return {
-        engine: 'figma-renderer',
-        layoutProfile: ctx.defaultLayoutProfile,
-        reason: 'Figma template linked — using Figma-rendered backgrounds with editable text',
+        engine: 'marp',
+        layoutProfile,
+        reason: 'Figma template linked — Marp with Figma backgrounds',
       };
     }
 
     // Rule 2: All other cases → Marp (default, zero-config)
-    const layoutProfile = this.resolveLayoutProfile(ctx);
     const reason = this.buildReason(ctx, layoutProfile);
 
     return {

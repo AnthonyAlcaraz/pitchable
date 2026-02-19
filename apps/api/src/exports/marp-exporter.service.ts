@@ -175,6 +175,7 @@ export class MarpExporterService {
     imageLayout?: string,
     layoutProfile: LayoutProfile = 'startup',
     rendererOverrides?: Map<number, string>,
+    figmaBackgrounds?: Map<number, string>,
   ): string {
     const palette = theme.colorPalette as unknown as ColorPalette;
     const sections: string[] = [];
@@ -479,13 +480,14 @@ export class MarpExporterService {
 
     for (const slide of sortedSlides) {
       const rendererOverride = rendererOverrides?.get(slide.slideNumber);
-      sections.push(this.buildSlideMarkdown(slide, bg, imageLayout, safePrimary, profile, palette, rendererOverride));
+      const figmaBg = figmaBackgrounds?.get(slide.slideNumber);
+      sections.push(this.buildSlideMarkdown(slide, bg, imageLayout, safePrimary, profile, palette, rendererOverride, figmaBg));
     }
 
     return sections.join('\n\n---\n\n');
   }
 
-  private buildSlideMarkdown(slide: SlideModel, bgColor?: string, imageLayout?: string, primaryColor?: string, profile?: LayoutProfileConfig, palette?: ColorPalette, rendererOverride?: string): string {
+  private buildSlideMarkdown(slide: SlideModel, bgColor?: string, imageLayout?: string, primaryColor?: string, profile?: LayoutProfileConfig, palette?: ColorPalette, rendererOverride?: string, figmaBackground?: string): string {
     const lines: string[] = [];
     const type = slide.slideType;
     const bgVariant = getSlideBackground(type, slide.slideNumber, bgColor);
@@ -524,6 +526,12 @@ export class MarpExporterService {
       lines.push('');
     } else {
       lines.push(`<!-- _class: ${bgVariant.className}${layoutClass} -->`);
+      lines.push('');
+    }
+
+    // Figma template background: full-bleed behind all content
+    if (figmaBackground) {
+      lines.push(`![bg](${figmaBackground})`);
       lines.push('');
     }
 

@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { join } from 'path';
 import { mkdir } from 'fs/promises';
-import { readFile } from 'fs/promises';
+import { readFile, writeFile } from 'fs/promises';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { MarpExporterService } from './marp-exporter.service.js';
 import { RevealJsExporterService } from './revealjs-exporter.service.js';
@@ -145,7 +145,7 @@ export class ExportsService {
     });
   }
 
-  async processExport(jobId: string, renderEngine?: 'auto' | 'marp' | 'figma'): Promise<void> {
+  async processExport(jobId: string, _renderEngine?: 'auto' | 'marp' | 'figma'): Promise<void> {
     const job = await this.prisma.exportJob.findUnique({
       where: { id: jobId },
     });
@@ -227,13 +227,9 @@ export class ExportsService {
         deckArchetype,
       });
 
-      // Allow explicit override
-      const effectiveEngine = renderEngine === 'figma' ? 'figma-renderer'
-        : renderEngine === 'marp' ? 'marp'
-        : selection.engine;
       const layoutProfile: LayoutProfile = selection.layoutProfile;
 
-      this.logger.log(`Export ${jobId}: engine=${effectiveEngine}, profile=${layoutProfile} (${selection.reason})`);
+      this.logger.log(`Export ${jobId}: engine=marp, profile=${layoutProfile} (${selection.reason})`);
 
       let buffer: Buffer;
       let contentType: string;
@@ -242,31 +238,38 @@ export class ExportsService {
       // AI renderer chooser: analyze content and suggest template upgrades
       const rendererOverrides = await this.rendererChooser.chooseRenderers(slides);
 
+      // Fetch Figma backgrounds if template is linked
+      let figmaBackgrounds: Map<number, string> | undefined;
+
       switch (job.format) {
         case ExportFormat.PPTX: {
-          // Check if Figma renderer was selected and we have a valid template + userId
-          if (effectiveEngine === 'figma-renderer' && figmaTemplateId && presentation.userId) {
-            buffer = await this.figmaRenderer.renderPresentation(
-              presentation.id,
-              presentation.userId,
-              { format: 'pptx', templateId: figmaTemplateId },
+          const pptxDir = join(this.tempDir, jobId);
+          await mkdir(pptxDir, { recursive: true });
+
+          if (figmaTemplateId && presentation.userId) {
+            const buffers = await this.figmaRenderer.fetchSlideBackgrounds(
+              presentation.id, presentation.userId, figmaTemplateId,
             );
-          } else {
-            // Default: Marp CLI with layout-profile-aware CSS
-            const pptxDir = join(this.tempDir, jobId);
-            await mkdir(pptxDir, { recursive: true });
-            const pptxPath = join(pptxDir, `${safeFilename(presentation.title)}.pptx`);
-            const pptxMarkdown = this.marpExporter.generateMarpMarkdown(
-              presentation,
-              slides,
-              theme,
-              imageLayout,
-              layoutProfile,
-              rendererOverrides,
-            );
-            await this.marpExporter.exportToPptx(pptxMarkdown, pptxPath);
-            buffer = await readFile(pptxPath);
+            figmaBackgrounds = new Map();
+            for (const [slideNum, buf] of buffers) {
+              const bgFilename = `figma-bg-${slideNum}.png`;
+              await writeFile(join(pptxDir, bgFilename), buf);
+              figmaBackgrounds.set(slideNum, bgFilename);
+            }
           }
+
+          const pptxPath = join(pptxDir, `${safeFilename(presentation.title)}.pptx`);
+          const pptxMarkdown = this.marpExporter.generateMarpMarkdown(
+            presentation,
+            slides,
+            theme,
+            imageLayout,
+            layoutProfile,
+            rendererOverrides,
+            figmaBackgrounds,
+          );
+          await this.marpExporter.exportToPptx(pptxMarkdown, pptxPath);
+          buffer = await readFile(pptxPath);
           contentType =
             'application/vnd.openxmlformats-officedocument.presentationml.presentation';
           filename = `${safeFilename(presentation.title)}.pptx`;
@@ -277,6 +280,19 @@ export class ExportsService {
           // Marp CLI requires filesystem — write temp, read back
           const jobDir = join(this.tempDir, jobId);
           await mkdir(jobDir, { recursive: true });
+
+          if (figmaTemplateId && presentation.userId) {
+            const buffers = await this.figmaRenderer.fetchSlideBackgrounds(
+              presentation.id, presentation.userId, figmaTemplateId,
+            );
+            figmaBackgrounds = new Map();
+            for (const [slideNum, buf] of buffers) {
+              const bgFilename = `figma-bg-${slideNum}.png`;
+              await writeFile(join(jobDir, bgFilename), buf);
+              figmaBackgrounds.set(slideNum, bgFilename);
+            }
+          }
+
           const outputPath = join(jobDir, `${safeFilename(presentation.title)}.pdf`);
           const markdown = this.marpExporter.generateMarpMarkdown(
             presentation,
@@ -285,6 +301,7 @@ export class ExportsService {
             imageLayout,
             layoutProfile,
             rendererOverrides,
+            figmaBackgrounds,
           );
           await this.marpExporter.exportToPdf(markdown, outputPath);
           buffer = await readFile(outputPath);
@@ -446,23 +463,29 @@ export class ExportsService {
     let buffer: Buffer;
     let contentType: string;
     let filename: string;
+    let figmaBackgrounds: Map<number, string> | undefined;
 
     switch (job.format) {
       case ExportFormat.PPTX: {
-        if (selection.engine === 'figma-renderer' && figmaTemplateId && presentation.userId) {
-          buffer = await this.figmaRenderer.renderPresentation(
-            presentation.id,
-            presentation.userId,
-            { format: 'pptx', templateId: figmaTemplateId },
+        const pptxDir = join(this.tempDir, jobId);
+        await mkdir(pptxDir, { recursive: true });
+
+        if (figmaTemplateId && presentation.userId) {
+          const buffers = await this.figmaRenderer.fetchSlideBackgrounds(
+            presentation.id, presentation.userId, figmaTemplateId,
           );
-        } else {
-          const pptxDir = join(this.tempDir, jobId);
-          await mkdir(pptxDir, { recursive: true });
-          const pptxPath = join(pptxDir, `${safeFilename(presentation.title)}.pptx`);
-          const pptxMd = this.marpExporter.generateMarpMarkdown(presentation, slides, theme, imageLayout, layoutProfile, rendererOverrides);
-          await this.marpExporter.exportToPptx(pptxMd, pptxPath);
-          buffer = await readFile(pptxPath);
+          figmaBackgrounds = new Map();
+          for (const [slideNum, buf] of buffers) {
+            const bgFilename = `figma-bg-${slideNum}.png`;
+            await writeFile(join(pptxDir, bgFilename), buf);
+            figmaBackgrounds.set(slideNum, bgFilename);
+          }
         }
+
+        const pptxPath = join(pptxDir, `${safeFilename(presentation.title)}.pptx`);
+        const pptxMd = this.marpExporter.generateMarpMarkdown(presentation, slides, theme, imageLayout, layoutProfile, rendererOverrides, figmaBackgrounds);
+        await this.marpExporter.exportToPptx(pptxMd, pptxPath);
+        buffer = await readFile(pptxPath);
         contentType = 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
         filename = `${safeFilename(presentation.title)}.pptx`;
         break;
@@ -470,8 +493,21 @@ export class ExportsService {
       case ExportFormat.PDF: {
         const jobDir = join(this.tempDir, jobId);
         await mkdir(jobDir, { recursive: true });
+
+        if (figmaTemplateId && presentation.userId) {
+          const buffers = await this.figmaRenderer.fetchSlideBackgrounds(
+            presentation.id, presentation.userId, figmaTemplateId,
+          );
+          figmaBackgrounds = new Map();
+          for (const [slideNum, buf] of buffers) {
+            const bgFilename = `figma-bg-${slideNum}.png`;
+            await writeFile(join(jobDir, bgFilename), buf);
+            figmaBackgrounds.set(slideNum, bgFilename);
+          }
+        }
+
         const outputPath = join(jobDir, `${safeFilename(presentation.title)}.pdf`);
-        const markdown = this.marpExporter.generateMarpMarkdown(presentation, slides, theme, imageLayout, layoutProfile, rendererOverrides);
+        const markdown = this.marpExporter.generateMarpMarkdown(presentation, slides, theme, imageLayout, layoutProfile, rendererOverrides, figmaBackgrounds);
         await this.marpExporter.exportToPdf(markdown, outputPath);
         buffer = await readFile(outputPath);
         contentType = 'application/pdf';
