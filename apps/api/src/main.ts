@@ -15,7 +15,22 @@ async function bootstrap() {
   expressApp.set('trust proxy', 1);
 
   // Security
-  app.use(helmet());
+  app.use(
+    helmet({
+      contentSecurityPolicy: process.env['NODE_ENV'] === 'production'
+        ? {
+            directives: {
+              defaultSrc: ["'self'"],
+              scriptSrc: ["'self'"],
+              styleSrc: ["'self'", "'unsafe-inline'"],
+              imgSrc: ["'self'", 'data:', 'https:'],
+              connectSrc: ["'self'", 'wss:', 'https:'],
+              fontSrc: ["'self'", 'data:'],
+            },
+          }
+        : false,
+    }),
+  );
   app.enableCors({
     origin: process.env['FRONTEND_URL'] || 'http://localhost:5173',
     credentials: true,

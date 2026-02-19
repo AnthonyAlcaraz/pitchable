@@ -12,6 +12,7 @@ import {
   Zap,
   Shield,
   GitFork,
+  Check,
 } from 'lucide-react';
 
 // ── Animated Counter ─────────────────────────────────────────
@@ -230,6 +231,108 @@ export function LandingPage() {
                 </div>
                 <h3 className="mb-2 font-semibold text-foreground">{s.title}</h3>
                 <p className="text-sm leading-relaxed text-muted-foreground">{s.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Pricing ──────────────────────────────────── */}
+      <section className="py-24">
+        <div className="mx-auto max-w-6xl px-6">
+          <div className="mb-14 text-center">
+            <h2 className="mb-3 text-3xl font-bold text-foreground">
+              Simple, transparent pricing
+            </h2>
+            <p className="text-muted-foreground">
+              Start free. Upgrade when you need more.
+            </p>
+          </div>
+
+          <div className="grid gap-6 md:grid-cols-3">
+            {[
+              {
+                name: 'Free',
+                price: '$0',
+                period: '',
+                description: 'Try Pitchable with 10 free credits',
+                features: [
+                  '10 credits on signup',
+                  '1 deck per month',
+                  'AI-powered content (Claude Opus 4.6)',
+                  'PPTX, PDF, HTML export',
+                ],
+                cta: 'Get Started',
+                popular: false,
+              },
+              {
+                name: 'Starter',
+                price: '$19',
+                period: '/month',
+                description: 'For regular presenters',
+                features: [
+                  '40 credits per month',
+                  '10 decks per month',
+                  'AI image generation',
+                  'Priority support',
+                ],
+                cta: 'Start Free Trial',
+                popular: true,
+              },
+              {
+                name: 'Pro',
+                price: '$49',
+                period: '/month',
+                description: 'For power users and teams',
+                features: [
+                  '100 credits per month',
+                  'Unlimited decks',
+                  'AI image generation',
+                  'Priority support',
+                ],
+                cta: 'Start Free Trial',
+                popular: false,
+              },
+            ].map((plan) => (
+              <div
+                key={plan.name}
+                className={`relative rounded-2xl border p-8 transition-all hover:shadow-lg ${
+                  plan.popular
+                    ? 'border-orange-500 bg-card shadow-lg shadow-orange-500/10'
+                    : 'border-border bg-card hover:border-orange-500/20 hover:shadow-orange-500/5'
+                }`}
+              >
+                {plan.popular && (
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-orange-500 px-4 py-1 text-xs font-semibold text-white">
+                    Most Popular
+                  </div>
+                )}
+                <h3 className="mb-1 text-xl font-bold text-foreground">{plan.name}</h3>
+                <p className="mb-4 text-sm text-muted-foreground">{plan.description}</p>
+                <div className="mb-6">
+                  <span className="text-4xl font-extrabold text-foreground">{plan.price}</span>
+                  {plan.period && (
+                    <span className="text-muted-foreground">{plan.period}</span>
+                  )}
+                </div>
+                <ul className="mb-8 space-y-3">
+                  {plan.features.map((f) => (
+                    <li key={f} className="flex items-start gap-2 text-sm text-muted-foreground">
+                      <Check className="mt-0.5 h-4 w-4 shrink-0 text-orange-400" />
+                      {f}
+                    </li>
+                  ))}
+                </ul>
+                <Link
+                  to="/register"
+                  className={`block w-full rounded-xl py-3 text-center font-semibold transition-all ${
+                    plan.popular
+                      ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/20 hover:bg-orange-400'
+                      : 'border border-border text-foreground hover:bg-accent'
+                  }`}
+                >
+                  {plan.cta}
+                </Link>
               </div>
             ))}
           </div>

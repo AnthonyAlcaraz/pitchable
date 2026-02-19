@@ -1,8 +1,10 @@
+import { join } from 'node:path';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 import { BullModule } from '@nestjs/bullmq';
+import { ServeStaticModule } from '@nestjs/serve-static';
 import { AppController } from './app.controller.js';
 import { AppService } from './app.service.js';
 import { PrismaModule } from './prisma/prisma.module.js';
@@ -29,6 +31,22 @@ import { EmailModule } from './email/email.module.js';
 import { FigmaModule } from './figma/figma.module.js';
 import { validate } from './config/env.validation.js';
 
+// Parse REDIS_URL (Railway provides this) or fall back to host/port
+const redisUrl = process.env['REDIS_URL'];
+const redisConnection = redisUrl
+  ? (() => {
+      const u = new URL(redisUrl);
+      return {
+        host: u.hostname,
+        port: +u.port || 6379,
+        password: u.password || undefined,
+      };
+    })()
+  : {
+      host: process.env['REDIS_HOST'] || 'localhost',
+      port: parseInt(process.env['REDIS_PORT'] || '6379', 10),
+    };
+
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true, validate }),
@@ -37,12 +55,38 @@ import { validate } from './config/env.validation.js';
       { name: 'medium', ttl: 10000, limit: 20 },
       { name: 'long', ttl: 60000, limit: 100 },
     ]),
-    BullModule.forRoot({
-      connection: {
-        host: process.env['REDIS_HOST'] || 'localhost',
-        port: parseInt(process.env['REDIS_PORT'] || '6379', 10),
-      },
-    }),
+    BullModule.forRoot({ connection: redisConnection }),
+    // Serve the React SPA from the built web app (production only)
+    ...(process.env['NODE_ENV'] === 'production'
+      ? [
+          ServeStaticModule.forRoot({
+            rootPath: join(__dirname, '..', '..', '..', '..', 'web', 'dist'),
+            exclude: [
+              '/auth/(.*)',
+              '/presentations/(.*)',
+              '/chat/(.*)',
+              '/billing/(.*)',
+              '/credits/(.*)',
+              '/exports/(.*)',
+              '/health/(.*)',
+              '/api/(.*)',
+              '/api-keys/(.*)',
+              '/gallery/(.*)',
+              '/themes/(.*)',
+              '/pitch-lens/(.*)',
+              '/pitch-briefs/(.*)',
+              '/constraints/(.*)',
+              '/images/(.*)',
+              '/knowledge-base/(.*)',
+              '/mcp/(.*)',
+              '/analytics/(.*)',
+              '/socket.io/(.*)',
+              '/figma/(.*)',
+              '/email/(.*)',
+            ],
+          }),
+        ]
+      : []),
     PrismaModule,
     AuthModule,
     ConstraintsModule,

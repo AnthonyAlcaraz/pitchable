@@ -20,6 +20,10 @@ class EnvironmentVariables {
   REDIS_PORT?: string = '6379';
 
   @IsOptional()
+  @IsString()
+  REDIS_URL?: string;
+
+  @IsOptional()
   @IsNumberString()
   PORT?: string = '3000';
 
