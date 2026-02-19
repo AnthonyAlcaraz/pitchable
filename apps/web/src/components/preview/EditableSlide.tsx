@@ -6,6 +6,7 @@ import { usePresentationStore } from '@/stores/presentation.store';
 import type { SlideData, ThemeData } from '@/stores/presentation.store';
 import { themeToStyleVars } from './SlideRenderer';
 import { FigmaFramePicker } from '@/components/figma/FigmaFramePicker';
+import { FigmaSyncBadge } from '@/components/figma/FigmaSyncBadge';
 import { Figma, Sparkles, RefreshCw, Loader2 } from 'lucide-react';
 
 interface EditableSlideProps {
@@ -182,14 +183,22 @@ export function EditableSlide({ slide, presentationId, theme, className, lensId 
           )}
         </button>
         {slide.imageSource === 'FIGMA' && slide.figmaNodeId && (
-          <button
-            onClick={handleRefreshFigma}
-            disabled={isSyncing}
-            className="rounded bg-black/60 p-1 text-white hover:bg-black/80"
-            title="Refresh from Figma"
-          >
-            <RefreshCw className={cn('h-3 w-3', isSyncing && 'animate-spin')} />
-          </button>
+          <>
+            <button
+              onClick={handleRefreshFigma}
+              disabled={isSyncing}
+              className="rounded bg-black/60 p-1 text-white hover:bg-black/80"
+              title="Refresh from Figma"
+            >
+              <RefreshCw className={cn('h-3 w-3', isSyncing && 'animate-spin')} />
+            </button>
+            <FigmaSyncBadge
+              figmaLastSyncAt={slide.figmaLastSyncAt}
+              figmaSyncVersion={slide.figmaSyncVersion}
+              imageSource={slide.imageSource}
+              figmaNodeId={slide.figmaNodeId}
+            />
+          </>
         )}
         {slide.imageSource !== 'FIGMA' && slide.imageUrl && (
           <span className="rounded bg-black/60 px-1.5 py-0.5 text-[0.45em] text-white">

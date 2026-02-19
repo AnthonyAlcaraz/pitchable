@@ -15,6 +15,9 @@ export interface SlideData {
   figmaNodeId: string | null;
   figmaNodeName: string | null;
   createdAt: string;
+  updatedAt?: string;
+  figmaLastSyncAt?: string | null;
+  figmaSyncVersion?: number;
 }
 
 export interface ThemeData {
