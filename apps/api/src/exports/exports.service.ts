@@ -11,8 +11,10 @@ import { PrismaService } from '../prisma/prisma.service.js';
 import { MarpExporterService } from './marp-exporter.service.js';
 import { RevealJsExporterService } from './revealjs-exporter.service.js';
 import { PptxGenJsExporterService } from './pptxgenjs-exporter.service.js';
+import { TemplateSelectorService, type TemplateSelectorContext } from './template-selector.service.js';
 import { S3Service } from '../knowledge-base/storage/s3.service.js';
 import { FigmaRendererService } from '../figma/figma-renderer.service.js';
+import { ThemesService } from '../themes/themes.service.js';
 import { ExportFormat, JobStatus } from '../../generated/prisma/enums.js';
 import { type ColorPalette } from './slide-visual-theme.js';
 import type { PresentationModel } from '../../generated/prisma/models/Presentation.js';
@@ -104,13 +106,16 @@ export class ExportsService {
     private readonly marpExporter: MarpExporterService,
     private readonly revealJsExporter: RevealJsExporterService,
     private readonly pptxGenJsExporter: PptxGenJsExporterService,
+    private readonly templateSelector: TemplateSelectorService,
     private readonly s3: S3Service,
     private readonly figmaRenderer: FigmaRendererService,
+    private readonly themesService: ThemesService,
   ) {}
 
   async createExportJob(
     presentationId: string,
     format: ExportFormat,
+    renderEngine?: 'auto' | 'marp' | 'pptxgenjs' | 'figma',
   ) {
     const presentation = await this.prisma.presentation.findUnique({
       where: { id: presentationId },
@@ -178,15 +183,38 @@ export class ExportsService {
         );
       }
 
-      // Fetch image layout from PitchLens if linked
+      // Fetch PitchLens context if linked
       let imageLayout: string | undefined;
+      let lensContext: { audienceType?: string; pitchGoal?: string; toneStyle?: string; companyStage?: string; deckArchetype?: string; figmaTemplateId?: string | null } = {};
       if (presentation.pitchLensId) {
         const lens = await this.prisma.pitchLens.findUnique({
           where: { id: presentation.pitchLensId },
-          select: { imageLayout: true },
         });
-        imageLayout = lens?.imageLayout ?? undefined;
+        if (lens) {
+          imageLayout = lens.imageLayout ?? undefined;
+          lensContext = {
+            audienceType: lens.audienceType ?? undefined,
+            pitchGoal: lens.pitchGoal ?? undefined,
+            toneStyle: lens.toneStyle ?? undefined,
+            companyStage: lens.companyStage ?? undefined,
+            deckArchetype: lens.deckArchetype ?? undefined,
+            figmaTemplateId: lens.figmaTemplateId,
+          };
+        }
       }
+
+      // Auto-select render engine and layout profile
+      const themeMeta = this.themesService.getThemeMeta(theme.name);
+      const selectorCtx: TemplateSelectorContext = {
+        format: job.format,
+        ...lensContext,
+        themeName: theme.name,
+        themeCategory: themeMeta?.category ?? 'dark',
+        defaultLayoutProfile: themeMeta?.defaultLayoutProfile ?? 'startup',
+        figmaTemplateId: lensContext.figmaTemplateId,
+      };
+      const selection = this.templateSelector.selectRenderEngine(selectorCtx);
+      this.logger.log(`Auto-selected engine: ${selection.engine} (${selection.layoutProfile}) — ${selection.reason}`);
 
       let buffer: Buffer;
       let contentType: string;
@@ -194,18 +222,18 @@ export class ExportsService {
 
       switch (job.format) {
         case ExportFormat.PPTX: {
-          // Marp CLI produces proven Z4-quality PPTX output
-          const pptxDir = join(this.tempDir, jobId);
-          await mkdir(pptxDir, { recursive: true });
-          const pptxPath = join(pptxDir, `${safeFilename(presentation.title)}.pptx`);
-          const pptxMarkdown = this.marpExporter.generateMarpMarkdown(
-            presentation,
-            slides,
-            theme,
-            imageLayout,
-          );
-          await this.marpExporter.exportToPptx(pptxMarkdown, pptxPath);
-          buffer = await readFile(pptxPath);
+          if (selection.engine === 'pptxgenjs') {
+            // PptxGenJS — native shapes, themed layouts
+            buffer = await this.pptxGenJsExporter.exportToPptx(presentation, slides, theme, selection.layoutProfile);
+          } else {
+            // Marp fallback (user explicitly chose 'marp')
+            const pptxDir = join(this.tempDir, jobId);
+            await mkdir(pptxDir, { recursive: true });
+            const pptxPath = join(pptxDir, `${safeFilename(presentation.title)}.pptx`);
+            const pptxMarkdown = this.marpExporter.generateMarpMarkdown(presentation, slides, theme, imageLayout);
+            await this.marpExporter.exportToPptx(pptxMarkdown, pptxPath);
+            buffer = await readFile(pptxPath);
+          }
           contentType =
             'application/vnd.openxmlformats-officedocument.presentationml.presentation';
           filename = `${safeFilename(presentation.title)}.pptx`;
@@ -334,15 +362,36 @@ export class ExportsService {
       throw new Error(`Theme "${presentation.themeId}" not found`);
     }
 
-    // Fetch image layout from PitchLens if linked
+    // Fetch PitchLens context if linked
     let imageLayout: string | undefined;
+    let lensCtx2: { audienceType?: string; pitchGoal?: string; toneStyle?: string; companyStage?: string; deckArchetype?: string; figmaTemplateId?: string | null } = {};
     if (presentation.pitchLensId) {
       const lens = await this.prisma.pitchLens.findUnique({
         where: { id: presentation.pitchLensId },
-        select: { imageLayout: true },
       });
-      imageLayout = lens?.imageLayout ?? undefined;
+      if (lens) {
+        imageLayout = lens.imageLayout ?? undefined;
+        lensCtx2 = {
+          audienceType: lens.audienceType ?? undefined,
+          pitchGoal: lens.pitchGoal ?? undefined,
+          toneStyle: lens.toneStyle ?? undefined,
+          companyStage: lens.companyStage ?? undefined,
+          deckArchetype: lens.deckArchetype ?? undefined,
+          figmaTemplateId: lens.figmaTemplateId,
+        };
+      }
     }
+
+    // Auto-select render engine
+    const meta2 = this.themesService.getThemeMeta(theme.name);
+    const sel2 = this.templateSelector.selectRenderEngine({
+      format: job.format,
+      ...lensCtx2,
+      themeName: theme.name,
+      themeCategory: meta2?.category ?? 'dark',
+      defaultLayoutProfile: meta2?.defaultLayoutProfile ?? 'startup',
+      figmaTemplateId: lensCtx2.figmaTemplateId,
+    });
 
     let buffer: Buffer;
     let contentType: string;
@@ -350,12 +399,16 @@ export class ExportsService {
 
     switch (job.format) {
       case ExportFormat.PPTX: {
-        const pptxDir = join(this.tempDir, jobId);
-        await mkdir(pptxDir, { recursive: true });
-        const pptxPath = join(pptxDir, `${safeFilename(presentation.title)}.pptx`);
-        const pptxMd = this.marpExporter.generateMarpMarkdown(presentation, slides, theme, imageLayout);
-        await this.marpExporter.exportToPptx(pptxMd, pptxPath);
-        buffer = await readFile(pptxPath);
+        if (sel2.engine === 'pptxgenjs') {
+          buffer = await this.pptxGenJsExporter.exportToPptx(presentation, slides, theme, sel2.layoutProfile);
+        } else {
+          const pptxDir = join(this.tempDir, jobId);
+          await mkdir(pptxDir, { recursive: true });
+          const pptxPath = join(pptxDir, `${safeFilename(presentation.title)}.pptx`);
+          const pptxMd = this.marpExporter.generateMarpMarkdown(presentation, slides, theme, imageLayout);
+          await this.marpExporter.exportToPptx(pptxMd, pptxPath);
+          buffer = await readFile(pptxPath);
+        }
         contentType = 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
         filename = `${safeFilename(presentation.title)}.pptx`;
         break;
