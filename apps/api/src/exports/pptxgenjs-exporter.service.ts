@@ -31,6 +31,24 @@ interface ColorPalette {
   error: string;
 }
 
+export type LayoutProfile = 'corporate' | 'startup' | 'creative' | 'consulting' | 'technical';
+
+interface LayoutProfileConfig {
+  bokeh: boolean;
+  glassCards: boolean;
+  fontScale: number;
+  accentBarStyle: 'subtle' | 'bold' | 'dramatic' | 'horizontal' | 'dot-grid';
+  sectionLabels: 'always' | 'optional' | 'off';
+}
+
+const LAYOUT_PROFILES: Record<LayoutProfile, LayoutProfileConfig> = {
+  corporate: { bokeh: false, glassCards: false, fontScale: 1.0, accentBarStyle: 'subtle', sectionLabels: 'optional' },
+  startup:   { bokeh: true,  glassCards: true,  fontScale: 1.0, accentBarStyle: 'bold', sectionLabels: 'optional' },
+  creative:  { bokeh: true,  glassCards: true,  fontScale: 1.1, accentBarStyle: 'dramatic', sectionLabels: 'off' },
+  consulting:{ bokeh: false, glassCards: false, fontScale: 0.95, accentBarStyle: 'horizontal', sectionLabels: 'always' },
+  technical: { bokeh: false, glassCards: false, fontScale: 0.95, accentBarStyle: 'dot-grid', sectionLabels: 'optional' },
+};
+
 // ── Helpers ────────────────────────────────────────────────
 
 /** Strip '#' prefix for PptxGenJS hex colors */
@@ -81,14 +99,17 @@ export class PptxGenJsExporterService {
   private readonly logger = new Logger(PptxGenJsExporterService.name);
   private isMcKinseyTheme = false;
   private logoDataUri: string | null = null;
+  private profileConfig: LayoutProfileConfig = LAYOUT_PROFILES.startup;
 
   async exportToPptx(
     presentation: PresentationModel,
     slides: SlideModel[],
     theme: ThemeModel,
+    layoutProfile: LayoutProfile = 'startup',
   ): Promise<Buffer> {
     const palette = theme.colorPalette as unknown as ColorPalette;
     this.isMcKinseyTheme = theme.name === 'mckinsey-executive';
+    this.profileConfig = LAYOUT_PROFILES[layoutProfile];
     const pres = new PptxGenJS();
 
     pres.title = presentation.title;
@@ -2293,7 +2314,11 @@ export class PptxGenJsExporterService {
     palette: ColorPalette,
     theme: ThemeModel,
   ): void {
+    // Section labels: 'off' = never show, 'always' = show even without label, 'optional' = only if present
+    if (this.profileConfig.sectionLabels === 'off') return;
+
     const label = (slide as Record<string, unknown>).sectionLabel as string | undefined;
+    if (!label && this.profileConfig.sectionLabels !== 'always') return;
     if (!label) return;
     if (slide.slideType === 'TITLE' || slide.slideType === 'CTA') return;
 
@@ -2347,6 +2372,22 @@ export class PptxGenJsExporterService {
       fill: { color: gradEnd, transparency: 40 },
     });
 
+    // Skip bokeh effects for non-bokeh profiles
+    if (!this.profileConfig.bokeh) {
+      // Technical profile: subtle dot-grid background
+      if (this.profileConfig.accentBarStyle === 'dot-grid') {
+        for (let dx = 0; dx < 13; dx += 1.3) {
+          for (let dy = 0; dy < 7; dy += 1.3) {
+            s.addShape('ellipse' as PptxGenJS.ShapeType, {
+              x: dx + 0.3, y: dy + 0.3, w: 0.04, h: 0.04,
+              fill: { color: hex(palette.border), transparency: 70 },
+            });
+          }
+        }
+      }
+      return;
+    }
+
     // Bokeh: large soft primary ellipse (AMI Labs style — clearly visible ambient glow)
     const positions = [
       { x: -1.5, y: 0.5, w: 8.0, h: 7.0 },
@@ -2377,6 +2418,9 @@ export class PptxGenJsExporterService {
     palette: ColorPalette,
     opts: { x: PptxGenJS.Coord; y: PptxGenJS.Coord; w: PptxGenJS.Coord; h: PptxGenJS.Coord },
   ): void {
+    // Skip glass cards for non-glass profiles
+    if (!this.profileConfig.glassCards) return;
+
     const bgHex = palette.background.replace('#', '');
     const rr = parseInt(bgHex.slice(0, 2), 16);
     const gg = parseInt(bgHex.slice(2, 4), 16);
@@ -2386,10 +2430,11 @@ export class PptxGenJsExporterService {
 
     const surfaceHex = hex(palette.surface || palette.background);
     const borderHex = hex(palette.border || palette.text);
+    const transparency = this.profileConfig.accentBarStyle === 'dramatic' ? 25 : 35;
 
     s.addShape('roundRect' as PptxGenJS.ShapeType, {
       x: opts.x, y: opts.y, w: opts.w, h: opts.h,
-      fill: { color: surfaceHex, transparency: 35 },
+      fill: { color: surfaceHex, transparency },
       rectRadius: 0.15,
       line: { color: borderHex, width: 1.0, transparency: 40 },
     });
