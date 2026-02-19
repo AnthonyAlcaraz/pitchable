@@ -28,8 +28,8 @@ COPY . .
 # Generate Prisma client
 RUN cd apps/api && npx prisma generate
 
-# Build all packages (shared → api → web) via Turborepo
-RUN pnpm run build
+# Build only needed packages (skip figma-plugin) via Turborepo
+RUN npx turbo run build --filter='!@pitchable/figma-plugin'
 
 # ── Stage 3: Production image ─────────────────────────────────
 FROM node:22-slim AS prod

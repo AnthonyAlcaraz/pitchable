@@ -16,3 +16,4 @@ docker-compose.yml
 reference-decks
 specs
 omnisearch-to-kb.js
+apps/figma-plugin
