@@ -12,7 +12,6 @@ const CockpitPage = lazy(() => import('@/pages/CockpitPage'));
 const DashboardPage = lazy(() => import('@/pages/DashboardPage'));
 const SettingsPage = lazy(() => import('@/pages/SettingsPage'));
 const WorkspacePage = lazy(() => import('@/pages/WorkspacePage'));
-const KnowledgeBasePage = lazy(() => import('@/pages/KnowledgeBasePage'));
 const BillingPage = lazy(() => import('@/pages/BillingPage'));
 const PitchLensListPage = lazy(() => import('@/pages/PitchLensListPage'));
 const PitchLensDetailPage = lazy(() => import('@/pages/PitchLensDetailPage'));

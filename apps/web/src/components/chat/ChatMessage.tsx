@@ -25,7 +25,7 @@ export function ChatMessage({
   metadata,
   isStreaming,
   pendingValidations,
-  presentationId,
+  presentationId: _presentationId,
   onAcceptSlide,
   onEditSlide,
   onRejectSlide,

@@ -85,8 +85,6 @@ export function EditableSlide({ slide, presentationId, theme, className, lensId 
     }
   }, [slide.id, slide.figmaFileKey, slide.figmaNodeId, lensId]);
 
-  // Parse bullet points from body
-  const bodyLines = slide.body.split('\n').filter((l) => l.trim().length > 0);
 
   return (
     <div
