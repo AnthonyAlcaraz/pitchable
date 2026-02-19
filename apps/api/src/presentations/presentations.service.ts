@@ -20,6 +20,7 @@ import {
   SlideType,
   ExportFormat,
   JobStatus,
+  ImageSource,
 } from '../../generated/prisma/enums.js';
 import type { SlideContent } from '../constraints/density-validator.js';
 
@@ -54,6 +55,10 @@ export interface PresentationWithSlides {
     slideType: SlideType;
     imageUrl: string | null;
     imagePrompt: string | null;
+    imageSource: ImageSource;
+    figmaFileKey: string | null;
+    figmaNodeId: string | null;
+    figmaNodeName: string | null;
     createdAt: Date;
   }>;
 }
@@ -200,6 +205,10 @@ export class PresentationsService {
         slideType: s.slideType,
         imageUrl: s.imageUrl,
         imagePrompt: s.imagePrompt,
+        imageSource: s.imageSource,
+        figmaFileKey: s.figmaFileKey,
+        figmaNodeId: s.figmaNodeId,
+        figmaNodeName: s.figmaNodeName,
         createdAt: s.createdAt,
       })),
     };
@@ -295,6 +304,10 @@ export class PresentationsService {
         slideType: s.slideType,
         imageUrl: s.imageUrl,
         imagePrompt: s.imagePrompt,
+        imageSource: s.imageSource,
+        figmaFileKey: s.figmaFileKey,
+        figmaNodeId: s.figmaNodeId,
+        figmaNodeName: s.figmaNodeName,
         createdAt: s.createdAt,
       })),
     };
@@ -626,6 +639,10 @@ export class PresentationsService {
         slideType: s.slideType,
         imageUrl: s.imageUrl,
         imagePrompt: s.imagePrompt,
+        imageSource: s.imageSource,
+        figmaFileKey: s.figmaFileKey,
+        figmaNodeId: s.figmaNodeId,
+        figmaNodeName: s.figmaNodeName,
         createdAt: s.createdAt,
       })),
     };
@@ -746,6 +763,10 @@ export class PresentationsService {
         slideType: s.slideType,
         imageUrl: s.imageUrl,
         imagePrompt: s.imagePrompt,
+        imageSource: s.imageSource,
+        figmaFileKey: s.figmaFileKey,
+        figmaNodeId: s.figmaNodeId,
+        figmaNodeName: s.figmaNodeName,
         createdAt: s.createdAt,
       })),
     };

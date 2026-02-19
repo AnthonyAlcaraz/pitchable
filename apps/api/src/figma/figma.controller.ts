@@ -8,6 +8,7 @@ import {
   UseGuards,
   Request,
   Query,
+  BadRequestException,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
 import { FigmaService } from './figma.service.js';
@@ -33,8 +34,14 @@ export class FigmaController {
     @Request() req: AuthRequest,
     @Body() dto: ConnectFigmaDto,
   ) {
-    await this.figmaService.saveToken(req.user.sub, dto.accessToken);
-    return { connected: true };
+    try {
+      await this.figmaService.saveToken(req.user.sub, dto.accessToken);
+      return { connected: true };
+    } catch (err) {
+      if (err instanceof BadRequestException) throw err;
+      const msg = err instanceof Error ? err.message : 'Unknown error';
+      throw new BadRequestException(`Invalid Figma token: ${msg}`);
+    }
   }
 
   /** Remove Figma integration. */
