@@ -31,6 +31,13 @@ RUN cd apps/api && npx prisma generate
 # Build only the packages we need (api + web)
 RUN npx turbo run build --filter='@deckpilot/api' --filter='@deckpilot/web'
 
+# Prisma generates ESM TypeScript (package.json has "type":"module").
+# tsc compiles these to ESM JS in dist/generated/prisma/, but doesn't copy
+# the package.json. Node.js needs it there to treat .js files as ESM at runtime.
+RUN cp apps/api/generated/prisma/package.json apps/api/dist/generated/prisma/package.json \
+    && echo "=== dist/generated/prisma/client.js format check ===" \
+    && head -5 apps/api/dist/generated/prisma/client.js
+
 # ── Stage 3: Production image ─────────────────────────────────
 FROM node:22-slim AS prod
 
