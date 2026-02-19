@@ -14,7 +14,7 @@ import { ExportFormat } from '../../generated/prisma/enums.js';
 
 interface CreateExportBody {
   format: ExportFormat;
-  renderEngine?: 'marp' | 'figma';
+  renderEngine?: 'auto' | 'marp' | 'figma';
 }
 
 @UseGuards(JwtAuthGuard)
@@ -33,7 +33,7 @@ export class ExportsController {
     );
 
     // Process the export immediately (in production, this would be a queue job)
-    void this.exportsService.processExport(job.id);
+    void this.exportsService.processExport(job.id, body.renderEngine);
 
     return {
       jobId: job.id,
