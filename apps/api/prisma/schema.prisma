@@ -246,7 +246,6 @@ model DocumentChunk {
   heading      String?
   headingLevel Int                    @default(0)
   chunkIndex   Int
-  embedding    Unsupported("vector")?
   metadata     Json                   @default("{}")
   createdAt    DateTime               @default(now())
   document     Document               @relation(fields: [documentId], references: [id], onDelete: Cascade)
