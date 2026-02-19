@@ -7,7 +7,6 @@ import {
   validatePalette,
   type SlidePalette,
 } from '../constraints/index.js';
-import type { LayoutProfile } from '../exports/pptxgenjs-exporter.service.js';
 
 /** Controls how often AI-generated images appear on slides. */
 export type ImageFrequency = 'none' | 'rare' | 'moderate' | 'frequent';
@@ -24,8 +23,6 @@ export interface ThemeMeta {
   suggestedFrameworks: string[];
   /** Category for grouping in UI: 'dark' | 'light' | 'consulting' | 'creative' */
   category: string;
-  /** Default layout profile for PptxGenJS export rendering. */
-  defaultLayoutProfile: LayoutProfile;
 }
 
 interface ThemeDefinition {
@@ -112,7 +109,6 @@ const BUILT_IN_THEMES: ThemeDefinition[] = [
       bestForGoals: ['RAISE_FUNDING', 'SELL_PRODUCT'],
       suggestedFrameworks: ['POPP', 'PAS', 'STAR'],
       category: 'dark',
-      defaultLayoutProfile: 'startup',
     },
   },
   {
@@ -144,7 +140,6 @@ const BUILT_IN_THEMES: ThemeDefinition[] = [
       bestForGoals: ['GET_BUYIN', 'REPORT_RESULTS'],
       suggestedFrameworks: ['MINTO_PYRAMID', 'MCKINSEY_SCR', 'WHAT_SO_WHAT_NOW_WHAT'],
       category: 'dark',
-      defaultLayoutProfile: 'startup',
     },
   },
   {
@@ -176,7 +171,6 @@ const BUILT_IN_THEMES: ThemeDefinition[] = [
       bestForGoals: ['INSPIRE', 'SELL_PRODUCT'],
       suggestedFrameworks: ['HEROS_JOURNEY', 'PIXAR_PITCH', 'TALK_LIKE_TED'],
       category: 'creative',
-      defaultLayoutProfile: 'creative',
     },
   },
   {
@@ -208,7 +202,6 @@ const BUILT_IN_THEMES: ThemeDefinition[] = [
       bestForGoals: ['EDUCATE', 'GET_BUYIN'],
       suggestedFrameworks: ['STAR', 'WHAT_SO_WHAT_NOW_WHAT', 'MINTO_PYRAMID'],
       category: 'dark',
-      defaultLayoutProfile: 'technical',
     },
   },
 
@@ -242,7 +235,6 @@ const BUILT_IN_THEMES: ThemeDefinition[] = [
       bestForGoals: ['REPORT_RESULTS', 'GET_BUYIN', 'EDUCATE'],
       suggestedFrameworks: ['MINTO_PYRAMID', 'WHAT_SO_WHAT_NOW_WHAT', 'RESONATE'],
       category: 'light',
-      defaultLayoutProfile: 'corporate',
     },
   },
   {
@@ -274,7 +266,6 @@ const BUILT_IN_THEMES: ThemeDefinition[] = [
       bestForGoals: ['SELL_PRODUCT', 'GET_BUYIN', 'REPORT_RESULTS'],
       suggestedFrameworks: ['PAS', 'BAB', 'POPP'],
       category: 'light',
-      defaultLayoutProfile: 'corporate',
     },
   },
   {
@@ -306,7 +297,6 @@ const BUILT_IN_THEMES: ThemeDefinition[] = [
       bestForGoals: ['GET_BUYIN', 'REPORT_RESULTS'],
       suggestedFrameworks: ['MCKINSEY_SCR', 'MINTO_PYRAMID', 'WHAT_SO_WHAT_NOW_WHAT'],
       category: 'consulting',
-      defaultLayoutProfile: 'consulting',
     },
   },
 
@@ -342,7 +332,6 @@ const BUILT_IN_THEMES: ThemeDefinition[] = [
       bestForGoals: ['SELL_PRODUCT', 'INSPIRE'],
       suggestedFrameworks: ['HEROS_JOURNEY', 'TALK_LIKE_TED', 'PIXAR_PITCH'],
       category: 'dark',
-      defaultLayoutProfile: 'creative',
     },
   },
 
@@ -376,7 +365,6 @@ const BUILT_IN_THEMES: ThemeDefinition[] = [
       bestForGoals: ['INSPIRE', 'EDUCATE'],
       suggestedFrameworks: ['TALK_LIKE_TED', 'HEROS_JOURNEY', 'RESONATE'],
       category: 'dark',
-      defaultLayoutProfile: 'creative',
     },
   },
 
@@ -410,7 +398,6 @@ const BUILT_IN_THEMES: ThemeDefinition[] = [
       bestForGoals: ['RAISE_FUNDING'],
       suggestedFrameworks: ['KAWASAKI_10_20_30', 'POPP', 'PAS'],
       category: 'light',
-      defaultLayoutProfile: 'corporate',
     },
   },
 
@@ -444,7 +431,6 @@ const BUILT_IN_THEMES: ThemeDefinition[] = [
       bestForGoals: ['RAISE_FUNDING', 'REPORT_RESULTS'],
       suggestedFrameworks: ['POPP', 'MCKINSEY_SCR', 'MINTO_PYRAMID'],
       category: 'consulting',
-      defaultLayoutProfile: 'consulting',
     },
   },
 
@@ -478,7 +464,6 @@ const BUILT_IN_THEMES: ThemeDefinition[] = [
       bestForGoals: ['INSPIRE', 'SELL_PRODUCT'],
       suggestedFrameworks: ['PIXAR_PITCH', 'HEROS_JOURNEY', 'RESONATE'],
       category: 'creative',
-      defaultLayoutProfile: 'creative',
     },
   },
 
@@ -512,7 +497,6 @@ const BUILT_IN_THEMES: ThemeDefinition[] = [
       bestForGoals: ['SELL_PRODUCT', 'RAISE_FUNDING', 'EDUCATE'],
       suggestedFrameworks: ['PAS', 'STAR', 'POPP'],
       category: 'dark',
-      defaultLayoutProfile: 'startup',
     },
   },
 
@@ -546,7 +530,6 @@ const BUILT_IN_THEMES: ThemeDefinition[] = [
       bestForGoals: ['GET_BUYIN', 'REPORT_RESULTS'],
       suggestedFrameworks: ['MCKINSEY_SCR', 'MINTO_PYRAMID', 'WHAT_SO_WHAT_NOW_WHAT'],
       category: 'consulting',
-      defaultLayoutProfile: 'consulting',
     },
   },
 
@@ -580,7 +563,6 @@ const BUILT_IN_THEMES: ThemeDefinition[] = [
       bestForGoals: ['EDUCATE', 'SELL_PRODUCT', 'INSPIRE'],
       suggestedFrameworks: ['WHAT_SO_WHAT_NOW_WHAT', 'STAR', 'PAS'],
       category: 'dark',
-      defaultLayoutProfile: 'startup',
     },
   },
 
@@ -614,7 +596,6 @@ const BUILT_IN_THEMES: ThemeDefinition[] = [
       bestForGoals: ['EDUCATE', 'REPORT_RESULTS'],
       suggestedFrameworks: ['STAR', 'WHAT_SO_WHAT_NOW_WHAT', 'MINTO_PYRAMID'],
       category: 'light',
-      defaultLayoutProfile: 'technical',
     },
   },
 ];

@@ -6,7 +6,6 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { ThemesService } from '../themes/themes.service.js';
-import { TemplateSelectorService, type RenderEngineSelection } from '../exports/template-selector.service.js';
 import type { CreatePitchLensDto } from './dto/create-pitch-lens.dto.js';
 import type { UpdatePitchLensDto } from './dto/update-pitch-lens.dto.js';
 import type { RecommendFrameworksDto } from './dto/recommend-frameworks.dto.js';
@@ -29,7 +28,6 @@ export class PitchLensService {
     private readonly prisma: PrismaService,
     private readonly themesService: ThemesService,
     private readonly archetypeResolver: ArchetypeResolverService,
-    private readonly templateSelector: TemplateSelectorService,
   ) {}
 
   async create(userId: string, dto: CreatePitchLensDto) {
@@ -240,42 +238,5 @@ export class PitchLensService {
       ...presentation.pitchLens,
       framework: getFrameworkConfig(presentation.pitchLens.selectedFramework),
     };
-  }
-
-  /**
-   * Get recommended render engine for a PitchLens (preview before export).
-   */
-  async getRecommendedEngine(lensId: string): Promise<RenderEngineSelection> {
-    const lens = await this.prisma.pitchLens.findUnique({
-      where: { id: lensId },
-      include: { presentations: { take: 1, select: { themeId: true } } },
-    });
-
-    if (!lens) throw new NotFoundException('Pitch Lens not found');
-
-    // Resolve theme — use first linked presentation's theme, or default
-    let themeName = 'pitchable-dark';
-    if (lens.presentations.length > 0) {
-      const theme = await this.prisma.theme.findUnique({
-        where: { id: lens.presentations[0].themeId },
-        select: { name: true },
-      });
-      if (theme) themeName = theme.name;
-    }
-
-    const themeMeta = this.themesService.getThemeMeta(themeName);
-
-    return this.templateSelector.selectRenderEngine({
-      format: 'PPTX',
-      audienceType: lens.audienceType ?? undefined,
-      pitchGoal: lens.pitchGoal ?? undefined,
-      toneStyle: lens.toneStyle ?? undefined,
-      companyStage: lens.companyStage ?? undefined,
-      deckArchetype: lens.deckArchetype ?? undefined,
-      themeName,
-      themeCategory: themeMeta?.category ?? 'dark',
-      defaultLayoutProfile: themeMeta?.defaultLayoutProfile ?? 'startup',
-      figmaTemplateId: lens.figmaTemplateId,
-    });
   }
 }

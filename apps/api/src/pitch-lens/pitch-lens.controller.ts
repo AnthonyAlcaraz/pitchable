@@ -115,11 +115,4 @@ export class PitchLensController {
   recommendTheme(@Body() dto: RecommendThemesDto) {
     return this.pitchLensService.getThemeRecommendations(dto);
   }
-
-  @Get(':id/recommended-engine')
-  async getRecommendedEngine(
-    @Param('id', ParseUUIDPipe) id: string,
-  ) {
-    return this.pitchLensService.getRecommendedEngine(id);
-  }
 }
