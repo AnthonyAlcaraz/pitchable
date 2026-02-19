@@ -1,0 +1,57 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - uses: actions/cache@v4
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: ${{ runner.os }}-pnpm-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma client
+        run: cd apps/api && npx prisma generate
+
+      - name: Ensure Prisma ESM package.json
+        run: echo '{"type":"module"}' > apps/api/generated/prisma/package.json
+
+      - name: Build API
+        run: cd apps/api && npx tsc
+
+      - name: Copy Prisma ESM package.json to dist
+        run: cp apps/api/generated/prisma/package.json apps/api/dist/generated/prisma/package.json
+
+      - name: Build Web
+        run: cd apps/web && pnpm build
+
+      - name: Verify dist exists
+        run: |
+          test -f apps/api/dist/src/main.js || (echo "API build output missing" && exit 1)
+          test -d apps/web/dist || (echo "Web build output missing" && exit 1)
+          echo "Build verified successfully"
