@@ -40,6 +40,7 @@ model User {
   presentations      Presentation[]
   subscription       Subscription?
   figmaIntegration   FigmaIntegration?
+  figmaTemplates     FigmaTemplate[]
 
   @@index([email])
 }
@@ -308,6 +309,8 @@ model PitchLens {
   showOutlineSlide    Boolean        @default(false)
   figmaFileKey        String?
   figmaAccessToken    String?
+  figmaTemplateId     String?        @db.Uuid
+  figmaTemplate       FigmaTemplate? @relation("PitchLensTemplate", fields: [figmaTemplateId], references: [id])
   briefLenses         BriefLens[]
   user                User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   presentations       Presentation[]
@@ -388,6 +391,41 @@ model FigmaIntegration {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+
+
+model FigmaTemplate {
+  id            String                 @id @default(uuid()) @db.Uuid
+  userId        String                 @db.Uuid
+  name          String
+  description   String?
+  figmaFileKey  String
+  figmaFileName String?
+  thumbnailUrl  String?
+  isPublic      Boolean                @default(false)
+  createdAt     DateTime               @default(now())
+  updatedAt     DateTime               @updatedAt
+  user          User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mappings      FigmaTemplateMapping[]
+  pitchLenses   PitchLens[]            @relation("PitchLensTemplate")
+
+  @@index([userId])
+  @@index([isPublic])
+}
+
+model FigmaTemplateMapping {
+  id            String        @id @default(uuid()) @db.Uuid
+  templateId    String        @db.Uuid
+  slideType     SlideType
+  figmaNodeId   String
+  figmaNodeName String?
+  thumbnailUrl  String?
+  createdAt     DateTime      @default(now())
+  template      FigmaTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  @@unique([templateId, slideType])
+  @@index([templateId])
 }
 
 model PresentationView {
