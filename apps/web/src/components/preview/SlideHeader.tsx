@@ -15,6 +15,8 @@ interface SlideHeaderProps {
 const EXPORT_FORMATS = [
   { key: 'pdf', label: 'PDF' },
   { key: 'pptx', label: 'PowerPoint' },
+  { key: 'pdf-figma', label: 'PDF (Figma Design)' },
+  { key: 'pptx-figma', label: 'PPTX (Figma Design)' },
   { key: 'html', label: 'Reveal.js (HTML)' },
   { key: 'figma', label: 'Figma Plugin JSON' },
 ] as const;
