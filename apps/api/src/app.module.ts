@@ -60,7 +60,7 @@ const redisConnection = redisUrl
     ...(process.env['NODE_ENV'] === 'production'
       ? [
           ServeStaticModule.forRoot({
-            rootPath: join(__dirname, '..', '..', '..', '..', 'web', 'dist'),
+            rootPath: join(__dirname, '..', '..', '..', 'web', 'dist'),
             exclude: [
               '/auth/(.*)',
               '/presentations/(.*)',
