@@ -1,14 +1,16 @@
 {
   "name": "@pitchable/figma-plugin",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "description": "Import Pitchable presentations into Figma as editable frames",
   "scripts": {
-    "build": "tsc",
-    "watch": "tsc --watch"
+    "build": "esbuild src/code.ts --bundle --outfile=dist/code.js --target=es2020",
+    "watch": "esbuild src/code.ts --bundle --outfile=dist/code.js --target=es2020 --watch",
+    "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
     "@figma/plugin-typings": "^1.100.0",
+    "esbuild": "^0.24.0",
     "typescript": "^5.7.0"
   }
 }
