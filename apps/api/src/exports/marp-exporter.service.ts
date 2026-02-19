@@ -174,6 +174,7 @@ export class MarpExporterService {
     theme: ThemeModel,
     imageLayout?: string,
     layoutProfile: LayoutProfile = 'startup',
+    rendererOverrides?: Map<number, string>,
   ): string {
     const palette = theme.colorPalette as unknown as ColorPalette;
     const sections: string[] = [];
@@ -477,13 +478,14 @@ export class MarpExporterService {
     );
 
     for (const slide of sortedSlides) {
-      sections.push(this.buildSlideMarkdown(slide, bg, imageLayout, safePrimary, profile, palette));
+      const rendererOverride = rendererOverrides?.get(slide.slideNumber);
+      sections.push(this.buildSlideMarkdown(slide, bg, imageLayout, safePrimary, profile, palette, rendererOverride));
     }
 
     return sections.join('\n\n---\n\n');
   }
 
-  private buildSlideMarkdown(slide: SlideModel, bgColor?: string, imageLayout?: string, primaryColor?: string, profile?: LayoutProfileConfig, palette?: ColorPalette): string {
+  private buildSlideMarkdown(slide: SlideModel, bgColor?: string, imageLayout?: string, primaryColor?: string, profile?: LayoutProfileConfig, palette?: ColorPalette, rendererOverride?: string): string {
     const lines: string[] = [];
     const type = slide.slideType;
     const bgVariant = getSlideBackground(type, slide.slideNumber, bgColor);
@@ -523,6 +525,21 @@ export class MarpExporterService {
     } else {
       lines.push(`<!-- _class: ${bgVariant.className}${layoutClass} -->`);
       lines.push('');
+    }
+
+    // AI renderer override: upgrade slide to a visual template when content matches
+    if (rendererOverride && FIGMA_GRADE_TYPES.has(rendererOverride) && palette) {
+      lines.push(buildHtmlSlideContent(
+        { title: slide.title, body: slide.body || '', slideType: rendererOverride },
+        palette,
+      ));
+      lines.push('');
+      if (slide.speakerNotes) {
+        lines.push('<!--');
+        lines.push(slide.speakerNotes);
+        lines.push('-->');
+      }
+      return lines.join('\n');
     }
 
     // Figma-grade HTML+SVG dispatch for complex slide types

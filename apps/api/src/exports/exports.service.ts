@@ -15,6 +15,7 @@ import { TemplateSelectorService } from './template-selector.service.js';
 import { S3Service } from '../knowledge-base/storage/s3.service.js';
 import { FigmaRendererService } from '../figma/figma-renderer.service.js';
 import { ThemesService } from '../themes/themes.service.js';
+import { RendererChooserService } from './renderer-chooser.service.js';
 import { ExportFormat, JobStatus } from '../../generated/prisma/enums.js';
 import { type ColorPalette } from './slide-visual-theme.js';
 import type { LayoutProfile } from './marp-exporter.service.js';
@@ -111,6 +112,7 @@ export class ExportsService {
     private readonly s3: S3Service,
     private readonly figmaRenderer: FigmaRendererService,
     private readonly themesService: ThemesService,
+    private readonly rendererChooser: RendererChooserService,
   ) {}
 
   async createExportJob(
@@ -237,6 +239,9 @@ export class ExportsService {
       let contentType: string;
       let filename: string;
 
+      // AI renderer chooser: analyze content and suggest template upgrades
+      const rendererOverrides = await this.rendererChooser.chooseRenderers(slides);
+
       switch (job.format) {
         case ExportFormat.PPTX: {
           // Check if Figma renderer was selected and we have a valid template + userId
@@ -257,6 +262,7 @@ export class ExportsService {
               theme,
               imageLayout,
               layoutProfile,
+              rendererOverrides,
             );
             await this.marpExporter.exportToPptx(pptxMarkdown, pptxPath);
             buffer = await readFile(pptxPath);
@@ -278,6 +284,7 @@ export class ExportsService {
             theme,
             imageLayout,
             layoutProfile,
+            rendererOverrides,
           );
           await this.marpExporter.exportToPdf(markdown, outputPath);
           buffer = await readFile(outputPath);
@@ -433,6 +440,9 @@ export class ExportsService {
     });
     const layoutProfile: LayoutProfile = selection.layoutProfile;
 
+    // AI renderer chooser: analyze content and suggest template upgrades
+    const rendererOverrides = await this.rendererChooser.chooseRenderers(slides);
+
     let buffer: Buffer;
     let contentType: string;
     let filename: string;
@@ -449,7 +459,7 @@ export class ExportsService {
           const pptxDir = join(this.tempDir, jobId);
           await mkdir(pptxDir, { recursive: true });
           const pptxPath = join(pptxDir, `${safeFilename(presentation.title)}.pptx`);
-          const pptxMd = this.marpExporter.generateMarpMarkdown(presentation, slides, theme, imageLayout, layoutProfile);
+          const pptxMd = this.marpExporter.generateMarpMarkdown(presentation, slides, theme, imageLayout, layoutProfile, rendererOverrides);
           await this.marpExporter.exportToPptx(pptxMd, pptxPath);
           buffer = await readFile(pptxPath);
         }
@@ -461,7 +471,7 @@ export class ExportsService {
         const jobDir = join(this.tempDir, jobId);
         await mkdir(jobDir, { recursive: true });
         const outputPath = join(jobDir, `${safeFilename(presentation.title)}.pdf`);
-        const markdown = this.marpExporter.generateMarpMarkdown(presentation, slides, theme, imageLayout, layoutProfile);
+        const markdown = this.marpExporter.generateMarpMarkdown(presentation, slides, theme, imageLayout, layoutProfile, rendererOverrides);
         await this.marpExporter.exportToPdf(markdown, outputPath);
         buffer = await readFile(outputPath);
         contentType = 'application/pdf';
