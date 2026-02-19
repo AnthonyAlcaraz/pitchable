@@ -65,6 +65,7 @@ export interface CreatePitchLensInput {
   isDefault?: boolean;
   figmaFileKey?: string;
   figmaAccessToken?: string;
+  figmaTemplateId?: string;
 }
 
 interface PitchLensState {

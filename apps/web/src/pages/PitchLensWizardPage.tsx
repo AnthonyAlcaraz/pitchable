@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { usePitchLensStore } from '@/stores/pitch-lens.store';
+import { useFigmaTemplateStore } from '@/stores/figma-template.store';
 import type { CreatePitchLensInput } from '@/stores/pitch-lens.store';
-import { ArrowLeft, ArrowRight, Check, Focus, Figma, ExternalLink } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, Focus, Figma, ExternalLink, Layers } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const STEPS = ['Name', 'Audience', 'Goal', 'Context', 'Tone', 'Framework', 'Review'] as const;
@@ -57,6 +58,7 @@ export function PitchLensWizardPage() {
   const { id: editId } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { createLens, updateLens, loadLens, currentLens, getRecommendations, recommendations, loadFrameworks, allFrameworks } = usePitchLensStore();
+  const { templates: figmaTemplates, loadTemplates: loadFigmaTemplates } = useFigmaTemplateStore();
 
   const [step, setStep] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -75,6 +77,7 @@ export function PitchLensWizardPage() {
     showOutlineSlide: false,
     figmaFileKey: '',
     figmaAccessToken: '',
+    figmaTemplateId: undefined as string | undefined,
   });
 
   // Load existing lens for editing
@@ -83,7 +86,8 @@ export function PitchLensWizardPage() {
       loadLens(editId).then(() => {});
     }
     loadFrameworks();
-  }, [editId, loadLens, loadFrameworks]);
+    loadFigmaTemplates();
+  }, [editId, loadLens, loadFrameworks, loadFigmaTemplates]);
 
   useEffect(() => {
     if (editId && currentLens) {
@@ -327,6 +331,28 @@ export function PitchLensWizardPage() {
               <p className="mb-3 text-xs text-muted-foreground">
                 Connect a Figma file to pull designer-made graphics into slides generated with this lens.
               </p>
+
+              {figmaTemplates.length > 0 && (
+                <div className="mb-3">
+                  <label className="mb-1 block text-xs text-muted-foreground">Figma Template (optional)</label>
+                  <select
+                    value={form.figmaTemplateId ?? ''}
+                    onChange={(e) => setForm({ ...form, figmaTemplateId: e.target.value || undefined })}
+                    className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                  >
+                    <option value="">No template</option>
+                    {figmaTemplates.map((t) => (
+                      <option key={t.id} value={t.id}>
+                        {t.name} ({t.mappingCount} mapped)
+                      </option>
+                    ))}
+                  </select>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Use a template to render exports with Figma-designed frames per slide type.
+                  </p>
+                </div>
+              )}
+
               <div className="space-y-3">
                 <div>
                   <label className="mb-1 block text-xs text-muted-foreground">Figma File Key or URL</label>
