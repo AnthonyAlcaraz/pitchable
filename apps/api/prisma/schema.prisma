@@ -41,6 +41,7 @@ model User {
   subscription       Subscription?
   figmaIntegration   FigmaIntegration?
   figmaTemplates     FigmaTemplate[]
+  figmaWebhooks      FigmaWebhook[]
 
   @@index([email])
 }
@@ -102,10 +103,13 @@ model Slide {
   figmaFileKey   String?
   figmaNodeId    String?
   figmaNodeName  String?
-  sectionLabel   String?
-  createdAt      DateTime     @default(now())
-  imageJobs      ImageJob[]
-  presentation   Presentation @relation(fields: [presentationId], references: [id], onDelete: Cascade)
+  sectionLabel      String?
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @default(now()) @updatedAt
+  figmaLastSyncAt   DateTime?
+  figmaSyncVersion  Int          @default(0)
+  imageJobs         ImageJob[]
+  presentation      Presentation @relation(fields: [presentationId], references: [id], onDelete: Cascade)
 
   @@index([presentationId])
 }
@@ -621,4 +625,19 @@ enum BriefStatus {
   PROCESSING
   READY
   ERROR
+}
+
+model FigmaWebhook {
+  id          String    @id @default(uuid()) @db.Uuid
+  userId      String    @db.Uuid
+  fileKey     String
+  webhookId   String    @unique
+  passcode    String
+  isActive    Boolean   @default(true)
+  lastEventAt DateTime?
+  createdAt   DateTime  @default(now())
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([fileKey])
+  @@index([userId])
 }
