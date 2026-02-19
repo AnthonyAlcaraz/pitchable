@@ -699,10 +699,18 @@ export class ChatService {
     return null;
   }
 
-  async getHistory(presentationId: string) {
-    return this.prisma.chatMessage.findMany({
+  async getHistory(
+    presentationId: string,
+    options?: { limit?: number; cursor?: string },
+  ) {
+    const take = Math.min(options?.limit ?? 200, 500);
+    const cursor = options?.cursor;
+
+    const messages = await this.prisma.chatMessage.findMany({
       where: { presentationId },
       orderBy: { createdAt: 'asc' },
+      take: take + 1, // fetch one extra to detect hasMore
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
       select: {
         id: true,
         role: true,
@@ -712,5 +720,11 @@ export class ChatService {
         createdAt: true,
       },
     });
+
+    const hasMore = messages.length > take;
+    const items = hasMore ? messages.slice(0, take) : messages;
+    const nextCursor = hasMore ? items[items.length - 1].id : undefined;
+
+    return { messages: items, hasMore, nextCursor };
   }
 }

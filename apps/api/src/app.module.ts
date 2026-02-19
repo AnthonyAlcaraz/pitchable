@@ -5,6 +5,7 @@ import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 import { BullModule } from '@nestjs/bullmq';
 import { ServeStaticModule } from '@nestjs/serve-static';
+import { ScheduleModule } from '@nestjs/schedule';
 import { AppController } from './app.controller.js';
 import { AppService } from './app.service.js';
 import { PrismaModule } from './prisma/prisma.module.js';
@@ -55,7 +56,14 @@ const redisConnection = redisUrl
       { name: 'medium', ttl: 10000, limit: 20 },
       { name: 'long', ttl: 60000, limit: 100 },
     ]),
-    BullModule.forRoot({ connection: redisConnection }),
+    BullModule.forRoot({
+      connection: redisConnection,
+      defaultJobOptions: {
+        removeOnComplete: { age: 3600, count: 1000 },  // keep last 1000 or 1h
+        removeOnFail: { age: 86400 },                  // keep failed jobs 24h
+      },
+    }),
+    ScheduleModule.forRoot(),
     // Serve the React SPA from the built web app (production only)
     ...(process.env['NODE_ENV'] === 'production'
       ? [

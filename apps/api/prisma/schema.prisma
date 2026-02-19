@@ -111,7 +111,7 @@ model Slide {
   imageJobs         ImageJob[]
   presentation      Presentation @relation(fields: [presentationId], references: [id], onDelete: Cascade)
 
-  @@index([presentationId])
+  @@index([presentationId, createdAt])
 }
 
 model Theme {

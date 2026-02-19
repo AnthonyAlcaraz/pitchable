@@ -4,8 +4,10 @@ import {
   Get,
   Param,
   Body,
+  Query,
   UseGuards,
   Res,
+  Logger,
 } from '@nestjs/common';
 import * as express from 'express';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
@@ -20,9 +22,14 @@ import {
   PresentationStatus,
 } from '../../generated/prisma/enums.js';
 
+/** Max time (ms) a SSE stream can be idle before we close it. */
+const SSE_IDLE_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
+
 @Controller('chat')
 @UseGuards(JwtAuthGuard)
 export class ChatController {
+  private readonly logger = new Logger(ChatController.name);
+
   constructor(
     private readonly chatService: ChatService,
     private readonly prisma: PrismaService,
@@ -94,25 +101,54 @@ export class ChatController {
       }
     }
 
+    // Track client disconnect to abort generation early
+    let clientDisconnected = false;
+    res.on('close', () => { clientDisconnected = true; });
+
+    // Idle timeout: close stream if no events sent for too long
+    let idleTimer: ReturnType<typeof setTimeout> | null = null;
+    const resetIdle = () => {
+      if (idleTimer) clearTimeout(idleTimer);
+      idleTimer = setTimeout(() => {
+        if (!clientDisconnected) {
+          this.logger.warn(`SSE idle timeout for presentation ${presentationId}`);
+          try { res.write('data: [DONE]\n\n'); res.end(); } catch { /* already closed */ }
+        }
+      }, SSE_IDLE_TIMEOUT_MS);
+    };
+    resetIdle();
+
     try {
       for await (const event of this.chatService.handleMessage(
         user.userId,
         presentationId,
         dto.content,
       )) {
+        // Backpressure: stop writing if client disconnected or stream not writable
+        if (clientDisconnected || !res.writable) {
+          this.logger.debug(`SSE stream closed by client for presentation ${presentationId}`);
+          break;
+        }
         const data = JSON.stringify(event);
         res.write(`data: ${data}\n\n`);
+        resetIdle();
       }
     } catch (error) {
-      const msg =
-        error instanceof Error ? error.message : 'Unknown error';
-      res.write(
-        `data: ${JSON.stringify({ type: 'error', content: msg })}\n\n`,
-      );
+      if (!clientDisconnected && res.writable) {
+        const msg =
+          error instanceof Error ? error.message : 'Unknown error';
+        res.write(
+          `data: ${JSON.stringify({ type: 'error', content: msg })}\n\n`,
+        );
+      }
     }
 
-    res.write('data: [DONE]\n\n');
-    res.end();
+    if (idleTimer) clearTimeout(idleTimer);
+
+    if (!clientDisconnected && res.writable) {
+      res.write('data: [DONE]\n\n');
+      res.end();
+    }
   }
 
   @Get(':presentationId/history')
@@ -120,11 +156,16 @@ export class ChatController {
   async getHistory(
     @CurrentUser() _user: RequestUser,
     @Param('presentationId') presentationId: string,
+    @Query('limit') limit?: string,
+    @Query('cursor') cursor?: string,
   ) {
     // Return empty history for new presentations
     if (presentationId === 'new') {
-      return [];
+      return { messages: [], hasMore: false };
     }
-    return this.chatService.getHistory(presentationId);
+    return this.chatService.getHistory(presentationId, {
+      limit: limit ? parseInt(limit, 10) : undefined,
+      cursor: cursor || undefined,
+    });
   }
 }

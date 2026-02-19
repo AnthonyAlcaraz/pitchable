@@ -54,12 +54,17 @@ export interface GenerationProgressEvent {
   message: string;
 }
 
+/** Max WebSocket connections per user (prevents resource exhaustion). */
+const MAX_CONNECTIONS_PER_USER = 10;
+
 @WebSocketGateway({
   cors: {
     origin: process.env['FRONTEND_URL'] || 'http://localhost:5173',
     credentials: true,
   },
   namespace: '/',
+  pingInterval: 15000,
+  pingTimeout: 10000,
 })
 export class EventsGateway
   implements OnGatewayConnection, OnGatewayDisconnect
@@ -69,6 +74,9 @@ export class EventsGateway
 
   private readonly logger = new Logger(EventsGateway.name);
   private readonly jwtSecret: string;
+
+  /** Track active connections per userId for rate limiting. */
+  private readonly userConnections = new Map<string, Set<string>>();
 
   constructor(
     configService: ConfigService,
@@ -95,10 +103,28 @@ export class EventsGateway
       }
 
       const payload = verify(token, this.jwtSecret) as JwtPayload;
-      client.data['userId'] = payload.sub;
+      const userId = payload.sub;
+      client.data['userId'] = userId;
       client.data['email'] = payload.email;
+
+      // Per-user connection limit
+      if (!this.userConnections.has(userId)) {
+        this.userConnections.set(userId, new Set());
+      }
+      const conns = this.userConnections.get(userId)!;
+
+      if (conns.size >= MAX_CONNECTIONS_PER_USER) {
+        this.logger.warn(
+          `Client ${client.id} rejected: user ${payload.email} has ${conns.size}/${MAX_CONNECTIONS_PER_USER} connections`,
+        );
+        client.emit('error', { message: 'Too many concurrent connections. Close some tabs and retry.' });
+        client.disconnect();
+        return;
+      }
+
+      conns.add(client.id);
       this.logger.log(
-        `Client ${client.id} connected (user: ${payload.email})`,
+        `Client ${client.id} connected (user: ${payload.email}, connections: ${conns.size})`,
       );
     } catch {
       this.logger.warn(`Client ${client.id} rejected: invalid token`);
@@ -107,6 +133,16 @@ export class EventsGateway
   }
 
   handleDisconnect(client: Socket): void {
+    const userId = client.data['userId'] as string | undefined;
+    if (userId) {
+      const conns = this.userConnections.get(userId);
+      if (conns) {
+        conns.delete(client.id);
+        if (conns.size === 0) {
+          this.userConnections.delete(userId);
+        }
+      }
+    }
     this.logger.log(`Client ${client.id} disconnected`);
   }
 
