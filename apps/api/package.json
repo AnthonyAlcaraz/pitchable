@@ -6,7 +6,7 @@
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
-    "build": "nest build && node -e \"const fs=require('fs');fs.mkdirSync('dist/generated/prisma',{recursive:true});fs.writeFileSync('dist/generated/prisma/package.json','{\\\"type\\\":\\\"module\\\"}')\"",
+    "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
     "start:dev": "nest start --watch",
