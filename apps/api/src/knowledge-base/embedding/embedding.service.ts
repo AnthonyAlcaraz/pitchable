@@ -12,7 +12,7 @@ export class EmbeddingService {
 
   constructor(config: ConfigService) {
     const openaiKey = config.get<string>('OPENAI_API_KEY');
-    if (openaiKey) {
+    if (openaiKey && openaiKey !== 'not-set') {
       this.client = new OpenAI({ apiKey: openaiKey });
       this.model = 'text-embedding-3-small';
       this.available = true;
