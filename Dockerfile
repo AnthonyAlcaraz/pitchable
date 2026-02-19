@@ -28,7 +28,7 @@ COPY . .
 # Generate Prisma client
 RUN cd apps/api && npx prisma generate
 
-# Build only the packages we need (api + web + shared)
+# Build only the packages we need (api + web)
 RUN npx turbo run build --filter='@deckpilot/api' --filter='@deckpilot/web'
 
 # ── Stage 3: Production image ─────────────────────────────────
@@ -68,8 +68,6 @@ COPY --from=build /app/apps/api/prisma ./apps/api/prisma
 # Copy node_modules (production deps)
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/apps/api/node_modules ./apps/api/node_modules
-COPY --from=build /app/packages/shared/dist ./packages/shared/dist
-COPY --from=build /app/packages/shared/package.json ./packages/shared/package.json
 
 # Copy package.json files (needed for module resolution)
 COPY --from=build /app/package.json ./
