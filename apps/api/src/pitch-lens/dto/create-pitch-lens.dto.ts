@@ -109,4 +109,8 @@ export class CreatePitchLensDto {
   @IsString()
   @MaxLength(500)
   figmaAccessToken?: string;
+
+  @IsOptional()
+  @IsString()
+  figmaTemplateId?: string;
 }

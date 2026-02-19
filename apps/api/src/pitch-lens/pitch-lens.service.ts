@@ -61,6 +61,7 @@ export class PitchLensService {
         showSectionLabels: dto.showSectionLabels ?? false,
         showOutlineSlide: dto.showOutlineSlide ?? false,
         isDefault: dto.isDefault ?? false,
+        figmaTemplateId: dto.figmaTemplateId,
       },
     });
 
