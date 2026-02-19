@@ -69,7 +69,8 @@
     "uuid": "^13.0.0",
     "xlsx": "^0.18.5",
     "zeroentropy": "^0.1.0-alpha.7",
-    "zod": "^4.3.6"
+    "zod": "^4.3.6",
+    "jsonwebtoken": "^9.0.2"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",
@@ -99,7 +100,8 @@
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
     "typescript": "^5.7.3",
-    "typescript-eslint": "^8.20.0"
+    "typescript-eslint": "^8.20.0",
+    "@types/jsonwebtoken": "^9.0.9"
   },
   "jest": {
     "moduleFileExtensions": [
