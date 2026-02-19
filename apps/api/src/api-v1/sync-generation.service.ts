@@ -201,6 +201,20 @@ export class SyncGenerationService {
         throw new Error('Generated outline was empty');
       }
 
+      // 7b. Tier-based slide truncation: FREE tier gets sample preview only
+      const syncUser = await this.prisma.user.findUnique({ where: { id: userId }, select: { tier: true } });
+      const syncTier = syncUser?.tier ?? 'FREE';
+      const maxSlidesLimit = this.tierEnforcement.getMaxSlidesPerDeck(syncTier);
+      const isSyncSamplePreview = maxSlidesLimit !== null && outline.slides.length > maxSlidesLimit;
+
+      if (isSyncSamplePreview) {
+        this.logger.log(`Free tier slide truncation: ${outline.slides.length} -> ${maxSlidesLimit} slides`);
+        outline.slides = outline.slides.slice(0, maxSlidesLimit);
+        for (let j = 0; j < outline.slides.length; j++) {
+          outline.slides[j].slideNumber = j + 1;
+        }
+      }
+
       // 8. Update presentation title from outline
       await this.prisma.presentation.update({
         where: { id: presentation.id },
@@ -487,8 +501,8 @@ ${slideKbContext}`;
         presentation.id,
       );
 
-      // 12b. Auto-generate images (non-blocking)
-      if (this.nanoBanana.isConfigured) {
+      // 12b. Auto-generate images (non-blocking) — skip for FREE tier
+      if (this.nanoBanana.isConfigured && this.tierEnforcement.canGenerateImages(syncTier)) {
         this.imagesService
           .queueBatchGeneration(presentation.id, userId)
           .catch((err) =>

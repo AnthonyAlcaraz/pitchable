@@ -254,6 +254,28 @@ export class GenerationService {
       return;
     }
 
+    // Tier-based slide truncation: FREE tier gets sample preview only
+    const userForTier = await this.prisma.user.findUnique({ where: { id: userId }, select: { tier: true } });
+    const userTier = userForTier?.tier ?? 'FREE';
+    const maxSlides = this.tierEnforcement.getMaxSlidesPerDeck(userTier);
+    const originalSlideCount = outline.slides.length;
+    let isSamplePreview = false;
+
+    if (maxSlides !== null && outline.slides.length > maxSlides) {
+      outline.slides = outline.slides.slice(0, maxSlides);
+      // Renumber truncated slides
+      for (let i = 0; i < outline.slides.length; i++) {
+        outline.slides[i].slideNumber = i + 1;
+      }
+      isSamplePreview = true;
+      yield {
+        type: 'token',
+        content: `**Sample Preview:** Generating ${maxSlides} of ${originalSlideCount} slides. Upgrade to unlock the full deck.
+
+`,
+      };
+    }
+
     yield { type: 'thinking', content: 'Preparing to generate your deck...' };
 
     // 1. Parallel setup: resolve theme, get briefId, build feedback block
@@ -744,8 +766,10 @@ export class GenerationService {
       content: `\n**Done!** Generated ${totalSlides} slides for "${outline.title}"${slideNumberOffset > 0 ? ` (${slideNumberOffset} auto-split)` : ''}. You can now:\n- Click any slide to edit inline\n- Ask me to modify specific slides ("make slide 3 more concise")\n- Use /theme to change the visual style\n- Use /export to download\n`,
     };
 
-    // 8. Auto-generate images (non-blocking) if configured
-    const shouldGenerateImages = config.autoGenerateImages !== false && this.nanoBanana.isConfigured;
+    // 8. Auto-generate images (non-blocking) if configured — skip for FREE tier
+    const shouldGenerateImages = config.autoGenerateImages !== false
+      && this.nanoBanana.isConfigured
+      && this.tierEnforcement.canGenerateImages(userTier);
     if (shouldGenerateImages) {
       try {
         const imageJobs = await this.imagesService.queueBatchGeneration(presentationId, userId);

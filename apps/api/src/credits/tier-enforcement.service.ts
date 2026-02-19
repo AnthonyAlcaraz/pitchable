@@ -18,6 +18,7 @@ export interface TierStatus {
   decksRemaining: number | null;
   creditBalance: number;
   imageCreditsPerMonth: number;
+  maxSlidesPerDeck: number | null;
 }
 
 @Injectable()
@@ -103,6 +104,13 @@ export class TierEnforcementService {
   }
 
   /**
+   * Get the max slides per deck for a tier. Returns null for unlimited.
+   */
+  getMaxSlidesPerDeck(tier: string): number | null {
+    return TIER_LIMITS[tier]?.maxSlidesPerDeck ?? TIER_LIMITS['FREE'].maxSlidesPerDeck;
+  }
+
+  /**
    * Get the monthly credit allocation for a tier.
    */
   getMonthlyAllocation(tier: string): number {
@@ -150,6 +158,7 @@ export class TierEnforcementService {
         decksRemaining: freeLimits.maxDecksPerMonth,
         creditBalance: 0,
         imageCreditsPerMonth: freeLimits.imageCreditsPerMonth,
+        maxSlidesPerDeck: freeLimits.maxSlidesPerDeck,
       };
     }
 
@@ -169,6 +178,7 @@ export class TierEnforcementService {
       decksRemaining,
       creditBalance: user.creditBalance,
       imageCreditsPerMonth: limits.imageCreditsPerMonth,
+      maxSlidesPerDeck: limits.maxSlidesPerDeck,
     };
   }
 

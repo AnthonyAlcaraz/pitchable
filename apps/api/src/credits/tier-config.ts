@@ -1,64 +1,66 @@
 export interface TierLimits {
   maxDecksPerMonth: number | null; // null = unlimited
+  maxSlidesPerDeck: number | null; // null = unlimited, FREE = 4 sample slides
   imageCreditsPerMonth: number;
 }
 
 /**
- * Credit economics (smart model routing + Nano Banana Pro):
+ * Credit economics (all Sonnet 4.6 + Nano Banana Pro):
  *
- * Model routing:
- *   Opus 4.6  ($5/$25 MTok)  — slide content generation (quality-critical)
- *   Sonnet 4.5 ($3/$15 MTok) — outline, chat, slide modification
- *   Haiku 4.5 ($0.80/$4 MTok) — intent classifier, content review
+ * All AI calls use claude-sonnet-4-6 ($3/$15 MTok).
  *
- * Cost per 10-slide deck (LLM): ~$0.243 (down from $0.296 with all-Opus)
+ * Cost per 10-slide deck (LLM): ~$0.24
  * Cost per image:               ~$0.134 (Nano Banana Pro 2K)
- * Cost per illustrated deck:    ~$0.243 + $1.34 = $1.58
+ * Cost per illustrated deck:    ~$0.24 + $1.34 = $1.58
  *
  * Credit value: 1 credit = $0.25 user-facing
- * Free signup gift: 10 credits = $2.50 value
- *   → Enough for 1 full illustrated deck (trial hook)
+ * Free signup gift: 5 credits = $1.25 value
+ *   → Enough for 2 sample decks (4 slides each, no images)
  *
  * Pricing (optimized for 60%+ margin):
- *   FREE       — 10 credits on signup, 1 deck/month, no monthly refresh
- *   STARTER    — $19/mo → 40 credits/month (~4 illustrated decks)
- *   PRO        — $49/mo → 100 credits/month (~10 decks), unlimited deck count
+ *   FREE       — 5 credits on signup, 2 decks/month (4 slides max), no images
+ *   STARTER    — $19/mo → 40 credits/month (~10 decks, 15 slides max)
+ *   PRO        — $49/mo → 100 credits/month (unlimited decks + slides)
  *   ENTERPRISE — custom
  *
- * Margin at max usage:
+ * Margin at average usage:
  *   STARTER: $19 revenue - $7.50 cost = $11.50 profit (60%)
  *   PRO:     $49 revenue - $18 cost   = $31 profit (63%)
  *
  * Credit deductions:
- *   Deck generation: 3 credits (covers LLM cost for outline + 10 slides + review)
+ *   Deck generation: 2 credits (covers LLM cost for outline + slides + review)
  *   Image generation: 1 credit per image (covers Nano Banana Pro cost)
  *   Export: free
  */
 
 /** Credits deducted per deck generation (covers LLM costs). */
-export const DECK_GENERATION_COST = 3;
+export const DECK_GENERATION_COST = 2;
 
 /** Credits deducted per image generation. */
 export const IMAGE_GENERATION_COST = 1;
 
 /** Credits granted to new free-tier users on signup. */
-export const FREE_SIGNUP_CREDITS = 10;
+export const FREE_SIGNUP_CREDITS = 5;
 
 export const TIER_LIMITS: Record<string, TierLimits> = {
   FREE: {
-    maxDecksPerMonth: 1,
-    imageCreditsPerMonth: 0, // no monthly refresh; one-time 10 credits on signup
+    maxDecksPerMonth: 2,
+    maxSlidesPerDeck: 4, // sample preview only
+    imageCreditsPerMonth: 0, // no monthly refresh; one-time 5 credits on signup
   },
   STARTER: {
     maxDecksPerMonth: 10,
+    maxSlidesPerDeck: 15,
     imageCreditsPerMonth: 40,
   },
   PRO: {
     maxDecksPerMonth: null,
+    maxSlidesPerDeck: null,
     imageCreditsPerMonth: 100,
   },
   ENTERPRISE: {
     maxDecksPerMonth: null,
+    maxSlidesPerDeck: null,
     imageCreditsPerMonth: 300,
   },
 };
