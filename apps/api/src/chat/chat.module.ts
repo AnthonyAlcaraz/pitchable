@@ -12,6 +12,7 @@ import { ValidationGateService } from './validation-gate.service.js';
 import { QualityAgentsService } from './quality-agents.service.js';
 import { VisualCriticService } from './visual-critic.service.js';
 import { ChatCleanupService } from './chat-cleanup.service.js';
+import { InteractionGateService } from './interaction-gate.service.js';
 import { PrismaModule } from '../prisma/prisma.module.js';
 import { KnowledgeBaseModule } from '../knowledge-base/knowledge-base.module.js';
 import { ConstraintsModule } from '../constraints/constraints.module.js';
@@ -20,9 +21,10 @@ import { CreditsModule } from '../credits/credits.module.js';
 import { ImagesModule } from '../images/images.module.js';
 import { EmailModule } from '../email/email.module.js';
 import { PitchLensModule } from '../pitch-lens/pitch-lens.module.js';
+import { ThemesModule } from '../themes/themes.module.js';
 
 @Module({
-  imports: [PrismaModule, KnowledgeBaseModule, ConstraintsModule, ExportsModule, CreditsModule, ImagesModule, EmailModule, PitchLensModule],
+  imports: [PrismaModule, KnowledgeBaseModule, ConstraintsModule, ExportsModule, CreditsModule, ImagesModule, EmailModule, PitchLensModule, ThemesModule],
   controllers: [ChatController],
   providers: [
     ChatService,
@@ -37,6 +39,7 @@ import { PitchLensModule } from '../pitch-lens/pitch-lens.module.js';
     QualityAgentsService,
     VisualCriticService,
     ChatCleanupService,
+    InteractionGateService,
   ],
   exports: [
     ChatService,
@@ -50,6 +53,7 @@ import { PitchLensModule } from '../pitch-lens/pitch-lens.module.js';
     ValidationGateService,
     QualityAgentsService,
     VisualCriticService,
+    InteractionGateService,
   ],
 })
 export class ChatModule {}

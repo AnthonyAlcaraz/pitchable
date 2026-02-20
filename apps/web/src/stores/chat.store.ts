@@ -27,6 +27,61 @@ export interface PendingCreditConfirmation {
   currentBalance: number;
 }
 
+export interface InlineSlideCard {
+  id: string;
+  slideNumber: number;
+  title: string;
+  body: string;
+  slideType: string;
+  imageUrl: string | null;
+}
+
+export interface PendingThemeSelection {
+  contextId: string;
+  options: Array<{
+    id: string;
+    name: string;
+    displayName: string;
+    colorPalette: Record<string, string>;
+    headingFont: string;
+    bodyFont: string;
+    score: number;
+    category: string;
+  }>;
+  defaultThemeId: string;
+  timeoutMs: number;
+  receivedAt: number;
+}
+
+export interface PendingLayoutSelection {
+  contextId: string;
+  slideNumber: number;
+  slideTitle: string;
+  options: Array<{
+    id: string;
+    name: string;
+    description: string;
+    slideType: string;
+  }>;
+  defaultLayout: string;
+  timeoutMs: number;
+  receivedAt: number;
+}
+
+export interface PendingImageSelection {
+  contextId: string;
+  slideId: string;
+  candidates: Array<{
+    id: string;
+    imageUrl: string;
+    score: number;
+    prompt: string;
+  }>;
+  defaultImageId: string;
+  timeoutMs: number;
+  receivedAt: number;
+}
+
 export interface AgentStep {
   id: string;
   content: string;
@@ -48,12 +103,19 @@ interface ChatState {
   error: string | null;
   pendingValidations: PendingValidation[];
   pendingCreditConfirmation: PendingCreditConfirmation | null;
+  inlineSlideCards: InlineSlideCard[];
+  pendingThemeSelection: PendingThemeSelection | null;
+  pendingLayoutSelections: PendingLayoutSelection[];
+  pendingImageSelections: PendingImageSelection[];
 
   loadHistory: (presentationId: string) => Promise<void>;
   sendMessage: (presentationId: string, content: string) => Promise<void>;
   acceptSlide: (presentationId: string, slideId: string) => Promise<void>;
   editSlide: (presentationId: string, slideId: string, edits: { title?: string; body?: string; speakerNotes?: string }) => Promise<void>;
   rejectSlide: (presentationId: string, slideId: string) => Promise<void>;
+  respondToInteraction: (presentationId: string, interactionType: string, contextId: string, selection: unknown) => Promise<void>;
+  addImageSelection: (selection: PendingImageSelection) => void;
+  removeImageSelection: (contextId: string) => void;
   clearMessages: () => void;
   clearError: () => void;
 }
@@ -79,6 +141,10 @@ export const useChatStore = create<ChatState>((set, get) => ({
   error: null,
   pendingValidations: [],
   pendingCreditConfirmation: null,
+  inlineSlideCards: [],
+  pendingThemeSelection: null,
+  pendingLayoutSelections: [],
+  pendingImageSelections: [],
 
   loadHistory: async (presentationId: string) => {
     set({ isLoading: true, error: null });
@@ -121,6 +187,9 @@ export const useChatStore = create<ChatState>((set, get) => ({
       thinkingText: null,
       agentSteps: [],
       error: null,
+      inlineSlideCards: [],
+      pendingThemeSelection: null,
+      pendingLayoutSelections: [],
     }));
 
     try {
@@ -174,6 +243,36 @@ export const useChatStore = create<ChatState>((set, get) => ({
             if (newId) {
               window.history.replaceState(null, '', "/workspace/" + newId);
             }
+          } else if (metadata?.action === 'slide_preview') {
+            const slide = metadata.slide as InlineSlideCard;
+            if (slide) {
+              set((state) => ({
+                inlineSlideCards: [...state.inlineSlideCards, slide],
+              }));
+            }
+          } else if (metadata?.action === 'theme_selection') {
+            set({
+              pendingThemeSelection: {
+                contextId: metadata.contextId as string,
+                options: metadata.options as PendingThemeSelection['options'],
+                defaultThemeId: metadata.defaultThemeId as string,
+                timeoutMs: metadata.timeoutMs as number,
+                receivedAt: Date.now(),
+              },
+            });
+          } else if (metadata?.action === 'layout_selection') {
+            const ls: PendingLayoutSelection = {
+              contextId: metadata.contextId as string,
+              slideNumber: metadata.slideNumber as number,
+              slideTitle: metadata.slideTitle as string,
+              options: metadata.options as PendingLayoutSelection['options'],
+              defaultLayout: metadata.defaultLayout as string,
+              timeoutMs: metadata.timeoutMs as number,
+              receivedAt: Date.now(),
+            };
+            set((state) => ({
+              pendingLayoutSelections: [...state.pendingLayoutSelections, ls],
+            }));
           }
         } else if (event.type === 'thinking') {
           set({ thinkingText: event.content });
@@ -298,6 +397,39 @@ export const useChatStore = create<ChatState>((set, get) => ({
     await get().sendMessage(presentationId, 'reject');
   },
 
-  clearMessages: () => set({ messages: [], streamingContent: '', pendingValidations: [], pendingCreditConfirmation: null }),
+  respondToInteraction: async (presentationId: string, interactionType: string, contextId: string, selection: unknown) => {
+    try {
+      await api.post(`/chat/${presentationId}/interact`, {
+        interactionType,
+        contextId,
+        selection,
+      });
+    } catch (err) {
+      console.error('Failed to respond to interaction:', err);
+    }
+  },
+
+  addImageSelection: (selection: PendingImageSelection) => {
+    set((state) => ({
+      pendingImageSelections: [...state.pendingImageSelections, selection],
+    }));
+  },
+
+  removeImageSelection: (contextId: string) => {
+    set((state) => ({
+      pendingImageSelections: state.pendingImageSelections.filter((s) => s.contextId !== contextId),
+    }));
+  },
+
+  clearMessages: () => set({
+    messages: [],
+    streamingContent: '',
+    pendingValidations: [],
+    pendingCreditConfirmation: null,
+    inlineSlideCards: [],
+    pendingThemeSelection: null,
+    pendingLayoutSelections: [],
+    pendingImageSelections: [],
+  }),
   clearError: () => set({ error: null }),
 }));

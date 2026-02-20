@@ -103,3 +103,38 @@ export interface ValidationResult {
   valid: boolean
   violations: ConstraintViolation[]
 }
+
+// ── Generative UI Types ───────────────────────────────────
+
+export interface LayoutOption {
+  id: string
+  name: string
+  description: string
+  slideType: SlideType
+}
+
+export interface ThemeOption {
+  id: string
+  name: string
+  displayName: string
+  colorPalette: Record<string, string>
+  headingFont: string
+  bodyFont: string
+  score: number
+  category: string
+}
+
+export interface ImageCandidate {
+  id: string
+  imageUrl: string
+  score: number
+  prompt: string
+}
+
+export type InteractionType = 'theme_selection' | 'layout_selection' | 'image_selection'
+
+export interface InteractionResponse {
+  interactionType: InteractionType
+  contextId: string
+  selection: unknown
+}

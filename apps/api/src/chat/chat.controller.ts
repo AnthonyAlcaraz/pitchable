@@ -16,6 +16,7 @@ import { CurrentUser } from '../auth/decorators/current-user.decorator.js';
 import type { RequestUser } from '../auth/decorators/current-user.decorator.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { ChatService } from './chat.service.js';
+import { InteractionGateService } from './interaction-gate.service.js';
 import { SendMessageDto } from './dto/send-message.dto.js';
 import {
   PresentationType,
@@ -36,6 +37,7 @@ export class ChatController {
   constructor(
     private readonly chatService: ChatService,
     private readonly prisma: PrismaService,
+    private readonly interactionGate: InteractionGateService,
   ) {}
 
   @Post(':presentationId/message')
@@ -179,5 +181,21 @@ export class ChatController {
       limit: limit ? parseInt(limit, 10) : undefined,
       cursor: cursor || undefined,
     });
+  }
+
+  @Post(':presentationId/interact')
+  @UseGuards(PresentationOwnerGuard)
+  async interact(
+    @CurrentUser() _user: RequestUser,
+    @Param('presentationId') presentationId: string,
+    @Body() body: { interactionType: string; contextId: string; selection: unknown },
+  ) {
+    const accepted = this.interactionGate.respond(
+      presentationId,
+      body.interactionType,
+      body.contextId,
+      body.selection,
+    );
+    return { accepted };
   }
 }
