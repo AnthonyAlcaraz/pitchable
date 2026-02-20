@@ -2,10 +2,13 @@ import { useEffect, useRef } from 'react';
 import { ChatMessage } from './ChatMessage.js';
 import { AgentActivity } from './AgentActivity.js';
 import { InlineSlideCard } from './InlineSlideCard.js';
+import { GenerationCompleteCard } from './GenerationCompleteCard.js';
 import { ThemeSelector } from './ThemeSelector.js';
 import { LayoutSelector } from './LayoutSelector.js';
 import { ImageSelector } from './ImageSelector.js';
-import type { ChatMessage as ChatMessageType, PendingValidation, AgentStep, InlineSlideCard as InlineSlideCardType, PendingThemeSelection, PendingLayoutSelection, PendingImageSelection } from '../../stores/chat.store.js';
+import type { ChatMessage as ChatMessageType, PendingValidation, AgentStep, InlineSlideCard as InlineSlideCardType, PendingThemeSelection, PendingLayoutSelection, PendingImageSelection, GenerationCompleteData } from '../../stores/chat.store.js';
+import { usePresentationStore } from '../../stores/presentation.store.js';
+import { themeToStyleVars } from '../preview/SlideRenderer.js';
 
 interface ChatHistoryProps {
   messages: ChatMessageType[];
@@ -18,7 +21,9 @@ interface ChatHistoryProps {
   pendingThemeSelection?: PendingThemeSelection | null;
   pendingLayoutSelections?: PendingLayoutSelection[];
   pendingImageSelections?: PendingImageSelection[];
+  generationComplete?: GenerationCompleteData | null;
   presentationId?: string;
+  onExport?: (presentationId: string, format: string) => void;
   onAcceptSlide?: (slideId: string) => void;
   onEditSlide?: (slideId: string, edits: { title?: string; body?: string; speakerNotes?: string }) => void;
   onRejectSlide?: (slideId: string) => void;
@@ -36,7 +41,9 @@ export function ChatHistory({
   pendingThemeSelection,
   pendingLayoutSelections,
   pendingImageSelections,
+  generationComplete,
   presentationId,
+  onExport,
   onAcceptSlide,
   onEditSlide,
   onRejectSlide,
@@ -45,12 +52,14 @@ export function ChatHistory({
   const bottomRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const userScrolled = useRef(false);
+  const { presentation, setCurrentSlide } = usePresentationStore();
+  const theme = presentation?.theme ?? null;
 
   useEffect(() => {
     if (!userScrolled.current) {
       bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [messages, streamingContent, pendingValidations, inlineSlideCards, thinkingText, agentSteps]);
+  }, [messages, streamingContent, pendingValidations, inlineSlideCards, generationComplete, thinkingText, agentSteps]);
 
   const handleScroll = () => {
     const el = containerRef.current;
@@ -96,6 +105,8 @@ export function ChatHistory({
             onAcceptSlide={onAcceptSlide}
             onEditSlide={onEditSlide}
             onRejectSlide={onRejectSlide}
+            onExport={onExport}
+            onSlideClick={(index) => setCurrentSlide(index)}
           />
         );
       })}
@@ -133,13 +144,22 @@ export function ChatHistory({
       )}
 
       {isStreaming && inlineSlideCards && inlineSlideCards.length > 0 && (
-        <div className="px-4 py-2">
+        <div className="px-4 py-2" style={themeToStyleVars(theme)}>
           <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin">
             {inlineSlideCards.map((slide) => (
-              <InlineSlideCard key={slide.id} slide={slide} />
+              <InlineSlideCard
+                key={slide.id}
+                slide={slide}
+                theme={theme}
+                onClick={() => setCurrentSlide(slide.slideNumber - 1)}
+              />
             ))}
           </div>
         </div>
+      )}
+
+      {generationComplete && onExport && (
+        <GenerationCompleteCard data={generationComplete} onExport={onExport} />
       )}
 
       {pendingImageSelections && pendingImageSelections.length > 0 && presentationId && onRespondToInteraction && (

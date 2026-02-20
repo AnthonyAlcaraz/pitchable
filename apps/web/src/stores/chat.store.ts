@@ -82,6 +82,15 @@ export interface PendingImageSelection {
   receivedAt: number;
 }
 
+export interface GenerationCompleteData {
+  presentationId: string;
+  deckTitle: string;
+  slideCount: number;
+  themeName: string;
+  imageCount: number;
+  isSamplePreview?: boolean;
+}
+
 export interface AgentStep {
   id: string;
   content: string;
@@ -107,6 +116,7 @@ interface ChatState {
   pendingThemeSelection: PendingThemeSelection | null;
   pendingLayoutSelections: PendingLayoutSelection[];
   pendingImageSelections: PendingImageSelection[];
+  generationComplete: GenerationCompleteData | null;
 
   loadHistory: (presentationId: string) => Promise<void>;
   sendMessage: (presentationId: string, content: string) => Promise<void>;
@@ -145,6 +155,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
   pendingThemeSelection: null,
   pendingLayoutSelections: [],
   pendingImageSelections: [],
+  generationComplete: null,
 
   loadHistory: async (presentationId: string) => {
     set({ isLoading: true, error: null });
@@ -188,6 +199,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
       agentSteps: [],
       error: null,
       inlineSlideCards: [],
+      generationComplete: null,
       pendingThemeSelection: null,
       pendingLayoutSelections: [],
     }));
@@ -273,6 +285,17 @@ export const useChatStore = create<ChatState>((set, get) => ({
             set((state) => ({
               pendingLayoutSelections: [...state.pendingLayoutSelections, ls],
             }));
+          } else if (metadata?.action === 'generation_complete') {
+            set({
+              generationComplete: {
+                presentationId: metadata.presentationId as string,
+                deckTitle: metadata.deckTitle as string,
+                slideCount: metadata.slideCount as number,
+                themeName: metadata.themeName as string,
+                imageCount: metadata.imageCount as number,
+                isSamplePreview: metadata.isSamplePreview as boolean | undefined,
+              },
+            });
           }
         } else if (event.type === 'thinking') {
           set({ thinkingText: event.content });
@@ -331,14 +354,19 @@ export const useChatStore = create<ChatState>((set, get) => ({
         }
       }
 
-      // Add assistant message
+      // Add assistant message (persist inline slide cards in metadata)
+      const currentSlideCards = get().inlineSlideCards;
+      const currentCompletion = get().generationComplete;
       if (fullContent) {
         const assistantMsg: ChatMessage = {
           id: crypto.randomUUID(),
           role: 'assistant',
           content: fullContent,
           messageType: 'text',
-          metadata: {},
+          metadata: {
+            ...(currentSlideCards.length > 0 ? { slideCards: currentSlideCards } : {}),
+            ...(currentCompletion ? { generationComplete: currentCompletion } : {}),
+          },
           createdAt: new Date().toISOString(),
         };
         set((state) => ({
@@ -440,6 +468,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
     pendingValidations: [],
     pendingCreditConfirmation: null,
     inlineSlideCards: [],
+    generationComplete: null,
     pendingThemeSelection: null,
     pendingLayoutSelections: [],
     pendingImageSelections: [],

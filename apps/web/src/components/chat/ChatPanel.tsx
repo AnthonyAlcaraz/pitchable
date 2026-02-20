@@ -26,6 +26,7 @@ export function ChatPanel({ presentationId, briefId: _briefId, lensId: _lensId }
     pendingThemeSelection,
     pendingLayoutSelections,
     pendingImageSelections,
+    generationComplete,
     loadHistory,
     sendMessage,
     acceptSlide,
@@ -68,6 +69,13 @@ export function ChatPanel({ presentationId, briefId: _briefId, lensId: _lensId }
       rejectSlide(presentationId, slideId);
     },
     [presentationId, rejectSlide],
+  );
+
+  const handleExport = useCallback(
+    (pid: string, format: string) => {
+      sendMessage(pid, `/export ${format}`);
+    },
+    [sendMessage],
   );
 
   // Guard: "new" is not a real presentation ID (workspace opened before generation)
@@ -114,7 +122,9 @@ export function ChatPanel({ presentationId, briefId: _briefId, lensId: _lensId }
         pendingThemeSelection={pendingThemeSelection}
         pendingLayoutSelections={pendingLayoutSelections}
         pendingImageSelections={pendingImageSelections}
+        generationComplete={generationComplete}
         presentationId={presentationId}
+        onExport={handleExport}
         onAcceptSlide={handleAcceptSlide}
         onEditSlide={handleEditSlide}
         onRejectSlide={handleRejectSlide}

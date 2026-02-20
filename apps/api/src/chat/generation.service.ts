@@ -896,13 +896,43 @@ export class GenerationService {
       }
     }
 
-    // Persist assistant message
+    // Emit generation_complete action for rich UI card
+    const imageJobCount = shouldGenerateImages ? (await this.prisma.slide.count({
+      where: { presentationId, imagePrompt: { not: null } },
+    })) : 0;
+    yield {
+      type: 'action',
+      content: '',
+      metadata: {
+        action: 'generation_complete',
+        presentationId,
+        deckTitle: outline.title,
+        slideCount: totalSlides,
+        themeName,
+        imageCount: imageJobCount,
+        isSamplePreview: isSamplePreview ?? false,
+      },
+    };
+
+    // Build slideCards for message persistence
+    const slideCardsForMessage = outline.slides.map((s, i) => ({
+      id: allSlides[i]?.id ?? s.slideNumber.toString(),
+      slideNumber: s.slideNumber,
+      title: s.title,
+      body: s.bulletPoints.map((b: string) => `- ${b}`).join('
+'),
+      slideType: s.slideType,
+      imageUrl: null,
+    }));
+
+    // Persist assistant message with slideCards in metadata
     await this.prisma.chatMessage.create({
       data: {
         presentationId,
         role: 'assistant',
         content: `Generated ${totalSlides} slides for "${outline.title}".`,
         messageType: 'text',
+        metadata: { slideCards: slideCardsForMessage },
       },
     });
 

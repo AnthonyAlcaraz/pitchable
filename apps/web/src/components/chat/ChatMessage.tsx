@@ -3,7 +3,11 @@ import remarkGfm from 'remark-gfm';
 import { User, Bot } from 'lucide-react';
 import { ValidationPrompt } from './ValidationPrompt';
 import { SlidePreviewCard } from './SlidePreviewCard';
-import type { PendingValidation } from '@/stores/chat.store';
+import { InlineSlideCard } from './InlineSlideCard.js';
+import { GenerationCompleteCard } from './GenerationCompleteCard.js';
+import type { PendingValidation, InlineSlideCard as InlineSlideCardType, GenerationCompleteData } from '@/stores/chat.store';
+import { usePresentationStore } from '../../stores/presentation.store.js';
+import { themeToStyleVars } from '../preview/SlideRenderer.js';
 
 interface ChatMessageProps {
   role: 'user' | 'assistant' | 'system';
@@ -16,6 +20,8 @@ interface ChatMessageProps {
   onAcceptSlide?: (slideId: string) => void;
   onEditSlide?: (slideId: string, edits: { title?: string; body?: string; speakerNotes?: string }) => void;
   onRejectSlide?: (slideId: string) => void;
+  onExport?: (presentationId: string, format: string) => void;
+  onSlideClick?: (slideIndex: number) => void;
 }
 
 export function ChatMessage({
@@ -29,8 +35,11 @@ export function ChatMessage({
   onAcceptSlide,
   onEditSlide,
   onRejectSlide,
+  onExport,
+  onSlideClick,
 }: ChatMessageProps) {
   const isUser = role === 'user';
+  const theme = usePresentationStore((s) => s.presentation?.theme ?? null);
 
   return (
     <div className={`flex gap-3 p-4 ${isUser ? 'bg-card' : 'bg-background'}`}>
@@ -82,6 +91,28 @@ export function ChatMessage({
               />
             ))}
           </div>
+        )}
+
+        {/* Render persisted inline slide cards from message metadata */}
+        {Array.isArray(metadata?.slideCards) && (metadata.slideCards as InlineSlideCardType[]).length > 0 && (
+          <div className="mt-3 flex gap-2 overflow-x-auto pb-2 scrollbar-thin" style={themeToStyleVars(theme)}>
+            {(metadata.slideCards as InlineSlideCardType[]).map((slide) => (
+              <InlineSlideCard
+                key={slide.id}
+                slide={slide}
+                theme={theme}
+                onClick={onSlideClick ? () => onSlideClick(slide.slideNumber - 1) : undefined}
+              />
+            ))}
+          </div>
+        )}
+
+        {/* Render persisted generation complete card */}
+        {metadata?.generationComplete && onExport && (
+          <GenerationCompleteCard
+            data={metadata.generationComplete as GenerationCompleteData}
+            onExport={onExport}
+          />
         )}
       </div>
     </div>
