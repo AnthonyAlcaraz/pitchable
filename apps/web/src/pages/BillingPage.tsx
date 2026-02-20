@@ -9,13 +9,13 @@ import { CreditCard, ExternalLink } from 'lucide-react';
 const PLANS = [
   {
     tier: 'FREE' as const,
-    name: 'Free',
+    name: 'Free Sample',
     price: 'Free',
-    description: 'Try Pitchable — no credit card required',
+    description: 'See what Pitchable can do',
     features: [
-      '5 credits on signup',
-      '2 decks per month',
-      '4-slide sample preview',
+      '2 sample decks',
+      '4 slides per deck (preview)',
+      'No credit card required',
       'PPTX, PDF, HTML export',
     ],
   },

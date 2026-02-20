@@ -252,17 +252,17 @@ export function LandingPage() {
           <div className="grid gap-6 md:grid-cols-3">
             {[
               {
-                name: 'Free',
+                name: 'Free Sample',
                 price: '$0',
                 period: '',
-                description: 'Try Pitchable — no credit card required',
+                description: 'See what Pitchable can do',
                 features: [
-                  '5 credits on signup',
-                  '2 decks per month',
-                  '4-slide sample preview',
+                  '2 sample decks',
+                  '4 slides per deck (preview)',
+                  'No credit card required',
                   'PPTX, PDF, HTML export',
                 ],
-                cta: 'Get Started',
+                cta: 'Try a Sample',
                 popular: false,
               },
               {
