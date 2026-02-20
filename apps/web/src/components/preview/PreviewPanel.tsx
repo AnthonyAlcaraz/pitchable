@@ -7,6 +7,9 @@ import { ThumbnailSidebar } from './ThumbnailSidebar';
 import { SlideHeader } from './SlideHeader';
 import { PresentationMode } from './PresentationMode';
 import { EditableSlide } from './EditableSlide';
+import { SlideRenderer } from './SlideRenderer';
+import { NarrativeAdvice } from './NarrativeAdvice';
+import { api } from '@/lib/api';
 
 interface PreviewPanelProps {
   presentationId?: string;
@@ -64,6 +67,10 @@ export function PreviewPanel({ presentationId }: PreviewPanelProps) {
   }, []);
 
   const sendMessage = useChatStore((s) => s.sendMessage);
+  const updateSlide = usePresentationStore((s) => s.updateSlide);
+
+  const slides = presentation?.slides ?? [];
+  const currentSlide = slides[currentSlideIndex];
 
   const handleExport = useCallback((format: string) => {
     if (presentationId) {
@@ -71,8 +78,18 @@ export function PreviewPanel({ presentationId }: PreviewPanelProps) {
     }
   }, [presentationId, sendMessage]);
 
-  const slides = presentation?.slides ?? [];
-  const currentSlide = slides[currentSlideIndex];
+  const handleSaveSpeakerNotes = useCallback(async (value: string) => {
+    if (!currentSlide || !presentationId) return;
+    updateSlide(currentSlide.id, { speakerNotes: value });
+    try {
+      await api.patch(`/presentations/${presentationId}/slides/${currentSlide.id}`, {
+        speakerNotes: value,
+      });
+    } catch (err) {
+      updateSlide(currentSlide.id, { speakerNotes: currentSlide.speakerNotes });
+      console.error('Failed to save speaker notes:', err);
+    }
+  }, [currentSlide, presentationId, updateSlide]);
 
   // Empty state
   if (!presentationId || presentationId === 'new') {
@@ -144,11 +161,28 @@ export function PreviewPanel({ presentationId }: PreviewPanelProps) {
             theme={presentation?.theme}
           />
 
-          {/* Main slide view */}
-          <div className="flex flex-1 items-center justify-center bg-muted/20 p-6">
+          {/* Main slide view — scrollable with preview + editable + coaching */}
+          <div className="flex-1 overflow-y-auto bg-muted/20 p-6">
             {currentSlide && (
-              <div className="w-full max-w-5xl">
-                <EditableSlide slide={currentSlide} presentationId={presentationId!} theme={presentation?.theme} />
+              <div className="mx-auto w-full max-w-5xl space-y-4">
+                {/* Read-only preview (final result) */}
+                <div>
+                  <p className="mb-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wide">Preview</p>
+                  <SlideRenderer slide={currentSlide} theme={presentation?.theme} />
+                </div>
+
+                {/* Editable slide */}
+                <div>
+                  <p className="mb-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wide">Edit</p>
+                  <EditableSlide slide={currentSlide} presentationId={presentationId!} theme={presentation?.theme} />
+                </div>
+
+                {/* Speaker notes + Narrative coaching */}
+                <NarrativeAdvice
+                  slideType={currentSlide.slideType}
+                  speakerNotes={currentSlide.speakerNotes}
+                  onSaveSpeakerNotes={handleSaveSpeakerNotes}
+                />
               </div>
             )}
           </div>

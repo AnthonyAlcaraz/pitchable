@@ -13,7 +13,7 @@ export function ThumbnailSidebar({ slides, currentIndex, onSelect, theme }: Thum
   if (slides.length === 0) return null;
 
   return (
-    <div className="flex w-20 flex-col gap-2 overflow-y-auto border-r border-border bg-muted/30 p-2">
+    <div className="flex w-44 flex-shrink-0 flex-col gap-2 overflow-y-auto border-r border-border bg-muted/30 p-2">
       {slides.map((slide, index) => (
         <button
           key={slide.id}
@@ -25,7 +25,7 @@ export function ThumbnailSidebar({ slides, currentIndex, onSelect, theme }: Thum
               : 'border-border hover:border-primary/50',
           )}
         >
-          <SlideRenderer slide={slide} theme={theme} scale={0.25} />
+          <SlideRenderer slide={slide} theme={theme} scale={0.35} />
           <span
             className={cn(
               'absolute bottom-0.5 right-1 text-[8px] font-medium',

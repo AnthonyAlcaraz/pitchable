@@ -144,19 +144,6 @@ export function EditableSlide({ slide, presentationId, theme, className, lensId 
         )}
       </div>
 
-      {/* Speaker notes indicator */}
-      {slide.speakerNotes && (
-        <div className="absolute bottom-0 left-0 right-0 border-t border-border bg-muted/50 px-3 py-1.5">
-          <EditableText
-            value={slide.speakerNotes}
-            onSave={(v) => handleSaveField('speakerNotes', v)}
-            className="text-[0.5em] text-muted-foreground"
-            placeholder="Speaker notes..."
-            multiline
-          />
-        </div>
-      )}
-
       {/* Image source toolbar */}
       <div className="absolute right-2 top-2 flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100 [div:hover>&]:opacity-100">
         {slide.imageSource === 'FIGMA' && slide.figmaNodeName && (
