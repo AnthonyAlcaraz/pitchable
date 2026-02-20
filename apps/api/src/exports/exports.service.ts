@@ -16,6 +16,7 @@ import { S3Service } from '../knowledge-base/storage/s3.service.js';
 import { FigmaRendererService } from '../figma/figma-renderer.service.js';
 import { ThemesService } from '../themes/themes.service.js';
 import { RendererChooserService } from './renderer-chooser.service.js';
+import { EventsGateway } from '../events/events.gateway.js';
 import { ExportFormat, JobStatus } from '../../generated/prisma/enums.js';
 import { type ColorPalette } from './slide-visual-theme.js';
 import type { LayoutProfile } from './marp-exporter.service.js';
@@ -113,6 +114,7 @@ export class ExportsService {
     private readonly figmaRenderer: FigmaRendererService,
     private readonly themesService: ThemesService,
     private readonly rendererChooser: RendererChooserService,
+    private readonly events: EventsGateway,
   ) {}
 
   /**
@@ -1056,6 +1058,13 @@ export class ExportsService {
 
       await this.prisma.slide.update({
         where: { id: slide.id },
+        data: { previewUrl },
+      });
+
+      // Notify frontend so it shows the preview without page refresh
+      this.events.emitSlideUpdated({
+        presentationId: presentation.id,
+        slideId: slide.id,
         data: { previewUrl },
       });
     }

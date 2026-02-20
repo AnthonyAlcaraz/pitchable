@@ -11,9 +11,10 @@ import { PrismaModule } from '../prisma/prisma.module.js';
 import { KnowledgeBaseModule } from '../knowledge-base/knowledge-base.module.js';
 import { FigmaModule } from '../figma/figma.module.js';
 import { ThemesModule } from '../themes/themes.module.js';
+import { EventsModule } from '../events/events.module.js';
 
 @Module({
-  imports: [PrismaModule, KnowledgeBaseModule, FigmaModule, ThemesModule],
+  imports: [PrismaModule, KnowledgeBaseModule, FigmaModule, ThemesModule, EventsModule],
   controllers: [ExportsController],
   providers: [MarpExporterService, RevealJsExporterService, PptxGenJsExporterService, TemplateSelectorService, LlmService, RendererChooserService, ExportsService],
   exports: [ExportsService, MarpExporterService],
