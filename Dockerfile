@@ -84,6 +84,10 @@ COPY --from=build /app/apps/api/node_modules ./apps/api/node_modules
 COPY --from=build /app/package.json ./
 COPY --from=build /app/apps/api/package.json ./apps/api/
 
+# Copy startup script (runs prisma db push before app)
+COPY apps/api/start.sh ./apps/api/start.sh
+RUN chmod +x ./apps/api/start.sh
+
 EXPOSE 3000
 
-CMD ["node", "apps/api/dist/src/main.js"]
+CMD ["./apps/api/start.sh"]

@@ -585,6 +585,7 @@ export class GenerationService {
           slideType: slide.slideType,
           imageUrl: null,
           imagePrompt: slide.imagePrompt,
+          previewUrl: null,
         },
         position: actualSlideNumber,
       });
@@ -716,6 +717,7 @@ export class GenerationService {
                 slideType: splitSlide.slideType,
                 imageUrl: null,
                 imagePrompt: splitSlide.imagePrompt,
+                previewUrl: null,
               },
               position: splitNum,
             });

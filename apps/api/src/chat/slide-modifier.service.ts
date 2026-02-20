@@ -305,6 +305,7 @@ The new slide should fit naturally in the deck's narrative flow.`;
           slideType: slide.slideType,
           imageUrl: null,
           imagePrompt: slide.imagePrompt,
+          previewUrl: null,
         },
         position: newNumber,
       });
@@ -365,6 +366,7 @@ The new slide should fit naturally in the deck's narrative flow.`;
         slideType: slide.slideType,
         imageUrl: null,
         imagePrompt: slide.imagePrompt,
+        previewUrl: null,
       },
       position: newNumber,
     });
