@@ -1,6 +1,7 @@
 import { useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { MessageSquare } from 'lucide-react';
+import { PeachLogo } from '../icons/PeachLogo.js';
 import { useChatStore } from '../../stores/chat.store.js';
 import { ChatHistory } from './ChatHistory.js';
 import { ChatInput } from './ChatInput.js';
@@ -105,8 +106,14 @@ export function ChatPanel({ presentationId, briefId, lensId }: ChatPanelProps) {
 
       {isNew ? (
         <div className="flex flex-1 flex-col items-center justify-center p-8 text-center text-muted-foreground">
-          <MessageSquare className="mb-3 h-10 w-10" />
-          <p>{t('chat.panel.empty_state')}</p>
+          <div className="relative mb-4">
+            <div className="absolute inset-0 animate-pulse rounded-full bg-orange-500/20 blur-xl" />
+            <div className="relative rounded-full bg-gradient-to-br from-orange-500/10 to-orange-600/5 p-4">
+              <PeachLogo className="h-12 w-12" />
+            </div>
+          </div>
+          <p className="text-sm font-medium text-foreground/80">{t('chat.panel.empty_state')}</p>
+          <p className="mt-1 text-xs text-muted-foreground">Describe your deck and Pitchable will craft it slide by slide</p>
         </div>
       ) : (
         <ChatHistory

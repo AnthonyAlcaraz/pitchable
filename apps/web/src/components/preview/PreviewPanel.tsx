@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Monitor } from 'lucide-react';
+import { PeachLogo } from '@/components/icons/PeachLogo';
 import { usePresentationStore } from '@/stores/presentation.store';
 import { useChatStore } from '@/stores/chat.store';
 import { useSlideUpdates } from '@/hooks/useSlideUpdates';
@@ -78,9 +79,17 @@ export function PreviewPanel({ presentationId }: PreviewPanelProps) {
   if (!presentationId || presentationId === 'new') {
     return (
       <div className="flex h-full flex-col items-center justify-center p-8">
-        <Monitor className="mb-4 h-12 w-12 text-muted-foreground/40" />
-        <p className="text-center text-sm text-muted-foreground">
-          Start a conversation to generate slides. They&apos;ll appear here in real-time.
+        <div className="relative mb-5">
+          <div className="absolute inset-0 rounded-full bg-orange-500/10 blur-2xl" />
+          <div className="relative rounded-2xl border border-border/50 bg-card/50 p-6 backdrop-blur-sm">
+            <PeachLogo className="h-16 w-16 opacity-60" />
+          </div>
+        </div>
+        <p className="text-center text-sm font-medium text-foreground/70">
+          Your slides will appear here
+        </p>
+        <p className="mt-1 text-center text-xs text-muted-foreground">
+          Start a conversation to generate slides in real-time
         </p>
       </div>
     );
@@ -99,7 +108,9 @@ export function PreviewPanel({ presentationId }: PreviewPanelProps) {
   if (slides.length === 0) {
     return (
       <div className="flex h-full flex-col items-center justify-center p-8">
-        <Monitor className="mb-4 h-12 w-12 text-muted-foreground/40" />
+        <div className="mb-4 rounded-2xl border border-border/50 bg-card/50 p-4">
+          <PeachLogo className="h-10 w-10 opacity-50" />
+        </div>
         <p className="mb-2 text-center text-sm font-medium text-foreground">
           {presentation?.title ?? 'Untitled Presentation'}
         </p>

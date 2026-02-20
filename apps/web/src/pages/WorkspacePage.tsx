@@ -1,7 +1,8 @@
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, Layers, BookOpen, Focus } from 'lucide-react';
+import { Layers, BookOpen, Focus } from 'lucide-react';
+import { PeachLogo } from '@/components/icons/PeachLogo';
 import { SplitScreen } from '@/components/layout/SplitScreen';
 import { ChatPanel } from '@/components/chat/ChatPanel';
 import { PreviewPanel } from '@/components/preview/PreviewPanel';
@@ -29,10 +30,10 @@ export function WorkspacePage() {
       <header className="flex h-12 items-center gap-3 border-b border-border px-4">
         <Link
           to="/cockpit"
-          className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
+          className="flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
         >
-          <ArrowLeft className="h-4 w-4" />
-          {t('workspace.cockpit')}
+          <PeachLogo className="h-5 w-5" />
+          <span className="font-medium text-foreground">Pitchable</span>
         </Link>
         <div className="h-5 w-px bg-border" />
         <div className="flex items-center gap-2">
