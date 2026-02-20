@@ -8,6 +8,7 @@ import { ImageCriticService, type CriticEvaluation } from './image-critic.servic
 import { ImgurService } from './imgur.service.js';
 import { S3Service } from '../knowledge-base/storage/s3.service.js';
 import { CreditsService } from '../credits/credits.service.js';
+import { IMAGE_GENERATION_COST } from '../credits/tier-config.js';
 import { EventsGateway } from '../events/events.gateway.js';
 import { JobStatus, CreditReason } from '../../generated/prisma/enums.js';
 
@@ -154,11 +155,10 @@ export class ImageGenerationProcessor extends WorkerHost {
         select: { presentationId: true },
       });
 
-      // 7. Deduct credits (1 per generation attempt)
-      const creditsUsed = Math.min(maxRounds, accepted ? 1 : maxRounds);
+      // 7. Deduct credits per image (uses configured cost, not per-round)
       await this.credits.deductCredits(
         userId,
-        creditsUsed,
+        IMAGE_GENERATION_COST,
         CreditReason.IMAGE_GENERATION,
         imageJobId,
       );

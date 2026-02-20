@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { CreditsService } from './credits.service.js';
+import { CreditReservationService } from './credit-reservation.service.js';
 import { CreditReason } from '../../generated/prisma/enums.js';
 import { TIER_LIMITS } from './tier-config.js';
 
@@ -18,6 +19,7 @@ export interface TierStatus {
   decksRemaining: number | null;
   creditBalance: number;
   creditsPerMonth: number;
+  creditsReserved: number;
   maxSlidesPerDeck: number | null;
 }
 
@@ -28,6 +30,7 @@ export class TierEnforcementService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly credits: CreditsService,
+    private readonly reservations: CreditReservationService,
   ) {}
 
   /**
@@ -159,6 +162,7 @@ export class TierEnforcementService {
         decksRemaining: freeLimits.maxDecksPerMonth,
         creditBalance: 0,
         creditsPerMonth: freeLimits.creditsPerMonth,
+        creditsReserved: 0,
         maxSlidesPerDeck: freeLimits.maxSlidesPerDeck,
       };
     }
@@ -172,6 +176,8 @@ export class TierEnforcementService {
     const decksLimit = limits.maxDecksPerMonth;
     const decksRemaining = decksLimit !== null ? Math.max(0, decksLimit - decksUsed) : null;
 
+    const creditsReserved = await this.reservations.getReservedAmount(userId);
+
     return {
       tier: user.tier,
       decksUsed,
@@ -179,6 +185,7 @@ export class TierEnforcementService {
       decksRemaining,
       creditBalance: user.creditBalance,
       creditsPerMonth: limits.creditsPerMonth,
+      creditsReserved,
       maxSlidesPerDeck: limits.maxSlidesPerDeck,
     };
   }

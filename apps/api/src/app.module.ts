@@ -69,25 +69,24 @@ const redisConnection = redisUrl
       ? [
           ServeStaticModule.forRoot({
             rootPath: join(__dirname, '..', '..', '..', 'web', 'dist'),
+            // Only exclude API-only prefixes (no SPA route collision).
+            // Prefixes with SPA pages (gallery, billing, chat, pitch-lens,
+            // pitch-briefs, analytics) are NOT excluded — NestJS controller
+            // routes are registered before the SPA fallback, so API sub-routes
+            // are handled first and the bare SPA paths get index.html.
             exclude: [
               '/auth/{*path}',
               '/presentations/{*path}',
-              '/chat/{*path}',
-              '/billing/{*path}',
               '/credits/{*path}',
               '/exports/{*path}',
               '/health/{*path}',
               '/api/{*path}',
               '/api-keys/{*path}',
-              '/gallery/{*path}',
               '/themes/{*path}',
-              '/pitch-lens/{*path}',
-              '/pitch-briefs/{*path}',
               '/constraints/{*path}',
               '/images/{*path}',
               '/knowledge-base/{*path}',
               '/mcp/{*path}',
-              '/analytics/{*path}',
               '/socket.io/{*path}',
               '/figma/{*path}',
               '/email/{*path}',
