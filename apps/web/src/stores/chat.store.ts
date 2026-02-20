@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { api } from '../lib/api.js';
 import { streamSse } from '../lib/sse.js';
+import { usePresentationStore } from './presentation.store.js';
 
 export interface ChatMessage {
   id: string;
@@ -19,12 +20,6 @@ export interface PendingValidation {
   speakerNotes: string;
   slideType: string;
   reviewPassed: boolean;
-}
-
-export interface PendingCreditConfirmation {
-  imageCount: number;
-  creditCost: number;
-  currentBalance: number;
 }
 
 export interface InlineSlideCard {
@@ -111,7 +106,7 @@ interface ChatState {
   isLoading: boolean;
   error: string | null;
   pendingValidations: PendingValidation[];
-  pendingCreditConfirmation: PendingCreditConfirmation | null;
+  pendingCreditConfirmation: null;
   inlineSlideCards: InlineSlideCard[];
   pendingThemeSelection: PendingThemeSelection | null;
   pendingLayoutSelections: PendingLayoutSelection[];
@@ -231,14 +226,6 @@ export const useChatStore = create<ChatState>((set, get) => ({
             set((state) => ({
               pendingValidations: [...state.pendingValidations, validation],
             }));
-          } else if (metadata?.action === 'credit_confirmation') {
-            set({
-              pendingCreditConfirmation: {
-                imageCount: metadata.imageCount as number,
-                creditCost: metadata.creditCost as number,
-                currentBalance: metadata.currentBalance as number,
-              },
-            });
           } else if (metadata?.action === 'export_ready') {
             const downloadUrl = metadata.downloadUrl as string;
             if (downloadUrl) {
@@ -254,6 +241,12 @@ export const useChatStore = create<ChatState>((set, get) => ({
             const newId = metadata.presentationId as string;
             if (newId) {
               window.dispatchEvent(new CustomEvent('presentation-created', { detail: { id: newId } }));
+            }
+          } else if (metadata?.action === 'change_theme') {
+            // Reload presentation to pick up the new theme
+            const pid = presentationId !== 'new' ? presentationId : undefined;
+            if (pid) {
+              usePresentationStore.getState().loadPresentation(pid);
             }
           } else if (metadata?.action === 'slide_preview') {
             const slide = metadata.slide as InlineSlideCard;
@@ -466,7 +459,6 @@ export const useChatStore = create<ChatState>((set, get) => ({
     messages: [],
     streamingContent: '',
     pendingValidations: [],
-    pendingCreditConfirmation: null,
     inlineSlideCards: [],
     generationComplete: null,
     pendingThemeSelection: null,

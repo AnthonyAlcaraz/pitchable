@@ -17,7 +17,7 @@ import {
 import type { LlmMessage } from './llm.service.js';
 
 export interface ChatStreamEvent {
-  type: 'token' | 'done' | 'error' | 'action' | 'thinking' | 'progress' | 'lens_inferred';
+  type: 'token' | 'done' | 'error' | 'action' | 'thinking' | 'progress';
   content: string;
   metadata?: Record<string, unknown>;
 }

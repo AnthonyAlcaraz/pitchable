@@ -1,6 +1,6 @@
 import {
   Search, Brain, Palette, FileSliders, Eye, Save,
-  Trash2, ArrowUpDown, Layers, Sparkles, type LucideIcon,
+  Trash2, ArrowUpDown, Layers, Sparkles, ShieldCheck, type LucideIcon,
 } from 'lucide-react';
 
 export interface StepConfig {
@@ -25,6 +25,7 @@ const STEP_MAP: Record<string, StepConfig> = {
   llm_add:      { icon: Brain,       phase: 'generate', accentColor: 'text-amber-400' },
   llm_stream:   { icon: Sparkles,    phase: 'generate', accentColor: 'text-amber-400' },
   generate_slide: { icon: FileSliders, phase: 'generate', accentColor: 'text-primary' },
+  quality_review: { icon: ShieldCheck, phase: 'finalize', accentColor: 'text-teal-400' },
 
   // Finalize phase
   save:         { icon: Save,        phase: 'finalize', accentColor: 'text-emerald-400' },
