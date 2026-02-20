@@ -258,4 +258,48 @@ export class KnowledgeBaseService {
     this.logger.log('Using keyword-based KB search (no OPENAI_API_KEY)');
     return this.vectorStore.searchByKeywords(userId, query, limit);
   }
+
+  /**
+   * Re-index all READY documents for a user into ZeroEntropy.
+   * Used when ZeroEntropy was enabled after documents were already processed.
+   */
+  async reindexZeroEntropy(userId: string): Promise<{ indexed: number; failed: number }> {
+    if (!this.zeRetrieval.isAvailable()) {
+      throw new Error('ZeroEntropy is not available');
+    }
+
+    const documents = await this.prisma.document.findMany({
+      where: { userId, status: DocumentStatus.READY },
+      include: {
+        chunks: {
+          select: { id: true, content: true, heading: true },
+        },
+      },
+    });
+
+    let indexed = 0;
+    let failed = 0;
+    const collectionName = this.zeRetrieval.collectionNameForUser(userId);
+
+    for (const doc of documents) {
+      if (doc.chunks.length === 0) continue;
+      try {
+        await this.zeRetrieval.indexDocument(
+          collectionName,
+          doc.id,
+          doc.title,
+          doc.chunks,
+        );
+        indexed++;
+        this.logger.log(`Re-indexed document ${doc.id} (${doc.chunks.length} chunks) into ZeroEntropy`);
+      } catch (err) {
+        failed++;
+        this.logger.warn(
+          `Failed to re-index document ${doc.id}: ${err instanceof Error ? err.message : String(err)}`,
+        );
+      }
+    }
+
+    return { indexed, failed };
+  }
 }

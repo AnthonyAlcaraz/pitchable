@@ -506,7 +506,7 @@ export class GenerationService {
       });
 
       // Layout Selection Gate: offer layout alternatives for eligible slides
-      let effectiveSlideType = outlineSlide.slideType;
+      let effectiveSlideType: string = outlineSlide.slideType;
       if (!GenerationService.SKIP_LAYOUT_TYPES.has(outlineSlide.slideType)) {
         const layoutOptions = this.generateLayoutOptions(outlineSlide);
         if (layoutOptions.length > 1) {
@@ -543,7 +543,7 @@ export class GenerationService {
       }
 
       // Override outlineSlide type for generation
-      const slideForGeneration = { ...outlineSlide, slideType: effectiveSlideType };
+      const slideForGeneration = { ...outlineSlide, slideType: effectiveSlideType as SlideType };
 
       // Use pre-fetched per-slide KB context
       const slideKbContext = slideKbContexts[slideIndex];

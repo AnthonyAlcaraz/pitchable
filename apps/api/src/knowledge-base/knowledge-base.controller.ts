@@ -117,4 +117,10 @@ export class KnowledgeBaseController {
       dto.threshold,
     );
   }
+
+  @Post('reindex')
+  @HttpCode(HttpStatus.OK)
+  async reindexZeroEntropy(@CurrentUser() user: RequestUser) {
+    return this.kbService.reindexZeroEntropy(user.userId);
+  }
 }

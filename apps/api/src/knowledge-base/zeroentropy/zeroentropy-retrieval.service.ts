@@ -63,29 +63,57 @@ export class ZeroEntropyRetrievalService {
 
     const results = await Promise.allSettled(
       chunks.map((chunk) =>
-        this.client!.documents.add({
-          collection_name: collectionName,
-          path: `${documentId}/${chunk.id}`,
-          content: { type: 'text', text: chunk.content },
-          metadata: {
-            document_id: documentId,
-            document_title: documentTitle,
-            ...(chunk.heading ? { heading: chunk.heading } : {}),
-          },
-          overwrite: true,
-        }),
+        this.addOrReplace(collectionName, documentId, documentTitle, chunk),
       ),
     );
 
     const failed = results.filter((r) => r.status === 'rejected');
     if (failed.length > 0) {
+      const firstErr = (failed[0] as PromiseRejectedResult).reason;
       this.logger.warn(
-        `ZeroEntropy indexing: ${failed.length}/${chunks.length} chunks failed for document ${documentId}`,
+        `ZeroEntropy indexing: ${failed.length}/${chunks.length} chunks failed for document ${documentId}. First error: ${firstErr instanceof Error ? firstErr.message : String(firstErr)}`,
       );
     } else {
       this.logger.log(
         `ZeroEntropy: indexed ${chunks.length} chunks for document ${documentId}`,
       );
+    }
+  }
+
+  /**
+   * Add a chunk, deleting existing doc at the same path first if needed.
+   * ZeroEntropy's overwrite feature is currently unavailable, so we delete+add.
+   */
+  private async addOrReplace(
+    collectionName: string,
+    documentId: string,
+    documentTitle: string,
+    chunk: { id: string; content: string; heading?: string | null },
+  ): Promise<void> {
+    const path = `${documentId}/${chunk.id}`;
+    const payload = {
+      collection_name: collectionName,
+      path,
+      content: { type: 'text' as const, text: chunk.content },
+      metadata: {
+        document_id: documentId,
+        document_title: documentTitle,
+        ...(chunk.heading ? { heading: chunk.heading } : {}),
+      },
+    };
+
+    try {
+      await this.client!.documents.add(payload);
+    } catch (err: unknown) {
+      // If conflict (path exists), delete and retry
+      if (err instanceof ConflictError || (err instanceof Error && err.message.includes('400'))) {
+        await this.client!.documents
+          .delete({ collection_name: collectionName, path })
+          .catch(() => {});
+        await this.client!.documents.add(payload);
+      } else {
+        throw err;
+      }
     }
   }
 
