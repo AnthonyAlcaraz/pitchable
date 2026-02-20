@@ -21,6 +21,12 @@ import { SendMessageDto } from './dto/send-message.dto.js';
 import {
   PresentationType,
   PresentationStatus,
+  AudienceType,
+  PitchGoal,
+  CompanyStage,
+  ToneStyle,
+  TechnicalLevel,
+  StoryFramework,
 } from '../../generated/prisma/enums.js';
 
 /** Max time (ms) a SSE stream can be idle before we close it. */
@@ -83,6 +89,26 @@ export class ChatController {
             select: { id: true },
           });
           pitchLensId = defaultLens?.id ?? null;
+        }
+
+        // Auto-create a default Pitch Lens if user has none (skipped onboarding)
+        if (!pitchLensId) {
+          const autoLens = await this.prisma.pitchLens.create({
+            data: {
+              userId: user.userId,
+              name: 'Default Lens',
+              audienceType: AudienceType.CUSTOMERS,
+              pitchGoal: PitchGoal.SELL_PRODUCT,
+              industry: 'General',
+              companyStage: CompanyStage.GROWTH,
+              toneStyle: ToneStyle.CONVERSATIONAL,
+              technicalLevel: TechnicalLevel.SEMI_TECHNICAL,
+              selectedFramework: StoryFramework.HEROS_JOURNEY,
+              isDefault: true,
+            },
+          });
+          pitchLensId = autoLens.id;
+          this.logger.log(`Auto-created default Pitch Lens ${autoLens.id} for user ${user.userId}`);
         }
 
         const pres = await this.prisma.presentation.create({
