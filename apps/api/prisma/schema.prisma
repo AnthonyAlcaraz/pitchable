@@ -33,7 +33,7 @@ model User {
   creditReservations CreditReservation[]
   creditTransactions CreditTransaction[]
   documents          Document[]
-  edgequakeMapping   EdgeQuakeMapping?
+  graphMapping       GraphMapping?
   feedbackEntries    FeedbackEntry[]
   pitchBriefs        PitchBrief[]
   pitchLenses        PitchLens[]
@@ -230,13 +230,14 @@ model Document {
   @@index([briefId])
 }
 
-model EdgeQuakeMapping {
-  id          String   @id @default(uuid()) @db.Uuid
-  userId      String   @unique @db.Uuid
-  tenantId    String
-  workspaceId String
-  createdAt   DateTime @default(now())
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+model GraphMapping {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @unique @db.Uuid
+  graphName String   @map("tenantId")
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("EdgeQuakeMapping")
 }
 
 model DocumentChunk {
@@ -328,7 +329,7 @@ model PitchBrief {
   userId               String         @db.Uuid
   name                 String
   description          String?
-  edgequakeWorkspaceId String?
+  graphName            String?        @map("edgequakeWorkspaceId")
   documentCount        Int            @default(0)
   entityCount          Int            @default(0)
   status               BriefStatus    @default(EMPTY)

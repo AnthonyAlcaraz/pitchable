@@ -6,7 +6,7 @@ import { S3Service } from './storage/s3.service.js';
 import { EmbeddingService } from './embedding/embedding.service.js';
 import { VectorStoreService } from './embedding/vector-store.service.js';
 import type { SearchResult } from './embedding/vector-store.service.js';
-import { EdgeQuakeService } from './edgequake/edgequake.service.js';
+import { FalkorDbService } from './falkordb/falkordb.service.js';
 import { ZeroEntropyRetrievalService } from './zeroentropy/zeroentropy-retrieval.service.js';
 import { DocumentSourceType, DocumentStatus } from '../../generated/prisma/enums.js';
 import { randomUUID } from 'node:crypto';
@@ -31,7 +31,7 @@ export class KnowledgeBaseService {
     @InjectQueue('document-processing') private readonly docQueue: Queue,
     private readonly embeddingService: EmbeddingService,
     private readonly vectorStore: VectorStoreService,
-    private readonly edgequake: EdgeQuakeService,
+    private readonly falkordb: FalkorDbService,
     private readonly zeRetrieval: ZeroEntropyRetrievalService,
   ) {}
 
@@ -179,21 +179,13 @@ export class KnowledgeBaseService {
       }
     }
 
-    // Delete from EdgeQuake if enabled (non-blocking)
-    if (this.edgequake.isEnabled()) {
+    // Delete from FalkorDB if enabled (non-blocking)
+    if (this.falkordb.isEnabled()) {
       try {
-        const mapping = await this.prisma.edgeQuakeMapping.findUnique({
-          where: { userId },
-        });
-        if (mapping) {
-          await this.edgequake.deleteDocument(
-            mapping.tenantId,
-            mapping.workspaceId,
-            documentId,
-          );
-        }
-      } catch (eqError) {
-        this.logger.warn(`EdgeQuake delete failed (non-blocking): ${eqError}`);
+        const graphName = FalkorDbService.kbGraphName(userId);
+        await this.falkordb.deleteDocument(graphName, documentId);
+      } catch (fkError) {
+        this.logger.warn(`FalkorDB delete failed (non-blocking): ${fkError}`);
       }
     }
 
@@ -221,44 +213,13 @@ export class KnowledgeBaseService {
       }
     }
 
-    // 2. Try EdgeQuake Graph-RAG
-    if (this.edgequake.isEnabled()) {
-      try {
-        const mapping = await this.prisma.edgeQuakeMapping.findUnique({
-          where: { userId },
-        });
-        if (mapping) {
-          const result = await this.edgequake.query(
-            mapping.tenantId,
-            mapping.workspaceId,
-            query,
-            'hybrid',
-          );
-          return result.sources.slice(0, limit).map((s) => ({
-            id: s.chunk_id,
-            content: s.content,
-            heading: null,
-            headingLevel: 0,
-            metadata: s.metadata ?? {},
-            documentId: s.document_id,
-            documentTitle: '',
-            similarity: s.score,
-          }));
-        }
-      } catch (eqError) {
-        this.logger.warn(
-          `EdgeQuake search failed, falling back to pgvector: ${eqError instanceof Error ? eqError.message : String(eqError)}`,
-        );
-      }
-    }
-
-    // 3. Fallback: pgvector search (if embeddings available)
+    // 2. Fallback: pgvector search (if embeddings available)
     if (this.embeddingService.isAvailable()) {
       const queryEmbedding = await this.embeddingService.embed(query);
       return this.vectorStore.searchSimilar(userId, queryEmbedding, limit, threshold);
     }
 
-    // 4. Final fallback: keyword-based search (no API key needed)
+    // 3. Final fallback: keyword-based search (no API key needed)
     this.logger.log('Using keyword-based KB search (no OPENAI_API_KEY)');
     return this.vectorStore.searchByKeywords(userId, query, limit);
   }

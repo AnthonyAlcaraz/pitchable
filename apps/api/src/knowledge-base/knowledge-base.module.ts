@@ -15,7 +15,9 @@ import { SpreadsheetParser } from './parsers/spreadsheet.parser.js';
 import { PptxParser } from './parsers/pptx.parser.js';
 import { EmbeddingService } from './embedding/embedding.service.js';
 import { VectorStoreService } from './embedding/vector-store.service.js';
-import { EdgeQuakeService } from './edgequake/edgequake.service.js';
+import { FalkorDbService } from './falkordb/falkordb.service.js';
+import { EntityExtractorService } from './falkordb/entity-extractor.service.js';
+import { LlmService } from '../chat/llm.service.js';
 import { ZeroEntropyRetrievalService } from './zeroentropy/zeroentropy-retrieval.service.js';
 import { OmnisearchService } from './omnisearch.service.js';
 import { RerankerService } from './reranker.service.js';
@@ -40,11 +42,13 @@ import { RerankerService } from './reranker.service.js';
     PptxParser,
     EmbeddingService,
     VectorStoreService,
-    EdgeQuakeService,
+    FalkorDbService,
+    EntityExtractorService,
+    LlmService,
     ZeroEntropyRetrievalService,
     OmnisearchService,
     RerankerService,
   ],
-  exports: [KnowledgeBaseService, S3Service, EmbeddingService, VectorStoreService, EdgeQuakeService, ZeroEntropyRetrievalService, OmnisearchService, RerankerService],
+  exports: [KnowledgeBaseService, S3Service, EmbeddingService, VectorStoreService, FalkorDbService, EntityExtractorService, ZeroEntropyRetrievalService, OmnisearchService, RerankerService],
 })
 export class KnowledgeBaseModule {}

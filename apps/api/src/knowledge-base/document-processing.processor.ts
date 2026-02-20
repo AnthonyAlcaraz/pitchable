@@ -12,7 +12,8 @@ import { SpreadsheetParser } from './parsers/spreadsheet.parser.js';
 import { PptxParser } from './parsers/pptx.parser.js';
 import { EmbeddingService } from './embedding/embedding.service.js';
 import { VectorStoreService } from './embedding/vector-store.service.js';
-import { EdgeQuakeService } from './edgequake/edgequake.service.js';
+import { FalkorDbService } from './falkordb/falkordb.service.js';
+import { EntityExtractorService } from './falkordb/entity-extractor.service.js';
 import { ZeroEntropyRetrievalService } from './zeroentropy/zeroentropy-retrieval.service.js';
 import { chunkByHeadings } from './chunking/heading-chunker.js';
 import { DocumentStatus } from '../../generated/prisma/enums.js';
@@ -35,7 +36,8 @@ export class DocumentProcessingProcessor extends WorkerHost {
     private readonly pptxParser: PptxParser,
     private readonly embeddingService: EmbeddingService,
     private readonly vectorStore: VectorStoreService,
-    private readonly edgequake: EdgeQuakeService,
+    private readonly falkordb: FalkorDbService,
+    private readonly entityExtractor: EntityExtractorService,
     private readonly zeRetrieval: ZeroEntropyRetrievalService,
   ) {
     super();
@@ -176,20 +178,26 @@ export class DocumentProcessingProcessor extends WorkerHost {
 
       this.logger.log(`Document ${documentId}: ${chunks.length} chunks processed, status=READY`);
 
-      // 9. Sync to EdgeQuake Graph-RAG (non-blocking)
-      if (this.edgequake.isEnabled()) {
+      // 9. Extract entities and index into FalkorDB knowledge graph (non-blocking)
+      if (this.falkordb.isEnabled()) {
         try {
-          const mapping = await this.getOrCreateEdgequakeMapping(userId);
-          await this.edgequake.uploadDocument(
-            mapping.tenantId,
-            mapping.workspaceId,
-            extractedText,
-            docTitle,
-          );
-          this.logger.log(`Document ${documentId}: synced to EdgeQuake`);
-        } catch (eqError) {
+          const extraction = await this.entityExtractor.extractFromChunks(storedChunks);
+          if (extraction.entities.length > 0) {
+            const graphName = FalkorDbService.kbGraphName(userId);
+            await this.falkordb.indexDocument(
+              graphName,
+              documentId,
+              docTitle,
+              extraction.entities,
+              extraction.relationships,
+            );
+            this.logger.log(
+              `Document ${documentId}: indexed ${extraction.entities.length} entities into FalkorDB`,
+            );
+          }
+        } catch (fkError) {
           this.logger.warn(
-            `Document ${documentId}: EdgeQuake sync failed (non-blocking): ${eqError instanceof Error ? eqError.message : String(eqError)}`,
+            `Document ${documentId}: FalkorDB entity extraction/indexing failed (non-blocking): ${fkError instanceof Error ? fkError.message : String(fkError)}`,
           );
         }
       }
@@ -211,27 +219,6 @@ export class DocumentProcessingProcessor extends WorkerHost {
       // Don't re-throw: the processor already handled the error by setting ERROR status.
       // Re-throwing caused BullMQ to mark the job as failed with no benefit (no retries configured).
     }
-  }
-
-  private async getOrCreateEdgequakeMapping(userId: string) {
-    const existing = await this.prisma.edgeQuakeMapping.findUnique({
-      where: { userId },
-    });
-    if (existing) return existing;
-
-    const tenant = await this.edgequake.ensureTenant(userId);
-    const workspace = await this.edgequake.ensureWorkspace(
-      tenant.id,
-      'default',
-    );
-
-    return this.prisma.edgeQuakeMapping.create({
-      data: {
-        userId,
-        tenantId: tenant.id,
-        workspaceId: workspace.id,
-      },
-    });
   }
 
   private async parseByMimeType(buffer: Buffer, mimeType: string): Promise<ParseResult> {

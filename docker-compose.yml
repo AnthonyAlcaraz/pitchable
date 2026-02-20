@@ -52,53 +52,20 @@ services:
       retries: 3
     restart: unless-stopped
 
-  # EdgeQuake Graph-RAG API (Rust)
-  edgequake:
-    build:
-      context: ../edgequake/edgequake
-      dockerfile: docker/Dockerfile
-    container_name: pitchable-edgequake
-    restart: unless-stopped
+  # FalkorDB - Graph database for entity relationships (replaces EdgeQuake)
+  falkordb:
+    image: falkordb/falkordb:latest
+    container_name: pitchable-falkordb
     ports:
-      - '8080:8080'
-    environment:
-      EDGEQUAKE_HOST: '0.0.0.0'
-      EDGEQUAKE_PORT: '8080'
-      DATABASE_URL: postgres://edgequake:${EDGEQUAKE_DB_PASSWORD:-edgequake_dev}@edgequake-db:5432/edgequake
-      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
-      RUST_LOG: info,edgequake=debug
-    depends_on:
-      edgequake-db:
-        condition: service_healthy
-    healthcheck:
-      test: ['CMD', 'curl', '-f', 'http://localhost:8080/health']
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 10s
-
-  # EdgeQuake PostgreSQL (pgvector + Apache AGE)
-  edgequake-db:
-    build:
-      context: ../edgequake/edgequake/docker
-      dockerfile: Dockerfile.postgres
-    container_name: pitchable-edgequake-db
-    restart: unless-stopped
-    ports:
-      - '5433:5432'
-    environment:
-      POSTGRES_USER: edgequake
-      POSTGRES_PASSWORD: ${EDGEQUAKE_DB_PASSWORD:-edgequake_dev}
-      POSTGRES_DB: edgequake
+      - '6380:6379'
     volumes:
-      - edgequake_pgdata:/var/lib/postgresql/data
-      - ../edgequake/edgequake/docker/init-extensions.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - falkordb_data:/data
+    restart: unless-stopped
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U edgequake -d edgequake']
+      test: ['CMD', 'redis-cli', '-p', '6379', 'ping']
       interval: 10s
-      timeout: 5s
+      timeout: 3s
       retries: 5
-      start_period: 10s
 
 volumes:
   pgdata:
@@ -107,7 +74,7 @@ volumes:
     driver: local
   miniodata:
     driver: local
-  edgequake_pgdata:
+  falkordb_data:
     driver: local
 
 networks:

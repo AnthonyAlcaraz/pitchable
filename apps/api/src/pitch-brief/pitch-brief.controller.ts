@@ -166,14 +166,12 @@ export class PitchBriefController {
   async getGraph(
     @CurrentUser() user: RequestUser,
     @Param('id', ParseUUIDPipe) id: string,
-    @Query('start_node') startNode?: string,
     @Query('depth') depth?: string,
-    @Query('max_nodes') maxNodes?: string,
+    @Query('limit') limit?: string,
   ) {
     return this.briefService.getGraph(user.userId, id, {
-      startNode,
       depth: depth ? parseInt(depth, 10) : undefined,
-      maxNodes: maxNodes ? parseInt(maxNodes, 10) : undefined,
+      limit: limit ? parseInt(limit, 10) : undefined,
     });
   }
 

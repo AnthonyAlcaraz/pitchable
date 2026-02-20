@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { KnowledgeBaseService } from '../knowledge-base/knowledge-base.service.js';
-import { EdgeQuakeService } from '../knowledge-base/edgequake/edgequake.service.js';
+import { FalkorDbService } from '../knowledge-base/falkordb/falkordb.service.js';
 import { OmnisearchService } from '../knowledge-base/omnisearch.service.js';
 import { RerankerService } from '../knowledge-base/reranker.service.js';
 import { buildFeedbackInjection } from './prompts/feedback-injection.prompt.js';
@@ -17,7 +17,7 @@ export class ContextBuilderService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly kbService: KnowledgeBaseService,
-    private readonly edgequake: EdgeQuakeService,
+    private readonly falkordb: FalkorDbService,
     private readonly omnisearch: OmnisearchService,
     private readonly reranker: RerankerService,
   ) {}
@@ -117,7 +117,8 @@ export class ContextBuilderService {
   }
 
   /**
-   * Retrieve KB context scoped to a specific Pitch Brief's EdgeQuake workspace.
+   * Retrieve KB context scoped to a specific Pitch Brief's FalkorDB graph.
+   * Returns entity relationship context merged with text search results.
    */
   async retrieveBriefContext(
     userId: string,
@@ -128,33 +129,35 @@ export class ContextBuilderService {
     try {
       const brief = await this.prisma.pitchBrief.findUnique({
         where: { id: briefId },
-        select: { edgequakeWorkspaceId: true },
+        select: { graphName: true },
       });
-      if (!brief?.edgequakeWorkspaceId || !this.edgequake.isEnabled()) {
-        return this.retrieveKbContext(userId, query, limit);
+
+      // Always get text context from KB
+      const textContext = await this.retrieveKbContext(userId, query, limit);
+
+      // Add entity graph context if FalkorDB is available
+      if (brief?.graphName && this.falkordb.isEnabled()) {
+        try {
+          const graphResult = await this.falkordb.query(brief.graphName, query);
+          if (graphResult.entities.length > 0) {
+            const entityParts = ['\nRelevant entities from knowledge graph:'];
+            for (const e of graphResult.entities.slice(0, 10)) {
+              entityParts.push(`- ${e.name} (${e.type}): ${e.description}`);
+            }
+            if (graphResult.relationships.length > 0) {
+              entityParts.push('\nEntity relationships:');
+              for (const r of graphResult.relationships.slice(0, 10)) {
+                entityParts.push(`- ${r.source} → ${r.target}: ${r.description}`);
+              }
+            }
+            return [textContext, entityParts.join('\n')].filter(Boolean).join('\n');
+          }
+        } catch (graphErr) {
+          this.logger.warn(`FalkorDB brief query failed (non-blocking): ${graphErr}`);
+        }
       }
 
-      const mapping = await this.prisma.edgeQuakeMapping.findUnique({
-        where: { userId },
-      });
-      if (!mapping) {
-        return this.retrieveKbContext(userId, query, limit);
-      }
-
-      const result = await this.edgequake.query(
-        mapping.tenantId,
-        brief.edgequakeWorkspaceId,
-        query,
-        'hybrid',
-      );
-
-      if (!result.sources || result.sources.length === 0) return '';
-
-      const parts = ['\nRelevant knowledge base content (from Pitch Brief):'];
-      for (const s of result.sources.slice(0, limit)) {
-        parts.push(`---\n${s.content}\n(score: ${s.score.toFixed(2)})`);
-      }
-      return parts.join('\n');
+      return textContext;
     } catch (err) {
       this.logger.warn(`Brief context retrieval failed, falling back to global KB: ${err}`);
       return this.retrieveKbContext(userId, query, limit);

@@ -6,7 +6,7 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
-import { EdgeQuakeService } from '../knowledge-base/edgequake/edgequake.service.js';
+import { FalkorDbService } from '../knowledge-base/falkordb/falkordb.service.js';
 import { KnowledgeBaseService } from '../knowledge-base/knowledge-base.service.js';
 import type { CreatePitchBriefDto } from './dto/create-pitch-brief.dto.js';
 import type { UpdatePitchBriefDto } from './dto/update-pitch-brief.dto.js';
@@ -18,7 +18,7 @@ export class PitchBriefService {
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly edgequake: EdgeQuakeService,
+    private readonly falkordb: FalkorDbService,
     private readonly kbService: KnowledgeBaseService,
   ) {}
 
@@ -34,23 +34,20 @@ export class PitchBriefService {
       },
     });
 
-    // Create dedicated EdgeQuake workspace for this brief
-    if (this.edgequake.isEnabled()) {
+    // Create dedicated FalkorDB graph for this brief
+    if (this.falkordb.isEnabled()) {
       try {
-        const tenantId = await this.getOrCreateTenant(userId);
-        const workspace = await this.edgequake.ensureWorkspace(
-          tenantId,
-          `brief-${brief.id}`,
-        );
+        const graphName = FalkorDbService.briefGraphName(brief.id);
+        await this.falkordb.ensureGraph(graphName);
         await this.prisma.pitchBrief.update({
           where: { id: brief.id },
-          data: { edgequakeWorkspaceId: workspace.id },
+          data: { graphName },
         });
-        brief.edgequakeWorkspaceId = workspace.id;
-        this.logger.log(`Created EQ workspace ${workspace.id} for brief ${brief.id}`);
+        brief.graphName = graphName;
+        this.logger.log(`Created FalkorDB graph ${graphName} for brief ${brief.id}`);
       } catch (error) {
         this.logger.warn(
-          `Failed to create EQ workspace for brief ${brief.id}: ${error instanceof Error ? error.message : String(error)}`,
+          `Failed to create FalkorDB graph for brief ${brief.id}: ${error instanceof Error ? error.message : String(error)}`,
         );
       }
     }
@@ -154,15 +151,14 @@ export class PitchBriefService {
     if (!existing) throw new NotFoundException('Pitch Brief not found');
     if (existing.userId !== userId) throw new ForbiddenException();
 
-    // Delete EQ workspace if it exists
-    if (existing.edgequakeWorkspaceId && this.edgequake.isEnabled()) {
+    // Delete FalkorDB graph if it exists
+    if (existing.graphName && this.falkordb.isEnabled()) {
       try {
-        const tenantId = await this.getOrCreateTenant(userId);
-        await this.edgequake.deleteWorkspace(tenantId, existing.edgequakeWorkspaceId);
-        this.logger.log(`Deleted EQ workspace ${existing.edgequakeWorkspaceId} for brief ${briefId}`);
+        await this.falkordb.deleteGraph(existing.graphName);
+        this.logger.log(`Deleted FalkorDB graph ${existing.graphName} for brief ${briefId}`);
       } catch (error) {
         this.logger.warn(
-          `Failed to delete EQ workspace for brief ${briefId}: ${error instanceof Error ? error.message : String(error)}`,
+          `Failed to delete FalkorDB graph for brief ${briefId}: ${error instanceof Error ? error.message : String(error)}`,
         );
       }
     }
@@ -218,18 +214,13 @@ export class PitchBriefService {
     });
     if (!doc) throw new NotFoundException('Document not found in this brief');
 
-    // Delete from EQ workspace if applicable
-    if (brief.edgequakeWorkspaceId && this.edgequake.isEnabled()) {
+    // Delete from FalkorDB graph if applicable
+    if (brief.graphName && this.falkordb.isEnabled()) {
       try {
-        const tenantId = await this.getOrCreateTenant(userId);
-        await this.edgequake.deleteDocument(
-          tenantId,
-          brief.edgequakeWorkspaceId,
-          docId,
-        );
+        await this.falkordb.deleteDocument(brief.graphName, docId);
       } catch (error) {
         this.logger.warn(
-          `EdgeQuake document delete failed (non-blocking): ${error instanceof Error ? error.message : String(error)}`,
+          `FalkorDB document delete failed (non-blocking): ${error instanceof Error ? error.message : String(error)}`,
         );
       }
     }
@@ -258,23 +249,21 @@ export class PitchBriefService {
   async getGraph(
     userId: string,
     briefId: string,
-    opts?: { startNode?: string; depth?: number; maxNodes?: number },
+    opts?: { depth?: number; limit?: number },
   ) {
     const brief = await this.ensureOwnership(userId, briefId);
-    if (!brief.edgequakeWorkspaceId) {
-      return { nodes: [], edges: [] };
+    if (!brief.graphName || !this.falkordb.isEnabled()) {
+      return { nodes: [], edges: [], totalNodes: 0, totalEdges: 0 };
     }
-    const tenantId = await this.getOrCreateTenant(userId);
-    return this.edgequake.getGraph(tenantId, brief.edgequakeWorkspaceId, opts);
+    return this.falkordb.getFullGraph(brief.graphName, opts);
   }
 
   async getGraphStats(userId: string, briefId: string) {
     const brief = await this.ensureOwnership(userId, briefId);
-    if (!brief.edgequakeWorkspaceId) {
-      return { nodeCount: 0, edgeCount: 0, documentCount: 0 };
+    if (!brief.graphName || !this.falkordb.isEnabled()) {
+      return { totalNodes: 0, totalEdges: 0, nodeTypes: {}, edgeTypes: {} };
     }
-    const tenantId = await this.getOrCreateTenant(userId);
-    return this.edgequake.getGraphStats(tenantId, brief.edgequakeWorkspaceId);
+    return this.falkordb.getGraphStats(brief.graphName);
   }
 
   async getEntities(
@@ -283,11 +272,10 @@ export class PitchBriefService {
     opts?: { type?: string; limit?: number },
   ) {
     const brief = await this.ensureOwnership(userId, briefId);
-    if (!brief.edgequakeWorkspaceId) {
+    if (!brief.graphName || !this.falkordb.isEnabled()) {
       return [];
     }
-    const tenantId = await this.getOrCreateTenant(userId);
-    return this.edgequake.getEntities(tenantId, brief.edgequakeWorkspaceId, opts);
+    return this.falkordb.getEntities(brief.graphName, opts);
   }
 
   async search(
@@ -297,20 +285,10 @@ export class PitchBriefService {
     limit = 10,
   ) {
     const brief = await this.ensureOwnership(userId, briefId);
-    if (!brief.edgequakeWorkspaceId) {
-      return { answer: '', sources: [] };
+    if (!brief.graphName || !this.falkordb.isEnabled()) {
+      return { entities: [], relationships: [] };
     }
-    const tenantId = await this.getOrCreateTenant(userId);
-    const result = await this.edgequake.query(
-      tenantId,
-      brief.edgequakeWorkspaceId,
-      query,
-      'hybrid',
-    );
-    return {
-      answer: result.answer,
-      sources: result.sources.slice(0, limit),
-    };
+    return this.falkordb.query(brief.graphName, query);
   }
 
   // ─── Lens Linking ─────────────────────────────────────────────────────────
@@ -370,19 +348,5 @@ export class PitchBriefService {
     if (!brief) throw new NotFoundException('Pitch Brief not found');
     if (brief.userId !== userId) throw new ForbiddenException();
     return brief;
-  }
-
-  private async getOrCreateTenant(userId: string): Promise<string> {
-    const mapping = await this.prisma.edgeQuakeMapping.findUnique({
-      where: { userId },
-    });
-    if (mapping) return mapping.tenantId;
-
-    const tenant = await this.edgequake.ensureTenant(userId);
-    const defaultWs = await this.edgequake.ensureWorkspace(tenant.id, 'default');
-    await this.prisma.edgeQuakeMapping.create({
-      data: { userId, tenantId: tenant.id, workspaceId: defaultWs.id },
-    });
-    return tenant.id;
   }
 }
