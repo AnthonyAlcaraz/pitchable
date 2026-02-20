@@ -427,29 +427,28 @@ export function LandingPage() {
           </div>
 
           <ShowcaseDeck
-            title="AMI Labs Pitchdeck — Dec 2025"
-            theme="Custom Brand"
+            title="NeuroPay — AI-Powered Fraud Detection"
+            theme="Creative Warm"
             slides={5}
             images={[
-              '/showcase/ami-labs-web-01.jpg',
-              '/showcase/ami-labs-web-02.jpg',
-              '/showcase/ami-labs-web-03.jpg',
-              '/showcase/ami-labs-web-04.jpg',
-              '/showcase/ami-labs-web-05.jpg',
+              '/showcase/investor-web-02.jpg',
+              '/showcase/investor-web-03.jpg',
+              '/showcase/investor-web-04.jpg',
+              '/showcase/investor-web-05.jpg',
             ]}
           />
 
           <div className="mt-12" />
 
           <ShowcaseDeck
-            title="The Future of Autonomous AI Agents in Enterprise"
+            title="Financial Services Digital Transformation"
             theme="McKinsey Executive"
-            slides={4}
+            slides={5}
             images={[
-              '/showcase/ai-agents-web-02.jpg',
-              '/showcase/ai-agents-web-03.jpg',
-              '/showcase/ai-agents-web-04.jpg',
-              '/showcase/ai-agents-web-05.jpg',
+              '/showcase/mckinsey-web-02.jpg',
+              '/showcase/mckinsey-web-03.jpg',
+              '/showcase/mckinsey-web-04.jpg',
+              '/showcase/mckinsey-web-05.jpg',
             ]}
           />
         </div>
