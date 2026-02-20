@@ -62,7 +62,10 @@ export class S3Service implements OnModuleInit {
     return this.endpoint;
   }
 
-  private requireS3(): S3Client {
+  // Return type widened: nodenext moduleResolution cannot trace .send()
+  // through @smithy/smithy-client class hierarchy in @aws-sdk/client-s3
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private requireS3(): any {
     if (!this.s3) {
       throw new Error('S3 is not configured. Set S3_ENDPOINT, S3_ACCESS_KEY, and S3_SECRET_KEY.');
     }

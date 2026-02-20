@@ -7,7 +7,7 @@ import {
   Res,
   UseGuards,
 } from '@nestjs/common';
-import * as express from 'express';
+import type { HttpResponse } from '../types/express.js';
 import { ExportsService } from './exports.service.js';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
 import { ExportFormat } from '../../generated/prisma/enums.js';
@@ -50,9 +50,10 @@ export class ExportsController {
   @Get('exports/:jobId/download')
   async downloadExport(
     @Param('jobId') jobId: string,
-    @Res() res: express.Response,
+    @Res() res: HttpResponse,
   ) {
     const { url } = await this.exportsService.getSignedDownloadUrl(jobId);
-    res.redirect(302, url);
+    // Express 5 default is 302; single-arg form resolves TS overload mismatch
+    res.redirect(url);
   }
 }

@@ -9,7 +9,7 @@ import {
   Res,
   Logger,
 } from '@nestjs/common';
-import * as express from 'express';
+import type { HttpResponse } from '../types/express.js';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
 import { PresentationOwnerGuard } from '../auth/guards/presentation-owner.guard.js';
 import { CurrentUser } from '../auth/decorators/current-user.decorator.js';
@@ -44,7 +44,7 @@ export class ChatController {
     @CurrentUser() user: RequestUser,
     @Param('presentationId') rawPresentationId: string,
     @Body() dto: SendMessageDto,
-    @Res() res: express.Response,
+    @Res() res: HttpResponse,
   ): Promise<void> {
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');

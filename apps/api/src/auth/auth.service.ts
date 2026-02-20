@@ -177,7 +177,7 @@ export class AuthService {
     const user = await this.prisma.user.findUnique({ where: { email } });
     if (!user) return; // Don't reveal email existence
 
-    const token = await this.jwtService.signAsync(
+    const token = await (this.jwtService as any).signAsync(
       { sub: user.id, email: user.email, type: 'password-reset' },
       {
         secret: this.configService.get<string>('JWT_ACCESS_SECRET'),
@@ -259,12 +259,13 @@ export class AuthService {
   ): Promise<AuthTokens> {
     const payload: Record<string, unknown> = { sub: userId, email, role };
 
+    const jwtSvc = this.jwtService as any;
     const [accessToken, refreshToken] = await Promise.all([
-      this.jwtService.signAsync(payload, {
+      jwtSvc.signAsync(payload, {
         secret: this.configService.get<string>('JWT_ACCESS_SECRET'),
         expiresIn: 900, // 15 minutes
       }),
-      this.jwtService.signAsync(payload, {
+      jwtSvc.signAsync(payload, {
         secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
         expiresIn: 604800, // 7 days
       }),

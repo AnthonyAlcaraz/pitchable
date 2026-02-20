@@ -6,7 +6,7 @@ import {
   HttpStatus,
   Logger,
 } from '@nestjs/common';
-import type { Request, Response } from 'express';
+import type { HttpRequest, HttpResponse } from '../../types/express.js';
 
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
@@ -14,8 +14,8 @@ export class AllExceptionsFilter implements ExceptionFilter {
 
   catch(exception: unknown, host: ArgumentsHost): void {
     const ctx = host.switchToHttp();
-    const response = ctx.getResponse<Response>();
-    const request = ctx.getRequest<Request>();
+    const response = ctx.getResponse<HttpResponse>();
+    const request = ctx.getRequest<HttpRequest>();
 
     let statusCode: number;
     let message: string;

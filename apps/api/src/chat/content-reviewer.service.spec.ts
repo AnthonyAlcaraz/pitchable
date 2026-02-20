@@ -1,4 +1,4 @@
-import { Test } from '@nestjs/testing';
+import { Test, TestingModule } from '@nestjs/testing';
 import { ContentReviewerService } from './content-reviewer.service';
 import { LlmService } from './llm.service';
 
@@ -11,14 +11,14 @@ describe('ContentReviewerService', () => {
       completeJson: jest.fn(),
     };
 
-    const module = await Test.createTestingModule({
+    const module: TestingModule = await Test.createTestingModule({
       providers: [
         ContentReviewerService,
         { provide: LlmService, useValue: llm },
       ],
     }).compile();
 
-    service = module.get(ContentReviewerService);
+    service = (module as any).get(ContentReviewerService);
   });
 
   describe('reviewSlide', () => {

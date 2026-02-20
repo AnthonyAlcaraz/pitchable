@@ -1,4 +1,4 @@
-import { Test } from '@nestjs/testing';
+import { Test, TestingModule } from '@nestjs/testing';
 import { ValidationGateService } from './validation-gate.service';
 import { FeedbackLogService } from './feedback-log.service';
 import type { ValidationRequest } from './validation-gate.service';
@@ -51,7 +51,7 @@ describe('ValidationGateService', () => {
       logCorrection: jest.fn().mockResolvedValue(undefined),
     };
 
-    const module = await Test.createTestingModule({
+    const module: TestingModule = await Test.createTestingModule({
       providers: [
         ValidationGateService,
         { provide: PrismaService, useValue: prisma },
@@ -59,7 +59,7 @@ describe('ValidationGateService', () => {
       ],
     }).compile();
 
-    service = module.get(ValidationGateService);
+    service = (module as any).get(ValidationGateService);
   });
 
   afterEach(() => {

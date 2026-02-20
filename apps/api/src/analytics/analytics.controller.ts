@@ -1,5 +1,5 @@
 import { Controller, Post, Get, Param, Req, UseGuards } from '@nestjs/common';
-import type { Request } from 'express';
+import type { HttpRequest } from '../types/express.js';
 import { AnalyticsService } from './analytics.service.js';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
 
@@ -10,7 +10,7 @@ export class AnalyticsController {
   @Post('view/:presentationId')
   async recordView(
     @Param('presentationId') presentationId: string,
-    @Req() req: Request,
+    @Req() req: HttpRequest,
   ) {
     const ip = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() ?? req.ip;
     const referrer = req.headers['referer'] as string | undefined;
@@ -20,8 +20,8 @@ export class AnalyticsController {
 
   @Get('creator-stats')
   @UseGuards(JwtAuthGuard)
-  async getCreatorStats(@Req() req: Request) {
-    const user = req.user as { userId: string };
+  async getCreatorStats(@Req() req: HttpRequest) {
+    const user = req.user as unknown as { userId: string };
     return this.analyticsService.getCreatorStats(user.userId);
   }
 }

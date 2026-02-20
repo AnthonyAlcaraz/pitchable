@@ -1,4 +1,4 @@
-import { Test } from '@nestjs/testing';
+import { Test, TestingModule } from '@nestjs/testing';
 import { FeedbackLogService } from './feedback-log.service';
 
 // Mock PrismaService at module level to avoid generated Prisma client ESM import
@@ -29,14 +29,14 @@ describe('FeedbackLogService', () => {
       },
     };
 
-    const module = await Test.createTestingModule({
+    const module: TestingModule = await Test.createTestingModule({
       providers: [
         FeedbackLogService,
         { provide: PrismaService, useValue: prisma },
       ],
     }).compile();
 
-    service = module.get(FeedbackLogService);
+    service = (module as any).get(FeedbackLogService);
   });
 
   describe('logFeedback', () => {

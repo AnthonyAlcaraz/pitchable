@@ -1,4 +1,4 @@
-import { Test } from '@nestjs/testing';
+import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { ExportsService } from './exports.service';
 import { MarpExporterService } from './marp-exporter.service';
@@ -91,7 +91,7 @@ describe('ExportsService', () => {
       generateRevealHtml: jest.fn().mockReturnValue('<html>reveal</html>'),
     };
 
-    const module = await Test.createTestingModule({
+    const module: TestingModule = await Test.createTestingModule({
       providers: [
         ExportsService,
         { provide: PrismaService, useValue: prisma },
@@ -102,7 +102,7 @@ describe('ExportsService', () => {
       ],
     }).compile();
 
-    service = module.get<ExportsService>(ExportsService);
+    service = (module as any).get(ExportsService);
   });
 
   describe('createExportJob', () => {

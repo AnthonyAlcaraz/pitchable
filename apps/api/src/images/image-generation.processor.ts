@@ -24,7 +24,7 @@ export interface ImageGenerationJobData {
 
 // ── Processor ───────────────────────────────────────────────
 
-@Processor('image-generation', { concurrency: 1 })
+@Processor('image-generation', { concurrency: 1 } as Record<string, unknown>)
 export class ImageGenerationProcessor extends WorkerHost {
   private readonly logger = new Logger(ImageGenerationProcessor.name);
   private readonly s3Endpoint: string;

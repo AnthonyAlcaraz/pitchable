@@ -13,7 +13,7 @@ import {
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
-import type { Request as ExpressRequest } from 'express';
+import type { HttpRequest } from '../types/express.js';
 import { AuthService } from './auth.service.js';
 import type { AuthResponse, AuthTokens } from './auth.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
@@ -46,7 +46,7 @@ export class AuthController {
   })
   async register(
     @Body() registerDto: RegisterDto,
-    @Req() req: ExpressRequest,
+    @Req() req: HttpRequest,
   ): Promise<AuthResponse> {
     const ip = req.ip ?? req.socket.remoteAddress ?? 'unknown';
     return this.authService.register(
@@ -61,7 +61,7 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   async login(
     @Body() loginDto: LoginDto,
-    @Req() req: ExpressRequest,
+    @Req() req: HttpRequest,
   ): Promise<AuthResponse> {
     const user = await this.authService.validateUser(loginDto.email, loginDto.password);
     if (!user) {

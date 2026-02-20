@@ -8,7 +8,7 @@ interface FigmaSyncJobData {
   userId: string;
 }
 
-@Processor('figma-sync', { concurrency: 1 })
+@Processor('figma-sync', { concurrency: 1 } as Record<string, unknown>)
 export class FigmaSyncProcessor extends WorkerHost {
   private readonly logger = new Logger(FigmaSyncProcessor.name);
 

@@ -62,7 +62,7 @@ const redisConnection = redisUrl
         removeOnComplete: { age: 3600, count: 1000 },  // keep last 1000 or 1h
         removeOnFail: { age: 86400 },                  // keep failed jobs 24h
       },
-    }),
+    } as any),
     ScheduleModule.forRoot(),
     // Serve the React SPA from the built web app (production only)
     ...(process.env['NODE_ENV'] === 'production'

@@ -3,7 +3,7 @@ import { Reflector } from '@nestjs/core';
 import { UserRole } from '../../../generated/prisma/enums.js';
 import { ROLES_KEY } from '../decorators/roles.decorator.js';
 import { RequestUser } from '../decorators/current-user.decorator.js';
-import { Request } from 'express';
+import type { HttpRequest } from '../../types/express.js';
 
 @Injectable()
 export class RolesGuard implements CanActivate {
@@ -18,8 +18,8 @@ export class RolesGuard implements CanActivate {
       return true;
     }
 
-    const request = context.switchToHttp().getRequest<Request>();
-    const user = request.user as RequestUser;
+    const request = context.switchToHttp().getRequest<HttpRequest>();
+    const user = request.user as unknown as RequestUser;
 
     if (!user) {
       return false;
