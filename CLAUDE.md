@@ -6,7 +6,8 @@
 
 ```bash
 # After ANY code change:
-cd ~/projects/slide-saas/apps/api && npx tsc --noEmit  # zero errors required
+cd ~/projects/slide-saas/apps/api && npx tsc --noEmit  # API type check
+cd ~/projects/slide-saas/apps/web && npx tsc -b          # Frontend type check (strict, matches Railway)
 cd ~/projects/slide-saas && git add <changed-files>
 git commit -m "type: description"
 git push
@@ -14,6 +15,25 @@ git push
 
 **Commit types:** `feat`, `fix`, `refactor`, `chore`, `docs`
 **Never batch changes across phases.** One commit per logical change.
+
+### Railway Deploy Verification (MANDATORY after every push)
+
+**ALWAYS check Railway dashboard after pushing.** Wait ~2 min for build, then verify:
+
+```bash
+# 1. Check deploy triggered
+gh api repos/AnthonyAlcaraz/pitchable/deployments --jq '.[0] | {sha: .sha[0:7], created_at}'
+# 2. Wait for build (~2 min), then check status
+sleep 120
+gh api repos/AnthonyAlcaraz/pitchable/deployments --jq '.[0].id' | xargs -I{} gh api repos/AnthonyAlcaraz/pitchable/deployments/{}/statuses --jq '.[0].state'
+# 3. If "failure": open Railway dashboard via Chrome DevTools MCP, read build logs, fix, repush
+# 4. If "success": verified deployed
+```
+
+**Key Railway gotchas:**
+- Railway uses `tsc -b` (project references) with `noUnusedLocals: true` — stricter than `tsc --noEmit`
+- Docker build may fail on missing transitive deps (e.g., `undici`) — add explicitly to package.json
+- Domain: **pitch-able.ai** | Project: **sweet-courtesy** | Region: asia-southeast1
 
 ## Project Structure
 
