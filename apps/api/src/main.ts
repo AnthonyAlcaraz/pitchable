@@ -1,3 +1,5 @@
+import { join } from 'node:path';
+import { existsSync, readFileSync } from 'node:fs';
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
@@ -56,6 +58,26 @@ async function bootstrap() {
     .build();
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api/docs', app, document);
+
+  // SPA collision middleware: routes where both SPA pages and API controllers
+  // share the same prefix. Serves index.html for browser navigation (Accept:
+  // text/html) so the React SPA handles routing, while API calls (fetch/XHR
+  // with Accept: */*) pass through to NestJS controllers.
+  if (process.env['NODE_ENV'] === 'production') {
+    const spaIndexPath = join(__dirname, '..', '..', '..', 'web', 'dist', 'index.html');
+    if (existsSync(spaIndexPath)) {
+      const spaHtml = readFileSync(spaIndexPath, 'utf-8');
+      const collisionPrefixes = ['/pitch-lens', '/pitch-briefs'];
+      expressApp.use((req: { method: string; path: string; headers: Record<string, string> }, res: { setHeader: (k: string, v: string) => void; end: (body: string) => void }, next: () => void) => {
+        if (req.method !== 'GET') return next();
+        if (!(req.headers['accept'] || '').includes('text/html')) return next();
+        const match = collisionPrefixes.some(p => req.path === p || req.path.startsWith(p + '/'));
+        if (!match) return next();
+        res.setHeader('Content-Type', 'text/html');
+        res.end(spaHtml);
+      });
+    }
+  }
 
   await app.listen(process.env['PORT'] || 3000);
 
