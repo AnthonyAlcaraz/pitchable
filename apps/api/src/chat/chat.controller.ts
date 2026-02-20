@@ -25,6 +25,9 @@ import {
 /** Max time (ms) a SSE stream can be idle before we close it. */
 const SSE_IDLE_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
 
+/** Heartbeat interval (ms) to keep SSE alive through proxies (Cloudflare, Railway). */
+const SSE_HEARTBEAT_MS = 20_000; // 20 seconds
+
 @Controller('chat')
 @UseGuards(JwtAuthGuard)
 export class ChatController {
@@ -105,6 +108,14 @@ export class ChatController {
     let clientDisconnected = false;
     res.on('close', () => { clientDisconnected = true; });
 
+    // Heartbeat: send SSE comment every 20s to prevent proxy idle timeout
+    // (Cloudflare kills HTTP/2 connections idle >100s with ERR_HTTP2_PROTOCOL_ERROR)
+    const heartbeat = setInterval(() => {
+      if (!clientDisconnected && res.writable) {
+        try { res.write(': keepalive\n\n'); } catch { /* ignore */ }
+      }
+    }, SSE_HEARTBEAT_MS);
+
     // Idle timeout: close stream if no events sent for too long
     let idleTimer: ReturnType<typeof setTimeout> | null = null;
     const resetIdle = () => {
@@ -143,6 +154,7 @@ export class ChatController {
       }
     }
 
+    clearInterval(heartbeat);
     if (idleTimer) clearTimeout(idleTimer);
 
     if (!clientDisconnected && res.writable) {
