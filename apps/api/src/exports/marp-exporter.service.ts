@@ -865,4 +865,55 @@ h3 { margin-top: 10px; font-size: 0.8em; }
       throw new Error(`PDF export failed: ${message}`);
     }
   }
+
+  /**
+   * Render each slide as a JPEG image and return the buffers.
+   * Uses Marp CLI --images jpeg. Caller is responsible for storing them.
+   */
+  async renderSlideImages(marpMarkdown: string): Promise<Buffer[]> {
+    const tempDir = join(process.cwd(), 'exports', `preview-${Date.now()}`);
+    await mkdir(tempDir, { recursive: true });
+
+    const tempMdPath = join(tempDir, 'slides.md');
+    await writeFile(tempMdPath, marpMarkdown, 'utf-8');
+
+    const imagesBase = join(tempDir, 'slide');
+
+    try {
+      await execFileAsync('npx', [
+        '@marp-team/marp-cli',
+        shellSafePath(tempMdPath),
+        '--images', 'jpeg',
+        '--html',
+        '--jpeg-quality', '80',
+        '--allow-local-files',
+        '--no-stdin',
+        '-o',
+        shellSafePath(imagesBase + '.jpeg'),
+      ], { timeout: 300_000, shell: true });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      this.logger.error(`Preview image render failed: ${message}`);
+      return [];
+    }
+
+    const dirFiles = await readdir(tempDir);
+    const slideImages = dirFiles
+      .filter((f) => f.startsWith('slide.') && f.endsWith('.jpeg') && /\.\d{3}\.jpeg$/.test(f))
+      .sort();
+
+    const buffers: Buffer[] = [];
+    for (const imgFile of slideImages) {
+      buffers.push(await readFile(join(tempDir, imgFile)));
+    }
+
+    // Cleanup temp files
+    for (const f of await readdir(tempDir)) {
+      try { await unlink(join(tempDir, f)); } catch { /* ignore */ }
+    }
+    try { await (await import('fs/promises')).rmdir(tempDir); } catch { /* ignore */ }
+
+    this.logger.log(`Rendered ${buffers.length} slide preview images`);
+    return buffers;
+  }
 }

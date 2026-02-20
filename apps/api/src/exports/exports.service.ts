@@ -408,6 +408,13 @@ export class ExportsService {
       this.logger.log(
         `Export job ${jobId} completed: ${job.format} -> ${fileUrl}`,
       );
+
+      // Generate and persist per-slide preview images (best-effort, non-blocking)
+      this.generateSlidePreviewImages(presentation, slides, theme, imageLayout, layoutProfile, rendererOverrides, figmaBackgrounds)
+        .catch((err: unknown) => {
+          const msg = err instanceof Error ? err.message : String(err);
+          this.logger.warn(`Preview generation failed for ${presentation.id}: ${msg}`);
+        });
     } catch (error: unknown) {
       const message =
         error instanceof Error ? error.message : 'Unknown export error';
@@ -965,5 +972,94 @@ export class ExportsService {
     }
 
     return blocks;
+  }
+
+  /**
+   * Get a slide's preview image — returns S3 URL redirect or local buffer.
+   */
+  async getSlidePreviewImage(
+    slideId: string,
+  ): Promise<{ url: string } | { buffer: Buffer } | null> {
+    const slide = await this.prisma.slide.findUnique({
+      where: { id: slideId },
+      select: { previewUrl: true },
+    });
+
+    if (!slide?.previewUrl) return null;
+
+    if (!slide.previewUrl.startsWith('local://')) {
+      // S3 key — get presigned URL
+      try {
+        const url = await this.s3.getSignedDownloadUrl(slide.previewUrl, 3600);
+        return { url };
+      } catch {
+        return null;
+      }
+    }
+
+    // Local file
+    const s3Key = slide.previewUrl.replace('local://', '');
+    const localPath = join(this.tempDir, '..', s3Key);
+    try {
+      const buffer = await readFile(localPath);
+      return { buffer };
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Generate per-slide preview images and save them.
+   * Uses the same Marp markdown the export uses.
+   * Updates each slide's previewUrl in the database.
+   */
+  private async generateSlidePreviewImages(
+    presentation: PresentationModel,
+    slides: SlideModel[],
+    theme: ThemeModel | null,
+    imageLayout?: string,
+    layoutProfile?: LayoutProfile,
+    rendererOverrides?: Map<number, string>,
+    figmaBackgrounds?: Map<number, string>,
+  ): Promise<void> {
+    if (!theme) return;
+
+    const marpMarkdown = this.marpExporter.generateMarpMarkdown(
+      presentation,
+      slides,
+      theme,
+      imageLayout,
+      layoutProfile,
+      rendererOverrides,
+      figmaBackgrounds,
+    );
+
+    const buffers = await this.marpExporter.renderSlideImages(marpMarkdown);
+    if (buffers.length === 0) return;
+
+    const sortedSlides = [...slides].sort((a, b) => a.slideNumber - b.slideNumber);
+
+    for (let i = 0; i < buffers.length && i < sortedSlides.length; i++) {
+      const slide = sortedSlides[i];
+      const s3Key = `previews/${presentation.id}/${slide.slideNumber}.jpeg`;
+      let previewUrl = s3Key;
+
+      try {
+        await this.s3.upload(s3Key, buffers[i], 'image/jpeg');
+      } catch {
+        // Fallback: save locally
+        const localDir = join(this.tempDir, '..', 'previews', presentation.id);
+        await mkdir(localDir, { recursive: true });
+        await writeFile(join(localDir, `${slide.slideNumber}.jpeg`), buffers[i]);
+        previewUrl = `local://previews/${presentation.id}/${slide.slideNumber}.jpeg`;
+      }
+
+      await this.prisma.slide.update({
+        where: { id: slide.id },
+        data: { previewUrl },
+      });
+    }
+
+    this.logger.log(`Saved ${Math.min(buffers.length, sortedSlides.length)} slide previews for presentation ${presentation.id}`);
   }
 }

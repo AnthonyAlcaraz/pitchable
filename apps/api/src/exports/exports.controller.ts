@@ -70,4 +70,25 @@ export class ExportsController {
     // S3 presigned URL — redirect
     res.redirect(url);
   }
+
+  @Get('slides/:slideId/preview')
+  async getSlidePreview(
+    @Param('slideId') slideId: string,
+    @Res() res: HttpResponse,
+  ) {
+    const result = await this.exportsService.getSlidePreviewImage(slideId);
+    if (!result) {
+      res.status(404).json({ message: 'No preview available' });
+      return;
+    }
+
+    if ('url' in result) {
+      res.redirect(result.url);
+      return;
+    }
+
+    res.setHeader('Content-Type', 'image/jpeg');
+    res.setHeader('Cache-Control', 'public, max-age=3600');
+    res.send(result.buffer);
+  }
 }

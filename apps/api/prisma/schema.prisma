@@ -103,6 +103,7 @@ model Slide {
   figmaFileKey   String?
   figmaNodeId    String?
   figmaNodeName  String?
+  previewUrl     String?
   sectionLabel      String?
   createdAt         DateTime     @default(now())
   updatedAt         DateTime     @default(now()) @updatedAt

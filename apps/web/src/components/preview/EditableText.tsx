@@ -72,7 +72,8 @@ export function EditableText({
     };
 
     if (multiline) {
-      return <textarea {...sharedProps} rows={4} />;
+      const lineCount = Math.max(4, (draft.match(/\n/g) || []).length + 2);
+      return <textarea {...sharedProps} rows={Math.min(lineCount, 20)} className={cn(sharedProps.className, 'font-mono text-sm')} />;
     }
     return <input type="text" {...sharedProps} />;
   }

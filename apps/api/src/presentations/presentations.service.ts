@@ -59,6 +59,7 @@ export interface PresentationWithSlides {
     figmaFileKey: string | null;
     figmaNodeId: string | null;
     figmaNodeName: string | null;
+    previewUrl: string | null;
     createdAt: Date;
   }>;
 }
@@ -209,6 +210,7 @@ export class PresentationsService {
         figmaFileKey: s.figmaFileKey,
         figmaNodeId: s.figmaNodeId,
         figmaNodeName: s.figmaNodeName,
+        previewUrl: s.previewUrl,
         createdAt: s.createdAt,
       })),
     };
@@ -308,6 +310,7 @@ export class PresentationsService {
         figmaFileKey: s.figmaFileKey,
         figmaNodeId: s.figmaNodeId,
         figmaNodeName: s.figmaNodeName,
+        previewUrl: s.previewUrl,
         createdAt: s.createdAt,
       })),
     };
@@ -643,6 +646,7 @@ export class PresentationsService {
         figmaFileKey: s.figmaFileKey,
         figmaNodeId: s.figmaNodeId,
         figmaNodeName: s.figmaNodeName,
+        previewUrl: s.previewUrl,
         createdAt: s.createdAt,
       })),
     };
@@ -767,6 +771,7 @@ export class PresentationsService {
         figmaFileKey: s.figmaFileKey,
         figmaNodeId: s.figmaNodeId,
         figmaNodeName: s.figmaNodeName,
+        previewUrl: s.previewUrl,
         createdAt: s.createdAt,
       })),
     };

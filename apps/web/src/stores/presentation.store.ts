@@ -14,6 +14,7 @@ export interface SlideData {
   figmaFileKey: string | null;
   figmaNodeId: string | null;
   figmaNodeName: string | null;
+  previewUrl: string | null;
   createdAt: string;
   updatedAt?: string;
   figmaLastSyncAt?: string | null;

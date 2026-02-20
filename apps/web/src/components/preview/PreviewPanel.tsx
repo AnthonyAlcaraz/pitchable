@@ -7,7 +7,6 @@ import { ThumbnailSidebar } from './ThumbnailSidebar';
 import { SlideHeader } from './SlideHeader';
 import { PresentationMode } from './PresentationMode';
 import { EditableSlide } from './EditableSlide';
-import { SlideRenderer } from './SlideRenderer';
 import { NarrativeAdvice } from './NarrativeAdvice';
 import { api } from '@/lib/api';
 
@@ -165,15 +164,25 @@ export function PreviewPanel({ presentationId }: PreviewPanelProps) {
           <div className="flex-1 overflow-y-auto bg-muted/20 p-6">
             {currentSlide && (
               <div className="mx-auto w-full max-w-5xl space-y-4">
-                {/* Read-only preview (final result) */}
-                <div>
-                  <p className="mb-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wide">Preview</p>
-                  <SlideRenderer slide={currentSlide} theme={presentation?.theme} />
-                </div>
+                {/* Real rendered preview (from export) */}
+                {currentSlide.previewUrl && (
+                  <div>
+                    <p className="mb-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wide">Final Result</p>
+                    <div className="overflow-hidden rounded-lg border border-border shadow-sm" style={{ aspectRatio: '16/9' }}>
+                      <img
+                        src={`/slides/${currentSlide.id}/preview`}
+                        alt={`Slide ${currentSlide.slideNumber} preview`}
+                        className="h-full w-full object-contain bg-black"
+                      />
+                    </div>
+                  </div>
+                )}
 
                 {/* Editable slide */}
                 <div>
-                  <p className="mb-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wide">Edit</p>
+                  <p className="mb-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                    {currentSlide.previewUrl ? 'Edit' : 'Slide'}
+                  </p>
                   <EditableSlide slide={currentSlide} presentationId={presentationId!} theme={presentation?.theme} />
                 </div>
 

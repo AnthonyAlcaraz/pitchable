@@ -105,9 +105,19 @@ export function PresentationMode({
         </button>
       )}
 
-      {/* Main slide */}
+      {/* Main slide — show rendered preview if available, otherwise fallback */}
       <div className="w-full max-w-5xl px-8">
-        <SlideRenderer slide={currentSlide} theme={theme} scale={2} />
+        {currentSlide.previewUrl ? (
+          <div className="overflow-hidden rounded-lg" style={{ aspectRatio: '16/9' }}>
+            <img
+              src={`/slides/${currentSlide.id}/preview`}
+              alt={`Slide ${currentSlide.slideNumber}`}
+              className="h-full w-full object-contain"
+            />
+          </div>
+        ) : (
+          <SlideRenderer slide={currentSlide} theme={theme} scale={2} />
+        )}
       </div>
     </div>
   );
