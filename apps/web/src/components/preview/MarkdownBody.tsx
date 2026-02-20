@@ -65,7 +65,7 @@ const compactComponents: Components = {
     <li className="truncate">- {children}</li>
   ),
   blockquote: ({ children }) => <>{children}</>,
-  table: ({ children }) => <div className="text-muted-foreground">[table]</div>,
+  table: () => <div className="text-muted-foreground">[table]</div>,
   h1: ({ children }) => <p className="font-bold">{children}</p>,
   h2: ({ children }) => <p className="font-bold">{children}</p>,
   h3: ({ children }) => <p className="font-semibold">{children}</p>,
