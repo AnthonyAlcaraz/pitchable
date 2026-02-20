@@ -627,8 +627,6 @@ export class ExportsService {
       );
     }
 
-    const url = await this.s3.getSignedDownloadUrl(job.fileUrl, 3600);
-
     const extensionMap: Record<string, string> = {
       [ExportFormat.PPTX]: 'pptx',
       [ExportFormat.PDF]: 'pdf',
@@ -640,7 +638,75 @@ export class ExportsService {
     const title = job.presentation?.title ?? 'presentation';
     const filename = `${title}.${ext}`;
 
+    // When S3 is available, return a presigned URL
+    if (this.s3.isAvailable() && !job.fileUrl.startsWith('local://')) {
+      const url = await this.s3.getSignedDownloadUrl(job.fileUrl, 3600);
+      return { url, filename };
+    }
+
+    // Fallback: serve via the local download endpoint
+    const url = `/exports/${jobId}/download`;
     return { url, filename };
+  }
+
+  /**
+   * Get the export file buffer for direct serving (used when S3 is unavailable).
+   */
+  async getExportBuffer(
+    jobId: string,
+  ): Promise<{ buffer: Buffer; filename: string; contentType: string }> {
+    const job = await this.prisma.exportJob.findUnique({
+      where: { id: jobId },
+      include: { presentation: { select: { title: true } } },
+    });
+
+    if (!job) {
+      throw new NotFoundException(`Export job "${jobId}" not found`);
+    }
+
+    if (job.status !== JobStatus.COMPLETED || !job.fileUrl) {
+      throw new NotFoundException(
+        `Export job "${jobId}" is not completed or has no file`,
+      );
+    }
+
+    const extMap: Record<string, string> = {
+      [ExportFormat.PPTX]: 'pptx',
+      [ExportFormat.PDF]: 'pdf',
+      [ExportFormat.REVEAL_JS]: 'html',
+      [ExportFormat.GOOGLE_SLIDES]: 'json',
+      [ExportFormat.FIGMA]: 'json',
+    };
+    const ctMap: Record<string, string> = {
+      [ExportFormat.PPTX]: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      [ExportFormat.PDF]: 'application/pdf',
+      [ExportFormat.REVEAL_JS]: 'text/html',
+      [ExportFormat.GOOGLE_SLIDES]: 'application/json',
+      [ExportFormat.FIGMA]: 'application/json',
+    };
+
+    const ext = extMap[job.format] ?? 'bin';
+    const title = job.presentation?.title ?? 'presentation';
+    const filename = `${title}.${ext}`;
+    const contentType = ctMap[job.format] ?? 'application/octet-stream';
+
+    // Read from local exports directory
+    const s3Key = job.fileUrl.replace('local://', '');
+    const localPath = join(this.tempDir, '..', s3Key);
+    try {
+      const buffer = await readFile(localPath);
+      return { buffer, filename, contentType };
+    } catch {
+      const altPath = join(this.tempDir, jobId, `${safeFilename(title)}.${ext}`);
+      try {
+        const buffer = await readFile(altPath);
+        return { buffer, filename, contentType };
+      } catch {
+        throw new NotFoundException(
+          `Export file not found locally for job "${jobId}". S3 is not configured.`,
+        );
+      }
+    }
   }
 
   async getExportStatus(jobId: string) {

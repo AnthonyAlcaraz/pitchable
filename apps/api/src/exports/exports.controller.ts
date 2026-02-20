@@ -53,7 +53,21 @@ export class ExportsController {
     @Res() res: HttpResponse,
   ) {
     const { url } = await this.exportsService.getSignedDownloadUrl(jobId);
-    // Express 5 default is 302; single-arg form resolves TS overload mismatch
+
+    // If URL is a local path (S3 unavailable), serve the file directly
+    if (url.startsWith('/exports/')) {
+      const { buffer, filename, contentType } =
+        await this.exportsService.getExportBuffer(jobId);
+      res.setHeader('Content-Type', contentType);
+      res.setHeader(
+        'Content-Disposition',
+        `attachment; filename="${encodeURIComponent(filename)}"`,
+      );
+      res.send(buffer);
+      return;
+    }
+
+    // S3 presigned URL — redirect
     res.redirect(url);
   }
 }
