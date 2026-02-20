@@ -5,8 +5,6 @@ import {
   ForbiddenException,
   ConflictException,
 } from '@nestjs/common';
-import { InjectQueue } from '@nestjs/bullmq';
-import { Queue } from 'bullmq';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { EdgeQuakeService } from '../knowledge-base/edgequake/edgequake.service.js';
 import { KnowledgeBaseService } from '../knowledge-base/knowledge-base.service.js';
@@ -22,7 +20,6 @@ export class PitchBriefService {
     private readonly prisma: PrismaService,
     private readonly edgequake: EdgeQuakeService,
     private readonly kbService: KnowledgeBaseService,
-    @InjectQueue('document-processing') private readonly documentQueue: Queue,
   ) {}
 
   // ─── CRUD ───────────────────────────────────────────────────────────────────
@@ -205,12 +202,9 @@ export class PitchBriefService {
       },
     });
 
-    // Queue document processing
-    await this.documentQueue.add('process-document', {
-      documentId,
-      userId,
-      briefId,
-    });
+    // NOTE: Do NOT queue document-processing here.
+    // kbService.uploadFile() already queued the job with correct sourceType/s3Key/mimeType.
+    // A duplicate job with missing fields would race and corrupt the document status.
 
     this.logger.log(`Document ${documentId} added to brief ${briefId}`);
     return { documentId, briefId };
