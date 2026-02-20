@@ -1,10 +1,12 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { PeachLogo } from '@/components/icons/PeachLogo';
+import { Download, ChevronDown } from 'lucide-react';
 import { usePresentationStore } from '@/stores/presentation.store';
 import { useChatStore } from '@/stores/chat.store';
 import { useSlideUpdates } from '@/hooks/useSlideUpdates';
 import { ThumbnailSidebar } from './ThumbnailSidebar';
 import { SlideHeader } from './SlideHeader';
+import { SlideRenderer } from './SlideRenderer';
 import { PresentationMode } from './PresentationMode';
 import { EditableSlide } from './EditableSlide';
 import { NarrativeAdvice } from './NarrativeAdvice';
@@ -90,6 +92,24 @@ export function PreviewPanel({ presentationId }: PreviewPanelProps) {
     }
   }, [currentSlide, presentationId, updateSlide]);
 
+  // Auto-scroll right panel when slide changes
+  const mainContentRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    mainContentRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [currentSlideIndex]);
+
+  // Inline export dropdown state
+  const [showExportMenu, setShowExportMenu] = useState(false);
+  const exportMenuRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!showExportMenu) return;
+    function handleClick(e: MouseEvent) {
+      if (exportMenuRef.current && !exportMenuRef.current.contains(e.target as Node)) setShowExportMenu(false);
+    }
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [showExportMenu]);
+
   // Empty state
   if (!presentationId || presentationId === 'new') {
     return (
@@ -161,13 +181,15 @@ export function PreviewPanel({ presentationId }: PreviewPanelProps) {
           />
 
           {/* Main slide view — scrollable with preview + editable + coaching */}
-          <div className="flex-1 overflow-y-auto bg-muted/20 p-6">
+          <div ref={mainContentRef} className="flex-1 overflow-y-auto bg-muted/20 p-6">
             {currentSlide && (
               <div className="mx-auto w-full max-w-5xl space-y-4">
-                {/* Real rendered preview (from export) */}
-                {currentSlide.previewUrl && (
-                  <div>
-                    <p className="mb-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wide">Final Result</p>
+                {/* Preview — exported image if available, themed SlideRenderer otherwise */}
+                <div>
+                  <p className="mb-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                    {currentSlide.previewUrl ? 'Final Result' : 'Preview'}
+                  </p>
+                  {currentSlide.previewUrl ? (
                     <div className="overflow-hidden rounded-lg border border-border shadow-sm" style={{ aspectRatio: '16/9' }}>
                       <img
                         src={`/slides/${currentSlide.id}/preview`}
@@ -175,14 +197,39 @@ export function PreviewPanel({ presentationId }: PreviewPanelProps) {
                         className="h-full w-full object-contain bg-black"
                       />
                     </div>
-                  </div>
-                )}
+                  ) : (
+                    <SlideRenderer slide={currentSlide} theme={presentation?.theme} scale={1} className="w-full" />
+                  )}
+                </div>
 
-                {/* Editable slide */}
+                {/* Editable slide + export button */}
                 <div>
-                  <p className="mb-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                    {currentSlide.previewUrl ? 'Edit' : 'Slide'}
-                  </p>
+                  <div className="mb-1.5 flex items-center justify-between">
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Edit</p>
+                    <div className="relative" ref={exportMenuRef}>
+                      <button
+                        onClick={() => setShowExportMenu((v) => !v)}
+                        className="flex items-center gap-1 rounded-md bg-orange-500/10 px-2.5 py-1 text-xs font-medium text-orange-400 transition-colors hover:bg-orange-500/20"
+                      >
+                        <Download className="h-3 w-3" />
+                        Export
+                        <ChevronDown className="h-3 w-3" />
+                      </button>
+                      {showExportMenu && (
+                        <div className="absolute right-0 top-full z-50 mt-1 min-w-[10rem] rounded-md border border-border bg-popover py-1 shadow-md">
+                          {(['pdf', 'pptx', 'pdf-figma', 'pptx-figma', 'html'] as const).map((fmt) => (
+                            <button
+                              key={fmt}
+                              onClick={() => { handleExport(fmt); setShowExportMenu(false); }}
+                              className="flex w-full items-center px-3 py-1.5 text-left text-sm text-popover-foreground transition-colors hover:bg-accent"
+                            >
+                              {fmt === 'pdf' ? 'PDF' : fmt === 'pptx' ? 'PowerPoint' : fmt === 'pdf-figma' ? 'PDF (Figma)' : fmt === 'pptx-figma' ? 'PPTX (Figma)' : 'HTML'}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
                   <EditableSlide slide={currentSlide} presentationId={presentationId!} theme={presentation?.theme} />
                 </div>
 

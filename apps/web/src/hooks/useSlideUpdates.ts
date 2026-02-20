@@ -45,6 +45,7 @@ export function useSlideUpdates(presentationId: string | undefined) {
   const updateSlide = usePresentationStore((s) => s.updateSlide);
   const removeSlide = usePresentationStore((s) => s.removeSlide);
   const reorderSlides = usePresentationStore((s) => s.reorderSlides);
+  const setCurrentSlide = usePresentationStore((s) => s.setCurrentSlide);
   const setTheme = usePresentationStore((s) => s.setTheme);
   const addImageSelection = useChatStore((s) => s.addImageSelection);
 
@@ -56,6 +57,8 @@ export function useSlideUpdates(presentationId: string | undefined) {
 
     const handleSlideAdded = (event: SlideAddedEvent) => {
       addSlide(event.slide);
+      // Auto-navigate to the newly added slide
+      setCurrentSlide(event.position - 1);
     };
 
     const handleSlideUpdated = (event: SlideUpdateEvent) => {
@@ -101,5 +104,5 @@ export function useSlideUpdates(presentationId: string | undefined) {
       socket.off('image:selectionRequest', handleImageSelectionRequest);
       leavePresentation(presentationId);
     };
-  }, [presentationId, addSlide, updateSlide, removeSlide, reorderSlides, setTheme, addImageSelection]);
+  }, [presentationId, addSlide, updateSlide, removeSlide, reorderSlides, setCurrentSlide, setTheme, addImageSelection]);
 }
