@@ -26,7 +26,6 @@ export function ChatPanel({ presentationId, briefId: _briefId, lensId: _lensId }
     pendingThemeSelection,
     pendingLayoutSelections,
     pendingImageSelections,
-    generationComplete,
     loadHistory,
     sendMessage,
     acceptSlide,
@@ -37,13 +36,13 @@ export function ChatPanel({ presentationId, briefId: _briefId, lensId: _lensId }
   } = useChatStore();
 
   useEffect(() => {
-    if (presentationId) {
+    if (presentationId && presentationId !== 'new') {
       loadHistory(presentationId);
     }
   }, [presentationId, loadHistory]);
 
   const handleSend = (content: string) => {
-    if (!presentationId || presentationId === 'new') return;
+    if (!presentationId) return;
     sendMessage(presentationId, content);
   };
 
@@ -78,15 +77,7 @@ export function ChatPanel({ presentationId, briefId: _briefId, lensId: _lensId }
     [sendMessage],
   );
 
-  // Guard: "new" is not a real presentation ID (workspace opened before generation)
-  if (!presentationId || presentationId === 'new') {
-    return (
-      <div className="flex h-full flex-col items-center justify-center p-8 text-center text-muted-foreground">
-        <MessageSquare className="mb-3 h-10 w-10" />
-        <p>{t('chat.panel.empty_state')}</p>
-      </div>
-    );
-  }
+  const isNew = !presentationId || presentationId === 'new';
 
   return (
     <div className="flex h-full flex-col">
@@ -111,25 +102,31 @@ export function ChatPanel({ presentationId, briefId: _briefId, lensId: _lensId }
         </div>
       )}
 
-      <ChatHistory
-        messages={messages}
-        streamingContent={streamingContent}
-        isStreaming={isStreaming}
-        thinkingText={thinkingText}
-        agentSteps={agentSteps}
-        pendingValidations={pendingValidations}
-        inlineSlideCards={inlineSlideCards}
-        pendingThemeSelection={pendingThemeSelection}
-        pendingLayoutSelections={pendingLayoutSelections}
-        pendingImageSelections={pendingImageSelections}
-        generationComplete={generationComplete}
-        presentationId={presentationId}
-        onExport={handleExport}
-        onAcceptSlide={handleAcceptSlide}
-        onEditSlide={handleEditSlide}
-        onRejectSlide={handleRejectSlide}
-        onRespondToInteraction={respondToInteraction}
-      />
+      {isNew ? (
+        <div className="flex flex-1 flex-col items-center justify-center p-8 text-center text-muted-foreground">
+          <MessageSquare className="mb-3 h-10 w-10" />
+          <p>{t('chat.panel.empty_state')}</p>
+        </div>
+      ) : (
+        <ChatHistory
+          messages={messages}
+          streamingContent={streamingContent}
+          isStreaming={isStreaming}
+          thinkingText={thinkingText}
+          agentSteps={agentSteps}
+          pendingValidations={pendingValidations}
+          inlineSlideCards={inlineSlideCards}
+          pendingThemeSelection={pendingThemeSelection}
+          pendingLayoutSelections={pendingLayoutSelections}
+          pendingImageSelections={pendingImageSelections}
+          presentationId={presentationId}
+          onExport={handleExport}
+          onAcceptSlide={handleAcceptSlide}
+          onEditSlide={handleEditSlide}
+          onRejectSlide={handleRejectSlide}
+          onRespondToInteraction={respondToInteraction}
+        />
+      )}
 
       <ChatInput onSend={handleSend} disabled={isStreaming} />
     </div>

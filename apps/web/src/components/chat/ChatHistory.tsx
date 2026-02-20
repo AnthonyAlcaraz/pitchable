@@ -2,11 +2,10 @@ import { useEffect, useRef } from 'react';
 import { ChatMessage } from './ChatMessage.js';
 import { AgentActivity } from './AgentActivity.js';
 import { InlineSlideCard } from './InlineSlideCard.js';
-import { GenerationCompleteCard } from './GenerationCompleteCard.js';
 import { ThemeSelector } from './ThemeSelector.js';
 import { LayoutSelector } from './LayoutSelector.js';
 import { ImageSelector } from './ImageSelector.js';
-import type { ChatMessage as ChatMessageType, PendingValidation, AgentStep, InlineSlideCard as InlineSlideCardType, PendingThemeSelection, PendingLayoutSelection, PendingImageSelection, GenerationCompleteData } from '../../stores/chat.store.js';
+import type { ChatMessage as ChatMessageType, PendingValidation, AgentStep, InlineSlideCard as InlineSlideCardType, PendingThemeSelection, PendingLayoutSelection, PendingImageSelection } from '../../stores/chat.store.js';
 import { usePresentationStore } from '../../stores/presentation.store.js';
 import { themeToStyleVars } from '../preview/SlideRenderer.js';
 
@@ -21,7 +20,6 @@ interface ChatHistoryProps {
   pendingThemeSelection?: PendingThemeSelection | null;
   pendingLayoutSelections?: PendingLayoutSelection[];
   pendingImageSelections?: PendingImageSelection[];
-  generationComplete?: GenerationCompleteData | null;
   presentationId?: string;
   onExport?: (presentationId: string, format: string) => void;
   onAcceptSlide?: (slideId: string) => void;
@@ -41,7 +39,6 @@ export function ChatHistory({
   pendingThemeSelection,
   pendingLayoutSelections,
   pendingImageSelections,
-  generationComplete,
   presentationId,
   onExport,
   onAcceptSlide,
@@ -59,7 +56,7 @@ export function ChatHistory({
     if (!userScrolled.current) {
       bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [messages, streamingContent, pendingValidations, inlineSlideCards, generationComplete, thinkingText, agentSteps]);
+  }, [messages, streamingContent, pendingValidations, inlineSlideCards, thinkingText, agentSteps]);
 
   const handleScroll = () => {
     const el = containerRef.current;
@@ -158,9 +155,6 @@ export function ChatHistory({
         </div>
       )}
 
-      {generationComplete && onExport && (
-        <GenerationCompleteCard data={generationComplete} onExport={onExport} />
-      )}
 
       {pendingImageSelections && pendingImageSelections.length > 0 && presentationId && onRespondToInteraction && (
         pendingImageSelections.map((sel) => (

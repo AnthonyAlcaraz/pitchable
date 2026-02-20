@@ -216,7 +216,7 @@ export class KnowledgeBaseService {
     // 2. Fallback: pgvector search (if embeddings available)
     if (this.embeddingService.isAvailable()) {
       const queryEmbedding = await this.embeddingService.embed(query);
-      return this.vectorStore.searchSimilar(userId, queryEmbedding, limit, threshold);
+      return this.vectorStore.searchSimilar(userId, queryEmbedding, limit, threshold, query);
     }
 
     // 3. Final fallback: keyword-based search (no API key needed)

@@ -253,7 +253,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
             // Backend created the presentation — update the URL to use the real ID
             const newId = metadata.presentationId as string;
             if (newId) {
-              window.history.replaceState(null, '', "/workspace/" + newId);
+              window.dispatchEvent(new CustomEvent('presentation-created', { detail: { id: newId } }));
             }
           } else if (metadata?.action === 'slide_preview') {
             const slide = metadata.slide as InlineSlideCard;

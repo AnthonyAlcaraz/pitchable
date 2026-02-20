@@ -30,9 +30,10 @@ export class VectorStoreService {
     _queryEmbedding: number[],
     limit = 10,
     _threshold = 0.3,
+    query = '',
   ): Promise<SearchResult[]> {
     this.logger.warn('pgvector not available — falling back to keyword search');
-    return this.searchByKeywords(userId, '', limit);
+    return this.searchByKeywords(userId, query, limit);
   }
 
   /**

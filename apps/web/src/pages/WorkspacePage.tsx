@@ -1,4 +1,5 @@
-import { Link, useParams, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ArrowLeft, Layers, BookOpen, Focus } from 'lucide-react';
 import { SplitScreen } from '@/components/layout/SplitScreen';
@@ -11,6 +12,16 @@ export function WorkspacePage() {
   const [searchParams] = useSearchParams();
   const briefId = searchParams.get('briefId');
   const lensId = searchParams.get('lensId');
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent<{ id: string }>).detail;
+      navigate(`/workspace/${detail.id}`, { replace: true });
+    };
+    window.addEventListener('presentation-created', handler);
+    return () => window.removeEventListener('presentation-created', handler);
+  }, [navigate]);
 
   return (
     <div className="flex h-screen flex-col">
