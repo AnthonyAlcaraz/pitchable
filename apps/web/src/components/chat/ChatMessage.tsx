@@ -79,9 +79,9 @@ export function ChatMessage({
         )}
 
         {/* Render validation prompts for pending slides */}
-        {pendingValidations && pendingValidations.length > 0 && !!onAcceptSlide && !!onEditSlide && !!onRejectSlide && (
+        {(pendingValidations?.length ?? 0) > 0 && onAcceptSlide && onEditSlide && onRejectSlide ? (
           <div className="mt-3 space-y-2">
-            {pendingValidations.map((v) => (
+            {pendingValidations!.map((v) => (
               <ValidationPrompt
                 key={v.slideId}
                 slide={v}
@@ -91,7 +91,7 @@ export function ChatMessage({
               />
             ))}
           </div>
-        )}
+        ) : null}
 
         {/* Render persisted inline slide cards from message metadata */}
         {Array.isArray(metadata?.slideCards) && (metadata.slideCards as InlineSlideCardType[]).length > 0 && (
