@@ -17,7 +17,7 @@ import { EntityExtractorService } from './falkordb/entity-extractor.service.js';
 import { ZeroEntropyRetrievalService } from './zeroentropy/zeroentropy-retrieval.service.js';
 import { CreditsService } from '../credits/credits.service.js';
 import { chunkByHeadings } from './chunking/heading-chunker.js';
-import { CreditReason, DocumentStatus } from '../../generated/prisma/enums.js';
+import { BriefStatus, CreditReason, DocumentStatus } from '../../generated/prisma/enums.js';
 import { ENTITY_EXTRACTION_COST } from '../credits/tier-config.js';
 import type { DocumentProcessingJobData } from './knowledge-base.service.js';
 import type { ParseResult } from './parsers/parser.interface.js';
@@ -181,6 +181,9 @@ export class DocumentProcessingProcessor extends WorkerHost {
 
       this.logger.log(`Document ${documentId}: ${chunks.length} chunks processed, status=READY`);
 
+      // 8b. Update linked brief status if all documents are now terminal
+      await this.updateBriefStatusIfComplete(documentId);
+
       // 9. Extract entities and index into FalkorDB knowledge graph (non-blocking, costs 1 credit)
       if (this.falkordb.isEnabled()) {
         try {
@@ -236,9 +239,52 @@ export class DocumentProcessingProcessor extends WorkerHost {
       } catch {
         this.logger.error(`Failed to update error status for document ${documentId}`);
       }
+
+      // Update brief status even on error (brief may transition if all docs are now terminal)
+      try {
+        await this.updateBriefStatusIfComplete(documentId);
+      } catch {
+        this.logger.error(`Failed to update brief status after document ${documentId} error`);
+      }
+
       // Don't re-throw: the processor already handled the error by setting ERROR status.
       // Re-throwing caused BullMQ to mark the job as failed with no benefit (no retries configured).
     }
+  }
+
+  /**
+   * After a document reaches READY or ERROR, check if its linked brief
+   * has all documents in a terminal state. If so, transition the brief
+   * to READY (if at least one doc succeeded) or ERROR (if all failed).
+   */
+  private async updateBriefStatusIfComplete(documentId: string): Promise<void> {
+    const doc = await this.prisma.document.findUnique({
+      where: { id: documentId },
+      select: { briefId: true },
+    });
+    if (!doc?.briefId) return;
+
+    const briefId = doc.briefId;
+    const allDocs = await this.prisma.document.findMany({
+      where: { briefId },
+      select: { status: true },
+    });
+
+    const terminalStatuses: Set<string> = new Set([DocumentStatus.READY, DocumentStatus.ERROR]);
+    const allTerminal = allDocs.every((d) => terminalStatuses.has(d.status));
+    if (!allTerminal) return;
+
+    const anyReady = allDocs.some((d) => d.status === DocumentStatus.READY);
+    const newStatus = anyReady ? BriefStatus.READY : BriefStatus.ERROR;
+
+    await this.prisma.pitchBrief.update({
+      where: { id: briefId },
+      data: { status: newStatus },
+    });
+
+    this.logger.log(
+      `Brief ${briefId}: all ${allDocs.length} documents terminal, status=${newStatus}`,
+    );
   }
 
   private async parseByMimeType(buffer: Buffer, mimeType: string): Promise<ParseResult> {

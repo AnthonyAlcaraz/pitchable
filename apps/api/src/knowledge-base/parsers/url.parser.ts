@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Readability } from '@mozilla/readability';
 import { JSDOM } from 'jsdom';
+import { Agent } from 'undici';
 import type { DocumentParser, ParseResult } from './parser.interface.js';
 
 @Injectable()
@@ -10,12 +11,21 @@ export class UrlParser implements DocumentParser {
   async parse(input: string): Promise<ParseResult> {
     const url = typeof input === 'string' ? input : String(input);
     try {
-      const response = await fetch(url, {
+      const fetchOptions: RequestInit & { dispatcher?: Agent } = {
         headers: {
           'User-Agent': 'Mozilla/5.0 (compatible; Pitchable/1.0)',
         },
         signal: AbortSignal.timeout(30000),
-      });
+      };
+
+      // Use permissive TLS in development (self-signed certs, missing CA bundles)
+      if (process.env.NODE_ENV !== 'production') {
+        fetchOptions.dispatcher = new Agent({
+          connect: { rejectUnauthorized: false },
+        });
+      }
+
+      const response = await fetch(url, fetchOptions);
 
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
