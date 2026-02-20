@@ -50,6 +50,19 @@ type SlideType =
   | 'MARKET_SIZING'
   | 'SPLIT_STATEMENT';
 
+// ── Dark Theme Tier System ───────────────────────────────────────
+
+type DarkTier = 'hero' | 'callout' | 'content';
+
+const HERO_TYPES: Set<string> = new Set(['TITLE', 'CTA', 'SECTION_DIVIDER']);
+const CALLOUT_TYPES: Set<string> = new Set(['QUOTE', 'METRICS_HIGHLIGHT', 'DATA_METRICS']);
+
+export function getDarkTier(slideType: string): DarkTier {
+  if (HERO_TYPES.has(slideType)) return 'hero';
+  if (CALLOUT_TYPES.has(slideType)) return 'callout';
+  return 'content';
+}
+
 // ── Background Variant Pool ────────────────────────────────
 
 const VARIANT_POOL: BackgroundVariant[] = [
@@ -178,6 +191,15 @@ export function getSlideBackground(
     return LIGHT_VARIANT_POOL[mapping ?? 0];
   }
 
+  // Dark theme tier system: hero / callout / content
+  const tier = getDarkTier(slideType);
+  if (tier === 'hero') {
+    return { className: 'bg-hero', label: 'Hero solid color' };
+  }
+  if (tier === 'callout') {
+    return { className: 'bg-callout-dark', label: 'Callout surface' };
+  }
+
   const mapping = TYPE_TO_VARIANT[slideType as SlideType];
   if (mapping === undefined || mapping === 'cycle') {
     return VARIANT_POOL[slideNumber % VARIANT_POOL.length];
@@ -211,6 +233,18 @@ function isDarkBg(bg: string): boolean {
   return (0.299 * r + 0.587 * g + 0.114 * b) < 128;
 }
 
+/** Get the appropriate hero background color for dark themes.
+ *  If primary is too light (e.g. white in dark-professional), use accent instead.
+ */
+export function getHeroBackground(palette: ColorPalette): string {
+  const c = palette.primary.replace('#', '');
+  const r = parseInt(c.slice(0, 2), 16);
+  const g = parseInt(c.slice(2, 4), 16);
+  const b = parseInt(c.slice(4, 6), 16);
+  const lum = 0.299 * r + 0.587 * g + 0.114 * b;
+  return lum > 180 ? palette.accent : palette.primary;
+}
+
 function patternColor(bg: string, opacity: number): string {
   return isDarkBg(bg)
     ? `rgba(255,255,255,${opacity})`
@@ -232,7 +266,7 @@ function waveSvg(color: string): string {
 }
 
 function circuitSvg(bg: string): string {
-  const pc = isDarkBg(bg) ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)';
+  const pc = isDarkBg(bg) ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
   return encodeURIComponent(
     `<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'>`
     + `<line x1='20' y1='20' x2='80' y2='20' stroke='${pc}' stroke-width='1.5'/>`
@@ -278,14 +312,14 @@ export function generateMarpBackgroundCSS(
     const shadeEnd = darkenForGradient(shadeBg);
     return `linear-gradient(135deg, ${shadeBg} 0%, ${shadeEnd} 100%)`;
   }
-  const pc = patternColor(bg, 0.03);
+  const pc = patternColor(bg, 0.06);
   const accentRgba = hexToRgba(palette.primary, 0.08);
   const accentCorner = hexToRgba(palette.accent, 0.06);
 
   // AMI Labs bokeh colors at visible opacity
-  const bokehPrimary = hexToRgba(palette.primary, 0.18);
-  const bokehAccent = hexToRgba(palette.accent, 0.14);
-  const bokehSecondary = hexToRgba(palette.secondary || palette.primary, 0.10);
+  const bokehPrimary = hexToRgba(palette.primary, 0.22);
+  const bokehAccent = hexToRgba(palette.accent, 0.18);
+  const bokehSecondary = hexToRgba(palette.secondary || palette.primary, 0.14);
 
   const lines: string[] = [];
 
@@ -481,6 +515,34 @@ export function generateMarpMcKinseyLeadCSS(palette: ColorPalette): string {
 }
 
 /**
+ * Generate Marp CSS for dark theme tier system.
+ * Hero: primary-color bg with all-white text.
+ * Callout: surface bg with accent top border.
+ */
+export function generateMarpDarkTierCSS(palette: ColorPalette): string {
+  const heroBg = getHeroBackground(palette);
+  return [
+    `  section.bg-hero {`,
+    `    background: ${heroBg} !important;`,
+    `    color: #FFFFFF !important;`,
+    `    text-align: center;`,
+    `    display: flex;`,
+    `    flex-direction: column;`,
+    `    justify-content: center;`,
+    `  }`,
+    `  section.bg-hero h1,`,
+    `  section.bg-hero h2,`,
+    `  section.bg-hero h3 { color: #FFFFFF !important; }`,
+    `  section.bg-hero p, section.bg-hero li { color: rgba(255,255,255,0.9) !important; }`,
+    `  section.bg-hero strong { color: #FFFFFF !important; }`,
+    `  section.bg-callout-dark {`,
+    `    background: ${palette.surface} !important;`,
+    `    border-top: 4px solid ${palette.accent};`,
+    `  }`,
+  ].join('\n');
+}
+
+/**
  * Generate Reveal.js CSS for McKinsey-style light-background themes.
  */
 export function generateRevealMcKinseyCSS(palette: ColorPalette): string {
@@ -512,7 +574,7 @@ export function generateRevealBackgroundCSS(
   gradientEnd: string,
 ): string {
   const baseGrad = `linear-gradient(135deg, ${bg} 0%, ${gradientEnd} 100%)`;
-  const pc = patternColor(bg, 0.03);
+  const pc = patternColor(bg, 0.06);
   const accentRgba = hexToRgba(palette.primary, 0.08);
   const accentCorner = hexToRgba(palette.accent, 0.06);
 

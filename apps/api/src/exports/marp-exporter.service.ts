@@ -14,6 +14,7 @@ import {
 } from '../constraints/index.js';
 import {
   getSlideBackground,
+  getHeroBackground,
   generateMarpBackgroundCSS,
   generateBackgroundShades,
   generateMarpAccentRotationCSS,
@@ -21,6 +22,7 @@ import {
   generateMarpMcKinseyCSS,
   generateMarpMcKinseyTableCSS,
   generateMarpMcKinseyLeadCSS,
+  generateMarpDarkTierCSS,
 } from './slide-visual-theme.js';
 import {
   FIGMA_GRADE_TYPES,
@@ -396,6 +398,9 @@ export class MarpExporterService {
       frontmatter.push(generateMarpBackgroundCSS(palette, bg, gradientEnd, bgShades));
       frontmatter.push(generateMarpAccentRotationCSS(safeAccent, safePrimary, safeSuccess, safeSecondary));
       frontmatter.push(generateLeadEnhancementCSS(safeAccent, safeText));
+      if (isDarkBackground(bg)) {
+        frontmatter.push(generateMarpDarkTierCSS(palette));
+      }
       // Tone down radial-glow by overriding its opacity
       if (profile.bgDecorationOpacity < 1.0) {
         frontmatter.push(
@@ -409,6 +414,9 @@ export class MarpExporterService {
       frontmatter.push(generateMarpBackgroundCSS(palette, bg, gradientEnd, bgShades));
       frontmatter.push(generateMarpAccentRotationCSS(safeAccent, safePrimary, safeSuccess, safeSecondary));
       frontmatter.push(generateLeadEnhancementCSS(safeAccent, safeText));
+      if (isDarkBackground(bg)) {
+        frontmatter.push(generateMarpDarkTierCSS(palette));
+      }
     }
 
     frontmatter.push(
@@ -519,13 +527,23 @@ export class MarpExporterService {
       if (bgVariant.className === 'bg-section-divider') {
         lines.push('<!-- _backgroundColor: #051C2C -->');
         lines.push('<!-- _color: #FFFFFF -->');
+      } else if (bgVariant.className === 'bg-hero' && palette) {
+        const heroBg = getHeroBackground(palette);
+        lines.push(`<!-- _backgroundColor: ${heroBg} -->`);
+        lines.push('<!-- _color: #FFFFFF -->');
       }
       lines.push('');
     } else if (type === 'METRICS_HIGHLIGHT') {
       lines.push(`<!-- _class: lead ${bgVariant.className} -->`);
+      if (bgVariant.className === 'bg-callout-dark' && palette) {
+        lines.push(`<!-- _backgroundColor: ${palette.surface} -->`);
+      }
       lines.push('');
     } else {
       lines.push(`<!-- _class: ${bgVariant.className}${layoutClass} -->`);
+      if (bgVariant.className === 'bg-callout-dark' && palette) {
+        lines.push(`<!-- _backgroundColor: ${palette.surface} -->`);
+      }
       lines.push('');
     }
 
