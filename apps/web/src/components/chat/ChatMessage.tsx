@@ -79,7 +79,7 @@ export function ChatMessage({
         )}
 
         {/* Render validation prompts for pending slides */}
-        {pendingValidations && pendingValidations.length > 0 && onAcceptSlide && onEditSlide && onRejectSlide && (
+        {pendingValidations && pendingValidations.length > 0 && !!onAcceptSlide && !!onEditSlide && !!onRejectSlide && (
           <div className="mt-3 space-y-2">
             {pendingValidations.map((v) => (
               <ValidationPrompt
