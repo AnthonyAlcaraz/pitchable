@@ -1,6 +1,7 @@
 import type { InlineSlideCard as InlineSlideCardType } from '../../stores/chat.store.js';
 import type { ThemeData } from '../../stores/presentation.store.js';
 import { themeToStyleVars } from '../preview/SlideRenderer.js';
+import { MarkdownBody } from '../preview/MarkdownBody.js';
 
 interface InlineSlideCardProps {
   slide: InlineSlideCardType;
@@ -9,9 +10,6 @@ interface InlineSlideCardProps {
 }
 
 export function InlineSlideCard({ slide, theme, onClick }: InlineSlideCardProps) {
-  const lines = slide.body.split('\n').filter((l) => l.trim().length > 0);
-  const hasBullets = lines.some((l) => l.trim().startsWith('-') || l.trim().startsWith('•'));
-
   return (
     <button
       type="button"
@@ -31,21 +29,10 @@ export function InlineSlideCard({ slide, theme, onClick }: InlineSlideCardProps)
           {slide.title}
         </h5>
 
-        <div className="flex-1 overflow-hidden">
-          {hasBullets ? (
-            <ul className="space-y-0.5">
-              {lines.slice(0, 3).map((line, i) => (
-                <li key={i} className="text-[8px] leading-tight text-foreground/50 truncate">
-                  {line.replace(/^[-•]\s*/, '- ')}
-                </li>
-              ))}
-              {lines.length > 3 && (
-                <li className="text-[8px] text-muted-foreground">+{lines.length - 3} more</li>
-              )}
-            </ul>
-          ) : (
-            <p className="text-[8px] leading-tight text-foreground/50 line-clamp-3">{slide.body}</p>
-          )}
+        <div className="flex-1 overflow-hidden line-clamp-3">
+          <MarkdownBody compact className="text-[8px] leading-tight text-foreground/50">
+            {slide.body}
+          </MarkdownBody>
         </div>
       </div>
     </button>

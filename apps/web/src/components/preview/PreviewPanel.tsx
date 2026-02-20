@@ -147,7 +147,7 @@ export function PreviewPanel({ presentationId }: PreviewPanelProps) {
           {/* Main slide view */}
           <div className="flex flex-1 items-center justify-center bg-muted/20 p-6">
             {currentSlide && (
-              <div className="w-full max-w-2xl">
+              <div className="w-full max-w-5xl">
                 <EditableSlide slide={currentSlide} presentationId={presentationId!} theme={presentation?.theme} />
               </div>
             )}

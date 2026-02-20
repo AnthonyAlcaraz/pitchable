@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { cn } from '@/lib/utils';
+import { MarkdownBody } from './MarkdownBody';
 
 interface EditableTextProps {
   value: string;
@@ -74,6 +75,21 @@ export function EditableText({
       return <textarea {...sharedProps} rows={4} />;
     }
     return <input type="text" {...sharedProps} />;
+  }
+
+  if (multiline && value) {
+    return (
+      <div
+        onClick={() => setIsEditing(true)}
+        className={cn(
+          'cursor-pointer rounded px-1 py-0.5 transition-colors hover:bg-primary/5 hover:ring-1 hover:ring-primary/20',
+          className,
+        )}
+        title="Click to edit"
+      >
+        <MarkdownBody>{value}</MarkdownBody>
+      </div>
+    );
   }
 
   return (

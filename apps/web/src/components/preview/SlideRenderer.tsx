@@ -1,5 +1,6 @@
 import { cn } from '@/lib/utils';
 import type { SlideData, ThemeData } from '@/stores/presentation.store';
+import { MarkdownBody } from './MarkdownBody';
 
 /** Convert theme colorPalette to CSS custom property overrides for scoped theming */
 export function themeToStyleVars(theme?: ThemeData | null): React.CSSProperties | undefined {
@@ -35,10 +36,6 @@ export function SlideRenderer({ slide, theme, className, scale = 1, onClick }: S
   const isTitle = slide.slideType === 'TITLE';
   const isCTA = slide.slideType === 'CTA';
   const isQuote = slide.slideType === 'QUOTE';
-
-  // Parse bullet points from body
-  const bodyLines = slide.body.split('\n').filter((l) => l.trim().length > 0);
-  const hasBullets = bodyLines.some((l) => l.trim().startsWith('-') || l.trim().startsWith('•'));
 
   return (
     <div
@@ -79,30 +76,15 @@ export function SlideRenderer({ slide, theme, className, scale = 1, onClick }: S
 
         {/* Body content */}
         {!isTitle && slide.body && (
-          <div
+          <MarkdownBody
             className={cn(
               'flex-1 text-[0.75em] leading-relaxed text-foreground/80',
               isCTA && 'flex items-center justify-center text-center',
               isQuote && 'flex items-center justify-center italic',
             )}
           >
-            {hasBullets ? (
-              <ul className="space-y-1">
-                {bodyLines.map((line, i) => {
-                  const text = line.replace(/^[-•]\s*/, '').trim();
-                  if (!text) return null;
-                  return (
-                    <li key={i} className="flex items-start gap-2">
-                      <span className="mt-[0.3em] h-1.5 w-1.5 flex-shrink-0 rounded-full bg-primary" />
-                      <span>{text}</span>
-                    </li>
-                  );
-                })}
-              </ul>
-            ) : (
-              <p className="whitespace-pre-wrap">{slide.body}</p>
-            )}
-          </div>
+            {slide.body}
+          </MarkdownBody>
         )}
 
         {/* Title slide subtitle */}
