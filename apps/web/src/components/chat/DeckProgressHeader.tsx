@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Layers } from 'lucide-react';
 
 interface DeckProgressHeaderProps {
@@ -8,6 +9,7 @@ interface DeckProgressHeaderProps {
 }
 
 export function DeckProgressHeader({ current, total, label, isComplete }: DeckProgressHeaderProps) {
+  const { t } = useTranslation();
   const percent = Math.round((current / total) * 100);
 
   return (
@@ -17,12 +19,12 @@ export function DeckProgressHeader({ current, total, label, isComplete }: DeckPr
         <div className="flex items-center gap-2">
           <Layers className="h-4 w-4 text-primary" />
           <span className="text-sm font-medium text-foreground">
-            {isComplete ? 'Deck generated' : 'Generating deck'}
+            {isComplete ? t('chat.progress.generated') : t('chat.progress.generating')}
           </span>
         </div>
         <div className="flex items-center gap-2">
           <span className="text-xs font-mono text-muted-foreground tabular-nums">
-            {current}/{total} slides
+            {t('chat.progress.slide_count', { current, total })}
           </span>
           <span className="text-xs font-mono font-semibold text-primary tabular-nums">
             {percent}%
@@ -33,7 +35,7 @@ export function DeckProgressHeader({ current, total, label, isComplete }: DeckPr
       {/* Current slide label */}
       {!isComplete && label && (
         <p className="mb-2 truncate text-xs text-muted-foreground">
-          Current: {label}
+          {t('chat.progress.current_label', { label })}
         </p>
       )}
 

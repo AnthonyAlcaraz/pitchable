@@ -1,13 +1,5 @@
 import { useEffect, useState } from 'react';
-
-const COMMANDS = [
-  { command: '/theme', description: 'Change theme' },
-  { command: '/export', description: 'Export presentation' },
-  { command: '/outline', description: 'Regenerate outline' },
-  { command: '/regenerate', description: 'Regenerate a slide' },
-  { command: '/images', description: 'Generate images' },
-  { command: '/help', description: 'Show commands' },
-];
+import { useTranslation } from 'react-i18next';
 
 interface SlashCommandMenuProps {
   filter: string;
@@ -20,7 +12,17 @@ export function SlashCommandMenu({
   onSelect,
   onClose,
 }: SlashCommandMenuProps) {
+  const { t } = useTranslation();
   const [selectedIndex, setSelectedIndex] = useState(0);
+
+  const COMMANDS = [
+    { command: '/theme', description: t('chat.slash_commands.theme') },
+    { command: '/export', description: t('chat.slash_commands.export') },
+    { command: '/outline', description: t('chat.slash_commands.outline') },
+    { command: '/regenerate', description: t('chat.slash_commands.regenerate') },
+    { command: '/images', description: t('chat.slash_commands.images') },
+    { command: '/help', description: t('chat.slash_commands.help') },
+  ];
 
   const filtered = COMMANDS.filter((c) =>
     c.command.startsWith(`/${filter}`),

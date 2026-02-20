@@ -1,8 +1,11 @@
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/stores/auth.store';
 import { Layers } from 'lucide-react';
+import { LanguageSwitcher } from '../layout/LanguageSwitcher';
 
 export function GalleryNav() {
+  const { t } = useTranslation();
   const isAuthenticated = useAuthStore((s) => !!s.user);
 
   return (
@@ -10,21 +13,22 @@ export function GalleryNav() {
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-6">
         <Link to="/" className="flex items-center gap-2">
           <Layers className="h-6 w-6 text-orange-500" />
-          <span className="text-lg font-bold text-foreground">Pitchable</span>
+          <span className="text-lg font-bold text-foreground">{t('common.app_name')}</span>
         </Link>
         <div className="flex items-center gap-4">
+          <LanguageSwitcher />
           <Link
             to="/gallery"
             className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
           >
-            Gallery
+            {t('gallery.nav.gallery')}
           </Link>
           {isAuthenticated ? (
             <Link
               to="/cockpit"
               className="rounded-lg bg-orange-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-orange-400"
             >
-              Dashboard
+              {t('gallery.nav.dashboard')}
             </Link>
           ) : (
             <>
@@ -32,13 +36,13 @@ export function GalleryNav() {
                 to="/login"
                 className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
               >
-                Log in
+                {t('gallery.nav.log_in')}
               </Link>
               <Link
                 to="/register"
                 className="rounded-lg bg-orange-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-orange-400"
               >
-                Sign up free
+                {t('gallery.nav.sign_up_free')}
               </Link>
             </>
           )}

@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -22,6 +23,8 @@ export function PlanCard({
   onSelect,
   isLoading,
 }: PlanCardProps) {
+  const { t } = useTranslation();
+
   return (
     <div
       className={cn(
@@ -31,7 +34,7 @@ export function PlanCard({
     >
       {isPopular && (
         <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-primary px-3 py-0.5 text-xs font-medium text-primary-foreground">
-          Popular
+          {t('billing.plans.popular')}
         </span>
       )}
 
@@ -40,8 +43,8 @@ export function PlanCard({
 
       <div className="mt-4">
         <span className="text-3xl font-bold text-foreground">{price}</span>
-        {price !== 'Free' && (
-          <span className="text-sm text-muted-foreground">/month</span>
+        {price !== t('billing.plans.free_price') && (
+          <span className="text-sm text-muted-foreground">{t('billing.plans.per_month')}</span>
         )}
       </div>
 
@@ -57,7 +60,7 @@ export function PlanCard({
       <div className="mt-6">
         {isCurrent ? (
           <div className="w-full rounded-md border border-primary bg-primary/5 py-2 text-center text-sm font-medium text-primary">
-            Current Plan
+            {t('billing.plans.current_plan')}
           </div>
         ) : (
           <button
@@ -71,7 +74,7 @@ export function PlanCard({
               isLoading && 'cursor-not-allowed opacity-50',
             )}
           >
-            {isLoading ? 'Loading...' : 'Upgrade'}
+            {isLoading ? t('common.loading') : t('common.upgrade')}
           </button>
         )}
       </div>

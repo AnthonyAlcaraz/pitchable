@@ -1,4 +1,5 @@
 import { useCallback, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { MessageSquare } from 'lucide-react';
 import { useChatStore } from '../../stores/chat.store.js';
 import { ChatHistory } from './ChatHistory.js';
@@ -11,6 +12,7 @@ interface ChatPanelProps {
 }
 
 export function ChatPanel({ presentationId, briefId: _briefId, lensId: _lensId }: ChatPanelProps) {
+  const { t } = useTranslation();
   const {
     messages,
     streamingContent,
@@ -67,7 +69,7 @@ export function ChatPanel({ presentationId, briefId: _briefId, lensId: _lensId }
     return (
       <div className="flex h-full flex-col items-center justify-center p-8 text-center text-gray-400">
         <MessageSquare className="mb-3 h-10 w-10" />
-        <p>Create or select a presentation to start chatting</p>
+        <p>{t('chat.panel.empty_state')}</p>
       </div>
     );
   }
@@ -76,9 +78,9 @@ export function ChatPanel({ presentationId, briefId: _briefId, lensId: _lensId }
     <div className="flex h-full flex-col">
       <div className="flex items-center gap-2 border-b border-gray-200 px-4 py-3">
         <MessageSquare className="h-4 w-4 text-purple-600" />
-        <span className="text-sm font-medium text-gray-700">Chat</span>
+        <span className="text-sm font-medium text-gray-700">{t('chat.panel.title')}</span>
         {isLoading && (
-          <span className="text-xs text-gray-400">Loading...</span>
+          <span className="text-xs text-gray-400">{t('chat.panel.loading')}</span>
         )}
       </div>
 
@@ -90,7 +92,7 @@ export function ChatPanel({ presentationId, briefId: _briefId, lensId: _lensId }
             onClick={clearError}
             className="ml-2 text-red-500 hover:text-red-700"
           >
-            Dismiss
+            {t('common.dismiss')}
           </button>
         </div>
       )}

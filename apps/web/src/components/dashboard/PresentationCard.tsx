@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { MoreVertical, Copy, Trash2, Pencil, Layers, GitFork, BookOpen, Focus, Globe, GlobeLock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { PresentationListItem } from '@/stores/presentations.store';
@@ -13,20 +14,6 @@ interface PresentationCardProps {
   onToggleVisibility?: (id: string, isPublic: boolean) => void;
 }
 
-const TYPE_LABELS: Record<string, string> = {
-  STANDARD: 'Standard',
-  VC_PITCH: 'VC Pitch',
-  TECHNICAL: 'Technical',
-  EXECUTIVE: 'Executive',
-};
-
-const STATUS_COLORS: Record<string, string> = {
-  DRAFT: 'bg-amber-500/10 text-amber-400',
-  PROCESSING: 'bg-orange-500/10 text-orange-400',
-  COMPLETED: 'bg-emerald-500/10 text-emerald-400',
-  FAILED: 'bg-red-500/10 text-red-400',
-};
-
 export function PresentationCard({
   presentation,
   onDelete,
@@ -35,9 +22,17 @@ export function PresentationCard({
   onFork,
   onToggleVisibility,
 }: PresentationCardProps) {
+  const { t } = useTranslation();
   const [showMenu, setShowMenu] = useState(false);
   const [isRenaming, setIsRenaming] = useState(false);
   const [renameValue, setRenameValue] = useState(presentation.title);
+
+  const TYPE_LABELS: Record<string, string> = {
+    STANDARD: t('dashboard.type_STANDARD'),
+    VC_PITCH: t('dashboard.type_VC_PITCH'),
+    TECHNICAL: t('dashboard.type_TECHNICAL'),
+    EXECUTIVE: t('dashboard.type_EXECUTIVE'),
+  };
 
   const handleRename = () => {
     if (renameValue.trim() && renameValue !== presentation.title) {
@@ -87,7 +82,11 @@ export function PresentationCard({
           <span
             className={cn(
               'rounded-full px-2 py-0.5 text-[10px] font-medium',
-              STATUS_COLORS[presentation.status] ?? 'bg-muted text-muted-foreground',
+              presentation.status === 'DRAFT' ? 'bg-amber-500/10 text-amber-400' :
+              presentation.status === 'PROCESSING' ? 'bg-orange-500/10 text-orange-400' :
+              presentation.status === 'COMPLETED' ? 'bg-emerald-500/10 text-emerald-400' :
+              presentation.status === 'FAILED' ? 'bg-red-500/10 text-red-400' :
+              'bg-muted text-muted-foreground',
             )}
           >
             {presentation.status}
@@ -96,7 +95,7 @@ export function PresentationCard({
             {TYPE_LABELS[presentation.presentationType] ?? presentation.presentationType}
           </span>
           <span className="text-xs text-muted-foreground">
-            {presentation.slideCount} slides
+            {t('common.slides_count', { count: presentation.slideCount })}
           </span>
           {presentation.briefName && (
             <span className="flex items-center gap-1 text-xs text-muted-foreground">
@@ -142,7 +141,7 @@ export function PresentationCard({
                 }}
                 className="flex w-full items-center gap-2 px-3 py-1.5 text-xs text-foreground hover:bg-accent"
               >
-                <Pencil className="h-3.5 w-3.5" /> Rename
+                <Pencil className="h-3.5 w-3.5" /> {t('common.rename')}
               </button>
               <button
                 onClick={(e) => {
@@ -152,7 +151,7 @@ export function PresentationCard({
                 }}
                 className="flex w-full items-center gap-2 px-3 py-1.5 text-xs text-foreground hover:bg-accent"
               >
-                <Copy className="h-3.5 w-3.5" /> Duplicate
+                <Copy className="h-3.5 w-3.5" /> {t('common.duplicate')}
               </button>
               {onFork && (
                 <button
@@ -163,7 +162,7 @@ export function PresentationCard({
                   }}
                   className="flex w-full items-center gap-2 px-3 py-1.5 text-xs text-foreground hover:bg-accent"
                 >
-                  <GitFork className="h-3.5 w-3.5" /> Reuse
+                  <GitFork className="h-3.5 w-3.5" /> {t('common.reuse')}
                 </button>
               )}
               {onToggleVisibility && presentation.status === 'COMPLETED' && (
@@ -176,9 +175,9 @@ export function PresentationCard({
                   className="flex w-full items-center gap-2 px-3 py-1.5 text-xs text-foreground hover:bg-accent"
                 >
                   {presentation.isPublic ? (
-                    <><GlobeLock className="h-3.5 w-3.5" /> Remove from Gallery</>
+                    <><GlobeLock className="h-3.5 w-3.5" /> {t('dashboard.remove_from_gallery')}</>
                   ) : (
-                    <><Globe className="h-3.5 w-3.5" /> Share to Gallery</>
+                    <><Globe className="h-3.5 w-3.5" /> {t('dashboard.share_to_gallery')}</>
                   )}
                 </button>
               )}
@@ -190,7 +189,7 @@ export function PresentationCard({
                 }}
                 className="flex w-full items-center gap-2 px-3 py-1.5 text-xs text-red-500 hover:bg-accent"
               >
-                <Trash2 className="h-3.5 w-3.5" /> Delete
+                <Trash2 className="h-3.5 w-3.5" /> {t('common.delete')}
               </button>
             </div>
           </>

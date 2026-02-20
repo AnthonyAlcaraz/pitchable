@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Trash2, FileText, Globe, Type, Loader2 } from 'lucide-react';
 import { DocumentStatusBadge } from './DocumentStatusBadge';
 
@@ -33,6 +34,8 @@ interface DocumentListProps {
 }
 
 export function DocumentList({ documents, onDelete, isLoading }: DocumentListProps) {
+  const { t } = useTranslation();
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -45,9 +48,9 @@ export function DocumentList({ documents, onDelete, isLoading }: DocumentListPro
     return (
       <div className="flex flex-col items-center justify-center py-12 text-center">
         <FileText className="h-10 w-10 text-muted-foreground mb-3" />
-        <p className="text-sm text-muted-foreground">No documents yet</p>
+        <p className="text-sm text-muted-foreground">{t('knowledge_base.no_documents')}</p>
         <p className="text-xs text-muted-foreground mt-1">
-          Upload files or add text/URLs above
+          {t('knowledge_base.no_documents_hint')}
         </p>
       </div>
     );
@@ -80,7 +83,7 @@ export function DocumentList({ documents, onDelete, isLoading }: DocumentListPro
                 ) : null}
                 {doc.chunkCount > 0 && (
                   <span className="text-xs text-muted-foreground">
-                    {doc.chunkCount} chunks
+                    {t('common.chunks_count', { count: doc.chunkCount })}
                   </span>
                 )}
               </div>

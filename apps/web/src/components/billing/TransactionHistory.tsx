@@ -1,3 +1,5 @@
+import { useTranslation } from 'react-i18next';
+
 interface Transaction {
   id: string;
   amount: number;
@@ -10,20 +12,22 @@ interface TransactionHistoryProps {
   transactions: Transaction[];
 }
 
-const REASON_LABELS: Record<string, string> = {
-  PURCHASE: 'Credit Purchase',
-  DECK_GENERATION: 'Deck Generation',
-  IMAGE_GENERATION: 'Image Generation',
-  SUBSCRIPTION_RENEWAL: 'Monthly Allocation',
-  ADMIN_ADJUSTMENT: 'Admin Adjustment',
-  REFUND: 'Refund',
-};
-
 export function TransactionHistory({ transactions }: TransactionHistoryProps) {
+  const { t } = useTranslation();
+
+  const REASON_LABELS: Record<string, string> = {
+    PURCHASE: t('billing.transaction_history.reason_PURCHASE'),
+    DECK_GENERATION: t('billing.transaction_history.reason_DECK_GENERATION'),
+    IMAGE_GENERATION: t('billing.transaction_history.reason_IMAGE_GENERATION'),
+    SUBSCRIPTION_RENEWAL: t('billing.transaction_history.reason_SUBSCRIPTION_RENEWAL'),
+    ADMIN_ADJUSTMENT: t('billing.transaction_history.reason_ADMIN_ADJUSTMENT'),
+    REFUND: t('billing.transaction_history.reason_REFUND'),
+  };
+
   if (transactions.length === 0) {
     return (
       <p className="py-8 text-center text-sm text-muted-foreground">
-        No transactions yet
+        {t('billing.transaction_history.no_transactions')}
       </p>
     );
   }
@@ -33,10 +37,10 @@ export function TransactionHistory({ transactions }: TransactionHistoryProps) {
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b border-border text-left">
-            <th className="pb-2 font-medium text-muted-foreground">Date</th>
-            <th className="pb-2 font-medium text-muted-foreground">Type</th>
-            <th className="pb-2 text-right font-medium text-muted-foreground">Amount</th>
-            <th className="pb-2 text-right font-medium text-muted-foreground">Balance</th>
+            <th className="pb-2 font-medium text-muted-foreground">{t('billing.transaction_history.date')}</th>
+            <th className="pb-2 font-medium text-muted-foreground">{t('billing.transaction_history.type')}</th>
+            <th className="pb-2 text-right font-medium text-muted-foreground">{t('billing.transaction_history.amount')}</th>
+            <th className="pb-2 text-right font-medium text-muted-foreground">{t('billing.transaction_history.balance')}</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-border">

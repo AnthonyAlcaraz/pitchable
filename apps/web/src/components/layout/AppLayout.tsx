@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/stores/auth.store';
 import {
   Layers,
@@ -16,22 +17,24 @@ import {
   Focus,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-
-const NAV_ITEMS = [
-  { path: '/cockpit', label: 'Cockpit', icon: Gauge },
-  { path: '/analytics', label: 'Analytics', icon: BarChart3 },
-  { path: '/pitch-briefs', label: 'Pitch Briefs', icon: BookOpen },
-  { path: '/pitch-lens', label: 'Pitch Lens', icon: Focus },
-  { path: '/billing', label: 'Billing', icon: CreditCard },
-  { path: '/settings', label: 'Settings', icon: Settings },
-] as const;
+import { LanguageSwitcher } from './LanguageSwitcher';
 
 export function AppLayout() {
+  const { t } = useTranslation();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const { user, logout } = useAuthStore();
   const location = useLocation();
   const navigate = useNavigate();
+
+  const NAV_ITEMS = [
+    { path: '/cockpit', label: t('nav.cockpit'), icon: Gauge },
+    { path: '/analytics', label: t('nav.analytics'), icon: BarChart3 },
+    { path: '/pitch-briefs', label: t('nav.pitch_briefs'), icon: BookOpen },
+    { path: '/pitch-lens', label: t('nav.pitch_lens'), icon: Focus },
+    { path: '/billing', label: t('nav.billing'), icon: CreditCard },
+    { path: '/settings', label: t('nav.settings'), icon: Settings },
+  ] as const;
 
   useEffect(() => {
     if (user && !user.onboardingCompleted) {
@@ -69,14 +72,14 @@ export function AppLayout() {
             <Layers className="h-6 w-6 shrink-0 text-orange-500" />
             {!collapsed && (
               <span className="text-lg font-semibold text-foreground">
-                Pitchable
+                {t('common.app_name')}
               </span>
             )}
           </div>
           <button
             onClick={() => setMobileOpen(false)}
             className="rounded-md p-1 hover:bg-sidebar-accent md:hidden"
-            aria-label="Close sidebar"
+            aria-label={t('nav.close_sidebar')}
           >
             <X className="h-5 w-5" />
           </button>
@@ -118,18 +121,20 @@ export function AppLayout() {
                 </p>
                 <p className="flex items-center gap-1 text-xs text-muted-foreground">
                   <CreditCard className="h-3 w-3" />
-                  {user.creditBalance} credits
+                  {user.creditBalance} {t('common.credits')}
                 </p>
               </div>
             </div>
           )}
+
+          <LanguageSwitcher />
 
           <button
             onClick={() => void handleLogout()}
             className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
           >
             <LogOut className="h-4 w-4 shrink-0" />
-            {!collapsed && <span>Log out</span>}
+            {!collapsed && <span>{t('nav.log_out')}</span>}
           </button>
 
           <button
@@ -141,7 +146,7 @@ export function AppLayout() {
             ) : (
               <>
                 <ChevronLeft className="h-4 w-4 shrink-0" />
-                <span>Collapse</span>
+                <span>{t('nav.collapse')}</span>
               </>
             )}
           </button>
@@ -155,12 +160,12 @@ export function AppLayout() {
           <button
             onClick={() => setMobileOpen(true)}
             className="rounded-md p-1.5 hover:bg-card"
-            aria-label="Open sidebar"
+            aria-label={t('nav.open_sidebar')}
           >
             <Menu className="h-5 w-5" />
           </button>
           <Layers className="h-5 w-5 text-orange-500" />
-          <span className="text-sm font-semibold text-foreground">Pitchable</span>
+          <span className="text-sm font-semibold text-foreground">{t('common.app_name')}</span>
         </header>
 
         {/* Main content */}

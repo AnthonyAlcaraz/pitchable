@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Coins, Check, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -15,6 +16,7 @@ export function CreditConfirmation({
   onConfirm,
   onCancel,
 }: CreditConfirmationProps) {
+  const { t } = useTranslation();
   const [isConfirming, setIsConfirming] = useState(false);
 
   const handleConfirm = () => {
@@ -29,8 +31,12 @@ export function CreditConfirmation({
         <div className="flex-1">
           <p className="text-sm font-medium text-foreground">{action}</p>
           <p className="mt-1 text-xs text-muted-foreground">
-            This will use <span className="font-medium text-amber-500">{creditCost}</span>{' '}
-            {creditCost === 1 ? 'credit' : 'credits'}.
+            {t('chat.credit_confirmation.cost_message', {
+              count: creditCost,
+              creditWord: creditCost === 1
+                ? t('chat.credit_confirmation.credit_singular')
+                : t('chat.credit_confirmation.credit_plural'),
+            })}
           </p>
         </div>
       </div>
@@ -46,7 +52,7 @@ export function CreditConfirmation({
           )}
         >
           <Check className="h-3.5 w-3.5" />
-          {isConfirming ? 'Processing...' : 'Confirm'}
+          {isConfirming ? t('common.processing') : t('common.confirm')}
         </button>
         <button
           onClick={onCancel}
@@ -54,7 +60,7 @@ export function CreditConfirmation({
           className="flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
         >
           <X className="h-3.5 w-3.5" />
-          Cancel
+          {t('common.cancel')}
         </button>
       </div>
     </div>

@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Plus, Layers } from 'lucide-react';
 import { PresentationCard } from './PresentationCard';
 import type { PresentationListItem } from '@/stores/presentations.store';
@@ -20,6 +21,8 @@ export function PresentationGrid({
   onFork,
   onToggleVisibility,
 }: PresentationGridProps) {
+  const { t } = useTranslation();
+
   if (presentations.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-border py-16">
@@ -27,18 +30,17 @@ export function PresentationGrid({
           <Layers className="h-8 w-8 text-primary" />
         </div>
         <h2 className="mb-2 text-lg font-semibold text-foreground">
-          No presentations yet
+          {t('dashboard.no_presentations_title')}
         </h2>
         <p className="mb-6 max-w-sm text-center text-sm text-muted-foreground">
-          Create your first presentation by describing what you need. Pitchable
-          will handle the design.
+          {t('dashboard.no_presentations_desc')}
         </p>
         <Link
           to="/workspace/new"
           className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90"
         >
           <Plus className="h-4 w-4" />
-          New Presentation
+          {t('dashboard.new_presentation')}
         </Link>
       </div>
     );
@@ -52,7 +54,7 @@ export function PresentationGrid({
         className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-border p-8 transition-colors hover:border-primary/50 hover:bg-primary/5"
       >
         <Plus className="mb-2 h-8 w-8 text-muted-foreground" />
-        <span className="text-sm font-medium text-muted-foreground">New Presentation</span>
+        <span className="text-sm font-medium text-muted-foreground">{t('dashboard.new_presentation')}</span>
       </Link>
 
       {/* Presentation cards */}

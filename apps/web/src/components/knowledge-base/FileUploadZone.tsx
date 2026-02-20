@@ -1,4 +1,5 @@
 import { useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useDropzone } from 'react-dropzone';
 import { Upload, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -16,6 +17,8 @@ interface FileUploadZoneProps {
 }
 
 export function FileUploadZone({ onUpload, isUploading }: FileUploadZoneProps) {
+  const { t } = useTranslation();
+
   const onDrop = useCallback(
     (acceptedFiles: File[]) => {
       acceptedFiles.forEach((file) => onUpload([file]));
@@ -49,13 +52,13 @@ export function FileUploadZone({ onUpload, isUploading }: FileUploadZoneProps) {
       )}
       <p className="text-sm text-muted-foreground">
         {isUploading
-          ? 'Uploading...'
+          ? t('common.uploading')
           : isDragActive
-            ? 'Drop files here'
-            : 'Drag & drop files, or click to select'}
+            ? t('knowledge_base.upload_drop_active')
+            : t('knowledge_base.upload_drop_text')}
       </p>
       <p className="text-xs text-muted-foreground mt-2">
-        PDF, DOCX, MD, TXT up to 20MB
+        {t('knowledge_base.upload_formats')}
       </p>
     </div>
   );

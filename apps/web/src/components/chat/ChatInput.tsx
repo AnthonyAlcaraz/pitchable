@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Send } from 'lucide-react';
 import { SlashCommandMenu } from './SlashCommandMenu.js';
 
@@ -8,6 +9,7 @@ interface ChatInputProps {
 }
 
 export function ChatInput({ onSend, disabled }: ChatInputProps) {
+  const { t } = useTranslation();
   const [value, setValue] = useState('');
   const [showCommands, setShowCommands] = useState(false);
   const [commandFilter, setCommandFilter] = useState('');
@@ -74,7 +76,7 @@ export function ChatInput({ onSend, disabled }: ChatInputProps) {
           value={value}
           onChange={handleChange}
           onKeyDown={handleKeyDown}
-          placeholder="Describe your presentation or type / for commands..."
+          placeholder={t('chat.input.placeholder')}
           disabled={disabled}
           rows={1}
           className="flex-1 resize-none rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm outline-none transition-colors placeholder:text-gray-400 focus:border-purple-300 focus:bg-white disabled:opacity-50"
@@ -89,7 +91,7 @@ export function ChatInput({ onSend, disabled }: ChatInputProps) {
         </button>
       </div>
       <p className="mt-1 text-xs text-gray-400">
-        Enter to send, Shift+Enter for newline
+        {t('chat.input.hint')}
       </p>
     </div>
   );

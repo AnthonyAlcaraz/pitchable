@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { GitFork, X, ChevronDown } from 'lucide-react';
 import { usePitchBriefStore } from '@/stores/pitch-brief.store';
 import { usePitchLensStore } from '@/stores/pitch-lens.store';
@@ -11,6 +12,7 @@ interface ForkDialogProps {
 }
 
 export function ForkDialog({ presentation, onFork, onClose }: ForkDialogProps) {
+  const { t } = useTranslation();
   const { briefs } = usePitchBriefStore();
   const { lenses } = usePitchLensStore();
 
@@ -33,7 +35,7 @@ export function ForkDialog({ presentation, onFork, onClose }: ForkDialogProps) {
         <div className="mb-5 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <GitFork className="h-5 w-5 text-primary" />
-            <h2 className="text-lg font-semibold text-foreground">Reuse Presentation</h2>
+            <h2 className="text-lg font-semibold text-foreground">{t('dashboard.fork_dialog_title')}</h2>
           </div>
           <button onClick={onClose} className="rounded p-1 hover:bg-accent">
             <X className="h-4 w-4 text-muted-foreground" />
@@ -41,13 +43,12 @@ export function ForkDialog({ presentation, onFork, onClose }: ForkDialogProps) {
         </div>
 
         <p className="mb-4 text-sm text-muted-foreground">
-          Fork &ldquo;{presentation.title}&rdquo; with different Brief or Lens context.
-          The slide structure will be preserved.
+          {t('dashboard.fork_dialog_desc', { title: presentation.title })}
         </p>
 
         <div className="space-y-4">
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-foreground">Title</label>
+            <label className="mb-1.5 block text-sm font-medium text-foreground">{t('dashboard.fork_dialog_title_label')}</label>
             <input
               type="text"
               value={title}
@@ -57,14 +58,14 @@ export function ForkDialog({ presentation, onFork, onClose }: ForkDialogProps) {
           </div>
 
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-foreground">Pitch Brief</label>
+            <label className="mb-1.5 block text-sm font-medium text-foreground">{t('dashboard.fork_dialog_brief_label')}</label>
             <div className="relative">
               <select
                 value={briefId}
                 onChange={(e) => setBriefId(e.target.value)}
                 className="w-full appearance-none rounded-lg border border-border bg-background px-3 py-2 pr-10 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
               >
-                <option value="">No Brief</option>
+                <option value="">{t('common.no_brief')}</option>
                 {briefs.map((b) => (
                   <option key={b.id} value={b.id}>{b.name}</option>
                 ))}
@@ -74,14 +75,14 @@ export function ForkDialog({ presentation, onFork, onClose }: ForkDialogProps) {
           </div>
 
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-foreground">Pitch Lens</label>
+            <label className="mb-1.5 block text-sm font-medium text-foreground">{t('dashboard.fork_dialog_lens_label')}</label>
             <div className="relative">
               <select
                 value={lensId}
                 onChange={(e) => setLensId(e.target.value)}
                 className="w-full appearance-none rounded-lg border border-border bg-background px-3 py-2 pr-10 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
               >
-                <option value="">No Lens</option>
+                <option value="">{t('common.no_lens')}</option>
                 {lenses.map((l) => (
                   <option key={l.id} value={l.id}>{l.name}</option>
                 ))}
@@ -96,14 +97,14 @@ export function ForkDialog({ presentation, onFork, onClose }: ForkDialogProps) {
             onClick={onClose}
             className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-accent"
           >
-            Cancel
+            {t('common.cancel')}
           </button>
           <button
             onClick={handleSubmit}
             className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
           >
             <GitFork className="h-4 w-4" />
-            Fork & Open
+            {t('dashboard.fork_and_open')}
           </button>
         </div>
       </div>
