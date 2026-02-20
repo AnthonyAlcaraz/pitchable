@@ -12,7 +12,6 @@ import {
   UploadedFile,
   ParseFilePipe,
   MaxFileSizeValidator,
-  FileTypeValidator,
   ParseUUIDPipe,
   HttpCode,
   HttpStatus,
@@ -26,6 +25,7 @@ import {
 } from '../auth/decorators/current-user.decorator.js';
 import { PitchBriefService } from './pitch-brief.service.js';
 import { KnowledgeBaseService } from '../knowledge-base/knowledge-base.service.js';
+import { DocumentFileValidator } from '../common/validators/document-file.validator.js';
 import { CreatePitchBriefDto } from './dto/create-pitch-brief.dto.js';
 import { UpdatePitchBriefDto } from './dto/update-pitch-brief.dto.js';
 
@@ -93,10 +93,7 @@ export class PitchBriefController {
       new ParseFilePipe({
         validators: [
           new MaxFileSizeValidator({ maxSize: 20 * 1024 * 1024 }),
-          new FileTypeValidator({
-            fileType:
-              /(pdf|vnd\.openxmlformats-officedocument\.wordprocessingml\.document|vnd\.openxmlformats-officedocument\.spreadsheetml\.sheet|vnd\.openxmlformats-officedocument\.presentationml\.presentation|vnd\.ms-excel|csv|plain|markdown|text)/,
-          }),
+          new DocumentFileValidator(),
         ],
       }),
     )

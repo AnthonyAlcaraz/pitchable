@@ -10,7 +10,6 @@ import {
   UploadedFile,
   ParseFilePipe,
   MaxFileSizeValidator,
-  FileTypeValidator,
   ParseUUIDPipe,
   HttpCode,
   HttpStatus,
@@ -19,6 +18,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiTags, ApiBearerAuth, ApiConsumes, ApiBody } from '@nestjs/swagger';
 import multer from 'multer';
 import { KnowledgeBaseService } from './knowledge-base.service.js';
+import { DocumentFileValidator } from '../common/validators/document-file.validator.js';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
 import { CurrentUser } from '../auth/decorators/current-user.decorator.js';
 import type { RequestUser } from '../auth/decorators/current-user.decorator.js';
@@ -55,9 +55,7 @@ export class KnowledgeBaseController {
       new ParseFilePipe({
         validators: [
           new MaxFileSizeValidator({ maxSize: 20 * 1024 * 1024 }),
-          new FileTypeValidator({
-            fileType: /(pdf|vnd\.openxmlformats-officedocument\.wordprocessingml\.document|plain|markdown|text)/,
-          }),
+          new DocumentFileValidator(),
         ],
       }),
     )

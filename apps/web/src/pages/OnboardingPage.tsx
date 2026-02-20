@@ -182,6 +182,7 @@ export function OnboardingPage() {
   const [urlInput, setUrlInput] = useState('');
   const [dragActive, setDragActive] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   const totalDocs = pendingFiles.length + pendingTexts.length + pendingUrls.length;
 
@@ -201,6 +202,7 @@ export function OnboardingPage() {
     } else if (briefStep === 1) {
       if (!briefId) return;
       setIsSubmitting(true);
+      setUploadError(null);
       try {
         for (const file of pendingFiles) {
           await uploadDocument(briefId, file);
@@ -212,8 +214,9 @@ export function OnboardingPage() {
           await addUrlDocument(briefId, url.url, url.title);
         }
         setBriefStep(2);
-      } catch (err) {
+      } catch (err: any) {
         console.error('Failed to upload documents:', err);
+        setUploadError(err?.message || 'Upload failed. Check file type (PDF, DOCX, TXT, MD, CSV, XLSX, PPTX) and try again.');
       } finally {
         setIsSubmitting(false);
       }
@@ -530,6 +533,13 @@ export function OnboardingPage() {
                         {t('onboarding.brief.add_url_title')}
                       </button>
                     </div>
+
+                    {/* Upload error */}
+                    {uploadError && (
+                      <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+                        {uploadError}
+                      </div>
+                    )}
 
                     {/* Pending documents list */}
                     {totalDocs > 0 && (
