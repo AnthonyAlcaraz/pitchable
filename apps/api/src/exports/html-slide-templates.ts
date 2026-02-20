@@ -24,14 +24,9 @@ const PAD = 53;       // 40 * (1280/960)
 const W = 1280;
 const H = 720;
 
-export const FIGMA_GRADE_TYPES: Set<string> = new Set([
-  'MARKET_SIZING',
-  'TIMELINE',
-  'METRICS_HIGHLIGHT',
-  'COMPARISON',
-  'TEAM',
-  'FEATURE_GRID',
-]);
+// Figma-grade HTML+SVG templates disabled — scoped CSS Marp rendering
+// produces more consistent results across all slide types.
+export const FIGMA_GRADE_TYPES: Set<string> = new Set([]);
 
 // ── Helpers ──────────────────────────────────────────────────
 
