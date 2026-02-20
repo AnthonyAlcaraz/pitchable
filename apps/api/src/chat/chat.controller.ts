@@ -74,12 +74,16 @@ export class ChatController {
           return;
         }
 
-        // Find user's default Pitch Lens (most recent)
-        const defaultLens = await this.prisma.pitchLens.findFirst({
-          where: { userId: user.userId },
-          orderBy: { createdAt: 'desc' },
-          select: { id: true },
-        });
+        // Use lens from request body (cockpit selection) or fall back to user's default
+        let pitchLensId = dto.lensId ?? null;
+        if (!pitchLensId) {
+          const defaultLens = await this.prisma.pitchLens.findFirst({
+            where: { userId: user.userId },
+            orderBy: { createdAt: 'desc' },
+            select: { id: true },
+          });
+          pitchLensId = defaultLens?.id ?? null;
+        }
 
         const pres = await this.prisma.presentation.create({
           data: {
@@ -90,7 +94,8 @@ export class ChatController {
             themeId,
             imageCount: 0,
             userId: user.userId,
-            pitchLensId: defaultLens?.id ?? null,
+            pitchLensId,
+            briefId: dto.briefId ?? null,
           },
         });
         presentationId = pres.id;

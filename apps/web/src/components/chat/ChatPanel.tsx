@@ -11,7 +11,7 @@ interface ChatPanelProps {
   lensId?: string;
 }
 
-export function ChatPanel({ presentationId, briefId: _briefId, lensId: _lensId }: ChatPanelProps) {
+export function ChatPanel({ presentationId, briefId, lensId }: ChatPanelProps) {
   const { t } = useTranslation();
   const {
     messages,
@@ -43,7 +43,8 @@ export function ChatPanel({ presentationId, briefId: _briefId, lensId: _lensId }
 
   const handleSend = (content: string) => {
     if (!presentationId) return;
-    sendMessage(presentationId, content);
+    const isNew = presentationId === 'new';
+    sendMessage(presentationId, content, isNew ? { briefId, lensId } : undefined);
   };
 
   const handleAcceptSlide = useCallback(

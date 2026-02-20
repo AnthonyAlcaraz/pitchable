@@ -1,4 +1,4 @@
-import { IsString, IsOptional, MaxLength } from 'class-validator';
+import { IsString, IsOptional, MaxLength, IsUUID } from 'class-validator';
 
 export class SendMessageDto {
   @IsString()
@@ -8,4 +8,12 @@ export class SendMessageDto {
   @IsOptional()
   @IsString()
   messageType?: string;
+
+  @IsOptional()
+  @IsUUID()
+  briefId?: string;
+
+  @IsOptional()
+  @IsUUID()
+  lensId?: string;
 }

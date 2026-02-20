@@ -174,7 +174,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
     }
   },
 
-  sendMessage: async (presentationId: string, content: string) => {
+  sendMessage: async (presentationId: string, content: string, opts?: { briefId?: string; lensId?: string }) => {
     const token = getToken();
     if (!token) {
       set({ error: 'Not authenticated' });
@@ -209,7 +209,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
       for await (const event of streamSse(
         `/chat/${presentationId}/message`,
-        { content },
+        { content, ...(opts?.briefId && { briefId: opts.briefId }), ...(opts?.lensId && { lensId: opts.lensId }) },
         token,
       )) {
         if (event.type === 'token') {
