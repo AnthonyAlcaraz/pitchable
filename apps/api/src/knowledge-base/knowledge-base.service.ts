@@ -19,6 +19,8 @@ export interface DocumentProcessingJobData {
   s3Key?: string;
   rawText?: string;
   url?: string;
+  /** Base64-encoded file buffer — used when S3 is not available */
+  fileBase64?: string;
 }
 
 @Injectable()
@@ -40,12 +42,14 @@ export class KnowledgeBaseService {
     file: Express.Multer.File,
     customTitle?: string,
   ) {
-    if (!this.s3.isAvailable()) {
-      throw new Error('File storage is not configured. Contact support or set up S3/R2.');
-    }
+    let s3Key: string | undefined;
 
-    const s3Key = `documents/${userId}/${randomUUID()}/${file.originalname}`;
-    await this.s3.upload(s3Key, file.buffer, file.mimetype);
+    if (this.s3.isAvailable()) {
+      s3Key = `documents/${userId}/${randomUUID()}/${file.originalname}`;
+      await this.s3.upload(s3Key, file.buffer, file.mimetype);
+    } else {
+      this.logger.warn('S3 not available — passing file buffer inline via job data');
+    }
 
     const title = customTitle || file.originalname;
     const document = await this.prisma.document.create({
@@ -55,7 +59,7 @@ export class KnowledgeBaseService {
         sourceType: DocumentSourceType.FILE,
         mimeType: file.mimetype,
         fileSize: file.size,
-        s3Key,
+        s3Key: s3Key ?? null,
         status: DocumentStatus.UPLOADED,
       },
     });
@@ -66,6 +70,7 @@ export class KnowledgeBaseService {
       sourceType: 'FILE',
       mimeType: file.mimetype,
       s3Key,
+      ...(!s3Key ? { fileBase64: file.buffer.toString('base64') } : {}),
     } satisfies DocumentProcessingJobData);
 
     this.logger.log(`Document ${document.id} uploaded and queued for processing`);

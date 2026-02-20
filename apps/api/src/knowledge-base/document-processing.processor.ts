@@ -47,7 +47,7 @@ export class DocumentProcessingProcessor extends WorkerHost {
   }
 
   async process(job: Job<DocumentProcessingJobData>): Promise<void> {
-    const { documentId, userId, sourceType, mimeType, s3Key, rawText, url } = job.data;
+    const { documentId, userId, sourceType, mimeType, s3Key, rawText, url, fileBase64 } = job.data;
     this.logger.log(`Processing document ${documentId} (type: ${sourceType})`);
 
     try {
@@ -73,8 +73,15 @@ export class DocumentProcessingProcessor extends WorkerHost {
           });
         }
       } else {
-        // FILE type -- download from S3 and parse by MIME type
-        const buffer = await this.s3.getBuffer(s3Key!);
+        // FILE type -- download from S3 or use inline buffer
+        let buffer: Buffer;
+        if (s3Key) {
+          buffer = await this.s3.getBuffer(s3Key);
+        } else if (fileBase64) {
+          buffer = Buffer.from(fileBase64, 'base64');
+        } else {
+          throw new Error('No S3 key or inline buffer available for file processing');
+        }
         const result = await this.parseByMimeType(buffer, mimeType!);
         extractedText = result.text;
       }
