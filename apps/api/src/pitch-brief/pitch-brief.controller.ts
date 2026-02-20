@@ -15,6 +15,7 @@ import {
   ParseUUIDPipe,
   HttpCode,
   HttpStatus,
+  UnprocessableEntityException,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import multer from 'multer';
@@ -103,7 +104,13 @@ export class PitchBriefController {
     @Body('title') title?: string,
   ) {
     // Create document via KB service (handles S3 upload + queuing)
-    const document = await this.kbService.uploadFile(user.userId, file, title);
+    let document;
+    try {
+      document = await this.kbService.uploadFile(user.userId, file, title);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Upload failed';
+      throw new UnprocessableEntityException(msg);
+    }
     // Link to brief and update status
     await this.briefService.addDocument(user.userId, id, document.id);
     return document;

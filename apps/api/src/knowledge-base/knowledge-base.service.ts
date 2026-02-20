@@ -40,6 +40,10 @@ export class KnowledgeBaseService {
     file: Express.Multer.File,
     customTitle?: string,
   ) {
+    if (!this.s3.isAvailable()) {
+      throw new Error('File storage is not configured. Contact support or set up S3/R2.');
+    }
+
     const s3Key = `documents/${userId}/${randomUUID()}/${file.originalname}`;
     await this.s3.upload(s3Key, file.buffer, file.mimetype);
 

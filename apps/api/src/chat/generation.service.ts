@@ -919,8 +919,7 @@ export class GenerationService {
       id: allSlides[i]?.id ?? s.slideNumber.toString(),
       slideNumber: s.slideNumber,
       title: s.title,
-      body: s.bulletPoints.map((b: string) => `- ${b}`).join('
-'),
+      body: s.bulletPoints.map((b: string) => `- ${b}`).join('\n'),
       slideType: s.slideType,
       imageUrl: null,
     }));

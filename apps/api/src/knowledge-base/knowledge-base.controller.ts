@@ -13,6 +13,7 @@ import {
   ParseUUIDPipe,
   HttpCode,
   HttpStatus,
+  UnprocessableEntityException,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiTags, ApiBearerAuth, ApiConsumes, ApiBody } from '@nestjs/swagger';
@@ -63,7 +64,12 @@ export class KnowledgeBaseController {
     @CurrentUser() user: RequestUser,
     @Body() dto: UploadDocumentDto,
   ) {
-    return this.kbService.uploadFile(user.userId, file, dto.title);
+    try {
+      return await this.kbService.uploadFile(user.userId, file, dto.title);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Upload failed';
+      throw new UnprocessableEntityException(msg);
+    }
   }
 
   @Post('text')
