@@ -115,6 +115,54 @@ export class ExportsService {
     private readonly rendererChooser: RendererChooserService,
   ) {}
 
+  /**
+   * Wait for any pending image generation jobs to complete before exporting.
+   * Polls every 3s, up to 3 minutes. If images are still pending after timeout,
+   * proceeds with export anyway (some slides just won't have images).
+   */
+  private async waitForPendingImages(presentationId: string): Promise<void> {
+    const MAX_WAIT_MS = 180_000; // 3 minutes
+    const POLL_INTERVAL_MS = 3_000;
+    const start = Date.now();
+
+    // Get slide IDs for this presentation
+    const slides = await this.prisma.slide.findMany({
+      where: { presentationId },
+      select: { id: true },
+    });
+    const slideIds = slides.map((s) => s.id);
+
+    if (slideIds.length === 0) return;
+
+    while (Date.now() - start < MAX_WAIT_MS) {
+      const pendingJobs = await this.prisma.imageJob.count({
+        where: {
+          slideId: { in: slideIds },
+          status: { in: [JobStatus.QUEUED, JobStatus.PROCESSING] },
+        },
+      });
+
+      if (pendingJobs === 0) {
+        this.logger.log(`All image jobs complete for presentation ${presentationId}`);
+        return;
+      }
+
+      this.logger.debug(`Waiting for ${pendingJobs} pending image job(s)...`);
+      await new Promise((r) => setTimeout(r, POLL_INTERVAL_MS));
+    }
+
+    // Count how many finished vs still pending
+    const remaining = await this.prisma.imageJob.count({
+      where: {
+        slideId: { in: slideIds },
+        status: { in: [JobStatus.QUEUED, JobStatus.PROCESSING] },
+      },
+    });
+    this.logger.warn(
+      `Image wait timeout (${MAX_WAIT_MS / 1000}s) — ${remaining} job(s) still pending, proceeding with export`,
+    );
+  }
+
   async createExportJob(
     presentationId: string,
     format: ExportFormat,
@@ -169,6 +217,9 @@ export class ExportsService {
           `Presentation "${job.presentationId}" not found during export`,
         );
       }
+
+      // Wait for pending image generation jobs before exporting
+      await this.waitForPendingImages(job.presentationId);
 
       const slides = await this.prisma.slide.findMany({
         where: { presentationId: job.presentationId },
@@ -400,6 +451,9 @@ export class ExportsService {
     if (!presentation) {
       throw new Error(`Presentation "${job.presentationId}" not found`);
     }
+
+    // Wait for pending image generation jobs before exporting
+    await this.waitForPendingImages(job.presentationId);
 
     const slides = await this.prisma.slide.findMany({
       where: { presentationId: job.presentationId },
