@@ -1,15 +1,18 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useApiKeysStore } from '@/stores/api-keys.store';
 import { Key, Plus, Copy, RotateCw, Trash2, Check, AlertTriangle } from 'lucide-react';
 
-const AVAILABLE_SCOPES = [
-  { value: 'presentations:read', label: 'Read Presentations', description: 'List and view presentations, briefs, lenses, credits' },
-  { value: 'presentations:write', label: 'Write Presentations', description: 'Create, delete, and fork presentations' },
-  { value: 'generation', label: 'Generate', description: 'Generate new presentations (costs 3 credits each)' },
-  { value: 'export', label: 'Export', description: 'Export presentations to PPTX, PDF, or HTML' },
-];
-
 export function ApiKeysPage() {
+  const { t } = useTranslation();
+
+  const AVAILABLE_SCOPES = [
+    { value: 'presentations:read', label: t('api_keys.scope_presentations_read'), description: t('api_keys.scope_presentations_read_desc') },
+    { value: 'presentations:write', label: t('api_keys.scope_presentations_write'), description: t('api_keys.scope_presentations_write_desc') },
+    { value: 'generation', label: t('api_keys.scope_generation'), description: t('api_keys.scope_generation_desc') },
+    { value: 'export', label: t('api_keys.scope_export'), description: t('api_keys.scope_export_desc') },
+  ];
+
   const keys = useApiKeysStore((s) => s.keys);
   const isLoading = useApiKeysStore((s) => s.isLoading);
   const loadKeys = useApiKeysStore((s) => s.loadKeys);
@@ -64,9 +67,9 @@ export function ApiKeysPage() {
     <div className="p-4 sm:p-6 lg:p-8">
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">API Keys</h1>
+          <h1 className="text-2xl font-bold text-foreground">{t('api_keys.title')}</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Manage API keys for programmatic access and MCP integration
+            {t('api_keys.subtitle')}
           </p>
         </div>
         <button
@@ -74,7 +77,7 @@ export function ApiKeysPage() {
           className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
         >
           <Plus className="h-4 w-4" />
-          Create API Key
+          {t('api_keys.create_key')}
         </button>
       </div>
 
@@ -83,7 +86,7 @@ export function ApiKeysPage() {
         <div className="mb-6 rounded-lg border border-yellow-500/30 bg-yellow-500/5 p-4">
           <div className="mb-2 flex items-center gap-2 text-yellow-500">
             <AlertTriangle className="h-4 w-4" />
-            <span className="text-sm font-semibold">Save this key now — you won't see it again</span>
+            <span className="text-sm font-semibold">{t('api_keys.save_key_warning')}</span>
           </div>
           <div className="flex items-center gap-2">
             <code className="flex-1 rounded bg-background px-3 py-2 text-sm font-mono text-foreground">
@@ -94,14 +97,14 @@ export function ApiKeysPage() {
               className="flex items-center gap-1 rounded-md border border-border px-3 py-2 text-sm hover:bg-accent"
             >
               {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
-              {copied ? 'Copied' : 'Copy'}
+              {copied ? t('common.copied') : t('common.copy')}
             </button>
           </div>
           <button
             onClick={() => setNewPlaintext(null)}
             className="mt-2 text-xs text-muted-foreground hover:text-foreground"
           >
-            Dismiss
+            {t('common.dismiss')}
           </button>
         </div>
       )}
@@ -110,17 +113,17 @@ export function ApiKeysPage() {
       {showCreate && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
           <div className="w-full max-w-md rounded-lg border border-border bg-card p-6 shadow-xl">
-            <h2 className="mb-4 text-lg font-semibold text-foreground">Create API Key</h2>
+            <h2 className="mb-4 text-lg font-semibold text-foreground">{t('api_keys.create_dialog_title')}</h2>
 
-            <label className="mb-1 block text-sm text-muted-foreground">Name</label>
+            <label className="mb-1 block text-sm text-muted-foreground">{t('api_keys.name_label')}</label>
             <input
               value={newKeyName}
               onChange={(e) => setNewKeyName(e.target.value)}
-              placeholder="e.g. My Agent Key"
+              placeholder={t('api_keys.name_placeholder')}
               className="mb-4 w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
             />
 
-            <label className="mb-2 block text-sm text-muted-foreground">Scopes</label>
+            <label className="mb-2 block text-sm text-muted-foreground">{t('api_keys.scopes_label')}</label>
             <div className="mb-4 space-y-2">
               {AVAILABLE_SCOPES.map((scope) => (
                 <label
@@ -146,14 +149,14 @@ export function ApiKeysPage() {
                 onClick={() => setShowCreate(false)}
                 className="rounded-md border border-border px-4 py-2 text-sm text-muted-foreground hover:bg-accent"
               >
-                Cancel
+                {t('common.cancel')}
               </button>
               <button
                 onClick={handleCreate}
                 disabled={!newKeyName.trim() || selectedScopes.length === 0}
                 className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
               >
-                Create Key
+                {t('api_keys.create_key')}
               </button>
             </div>
           </div>
@@ -168,8 +171,8 @@ export function ApiKeysPage() {
       ) : activeKeys.length === 0 ? (
         <div className="rounded-lg border border-dashed border-border p-12 text-center">
           <Key className="mx-auto mb-3 h-10 w-10 text-muted-foreground/50" />
-          <p className="text-sm text-muted-foreground">No API keys yet</p>
-          <p className="mt-1 text-xs text-muted-foreground">Create one to start using the REST API or MCP server</p>
+          <p className="text-sm text-muted-foreground">{t('api_keys.no_keys')}</p>
+          <p className="mt-1 text-xs text-muted-foreground">{t('api_keys.no_keys_hint')}</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -189,7 +192,7 @@ export function ApiKeysPage() {
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => handleRotate(key.id)}
-                    title="Rotate key"
+                    title={t('api_keys.rotate_key')}
                     className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
                   >
                     <RotateCw className="h-4 w-4" />
@@ -199,12 +202,12 @@ export function ApiKeysPage() {
                       onClick={() => handleRevoke(key.id)}
                       className="rounded-md bg-red-500/10 px-2 py-1 text-xs text-red-500 hover:bg-red-500/20"
                     >
-                      Confirm Revoke
+                      {t('api_keys.confirm_revoke')}
                     </button>
                   ) : (
                     <button
                       onClick={() => setConfirmRevoke(key.id)}
-                      title="Revoke key"
+                      title={t('api_keys.revoke_key')}
                       className="rounded-md p-1.5 text-muted-foreground hover:bg-red-500/10 hover:text-red-500"
                     >
                       <Trash2 className="h-4 w-4" />
@@ -220,9 +223,9 @@ export function ApiKeysPage() {
                 ))}
               </div>
               <div className="mt-2 flex gap-4 text-xs text-muted-foreground">
-                <span>Created {new Date(key.createdAt).toLocaleDateString()}</span>
-                {key.lastUsedAt && <span>Last used {new Date(key.lastUsedAt).toLocaleDateString()}</span>}
-                {key.expiresAt && <span>Expires {new Date(key.expiresAt).toLocaleDateString()}</span>}
+                <span>{t('api_keys.created_date', { date: new Date(key.createdAt).toLocaleDateString() })}</span>
+                {key.lastUsedAt && <span>{t('api_keys.last_used_date', { date: new Date(key.lastUsedAt).toLocaleDateString() })}</span>}
+                {key.expiresAt && <span>{t('api_keys.expires_date', { date: new Date(key.expiresAt).toLocaleDateString() })}</span>}
               </div>
             </div>
           ))}
@@ -232,7 +235,7 @@ export function ApiKeysPage() {
       {/* Revoked keys */}
       {revokedKeys.length > 0 && (
         <div className="mt-8">
-          <h2 className="mb-3 text-sm font-semibold text-muted-foreground">Revoked Keys</h2>
+          <h2 className="mb-3 text-sm font-semibold text-muted-foreground">{t('api_keys.revoked_keys_title')}</h2>
           <div className="space-y-2">
             {revokedKeys.map((key) => (
               <div key={key.id} className="rounded-lg border border-border/50 bg-card/50 p-3 opacity-60">
@@ -240,7 +243,7 @@ export function ApiKeysPage() {
                   <Key className="h-3.5 w-3.5 text-muted-foreground" />
                   <span className="text-sm text-muted-foreground">{key.name}</span>
                   <span className="text-xs font-mono text-muted-foreground">{key.keyPrefix}...</span>
-                  <span className="ml-auto rounded-full bg-red-500/10 px-2 py-0.5 text-xs text-red-500">Revoked</span>
+                  <span className="ml-auto rounded-full bg-red-500/10 px-2 py-0.5 text-xs text-red-500">{t('common.revoked')}</span>
                 </div>
               </div>
             ))}

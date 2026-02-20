@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   Gauge,
   Plus,
@@ -33,6 +34,7 @@ function formatEnum(value: string): string {
 }
 
 export function CockpitPage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const user = useAuthStore((s) => s.user);
   const presentations = usePresentationsStore((s) => s.presentations);
@@ -95,10 +97,10 @@ export function CockpitPage() {
       <div className="mb-8">
         <div className="mb-1 flex items-center gap-3">
           <Gauge className="h-7 w-7 text-primary" />
-          <h1 className="text-2xl font-bold text-foreground">Pitch Cockpit</h1>
+          <h1 className="text-2xl font-bold text-foreground">{t('cockpit.title')}</h1>
         </div>
         <p className="text-sm text-muted-foreground">
-          Your command center for pitch-perfect presentations
+          {t('cockpit.subtitle')}
         </p>
       </div>
 
@@ -107,7 +109,7 @@ export function CockpitPage() {
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
           <div className="flex-1">
             <label className="mb-2 block text-sm font-medium text-foreground">
-              Pitch Brief
+              {t('cockpit.pitch_brief_label')}
             </label>
             <div className="relative">
               <select
@@ -115,7 +117,7 @@ export function CockpitPage() {
                 onChange={(e) => setSelectedBriefId(e.target.value)}
                 className="w-full appearance-none rounded-lg border border-border bg-background px-4 py-2.5 pr-10 text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
               >
-                <option value="">No Brief</option>
+                <option value="">{t('common.no_brief')}</option>
                 {briefs.map((brief) => (
                   <option key={brief.id} value={brief.id}>
                     {brief.name}
@@ -128,7 +130,7 @@ export function CockpitPage() {
 
           <div className="flex-1">
             <label className="mb-2 block text-sm font-medium text-foreground">
-              Pitch Lens
+              {t('cockpit.pitch_lens_label')}
             </label>
             <div className="relative">
               <select
@@ -136,7 +138,7 @@ export function CockpitPage() {
                 onChange={(e) => setSelectedLensId(e.target.value)}
                 className="w-full appearance-none rounded-lg border border-border bg-background px-4 py-2.5 pr-10 text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
               >
-                <option value="">No Lens</option>
+                <option value="">{t('common.no_lens')}</option>
                 {lenses.map((lens) => (
                   <option key={lens.id} value={lens.id}>
                     {lens.name}
@@ -149,7 +151,7 @@ export function CockpitPage() {
 
           <div className="flex-1">
             <label className="mb-2 block text-sm font-medium text-foreground">
-              Starting From
+              {t('cockpit.starting_from_label')}
             </label>
             <div className="relative">
               <select
@@ -157,10 +159,10 @@ export function CockpitPage() {
                 onChange={(e) => setSelectedSourceId(e.target.value)}
                 className="w-full appearance-none rounded-lg border border-border bg-background px-4 py-2.5 pr-10 text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
               >
-                <option value="">Blank</option>
+                <option value="">{t('common.blank')}</option>
                 {completedPresentations.map((p) => (
                   <option key={p.id} value={p.id}>
-                    {p.title} ({p.slideCount} slides)
+                    {p.title} ({t('common.slides_count', { count: p.slideCount })})
                   </option>
                 ))}
               </select>
@@ -175,12 +177,12 @@ export function CockpitPage() {
           >
             {selectedSourceId ? (
               <>
-                Fork
+                {t('common.fork')}
                 <GitFork className="h-4 w-4" />
               </>
             ) : (
               <>
-                Generate
+                {t('common.generate')}
                 <ArrowRight className="h-4 w-4" />
               </>
             )}
@@ -188,8 +190,8 @@ export function CockpitPage() {
         </div>
         {!selectedLensId && (
           <p className="mt-3 text-xs text-amber-500">
-            Select a Pitch Lens to generate a deck.
-            {lenses.length === 0 && ' Create one first.'}
+            {t('cockpit.select_lens_warning')}
+            {lenses.length === 0 && t('cockpit.create_lens_first')}
           </p>
         )}
       </div>
@@ -202,7 +204,7 @@ export function CockpitPage() {
               <CreditCard className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Credit Balance</p>
+              <p className="text-sm text-muted-foreground">{t('cockpit.credit_balance')}</p>
               <p className="text-xl font-semibold text-foreground">
                 {user?.creditBalance ?? 0}
               </p>
@@ -216,7 +218,7 @@ export function CockpitPage() {
               <FileText className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Presentations</p>
+              <p className="text-sm text-muted-foreground">{t('cockpit.presentations')}</p>
               <p className="text-xl font-semibold text-foreground">
                 {presentations.length}
               </p>
@@ -230,7 +232,7 @@ export function CockpitPage() {
               <BookOpen className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Pitch Briefs</p>
+              <p className="text-sm text-muted-foreground">{t('cockpit.pitch_briefs')}</p>
               <p className="text-xl font-semibold text-foreground">
                 {briefs.length}
               </p>
@@ -242,13 +244,13 @@ export function CockpitPage() {
       {/* Recent Presentations */}
       <div className="mb-10">
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-foreground">Recent Presentations</h2>
+          <h2 className="text-lg font-semibold text-foreground">{t('cockpit.recent_presentations')}</h2>
           {presentations.length > 6 && (
             <button
               onClick={() => navigate('/dashboard')}
               className="flex items-center gap-1 text-sm text-primary hover:text-primary/80"
             >
-              View All
+              {t('common.view_all')}
               <ArrowRight className="h-3.5 w-3.5" />
             </button>
           )}
@@ -275,13 +277,13 @@ export function CockpitPage() {
       {/* Pitch Briefs */}
       <div className="mb-10">
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-foreground">Pitch Briefs</h2>
+          <h2 className="text-lg font-semibold text-foreground">{t('cockpit.pitch_briefs')}</h2>
           <button
             onClick={() => navigate('/pitch-briefs/new')}
             className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
           >
             <Plus className="h-4 w-4" />
-            New Brief
+            {t('cockpit.new_brief')}
           </button>
         </div>
         {briefsLoading ? (
@@ -292,14 +294,14 @@ export function CockpitPage() {
           <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-border py-12">
             <BookOpen className="mb-3 h-10 w-10 text-muted-foreground/50" />
             <p className="mb-4 text-sm text-muted-foreground">
-              Add your context — upload documents, paste text, or add URLs to build your knowledge base
+              {t('cockpit.empty_briefs_message')}
             </p>
             <button
               onClick={() => navigate('/pitch-briefs/new')}
               className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
             >
               <Plus className="h-4 w-4" />
-              Create Brief
+              {t('cockpit.create_brief')}
             </button>
           </div>
         ) : (
@@ -327,15 +329,15 @@ export function CockpitPage() {
                 <div className="flex items-center gap-3 text-xs text-muted-foreground">
                   <span className="flex items-center gap-1">
                     <FileText className="h-3 w-3" />
-                    {brief.documentCount} docs
+                    {t('common.docs_count', { count: brief.documentCount })}
                   </span>
                   <span className="flex items-center gap-1">
                     <BarChart3 className="h-3 w-3" />
-                    {brief.entityCount} entities
+                    {t('common.entities_count', { count: brief.entityCount })}
                   </span>
                   <span className="flex items-center gap-1">
                     <Focus className="h-3 w-3" />
-                    {brief.lensCount} lenses
+                    {t('common.lenses_count', { count: brief.lensCount })}
                   </span>
                 </div>
               </div>
@@ -347,13 +349,13 @@ export function CockpitPage() {
       {/* Pitch Lenses */}
       <div>
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-foreground">Pitch Lenses</h2>
+          <h2 className="text-lg font-semibold text-foreground">{t('cockpit.pitch_lenses')}</h2>
           <button
             onClick={() => navigate('/pitch-lens/new')}
             className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
           >
             <Plus className="h-4 w-4" />
-            New Lens
+            {t('cockpit.new_lens')}
           </button>
         </div>
         {lensesLoading ? (
@@ -364,14 +366,14 @@ export function CockpitPage() {
           <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-border py-12">
             <Focus className="mb-3 h-10 w-10 text-muted-foreground/50" />
             <p className="mb-4 text-sm text-muted-foreground">
-              Define your audience, goal, tone, and framework to guide AI generation
+              {t('cockpit.empty_lenses_message')}
             </p>
             <button
               onClick={() => navigate('/pitch-lens/new')}
               className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
             >
               <Plus className="h-4 w-4" />
-              Create Lens
+              {t('cockpit.create_lens')}
             </button>
           </div>
         ) : (
@@ -395,7 +397,9 @@ export function CockpitPage() {
                   </span>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  {lens.presentationCount} presentation{lens.presentationCount !== 1 ? 's' : ''}
+                  {lens.presentationCount === 1
+                    ? t('common.presentation_count', { count: lens.presentationCount })
+                    : t('common.presentation_count_plural', { count: lens.presentationCount })}
                 </p>
               </div>
             ))}

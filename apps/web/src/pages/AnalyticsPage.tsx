@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { BarChart3, Eye, GitFork, Globe, FileText } from 'lucide-react';
 import { api } from '@/lib/api';
 
@@ -27,6 +28,7 @@ interface CreatorStats {
 }
 
 export function AnalyticsPage() {
+  const { t } = useTranslation();
   const [stats, setStats] = useState<CreatorStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -49,7 +51,7 @@ export function AnalyticsPage() {
   if (!stats) {
     return (
       <div className="p-4 sm:p-6 lg:p-8">
-        <p className="text-muted-foreground">Failed to load analytics.</p>
+        <p className="text-muted-foreground">{t('analytics.failed_to_load')}</p>
       </div>
     );
   }
@@ -62,10 +64,10 @@ export function AnalyticsPage() {
       <div className="mb-8">
         <div className="mb-1 flex items-center gap-3">
           <BarChart3 className="h-7 w-7 text-primary" />
-          <h1 className="text-2xl font-bold text-foreground">Analytics</h1>
+          <h1 className="text-2xl font-bold text-foreground">{t('analytics.title')}</h1>
         </div>
         <p className="text-sm text-muted-foreground">
-          Track how your presentations perform
+          {t('analytics.subtitle')}
         </p>
       </div>
 
@@ -77,7 +79,7 @@ export function AnalyticsPage() {
               <Eye className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Total Views</p>
+              <p className="text-sm text-muted-foreground">{t('analytics.total_views')}</p>
               <p className="text-xl font-semibold text-foreground">
                 {stats.totalViews.toLocaleString()}
               </p>
@@ -91,7 +93,7 @@ export function AnalyticsPage() {
               <GitFork className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Total Forks</p>
+              <p className="text-sm text-muted-foreground">{t('analytics.total_forks')}</p>
               <p className="text-xl font-semibold text-foreground">
                 {stats.totalForks.toLocaleString()}
               </p>
@@ -105,7 +107,7 @@ export function AnalyticsPage() {
               <Globe className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Public</p>
+              <p className="text-sm text-muted-foreground">{t('analytics.public')}</p>
               <p className="text-xl font-semibold text-foreground">
                 {stats.publicCount}
               </p>
@@ -119,7 +121,7 @@ export function AnalyticsPage() {
               <FileText className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Total Decks</p>
+              <p className="text-sm text-muted-foreground">{t('analytics.total_decks')}</p>
               <p className="text-xl font-semibold text-foreground">
                 {stats.totalPresentations}
               </p>
@@ -130,7 +132,7 @@ export function AnalyticsPage() {
 
       {/* 30-day chart */}
       <div className="mb-8 rounded-lg border border-border bg-card p-6">
-        <h2 className="mb-4 text-lg font-semibold text-foreground">Views — Last 30 Days</h2>
+        <h2 className="mb-4 text-lg font-semibold text-foreground">{t('analytics.chart_title')}</h2>
         <div className="flex h-40 items-end gap-[2px] sm:gap-1">
           {stats.chartData.map((d) => (
             <div
@@ -156,21 +158,21 @@ export function AnalyticsPage() {
 
       {/* Top presentations */}
       <div className="rounded-lg border border-border bg-card p-6">
-        <h2 className="mb-4 text-lg font-semibold text-foreground">Top Presentations</h2>
+        <h2 className="mb-4 text-lg font-semibold text-foreground">{t('analytics.top_presentations_title')}</h2>
         {stats.topPresentations.length === 0 ? (
           <p className="py-8 text-center text-sm text-muted-foreground">
-            No presentations yet. Create one to start tracking analytics.
+            {t('analytics.no_presentations')}
           </p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border text-left">
-                  <th className="pb-3 pr-4 font-medium text-muted-foreground">Title</th>
-                  <th className="pb-3 px-4 font-medium text-muted-foreground text-right">Views</th>
-                  <th className="pb-3 px-4 font-medium text-muted-foreground text-right">Forks</th>
-                  <th className="hidden pb-3 px-4 font-medium text-muted-foreground text-right sm:table-cell">Slides</th>
-                  <th className="hidden pb-3 pl-4 font-medium text-muted-foreground text-right md:table-cell">Status</th>
+                  <th className="pb-3 pr-4 font-medium text-muted-foreground">{t('analytics.table_title')}</th>
+                  <th className="pb-3 px-4 font-medium text-muted-foreground text-right">{t('analytics.table_views')}</th>
+                  <th className="pb-3 px-4 font-medium text-muted-foreground text-right">{t('analytics.table_forks')}</th>
+                  <th className="hidden pb-3 px-4 font-medium text-muted-foreground text-right sm:table-cell">{t('analytics.table_slides')}</th>
+                  <th className="hidden pb-3 pl-4 font-medium text-muted-foreground text-right md:table-cell">{t('analytics.table_status')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
@@ -191,11 +193,11 @@ export function AnalyticsPage() {
                     <td className="hidden py-3 pl-4 text-right md:table-cell">
                       {p.isPublic ? (
                         <span className="rounded-full bg-green-500/10 px-2 py-0.5 text-xs font-medium text-green-400">
-                          Public
+                          {t('common.public')}
                         </span>
                       ) : (
                         <span className="rounded-full bg-secondary px-2 py-0.5 text-xs font-medium text-muted-foreground">
-                          Private
+                          {t('common.private')}
                         </span>
                       )}
                     </td>

@@ -1,33 +1,36 @@
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { ArrowLeft, Key, Code, Cpu, CreditCard, Zap, Shield } from 'lucide-react';
 
 export function DocsPage() {
+  const { t } = useTranslation();
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <nav className="border-b border-border px-6 py-4">
         <div className="mx-auto flex max-w-4xl items-center gap-4">
           <Link to="/" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
             <ArrowLeft className="h-4 w-4" />
-            Back to Pitchable
+            {t('docs.back_to_pitchable')}
           </Link>
         </div>
       </nav>
 
       <div className="mx-auto max-w-4xl px-6 py-12">
-        <h1 className="mb-2 text-3xl font-bold">Developer Documentation</h1>
+        <h1 className="mb-2 text-3xl font-bold">{t('docs.title')}</h1>
         <p className="mb-12 text-muted-foreground">
-          Programmatic access to Pitchable via REST API and MCP (Model Context Protocol)
+          {t('docs.subtitle')}
         </p>
 
         {/* Authentication */}
         <section className="mb-12">
           <div className="mb-4 flex items-center gap-2">
             <Key className="h-5 w-5 text-orange-400" />
-            <h2 className="text-xl font-semibold">Authentication</h2>
+            <h2 className="text-xl font-semibold">{t('docs.auth_title')}</h2>
           </div>
           <p className="mb-4 text-sm text-muted-foreground">
-            All API requests require an API key. Create one in{' '}
-            <Link to="/settings/api-keys" className="text-orange-400 hover:underline">Settings &rarr; API Keys</Link>.
+            {t('docs.auth_desc')}{' '}
+            <Link to="/settings/api-keys" className="text-orange-400 hover:underline">{t('docs.auth_link')}</Link>.
           </p>
           <pre className="overflow-x-auto rounded-lg bg-black/40 p-4 text-sm">
 {`# Via x-api-key header (recommended)
@@ -44,21 +47,21 @@ curl -H "Authorization: Bearer pk_your_key_here" \\
         <section className="mb-12">
           <div className="mb-4 flex items-center gap-2">
             <Code className="h-5 w-5 text-green-400" />
-            <h2 className="text-xl font-semibold">REST API</h2>
+            <h2 className="text-xl font-semibold">{t('docs.rest_api_title')}</h2>
           </div>
-          <p className="mb-4 text-sm text-muted-foreground">Base URL: <code className="text-foreground/80">https://app.pitchable.ai/api/v1</code></p>
+          <p className="mb-4 text-sm text-muted-foreground">{t('docs.rest_api_base_url')} <code className="text-foreground/80">https://app.pitchable.ai/api/v1</code></p>
 
           <div className="space-y-3">
             {[
-              { method: 'GET', path: '/presentations', scope: 'presentations:read', desc: 'List all presentations' },
-              { method: 'GET', path: '/presentations/:id', scope: 'presentations:read', desc: 'Get presentation with slides' },
-              { method: 'POST', path: '/generate', scope: 'generation', desc: 'Generate a full presentation' },
-              { method: 'DELETE', path: '/presentations/:id', scope: 'presentations:write', desc: 'Delete a presentation' },
-              { method: 'POST', path: '/presentations/:id/fork', scope: 'presentations:write', desc: 'Fork with context swap' },
-              { method: 'POST', path: '/presentations/:id/export', scope: 'export', desc: 'Export to PPTX/PDF/HTML' },
-              { method: 'GET', path: '/briefs', scope: 'presentations:read', desc: 'List Pitch Briefs' },
-              { method: 'GET', path: '/lenses', scope: 'presentations:read', desc: 'List Pitch Lenses' },
-              { method: 'GET', path: '/credits/balance', scope: 'presentations:read', desc: 'Check credit balance' },
+              { method: 'GET', path: '/presentations', scope: 'presentations:read', desc: t('docs.rest_api_endpoints.list_presentations') },
+              { method: 'GET', path: '/presentations/:id', scope: 'presentations:read', desc: t('docs.rest_api_endpoints.get_presentation') },
+              { method: 'POST', path: '/generate', scope: 'generation', desc: t('docs.rest_api_endpoints.generate') },
+              { method: 'DELETE', path: '/presentations/:id', scope: 'presentations:write', desc: t('docs.rest_api_endpoints.delete_presentation') },
+              { method: 'POST', path: '/presentations/:id/fork', scope: 'presentations:write', desc: t('docs.rest_api_endpoints.fork_presentation') },
+              { method: 'POST', path: '/presentations/:id/export', scope: 'export', desc: t('docs.rest_api_endpoints.export_presentation') },
+              { method: 'GET', path: '/briefs', scope: 'presentations:read', desc: t('docs.rest_api_endpoints.list_briefs') },
+              { method: 'GET', path: '/lenses', scope: 'presentations:read', desc: t('docs.rest_api_endpoints.list_lenses') },
+              { method: 'GET', path: '/credits/balance', scope: 'presentations:read', desc: t('docs.rest_api_endpoints.check_credits') },
             ].map((ep) => (
               <div key={ep.path + ep.method} className="flex items-center gap-3 rounded-lg bg-card px-4 py-3">
                 <span className={`w-16 rounded text-center text-xs font-bold ${ep.method === 'GET' ? 'bg-orange-500/20 text-orange-400' : ep.method === 'POST' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
@@ -72,7 +75,7 @@ curl -H "Authorization: Bearer pk_your_key_here" \\
           </div>
 
           {/* Generate example */}
-          <h3 className="mb-2 mt-8 text-lg font-semibold">Generate a Presentation</h3>
+          <h3 className="mb-2 mt-8 text-lg font-semibold">{t('docs.generate_title')}</h3>
           <pre className="overflow-x-auto rounded-lg bg-black/40 p-4 text-sm">
 {`curl -X POST https://app.pitchable.ai/api/v1/generate \\
   -H "x-api-key: pk_your_key_here" \\
@@ -90,13 +93,13 @@ curl -H "Authorization: Bearer pk_your_key_here" \\
         <section className="mb-12">
           <div className="mb-4 flex items-center gap-2">
             <Cpu className="h-5 w-5 text-purple-400" />
-            <h2 className="text-xl font-semibold">MCP (Model Context Protocol)</h2>
+            <h2 className="text-xl font-semibold">{t('docs.mcp_title')}</h2>
           </div>
           <p className="mb-4 text-sm text-muted-foreground">
-            Connect Pitchable to any AI agent that supports MCP — Claude Code, Cursor, Windsurf, and more.
+            {t('docs.mcp_desc')}
           </p>
 
-          <h3 className="mb-2 text-base font-semibold">Claude Code</h3>
+          <h3 className="mb-2 text-base font-semibold">{t('docs.mcp_claude_code')}</h3>
           <p className="mb-2 text-xs text-muted-foreground">Add to <code>.claude/mcp.json</code>:</p>
           <pre className="mb-6 overflow-x-auto rounded-lg bg-black/40 p-4 text-sm">
 {`{
@@ -112,7 +115,7 @@ curl -H "Authorization: Bearer pk_your_key_here" \\
 }`}
           </pre>
 
-          <h3 className="mb-2 text-base font-semibold">Cursor</h3>
+          <h3 className="mb-2 text-base font-semibold">{t('docs.mcp_cursor')}</h3>
           <p className="mb-2 text-xs text-muted-foreground">Add to <code>.cursor/mcp.json</code>:</p>
           <pre className="mb-6 overflow-x-auto rounded-lg bg-black/40 p-4 text-sm">
 {`{
@@ -128,17 +131,17 @@ curl -H "Authorization: Bearer pk_your_key_here" \\
 }`}
           </pre>
 
-          <h3 className="mb-2 text-base font-semibold">Available Tools</h3>
+          <h3 className="mb-2 text-base font-semibold">{t('docs.mcp_available_tools')}</h3>
           <div className="space-y-2">
             {[
-              { name: 'generate_presentation', desc: 'Generate a complete narrative deck from topic (3 credits)', icon: String.fromCodePoint(0x1F3AF) },
-              { name: 'list_presentations', desc: 'List your presentations with metadata', icon: String.fromCodePoint(0x1F4CB) },
-              { name: 'get_presentation', desc: 'Get a presentation with all slides and speaker notes', icon: String.fromCodePoint(0x1F4CA) },
-              { name: 'fork_presentation', desc: 'Fork with optional Brief/Lens swap', icon: String.fromCodePoint(0x1F500) },
-              { name: 'export_presentation', desc: 'Export to PPTX, PDF, or Reveal.js HTML', icon: String.fromCodePoint(0x1F4E6) },
-              { name: 'list_briefs', desc: 'List your Pitch Briefs (knowledge collections)', icon: String.fromCodePoint(0x1F4DA) },
-              { name: 'list_lenses', desc: 'List your Pitch Lenses (strategy profiles)', icon: String.fromCodePoint(0x1F50D) },
-              { name: 'check_credits', desc: 'Check credit balance and cost table', icon: String.fromCodePoint(0x1F4B3) },
+              { name: 'generate_presentation', desc: t('docs.mcp_tools.generate_presentation'), icon: String.fromCodePoint(0x1F3AF) },
+              { name: 'list_presentations', desc: t('docs.mcp_tools.list_presentations'), icon: String.fromCodePoint(0x1F4CB) },
+              { name: 'get_presentation', desc: t('docs.mcp_tools.get_presentation'), icon: String.fromCodePoint(0x1F4CA) },
+              { name: 'fork_presentation', desc: t('docs.mcp_tools.fork_presentation'), icon: String.fromCodePoint(0x1F500) },
+              { name: 'export_presentation', desc: t('docs.mcp_tools.export_presentation'), icon: String.fromCodePoint(0x1F4E6) },
+              { name: 'list_briefs', desc: t('docs.mcp_tools.list_briefs'), icon: String.fromCodePoint(0x1F4DA) },
+              { name: 'list_lenses', desc: t('docs.mcp_tools.list_lenses'), icon: String.fromCodePoint(0x1F50D) },
+              { name: 'check_credits', desc: t('docs.mcp_tools.check_credits'), icon: String.fromCodePoint(0x1F4B3) },
             ].map((tool) => (
               <div key={tool.name} className="flex items-center gap-3 rounded-lg bg-card px-4 py-3">
                 <span className="text-lg">{tool.icon}</span>
@@ -153,21 +156,21 @@ curl -H "Authorization: Bearer pk_your_key_here" \\
         <section className="mb-12">
           <div className="mb-4 flex items-center gap-2">
             <CreditCard className="h-5 w-5 text-yellow-400" />
-            <h2 className="text-xl font-semibold">Credit Costs</h2>
+            <h2 className="text-xl font-semibold">{t('docs.credits_title')}</h2>
           </div>
           <div className="overflow-hidden rounded-lg border border-border">
             <table className="w-full text-sm">
               <thead className="bg-card">
                 <tr>
-                  <th className="px-4 py-2 text-left font-medium text-muted-foreground">Operation</th>
-                  <th className="px-4 py-2 text-right font-medium text-muted-foreground">Cost</th>
+                  <th className="px-4 py-2 text-left font-medium text-muted-foreground">{t('docs.credits_table.operation')}</th>
+                  <th className="px-4 py-2 text-right font-medium text-muted-foreground">{t('docs.credits_table.cost')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                <tr><td className="px-4 py-2">Presentation generation</td><td className="px-4 py-2 text-right font-mono">3 credits</td></tr>
-                <tr><td className="px-4 py-2">Image generation (per image)</td><td className="px-4 py-2 text-right font-mono">1 credit</td></tr>
-                <tr><td className="px-4 py-2">Export (PPTX, PDF, HTML)</td><td className="px-4 py-2 text-right font-mono">Free</td></tr>
-                <tr><td className="px-4 py-2">List / Get / Fork</td><td className="px-4 py-2 text-right font-mono">Free</td></tr>
+                <tr><td className="px-4 py-2">{t('docs.credits_table.presentation_generation')}</td><td className="px-4 py-2 text-right font-mono">{t('docs.credits_table.presentation_generation_cost')}</td></tr>
+                <tr><td className="px-4 py-2">{t('docs.credits_table.image_generation')}</td><td className="px-4 py-2 text-right font-mono">{t('docs.credits_table.image_generation_cost')}</td></tr>
+                <tr><td className="px-4 py-2">{t('docs.credits_table.export')}</td><td className="px-4 py-2 text-right font-mono">{t('docs.credits_table.export_cost')}</td></tr>
+                <tr><td className="px-4 py-2">{t('docs.credits_table.list_get_fork')}</td><td className="px-4 py-2 text-right font-mono">{t('docs.credits_table.list_get_fork_cost')}</td></tr>
               </tbody>
             </table>
           </div>
@@ -177,21 +180,21 @@ curl -H "Authorization: Bearer pk_your_key_here" \\
         <section className="mb-12">
           <div className="mb-4 flex items-center gap-2">
             <Zap className="h-5 w-5 text-orange-400" />
-            <h2 className="text-xl font-semibold">Rate Limits</h2>
+            <h2 className="text-xl font-semibold">{t('docs.rate_limits_title')}</h2>
           </div>
           <div className="overflow-hidden rounded-lg border border-border">
             <table className="w-full text-sm">
               <thead className="bg-card">
                 <tr>
-                  <th className="px-4 py-2 text-left font-medium text-muted-foreground">Tier</th>
-                  <th className="px-4 py-2 text-right font-medium text-muted-foreground">Requests / min</th>
+                  <th className="px-4 py-2 text-left font-medium text-muted-foreground">{t('docs.rate_limits_table.tier')}</th>
+                  <th className="px-4 py-2 text-right font-medium text-muted-foreground">{t('docs.rate_limits_table.requests_per_min')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                <tr><td className="px-4 py-2">Free</td><td className="px-4 py-2 text-right font-mono">20</td></tr>
-                <tr><td className="px-4 py-2">Starter</td><td className="px-4 py-2 text-right font-mono">60</td></tr>
-                <tr><td className="px-4 py-2">Pro</td><td className="px-4 py-2 text-right font-mono">120</td></tr>
-                <tr><td className="px-4 py-2">Enterprise</td><td className="px-4 py-2 text-right font-mono">300</td></tr>
+                <tr><td className="px-4 py-2">{t('docs.rate_limits_table.free')}</td><td className="px-4 py-2 text-right font-mono">{t('docs.rate_limits_table.free_limit')}</td></tr>
+                <tr><td className="px-4 py-2">{t('docs.rate_limits_table.starter')}</td><td className="px-4 py-2 text-right font-mono">{t('docs.rate_limits_table.starter_limit')}</td></tr>
+                <tr><td className="px-4 py-2">{t('docs.rate_limits_table.pro')}</td><td className="px-4 py-2 text-right font-mono">{t('docs.rate_limits_table.pro_limit')}</td></tr>
+                <tr><td className="px-4 py-2">{t('docs.rate_limits_table.enterprise')}</td><td className="px-4 py-2 text-right font-mono">{t('docs.rate_limits_table.enterprise_limit')}</td></tr>
               </tbody>
             </table>
           </div>
@@ -201,21 +204,21 @@ curl -H "Authorization: Bearer pk_your_key_here" \\
         <section>
           <div className="mb-4 flex items-center gap-2">
             <Shield className="h-5 w-5 text-orange-400" />
-            <h2 className="text-xl font-semibold">Scopes Reference</h2>
+            <h2 className="text-xl font-semibold">{t('docs.scopes_title')}</h2>
           </div>
           <div className="overflow-hidden rounded-lg border border-border">
             <table className="w-full text-sm">
               <thead className="bg-card">
                 <tr>
-                  <th className="px-4 py-2 text-left font-medium text-muted-foreground">Scope</th>
-                  <th className="px-4 py-2 text-left font-medium text-muted-foreground">Allows</th>
+                  <th className="px-4 py-2 text-left font-medium text-muted-foreground">{t('docs.scopes_table.scope')}</th>
+                  <th className="px-4 py-2 text-left font-medium text-muted-foreground">{t('docs.scopes_table.allows')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                <tr><td className="px-4 py-2 font-mono text-orange-300">presentations:read</td><td className="px-4 py-2">List/get presentations, briefs, lenses, credits</td></tr>
-                <tr><td className="px-4 py-2 font-mono text-orange-300">presentations:write</td><td className="px-4 py-2">Create, delete, fork presentations</td></tr>
-                <tr><td className="px-4 py-2 font-mono text-orange-300">generation</td><td className="px-4 py-2">Generate presentations (costs credits)</td></tr>
-                <tr><td className="px-4 py-2 font-mono text-orange-300">export</td><td className="px-4 py-2">Export to PPTX, PDF, Reveal.js HTML</td></tr>
+                <tr><td className="px-4 py-2 font-mono text-orange-300">presentations:read</td><td className="px-4 py-2">{t('docs.scopes_table.presentations_read')}</td></tr>
+                <tr><td className="px-4 py-2 font-mono text-orange-300">presentations:write</td><td className="px-4 py-2">{t('docs.scopes_table.presentations_write')}</td></tr>
+                <tr><td className="px-4 py-2 font-mono text-orange-300">generation</td><td className="px-4 py-2">{t('docs.scopes_table.generation')}</td></tr>
+                <tr><td className="px-4 py-2 font-mono text-orange-300">export</td><td className="px-4 py-2">{t('docs.scopes_table.export')}</td></tr>
               </tbody>
             </table>
           </div>

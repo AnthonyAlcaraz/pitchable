@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/stores/auth.store';
 import { usePresentationsStore } from '@/stores/presentations.store';
 import type { PresentationListItem } from '@/stores/presentations.store';
@@ -9,6 +10,7 @@ import { CreditCard, FileText, BarChart3, ArrowRight } from 'lucide-react';
 import { api } from '@/lib/api';
 
 export function DashboardPage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const user = useAuthStore((s) => s.user);
   const presentations = usePresentationsStore((s) => s.presentations);
@@ -36,17 +38,17 @@ export function DashboardPage() {
         <div className="mb-6 flex items-center justify-between rounded-lg border border-primary/20 bg-primary/5 p-4">
           <div>
             <p className="text-sm font-medium text-foreground">
-              Finish setting up your account to generate your first deck
+              {t('dashboard.onboarding_banner')}
             </p>
             <p className="mt-0.5 text-xs text-muted-foreground">
-              Create a Pitch Brief and Lens to get started
+              {t('dashboard.onboarding_banner_subtitle')}
             </p>
           </div>
           <button
             onClick={() => navigate('/onboarding')}
             className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
           >
-            Resume Setup
+            {t('dashboard.resume_setup')}
             <ArrowRight className="h-4 w-4" />
           </button>
         </div>
@@ -54,10 +56,10 @@ export function DashboardPage() {
 
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-foreground">
-          Welcome back, {user?.name ?? 'there'}
+          {t('dashboard.welcome', { name: user?.name ?? 'there' })}
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Your presentations at a glance
+          {t('dashboard.subtitle')}
         </p>
       </div>
 
@@ -69,7 +71,7 @@ export function DashboardPage() {
               <CreditCard className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Credit Balance</p>
+              <p className="text-sm text-muted-foreground">{t('dashboard.credit_balance')}</p>
               <p className="text-xl font-semibold text-foreground">
                 {user?.creditBalance ?? 0}
               </p>
@@ -83,7 +85,7 @@ export function DashboardPage() {
               <FileText className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Presentations</p>
+              <p className="text-sm text-muted-foreground">{t('dashboard.presentations')}</p>
               <p className="text-xl font-semibold text-foreground">
                 {presentations.length}
               </p>
@@ -97,7 +99,7 @@ export function DashboardPage() {
               <BarChart3 className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Decks This Month</p>
+              <p className="text-sm text-muted-foreground">{t('dashboard.decks_this_month')}</p>
               <p className="text-xl font-semibold text-foreground">
                 {deckStats?.decksUsed ?? 0}
                 {deckStats?.decksLimit !== null && deckStats?.decksLimit !== undefined && (
