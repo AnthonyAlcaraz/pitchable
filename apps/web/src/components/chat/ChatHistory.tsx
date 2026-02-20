@@ -52,11 +52,11 @@ export function ChatHistory({
       className="flex-1 overflow-y-auto"
     >
       {messages.length === 0 && !isStreaming && (
-        <div className="flex h-full flex-col items-center justify-center p-8 text-center text-gray-400">
+        <div className="flex h-full flex-col items-center justify-center p-8 text-center text-muted-foreground">
           <p className="mb-2 text-lg font-medium">Start a conversation</p>
           <p className="text-sm">
             Describe your presentation or type{' '}
-            <code className="rounded bg-gray-100 px-1 py-0.5 text-purple-600">
+            <code className="rounded bg-muted px-1 py-0.5 text-orange-400">
               /help
             </code>{' '}
             for commands

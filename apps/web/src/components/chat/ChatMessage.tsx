@@ -42,10 +42,10 @@ export function ChatMessage({
         {isUser ? <User className="h-4 w-4" /> : <Bot className="h-4 w-4" />}
       </div>
       <div className="min-w-0 flex-1">
-        <p className="mb-1 text-xs font-medium text-gray-500">
+        <p className="mb-1 text-xs font-medium text-muted-foreground">
           {isUser ? 'You' : 'Pitchable'}
         </p>
-        <div className="prose prose-sm max-w-none text-gray-800">
+        <div className="prose prose-sm prose-invert max-w-none text-foreground">
           <ReactMarkdown remarkPlugins={[remarkGfm]}>
             {content}
           </ReactMarkdown>

@@ -62,7 +62,7 @@ export function ChatInput({ onSend, disabled }: ChatInputProps) {
   };
 
   return (
-    <div className="relative border-t border-gray-200 bg-white p-3">
+    <div className="relative border-t border-border bg-card p-3">
       {showCommands && (
         <SlashCommandMenu
           filter={commandFilter}
@@ -79,18 +79,18 @@ export function ChatInput({ onSend, disabled }: ChatInputProps) {
           placeholder={t('chat.input.placeholder')}
           disabled={disabled}
           rows={1}
-          className="flex-1 resize-none rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm outline-none transition-colors placeholder:text-gray-400 focus:border-purple-300 focus:bg-white disabled:opacity-50"
+          className="flex-1 resize-none rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-orange-500/50 focus:bg-background disabled:opacity-50"
         />
         <button
           type="button"
           onClick={handleSend}
           disabled={disabled || !value.trim()}
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-purple-600 text-white transition-colors hover:bg-purple-700 disabled:cursor-not-allowed disabled:opacity-50"
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-orange-500 text-white transition-colors hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-50"
         >
           <Send className="h-4 w-4" />
         </button>
       </div>
-      <p className="mt-1 text-xs text-gray-400">
+      <p className="mt-1 text-xs text-muted-foreground">
         {t('chat.input.hint')}
       </p>
     </div>

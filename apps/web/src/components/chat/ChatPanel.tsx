@@ -37,7 +37,7 @@ export function ChatPanel({ presentationId, briefId: _briefId, lensId: _lensId }
   }, [presentationId, loadHistory]);
 
   const handleSend = (content: string) => {
-    if (!presentationId) return;
+    if (!presentationId || presentationId === 'new') return;
     sendMessage(presentationId, content);
   };
 
@@ -65,9 +65,10 @@ export function ChatPanel({ presentationId, briefId: _briefId, lensId: _lensId }
     [presentationId, rejectSlide],
   );
 
-  if (!presentationId) {
+  // Guard: "new" is not a real presentation ID (workspace opened before generation)
+  if (!presentationId || presentationId === 'new') {
     return (
-      <div className="flex h-full flex-col items-center justify-center p-8 text-center text-gray-400">
+      <div className="flex h-full flex-col items-center justify-center p-8 text-center text-muted-foreground">
         <MessageSquare className="mb-3 h-10 w-10" />
         <p>{t('chat.panel.empty_state')}</p>
       </div>
@@ -76,16 +77,16 @@ export function ChatPanel({ presentationId, briefId: _briefId, lensId: _lensId }
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex items-center gap-2 border-b border-gray-200 px-4 py-3">
-        <MessageSquare className="h-4 w-4 text-purple-600" />
-        <span className="text-sm font-medium text-gray-700">{t('chat.panel.title')}</span>
+      <div className="flex items-center gap-2 border-b border-border px-4 py-3">
+        <MessageSquare className="h-4 w-4 text-orange-400" />
+        <span className="text-sm font-medium text-foreground">{t('chat.panel.title')}</span>
         {isLoading && (
-          <span className="text-xs text-gray-400">{t('chat.panel.loading')}</span>
+          <span className="text-xs text-muted-foreground">{t('chat.panel.loading')}</span>
         )}
       </div>
 
       {error && (
-        <div className="mx-3 mt-2 flex items-center justify-between rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
+        <div className="mx-3 mt-2 flex items-center justify-between rounded-md bg-red-500/10 px-3 py-2 text-sm text-red-400">
           <span>{error}</span>
           <button
             type="button"
