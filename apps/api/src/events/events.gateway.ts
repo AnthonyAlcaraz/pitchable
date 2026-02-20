@@ -158,6 +158,11 @@ export class EventsGateway
       return;
     }
 
+    // Skip join for "new" — presentation doesn't exist yet
+    if (presentationId === 'new') {
+      return;
+    }
+
     const presentation = await this.prisma.presentation.findUnique({
       where: { id: presentationId },
       select: { userId: true },

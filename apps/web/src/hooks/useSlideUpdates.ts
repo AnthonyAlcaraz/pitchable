@@ -49,7 +49,7 @@ export function useSlideUpdates(presentationId: string | undefined) {
   const addImageSelection = useChatStore((s) => s.addImageSelection);
 
   useEffect(() => {
-    if (!presentationId) return;
+    if (!presentationId || presentationId === 'new') return;
 
     const socket = getSocket();
     joinPresentation(presentationId);
