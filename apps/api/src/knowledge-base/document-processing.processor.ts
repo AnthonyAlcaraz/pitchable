@@ -15,8 +15,10 @@ import { VectorStoreService } from './embedding/vector-store.service.js';
 import { FalkorDbService } from './falkordb/falkordb.service.js';
 import { EntityExtractorService } from './falkordb/entity-extractor.service.js';
 import { ZeroEntropyRetrievalService } from './zeroentropy/zeroentropy-retrieval.service.js';
+import { CreditsService } from '../credits/credits.service.js';
 import { chunkByHeadings } from './chunking/heading-chunker.js';
-import { DocumentStatus } from '../../generated/prisma/enums.js';
+import { CreditReason, DocumentStatus } from '../../generated/prisma/enums.js';
+import { ENTITY_EXTRACTION_COST } from '../credits/tier-config.js';
 import type { DocumentProcessingJobData } from './knowledge-base.service.js';
 import type { ParseResult } from './parsers/parser.interface.js';
 
@@ -39,6 +41,7 @@ export class DocumentProcessingProcessor extends WorkerHost {
     private readonly falkordb: FalkorDbService,
     private readonly entityExtractor: EntityExtractorService,
     private readonly zeRetrieval: ZeroEntropyRetrievalService,
+    private readonly credits: CreditsService,
   ) {
     super();
   }
@@ -178,22 +181,39 @@ export class DocumentProcessingProcessor extends WorkerHost {
 
       this.logger.log(`Document ${documentId}: ${chunks.length} chunks processed, status=READY`);
 
-      // 9. Extract entities and index into FalkorDB knowledge graph (non-blocking)
+      // 9. Extract entities and index into FalkorDB knowledge graph (non-blocking, costs 1 credit)
       if (this.falkordb.isEnabled()) {
         try {
-          const extraction = await this.entityExtractor.extractFromChunks(storedChunks);
-          if (extraction.entities.length > 0) {
-            const graphName = FalkorDbService.kbGraphName(userId);
-            await this.falkordb.indexDocument(
-              graphName,
-              documentId,
-              docTitle,
-              extraction.entities,
-              extraction.relationships,
+          // Check if user has enough credits before extraction
+          const hasCredits = await this.credits.hasEnoughCredits(userId, ENTITY_EXTRACTION_COST);
+          if (!hasCredits) {
+            this.logger.warn(
+              `Document ${documentId}: skipping entity extraction (insufficient credits, need ${ENTITY_EXTRACTION_COST})`,
             );
-            this.logger.log(
-              `Document ${documentId}: indexed ${extraction.entities.length} entities into FalkorDB`,
-            );
+          } else {
+            const extraction = await this.entityExtractor.extractFromChunks(storedChunks);
+            if (extraction.entities.length > 0) {
+              const graphName = FalkorDbService.kbGraphName(userId);
+              await this.falkordb.indexDocument(
+                graphName,
+                documentId,
+                docTitle,
+                extraction.entities,
+                extraction.relationships,
+              );
+
+              // Charge credits after successful extraction + indexing
+              await this.credits.deductCredits(
+                userId,
+                ENTITY_EXTRACTION_COST,
+                CreditReason.ENTITY_EXTRACTION,
+                documentId,
+              );
+
+              this.logger.log(
+                `Document ${documentId}: indexed ${extraction.entities.length} entities into FalkorDB (charged ${ENTITY_EXTRACTION_COST} credit)`,
+              );
+            }
           }
         } catch (fkError) {
           this.logger.warn(

@@ -504,6 +504,7 @@ enum CreditReason {
   ADMIN_GRANT
   SUBSCRIPTION_RENEWAL
   API_GENERATION
+  ENTITY_EXTRACTION
 }
 
 enum ExportFormat {

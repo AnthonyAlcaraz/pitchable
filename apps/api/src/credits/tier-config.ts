@@ -43,6 +43,9 @@ export const DECK_GENERATION_COST = 2;
 /** Credits deducted per image generation. */
 export const IMAGE_GENERATION_COST = 1;
 
+/** Credits deducted per document entity extraction (Sonnet 4.6 LLM cost). */
+export const ENTITY_EXTRACTION_COST = 1;
+
 /** Credits granted to new free-tier users on signup. */
 export const FREE_SIGNUP_CREDITS = 5;
 

@@ -80,7 +80,7 @@ export class EntityExtractorService {
         { role: 'system', content: EXTRACTION_SYSTEM_PROMPT },
         { role: 'user', content: truncated },
       ],
-      LlmModel.HAIKU,
+      LlmModel.SONNET,
     );
 
     return this.parseExtractionResult(raw);
