@@ -113,6 +113,18 @@ class EnvironmentVariables {
 
   @IsOptional()
   @IsString()
+  STRIPE_PACK_10_PRICE_ID?: string;
+
+  @IsOptional()
+  @IsString()
+  STRIPE_PACK_25_PRICE_ID?: string;
+
+  @IsOptional()
+  @IsString()
+  STRIPE_PACK_50_PRICE_ID?: string;
+
+  @IsOptional()
+  @IsString()
   FRONTEND_URL?: string = 'http://localhost:5173';
 }
 

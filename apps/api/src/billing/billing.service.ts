@@ -165,6 +165,16 @@ export class BillingService {
       return;
     }
 
+    // Idempotency: check if this session was already processed
+    const existing = await this.prisma.creditTransaction.findFirst({
+      where: { referenceId: session.id, reason: CreditReason.PURCHASE },
+    });
+
+    if (existing) {
+      this.logger.warn(`Duplicate webhook for session ${session.id}, skipping`);
+      return;
+    }
+
     await this.credits.addCredits(
       userId,
       pack.credits,

@@ -101,6 +101,20 @@ export class StripeService {
   }
 
   /**
+   * Resolve the Stripe price ID for a credit pack.
+   * Uses pre-created price IDs from env when available, falls back to inline price_data.
+   */
+  private getPackPriceId(packId: string): string | undefined {
+    const envMap: Record<string, string> = {
+      pack_10: 'STRIPE_PACK_10_PRICE_ID',
+      pack_25: 'STRIPE_PACK_25_PRICE_ID',
+      pack_50: 'STRIPE_PACK_50_PRICE_ID',
+    };
+    const envVar = envMap[packId];
+    return envVar ? this.config.get<string>(envVar) : undefined;
+  }
+
+  /**
    * Create a Stripe Checkout Session for a one-time credit pack purchase.
    */
   async createTopUpCheckoutSession(
@@ -113,19 +127,24 @@ export class StripeService {
     const customerId = await this.getOrCreateCustomer(userId, email, name);
     const frontendUrl = this.config.get<string>('FRONTEND_URL', 'http://localhost:5173');
 
-    const session = await stripe.checkout.sessions.create({
-      customer: customerId,
-      mode: 'payment',
-      line_items: [
-        {
+    const priceId = this.getPackPriceId(pack.id);
+
+    // Use pre-created price if configured, otherwise inline price_data
+    const lineItem: Stripe.Checkout.SessionCreateParams.LineItem = priceId
+      ? { price: priceId, quantity: 1 }
+      : {
           price_data: {
             currency: 'usd',
             product_data: { name: `Pitchable ${pack.label}` },
             unit_amount: pack.priceCents,
           },
           quantity: 1,
-        },
-      ],
+        };
+
+    const session = await stripe.checkout.sessions.create({
+      customer: customerId,
+      mode: 'payment',
+      line_items: [lineItem],
       success_url: `${frontendUrl}/billing?status=success`,
       cancel_url: `${frontendUrl}/billing?status=cancel`,
       metadata: { userId, packId: pack.id },
