@@ -278,6 +278,7 @@ export function GalleryViewerPage() {
                 figmaFileKey: null,
                 figmaNodeId: null,
                 figmaNodeName: null,
+                previewUrl: null,
                 createdAt: '',
               };
               return (
