@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/stores/auth.store';
 import { Layers } from 'lucide-react';
 
 export function RegisterPage() {
+  const { t } = useTranslation();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -18,12 +20,12 @@ export function RegisterPage() {
     setValidationError(null);
 
     if (password !== confirmPassword) {
-      setValidationError('Passwords do not match');
+      setValidationError(t('auth.register.passwords_mismatch'));
       return;
     }
 
     if (password.length < 8) {
-      setValidationError('Password must be at least 8 characters');
+      setValidationError(t('auth.register.password_too_short'));
       return;
     }
 
@@ -42,8 +44,8 @@ export function RegisterPage() {
       <div className="w-full max-w-md rounded-lg border border-border bg-card p-8 shadow-md">
         <div className="mb-8 flex flex-col items-center gap-2">
           <Layers className="h-10 w-10 text-primary" />
-          <h1 className="text-2xl font-bold text-foreground">Pitchable</h1>
-          <p className="text-sm text-muted-foreground">Create your account</p>
+          <h1 className="text-2xl font-bold text-foreground">{t('common.app_name')}</h1>
+          <p className="text-sm text-muted-foreground">{t('auth.register.title')}</p>
         </div>
 
         {displayError && (
@@ -56,7 +58,7 @@ export function RegisterPage() {
               }}
               className="ml-2 font-medium underline"
             >
-              Dismiss
+              {t('common.dismiss')}
             </button>
           </div>
         )}
@@ -67,7 +69,7 @@ export function RegisterPage() {
               htmlFor="name"
               className="mb-1.5 block text-sm font-medium text-foreground"
             >
-              Name
+              {t('auth.register.name_label')}
             </label>
             <input
               id="name"
@@ -76,7 +78,7 @@ export function RegisterPage() {
               onChange={(e) => setName(e.target.value)}
               required
               className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-              placeholder="Your name"
+              placeholder={t('auth.register.name_placeholder')}
             />
           </div>
 
@@ -85,7 +87,7 @@ export function RegisterPage() {
               htmlFor="email"
               className="mb-1.5 block text-sm font-medium text-foreground"
             >
-              Email
+              {t('auth.register.email_label')}
             </label>
             <input
               id="email"
@@ -94,7 +96,7 @@ export function RegisterPage() {
               onChange={(e) => setEmail(e.target.value)}
               required
               className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-              placeholder="you@example.com"
+              placeholder={t('auth.register.email_placeholder')}
             />
           </div>
 
@@ -103,7 +105,7 @@ export function RegisterPage() {
               htmlFor="password"
               className="mb-1.5 block text-sm font-medium text-foreground"
             >
-              Password
+              {t('auth.register.password_label')}
             </label>
             <input
               id="password"
@@ -113,7 +115,7 @@ export function RegisterPage() {
               required
               minLength={8}
               className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-              placeholder="At least 8 characters"
+              placeholder={t('auth.register.password_placeholder')}
             />
           </div>
 
@@ -122,7 +124,7 @@ export function RegisterPage() {
               htmlFor="confirmPassword"
               className="mb-1.5 block text-sm font-medium text-foreground"
             >
-              Confirm Password
+              {t('auth.register.confirm_password_label')}
             </label>
             <input
               id="confirmPassword"
@@ -131,7 +133,7 @@ export function RegisterPage() {
               onChange={(e) => setConfirmPassword(e.target.value)}
               required
               className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-              placeholder="Confirm your password"
+              placeholder={t('auth.register.confirm_password_placeholder')}
             />
           </div>
 
@@ -140,17 +142,17 @@ export function RegisterPage() {
             disabled={isLoading}
             className="w-full rounded-md bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {isLoading ? 'Creating account...' : 'Create account'}
+            {isLoading ? t('auth.register.submitting') : t('auth.register.submit')}
           </button>
         </form>
 
         <p className="mt-6 text-center text-sm text-muted-foreground">
-          Already have an account?{' '}
+          {t('auth.register.has_account')}{' '}
           <Link
             to="/login"
             className="font-medium text-primary hover:underline"
           >
-            Log in
+            {t('auth.register.log_in')}
           </Link>
         </p>
       </div>

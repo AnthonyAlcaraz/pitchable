@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/stores/auth.store';
 import { Layers } from 'lucide-react';
 
 export function ForgotPasswordPage() {
+  const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const { forgotPassword, isLoading, error, clearError } = useAuthStore();
@@ -24,21 +26,20 @@ export function ForgotPasswordPage() {
       <div className="w-full max-w-md rounded-lg border border-border bg-card p-8 shadow-md">
         <div className="mb-8 flex flex-col items-center gap-2">
           <Layers className="h-10 w-10 text-primary" />
-          <h1 className="text-2xl font-bold text-foreground">Pitchable</h1>
-          <p className="text-sm text-muted-foreground">Reset your password</p>
+          <h1 className="text-2xl font-bold text-foreground">{t('common.app_name')}</h1>
+          <p className="text-sm text-muted-foreground">{t('auth.forgot_password.title')}</p>
         </div>
 
         {submitted ? (
           <div className="space-y-4">
             <div className="rounded-md bg-green-50 p-4 text-sm text-green-700">
-              If an account with that email exists, we sent a password reset
-              link. Check your inbox.
+              {t('auth.forgot_password.success_message')}
             </div>
             <Link
               to="/login"
               className="block text-center text-sm font-medium text-primary hover:underline"
             >
-              Back to login
+              {t('auth.forgot_password.back_to_login')}
             </Link>
           </div>
         ) : (
@@ -50,7 +51,7 @@ export function ForgotPasswordPage() {
                   onClick={clearError}
                   className="ml-2 font-medium underline"
                 >
-                  Dismiss
+                  {t('common.dismiss')}
                 </button>
               </div>
             )}
@@ -64,7 +65,7 @@ export function ForgotPasswordPage() {
                   htmlFor="email"
                   className="mb-1.5 block text-sm font-medium text-foreground"
                 >
-                  Email
+                  {t('auth.forgot_password.email_label')}
                 </label>
                 <input
                   id="email"
@@ -73,7 +74,7 @@ export function ForgotPasswordPage() {
                   onChange={(e) => setEmail(e.target.value)}
                   required
                   className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                  placeholder="you@example.com"
+                  placeholder={t('auth.forgot_password.email_placeholder')}
                 />
               </div>
 
@@ -82,7 +83,7 @@ export function ForgotPasswordPage() {
                 disabled={isLoading}
                 className="w-full rounded-md bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {isLoading ? 'Sending...' : 'Send reset link'}
+                {isLoading ? t('auth.forgot_password.submitting') : t('auth.forgot_password.submit')}
               </button>
             </form>
 
@@ -91,7 +92,7 @@ export function ForgotPasswordPage() {
                 to="/login"
                 className="font-medium text-primary hover:underline"
               >
-                Back to login
+                {t('auth.forgot_password.back_to_login')}
               </Link>
             </p>
           </>
