@@ -83,9 +83,11 @@ export const useChatStore = create<ChatState>((set, get) => ({
   loadHistory: async (presentationId: string) => {
     set({ isLoading: true, error: null });
     try {
-      const msgs = await api.get<ChatMessage[]>(
+      const res = await api.get<{ messages: ChatMessage[]; hasMore: boolean }>(
         `/chat/${presentationId}/history`,
       );
+      // Backend returns { messages, hasMore } — unwrap to array
+      const msgs = Array.isArray(res) ? res : (res.messages ?? []);
       set({ messages: msgs, isLoading: false });
     } catch (err) {
       set({
