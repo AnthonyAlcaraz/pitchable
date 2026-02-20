@@ -15,18 +15,18 @@ export function GalleryNav() {
           <Layers className="h-6 w-6 text-orange-500" />
           <span className="text-lg font-bold text-foreground">{t('common.app_name')}</span>
         </Link>
-        <div className="flex items-center gap-4">
-          <LanguageSwitcher />
+        <div className="flex items-center gap-2 sm:gap-4">
+          <LanguageSwitcher compact />
           <Link
             to="/gallery"
-            className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+            className="hidden text-sm font-medium text-muted-foreground transition-colors hover:text-foreground sm:block"
           >
             {t('gallery.nav.gallery')}
           </Link>
           {isAuthenticated ? (
             <Link
               to="/cockpit"
-              className="rounded-lg bg-orange-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-orange-400"
+              className="whitespace-nowrap rounded-lg bg-orange-500 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-orange-400 sm:px-4 sm:py-2 sm:text-sm"
             >
               {t('gallery.nav.dashboard')}
             </Link>
@@ -34,13 +34,13 @@ export function GalleryNav() {
             <>
               <Link
                 to="/login"
-                className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+                className="hidden text-sm font-medium text-muted-foreground transition-colors hover:text-foreground sm:block"
               >
                 {t('gallery.nav.log_in')}
               </Link>
               <Link
                 to="/register"
-                className="rounded-lg bg-orange-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-orange-400"
+                className="whitespace-nowrap rounded-lg bg-orange-500 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-orange-400 sm:px-4 sm:py-2 sm:text-sm"
               >
                 {t('gallery.nav.sign_up_free')}
               </Link>
