@@ -1,6 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { CREDIT_PACKS } from '../credits/tier-config.js';
+import type { CreditPack } from '../credits/tier-config.js';
 import Stripe from 'stripe';
 
 @Injectable()
@@ -95,6 +97,41 @@ export class StripeService {
     });
 
     this.logger.log(`Created checkout session ${session.id} for user ${userId} (${tier})`);
+    return { sessionId: session.id, url: session.url! };
+  }
+
+  /**
+   * Create a Stripe Checkout Session for a one-time credit pack purchase.
+   */
+  async createTopUpCheckoutSession(
+    userId: string,
+    email: string,
+    name: string,
+    pack: CreditPack,
+  ): Promise<{ sessionId: string; url: string }> {
+    const stripe = this.requireStripe();
+    const customerId = await this.getOrCreateCustomer(userId, email, name);
+    const frontendUrl = this.config.get<string>('FRONTEND_URL', 'http://localhost:5173');
+
+    const session = await stripe.checkout.sessions.create({
+      customer: customerId,
+      mode: 'payment',
+      line_items: [
+        {
+          price_data: {
+            currency: 'usd',
+            product_data: { name: `Pitchable ${pack.label}` },
+            unit_amount: pack.priceCents,
+          },
+          quantity: 1,
+        },
+      ],
+      success_url: `${frontendUrl}/billing?status=success`,
+      cancel_url: `${frontendUrl}/billing?status=cancel`,
+      metadata: { userId, packId: pack.id },
+    });
+
+    this.logger.log(`Created top-up checkout ${session.id} for user ${userId} (${pack.id})`);
     return { sessionId: session.id, url: session.url! };
   }
 

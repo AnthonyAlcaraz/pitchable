@@ -1,8 +1,6 @@
 import {
   Controller,
   Get,
-  Post,
-  Body,
   Query,
   UseGuards,
 } from '@nestjs/common';
@@ -10,11 +8,6 @@ import { CreditsService } from './credits.service.js';
 import { TierEnforcementService } from './tier-enforcement.service.js';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
 import * as CurrentUserModule from '../auth/decorators/current-user.decorator.js';
-import { CreditReason } from '../../generated/prisma/enums.js';
-
-interface PurchaseCreditsBody {
-  amount: number;
-}
 
 @UseGuards(JwtAuthGuard)
 @Controller('credits')
@@ -46,17 +39,5 @@ export class CreditsController {
     @CurrentUserModule.CurrentUser() user: CurrentUserModule.RequestUser,
   ) {
     return this.tierEnforcement.getTierStatus(user.userId);
-  }
-
-  @Post('purchase')
-  async purchaseCredits(
-    @CurrentUserModule.CurrentUser() user: CurrentUserModule.RequestUser,
-    @Body() body: PurchaseCreditsBody,
-  ) {
-    return this.creditsService.addCredits(
-      user.userId,
-      body.amount,
-      CreditReason.PURCHASE,
-    );
   }
 }

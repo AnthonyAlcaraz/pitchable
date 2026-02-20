@@ -4,7 +4,7 @@ import { useAuthStore } from '@/stores/auth.store';
 import { useBillingStore } from '@/stores/billing.store';
 import { PlanCard } from '@/components/billing/PlanCard';
 import { TransactionHistory } from '@/components/billing/TransactionHistory';
-import { CreditCard, ExternalLink } from 'lucide-react';
+import { CreditCard, ExternalLink, Zap } from 'lucide-react';
 
 const PLANS = [
   {
@@ -45,6 +45,12 @@ const PLANS = [
   },
 ];
 
+const CREDIT_PACKS = [
+  { id: 'pack_10', credits: 10, price: '$7.99', perCredit: '$0.80' },
+  { id: 'pack_25', credits: 25, price: '$14.99', perCredit: '$0.60' },
+  { id: 'pack_50', credits: 50, price: '$24.99', perCredit: '$0.50' },
+];
+
 export function BillingPage() {
   const user = useAuthStore((s) => s.user);
   const {
@@ -57,6 +63,7 @@ export function BillingPage() {
     loadTransactions,
     loadTierStatus,
     createCheckout,
+    buyTopUp,
     openPortal,
     clearError,
   } = useBillingStore();
@@ -93,6 +100,15 @@ export function BillingPage() {
   const handleManageSubscription = async () => {
     try {
       const url = await openPortal();
+      window.location.href = url;
+    } catch {
+      // Error is handled in store
+    }
+  };
+
+  const handleBuyCredits = async (packId: string) => {
+    try {
+      const url = await buyTopUp(packId);
       window.location.href = url;
     } catch {
       // Error is handled in store
@@ -210,6 +226,51 @@ export function BillingPage() {
           />
         ))}
       </div>
+
+      {/* Credit top-up packs */}
+      <section className="mb-8">
+        <h2 className="mb-4 text-lg font-semibold text-foreground">
+          Need more credits?
+        </h2>
+        <div className="grid gap-4 sm:grid-cols-3">
+          {CREDIT_PACKS.map((pack) => (
+            <div
+              key={pack.id}
+              className="flex flex-col justify-between rounded-lg border border-border bg-card p-5"
+            >
+              <div>
+                <div className="flex items-center gap-2">
+                  <Zap className="h-5 w-5 text-amber-500" />
+                  <span className="text-lg font-semibold text-foreground">
+                    {pack.credits} Credits
+                  </span>
+                </div>
+                <p className="mt-1 text-2xl font-bold text-foreground">
+                  {pack.price}
+                </p>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  {pack.perCredit} per credit
+                </p>
+              </div>
+              <button
+                onClick={() => void handleBuyCredits(pack.id)}
+                disabled={isLoading}
+                className="mt-4 w-full rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
+              >
+                Buy Credits
+              </button>
+            </div>
+          ))}
+        </div>
+        {currentTier === 'FREE' || currentTier === 'STARTER' ? (
+          <p className="mt-3 text-sm text-muted-foreground">
+            Save more with a plan upgrade
+            {currentTier === 'FREE'
+              ? ' — STARTER gives 40 credits/month for just $19.'
+              : ' — PRO gives 100 credits/month for just $49.'}
+          </p>
+        ) : null}
+      </section>
 
       {/* Transaction history */}
       <section className="rounded-lg border border-border bg-card p-6">

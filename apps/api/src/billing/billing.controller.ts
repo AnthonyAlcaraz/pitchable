@@ -16,6 +16,8 @@ import { BillingService } from './billing.service.js';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
 import * as CurrentUserModule from '../auth/decorators/current-user.decorator.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { CREDIT_PACKS } from '../credits/tier-config.js';
+import { TopUpDto } from './dto/topup.dto.js';
 import type { RawBodyRequest } from '@nestjs/common';
 import type { Request } from 'express';
 
@@ -64,6 +66,41 @@ export class BillingController {
       dbUser.email,
       dbUser.name,
       body.tier,
+    );
+  }
+
+  /**
+   * Create a Stripe Checkout Session for a one-time credit pack purchase.
+   */
+  @Post('topup')
+  @UseGuards(JwtAuthGuard)
+  async createTopUp(
+    @CurrentUserModule.CurrentUser() user: CurrentUserModule.RequestUser,
+    @Body() body: TopUpDto,
+  ): Promise<{ sessionId: string; url: string }> {
+    if (!this.stripe.isConfigured) {
+      throw new BadRequestException('Billing is not configured');
+    }
+
+    const pack = CREDIT_PACKS.find((p) => p.id === body.packId);
+    if (!pack) {
+      throw new BadRequestException(`Invalid pack: ${body.packId}`);
+    }
+
+    const dbUser = await this.prisma.user.findUnique({
+      where: { id: user.userId },
+      select: { email: true, name: true },
+    });
+
+    if (!dbUser) {
+      throw new NotFoundException('User not found');
+    }
+
+    return this.stripe.createTopUpCheckoutSession(
+      user.userId,
+      dbUser.email,
+      dbUser.name,
+      pack,
     );
   }
 

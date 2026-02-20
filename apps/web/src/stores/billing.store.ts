@@ -38,6 +38,7 @@ interface BillingState {
   loadTransactions: (limit?: number) => Promise<void>;
   loadTierStatus: () => Promise<void>;
   createCheckout: (tier: 'STARTER' | 'PRO') => Promise<string>;
+  buyTopUp: (packId: string) => Promise<string>;
   openPortal: () => Promise<string>;
   clearError: () => void;
 }
@@ -86,6 +87,21 @@ export const useBillingStore = create<BillingState>((set) => ({
       set({
         isLoading: false,
         error: err instanceof Error ? err.message : 'Failed to create checkout',
+      });
+      throw err;
+    }
+  },
+
+  buyTopUp: async (packId: string) => {
+    set({ isLoading: true, error: null });
+    try {
+      const { url } = await api.post<{ url: string }>('/billing/topup', { packId });
+      set({ isLoading: false });
+      return url;
+    } catch (err) {
+      set({
+        isLoading: false,
+        error: err instanceof Error ? err.message : 'Failed to start top-up checkout',
       });
       throw err;
     }

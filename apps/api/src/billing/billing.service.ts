@@ -2,7 +2,8 @@ import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { CreditsService } from '../credits/credits.service.js';
 import { TierEnforcementService } from '../credits/tier-enforcement.service.js';
-import { UserTier } from '../../generated/prisma/enums.js';
+import { CREDIT_PACKS } from '../credits/tier-config.js';
+import { UserTier, CreditReason } from '../../generated/prisma/enums.js';
 import type Stripe from 'stripe';
 
 export interface SubscriptionDto {
@@ -90,10 +91,22 @@ export class BillingService {
     session: Stripe.Checkout.Session,
   ): Promise<void> {
     const userId = session.metadata?.['userId'];
-    const tierStr = session.metadata?.['tier'];
 
-    if (!userId || !tierStr) {
-      this.logger.warn('Checkout session missing userId or tier metadata');
+    if (!userId) {
+      this.logger.warn('Checkout session missing userId metadata');
+      return;
+    }
+
+    // One-time credit pack purchase
+    if (session.mode === 'payment') {
+      await this.handleTopUpCheckout(session, userId);
+      return;
+    }
+
+    // Subscription checkout
+    const tierStr = session.metadata?.['tier'];
+    if (!tierStr) {
+      this.logger.warn('Subscription checkout missing tier metadata');
       return;
     }
 
@@ -138,6 +151,28 @@ export class BillingService {
     await this.tierEnforcement.allocateMonthlyCredits(userId, tier);
 
     this.logger.log(`Checkout complete: user ${userId} upgraded to ${tier}`);
+  }
+
+  private async handleTopUpCheckout(
+    session: Stripe.Checkout.Session,
+    userId: string,
+  ): Promise<void> {
+    const packId = session.metadata?.['packId'];
+    const pack = CREDIT_PACKS.find((p) => p.id === packId);
+
+    if (!pack) {
+      this.logger.warn(`Top-up checkout with unknown packId: ${packId}`);
+      return;
+    }
+
+    await this.credits.addCredits(
+      userId,
+      pack.credits,
+      CreditReason.PURCHASE,
+      session.id,
+    );
+
+    this.logger.log(`Credit top-up: user ${userId} purchased ${pack.credits} credits (${pack.id})`);
   }
 
   private async handleSubscriptionUpdated(

@@ -46,6 +46,27 @@ export const IMAGE_GENERATION_COST = 1;
 /** Credits granted to new free-tier users on signup. */
 export const FREE_SIGNUP_CREDITS = 5;
 
+export interface CreditPack {
+  id: string;
+  credits: number;
+  priceCents: number;
+  label: string;
+}
+
+/**
+ * One-time credit top-up packs. Priced above plan rates to incentivize upgrades.
+ *
+ *   Pack    $/credit   vs STARTER ($0.475)   vs PRO ($0.49)
+ *   10cr    $0.80      +68%                  +63%
+ *   25cr    $0.60      +26%                  +22%
+ *   50cr    $0.50      +5%                   +2%
+ */
+export const CREDIT_PACKS: CreditPack[] = [
+  { id: 'pack_10', credits: 10, priceCents: 799, label: '10 Credits' },
+  { id: 'pack_25', credits: 25, priceCents: 1499, label: '25 Credits' },
+  { id: 'pack_50', credits: 50, priceCents: 2499, label: '50 Credits' },
+];
+
 export const TIER_LIMITS: Record<string, TierLimits> = {
   FREE: {
     maxDecksPerMonth: 2,
