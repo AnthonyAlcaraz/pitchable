@@ -427,6 +427,21 @@ export function LandingPage() {
           </div>
 
           <ShowcaseDeck
+            title="AMI Labs Pitchdeck — Dec 2025"
+            theme="Custom Brand"
+            slides={5}
+            images={[
+              '/showcase/ami-labs-web-01.jpg',
+              '/showcase/ami-labs-web-02.jpg',
+              '/showcase/ami-labs-web-03.jpg',
+              '/showcase/ami-labs-web-04.jpg',
+              '/showcase/ami-labs-web-05.jpg',
+            ]}
+          />
+
+          <div className="mt-12" />
+
+          <ShowcaseDeck
             title="The Future of Autonomous AI Agents in Enterprise"
             theme="McKinsey Executive"
             slides={4}
@@ -435,20 +450,6 @@ export function LandingPage() {
               '/showcase/ai-agents-web-03.jpg',
               '/showcase/ai-agents-web-04.jpg',
               '/showcase/ai-agents-web-05.jpg',
-            ]}
-          />
-
-          <div className="mt-12" />
-
-          <ShowcaseDeck
-            title="GenAI Trends 2025-2026: LLMs, Agents, and Key Players"
-            theme="Dark Professional"
-            slides={4}
-            images={[
-              '/showcase/genai-web-02.jpg',
-              '/showcase/genai-web-03.jpg',
-              '/showcase/genai-web-04.jpg',
-              '/showcase/genai-web-05.jpg',
             ]}
           />
         </div>
