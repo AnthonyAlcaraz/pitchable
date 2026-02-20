@@ -3,7 +3,6 @@ import { getSocket, joinPresentation, leavePresentation } from '../lib/socket.js
 import { usePresentationStore } from '../stores/presentation.store.js';
 import { useChatStore } from '../stores/chat.store.js';
 import type { SlideData } from '../stores/presentation.store.js';
-import type { PendingImageSelection } from '../stores/chat.store.js';
 
 interface SlideAddedEvent {
   presentationId: string;
