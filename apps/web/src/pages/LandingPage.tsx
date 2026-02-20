@@ -13,6 +13,12 @@ import {
   Shield,
   GitFork,
   Check,
+  Rocket,
+  TrendingUp,
+  GraduationCap,
+  BookMarked,
+  Briefcase,
+  FlaskConical,
 } from 'lucide-react';
 import { PeachLogo } from '@/components/icons/PeachLogo';
 
@@ -349,6 +355,42 @@ export function LandingPage() {
                 </div>
                 <h3 className="mb-2 font-semibold text-foreground">{s.title}</h3>
                 <p className="text-sm leading-relaxed text-muted-foreground">{s.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Personas ─────────────────────────────────── */}
+      <section className="py-24">
+        <div className="mx-auto max-w-6xl px-6">
+          <div className="mb-14 text-center">
+            <h2 className="mb-3 text-3xl font-bold text-foreground">
+              {t('landing.personas.title')}
+            </h2>
+            <p className="text-muted-foreground">
+              {t('landing.personas.subtitle')}
+            </p>
+          </div>
+
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {[
+              { icon: Rocket, title: t('landing.personas.founders_title'), desc: t('landing.personas.founders_desc'), color: 'text-orange-400 bg-orange-500/10' },
+              { icon: TrendingUp, title: t('landing.personas.sales_title'), desc: t('landing.personas.sales_desc'), color: 'text-emerald-400 bg-emerald-500/10' },
+              { icon: GraduationCap, title: t('landing.personas.teachers_title'), desc: t('landing.personas.teachers_desc'), color: 'text-blue-400 bg-blue-500/10' },
+              { icon: BookMarked, title: t('landing.personas.students_title'), desc: t('landing.personas.students_desc'), color: 'text-violet-400 bg-violet-500/10' },
+              { icon: Briefcase, title: t('landing.personas.consultants_title'), desc: t('landing.personas.consultants_desc'), color: 'text-amber-400 bg-amber-500/10' },
+              { icon: FlaskConical, title: t('landing.personas.researchers_title'), desc: t('landing.personas.researchers_desc'), color: 'text-rose-400 bg-rose-500/10' },
+            ].map((p) => (
+              <div
+                key={p.title}
+                className="rounded-2xl border border-border bg-card p-6 transition-all hover:border-orange-500/20 hover:shadow-lg hover:shadow-orange-500/5"
+              >
+                <div className={`mb-4 flex h-11 w-11 items-center justify-center rounded-xl ${p.color}`}>
+                  <p.icon className="h-5 w-5" />
+                </div>
+                <h3 className="mb-2 font-semibold text-foreground">{p.title}</h3>
+                <p className="text-sm leading-relaxed text-muted-foreground">{p.desc}</p>
               </div>
             ))}
           </div>

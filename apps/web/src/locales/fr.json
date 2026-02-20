@@ -132,10 +132,10 @@
   },
   "landing": {
     "hero": {
-      "badge": "Pour les créateurs et les penseurs",
+      "badge": "Pour les fondateurs, commerciaux et enseignants",
       "title_before": "Chaque idée mérite d'être",
       "title_highlight": "pitchable",
-      "subtitle": "Transformez n'importe quelle idée, projet ou vision en une présentation persuasive — adaptée à votre audience et à votre histoire.",
+      "subtitle": "Que vous closiez un deal, souteniez une thèse ou pitchiez des investisseurs — Pitchable construit le deck que votre audience a besoin d'entendre.",
       "cta_primary": "Commencer Gratuitement",
       "cta_secondary": "Parcourir la Galerie"
     },
@@ -146,7 +146,7 @@
     },
     "features": {
       "title": "Tout ce qu'il vous faut pour pitcher avec assurance",
-      "subtitle": "Un système complet pour créer, affiner et réutiliser vos pitch decks",
+      "subtitle": "Des pitch investisseurs aux propositions commerciales, des cours magistraux aux rapports de direction",
       "pitch_briefs_title": "Dossiers de Pitch",
       "pitch_briefs_desc": "Constituez des collections de connaissances appuyées par des graphes de connaissances. Votre IA s'appuie sur du contexte réel, pas du remplissage générique.",
       "pitch_lenses_title": "Profils de Pitch",
@@ -182,7 +182,7 @@
       "starter_name": "Starter",
       "starter_price": "19 €",
       "starter_period": "/mois",
-      "starter_description": "Pour les présentateurs réguliers",
+      "starter_description": "Pour les enseignants, étudiants et freelances",
       "starter_feature_0": "Jusqu'à 10 decks par mois",
       "starter_feature_1": "Jusqu'à 15 diapositives par deck",
       "starter_feature_2": "~20 images générées par IA",
@@ -191,7 +191,7 @@
       "pro_name": "Pro",
       "pro_price": "49 €",
       "pro_period": "/mois",
-      "pro_description": "Pour les utilisateurs avancés et les équipes",
+      "pro_description": "Pour les équipes commerciales, consultants et agences",
       "pro_feature_0": "Jusqu'à 50 decks par mois",
       "pro_feature_1": "Aucune limite de diapositives par deck",
       "pro_feature_2": "Jusqu'à 100 images générées par IA",
@@ -202,6 +202,22 @@
       "title": "De vraies présentations, créées avec Pitchable",
       "subtitle": "Des présentations professionnelles générées en minutes, pas en jours"
     },
+    "personas": {
+      "title": "Conçu pour votre façon de travailler",
+      "subtitle": "Une plateforme, tous vos besoins de présentation",
+      "founders_title": "Fondateurs",
+      "founders_desc": "Pitch investisseurs, mises à jour du board et narratifs de levée de fonds qui décrochent le capital.",
+      "sales_title": "Équipes Commerciales",
+      "sales_desc": "Propositions clients, démos produit et analyses concurrentielles qui closent les deals.",
+      "teachers_title": "Enseignants",
+      "teachers_desc": "Supports de cours, diapositives de cours magistraux et plans de leçon qui captivent les étudiants.",
+      "students_title": "Étudiants",
+      "students_desc": "Soutenances de thèse, présentations de cours et synthèses de recherche qui décrochent les meilleures notes.",
+      "consultants_title": "Consultants",
+      "consultants_desc": "Decks stratégiques, livrables clients et supports d'atelier avec un niveau de finition McKinsey.",
+      "researchers_title": "Chercheurs",
+      "researchers_desc": "Conférences, présentations d'articles et demandes de subventions appuyées par vos données."
+    },
     "gallery": {
       "title": "Galerie Communautaire",
       "subtitle": "Présentations publiques de la communauté Pitchable",
@@ -211,7 +227,7 @@
     },
     "cta": {
       "title": "Votre prochaine idée mérite d'être partagée",
-      "subtitle": "Créateurs, fondateurs, chercheurs, enseignants — si vous avez une idée, nous vous aidons à la pitcher. Échantillon gratuit, sans carte bancaire.",
+      "subtitle": "Fondateurs, commerciaux, enseignants, étudiants, chercheurs, consultants — si vous avez quelque chose à présenter, on le fait percuter. Échantillon gratuit, sans carte bancaire.",
       "button": "Commencer Gratuitement"
     },
     "footer": {
@@ -375,14 +391,14 @@
       "free_feature_2": "Export PPTX, PDF, HTML",
       "starter_name": "Starter",
       "starter_price": "19 €",
-      "starter_description": "Pour les présentateurs réguliers",
+      "starter_description": "Pour les enseignants, étudiants et freelances",
       "starter_feature_0": "Jusqu'à 10 decks par mois",
       "starter_feature_1": "Jusqu'à 15 diapositives par deck",
       "starter_feature_2": "~20 images générées par IA",
       "starter_feature_3": "Export PPTX, PDF, HTML",
       "pro_name": "Pro",
       "pro_price": "49 €",
-      "pro_description": "Pour les utilisateurs avancés et les équipes",
+      "pro_description": "Pour les équipes commerciales, consultants et agences",
       "pro_feature_0": "Jusqu'à 50 decks par mois",
       "pro_feature_1": "Aucune limite de diapositives par deck",
       "pro_feature_2": "Jusqu'à 100 images générées par IA",

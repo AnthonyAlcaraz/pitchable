@@ -132,10 +132,10 @@
   },
   "landing": {
     "hero": {
-      "badge": "For builders and thinkers",
+      "badge": "For founders, sales teams, and educators",
       "title_before": "Every idea deserves to be",
       "title_highlight": "pitchable",
-      "subtitle": "Turn any thought, project, or vision into a persuasive presentation \u2014 tailored to your audience and story.",
+      "subtitle": "Whether you're closing a deal, defending a thesis, or pitching investors \u2014 Pitchable builds the deck your audience needs to hear.",
       "cta_primary": "Get Started Free",
       "cta_secondary": "Browse Gallery"
     },
@@ -146,7 +146,7 @@
     },
     "features": {
       "title": "Everything you need to pitch with confidence",
-      "subtitle": "A complete system for creating, refining, and reusing pitch decks",
+      "subtitle": "From investor decks to sales proposals, classroom lectures to board reports",
       "pitch_briefs_title": "Pitch Briefs",
       "pitch_briefs_desc": "Curate knowledge collections backed by knowledge graphs. Your AI draws from real context, not generic filler.",
       "pitch_lenses_title": "Pitch Lenses",
@@ -182,7 +182,7 @@
       "starter_name": "Starter",
       "starter_price": "$19",
       "starter_period": "/month",
-      "starter_description": "For regular presenters",
+      "starter_description": "For teachers, students, and freelancers",
       "starter_feature_0": "Up to 10 decks per month",
       "starter_feature_1": "Up to 15 slides per deck",
       "starter_feature_2": "~20 AI-generated images",
@@ -191,7 +191,7 @@
       "pro_name": "Pro",
       "pro_price": "$49",
       "pro_period": "/month",
-      "pro_description": "For power users and teams",
+      "pro_description": "For sales teams, consultants, and agencies",
       "pro_feature_0": "Up to 50 decks per month",
       "pro_feature_1": "No slide limit per deck",
       "pro_feature_2": "Up to 100 AI-generated images",
@@ -202,6 +202,22 @@
       "title": "Real Presentations, Built with Pitchable",
       "subtitle": "Enterprise-grade decks generated in minutes, not days"
     },
+    "personas": {
+      "title": "Built for the way you work",
+      "subtitle": "One platform, every presentation need",
+      "founders_title": "Founders",
+      "founders_desc": "Investor decks, board updates, and fundraising narratives that win capital.",
+      "sales_title": "Sales Teams",
+      "sales_desc": "Client proposals, product demos, and competitive analyses that close deals.",
+      "teachers_title": "Teachers",
+      "teachers_desc": "Course materials, lecture slides, and lesson plans that engage students.",
+      "students_title": "Students",
+      "students_desc": "Thesis defenses, class presentations, and research summaries that earn top marks.",
+      "consultants_title": "Consultants",
+      "consultants_desc": "Strategy decks, client deliverables, and workshop materials with McKinsey-level polish.",
+      "researchers_title": "Researchers",
+      "researchers_desc": "Conference talks, paper presentations, and grant proposals backed by your data."
+    },
     "gallery": {
       "title": "Community Gallery",
       "subtitle": "Public presentations from the Pitchable community",
@@ -211,7 +227,7 @@
     },
     "cta": {
       "title": "Your next idea is worth sharing",
-      "subtitle": "Builders, founders, researchers, teachers \u2014 if you have an idea, we'll help you pitch it. Free sample, no credit card.",
+      "subtitle": "Founders, salespeople, teachers, students, researchers, consultants \u2014 if you have something to present, we'll make it land. Free sample, no credit card.",
       "button": "Get Started Free"
     },
     "footer": {
@@ -375,14 +391,14 @@
       "free_feature_2": "PPTX, PDF, HTML export",
       "starter_name": "Starter",
       "starter_price": "$19",
-      "starter_description": "For regular presenters",
+      "starter_description": "For teachers, students, and freelancers",
       "starter_feature_0": "Up to 10 decks per month",
       "starter_feature_1": "Up to 15 slides per deck",
       "starter_feature_2": "~20 AI-generated images",
       "starter_feature_3": "PPTX, PDF, HTML export",
       "pro_name": "Pro",
       "pro_price": "$49",
-      "pro_description": "For power users and teams",
+      "pro_description": "For sales teams, consultants, and agencies",
       "pro_feature_0": "Up to 50 decks per month",
       "pro_feature_1": "No slide limit per deck",
       "pro_feature_2": "Up to 100 AI-generated images",
