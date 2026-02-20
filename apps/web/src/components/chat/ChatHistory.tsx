@@ -3,6 +3,7 @@ import { ChatMessage } from './ChatMessage.js';
 import { AgentActivity } from './AgentActivity.js';
 import { InlineSlideCard } from './InlineSlideCard.js';
 import { ThemeSelector } from './ThemeSelector.js';
+import { LayoutSelector } from './LayoutSelector.js';
 import type { ChatMessage as ChatMessageType, PendingValidation, AgentStep, InlineSlideCard as InlineSlideCardType, PendingThemeSelection, PendingLayoutSelection } from '../../stores/chat.store.js';
 
 interface ChatHistoryProps {
@@ -107,6 +108,14 @@ export function ChatHistory({
       {pendingThemeSelection && presentationId && onRespondToInteraction && (
         <ThemeSelector
           selection={pendingThemeSelection}
+          presentationId={presentationId}
+          onSelect={onRespondToInteraction}
+        />
+      )}
+
+      {pendingLayoutSelections && pendingLayoutSelections.length > 0 && presentationId && onRespondToInteraction && (
+        <LayoutSelector
+          selection={pendingLayoutSelections[pendingLayoutSelections.length - 1]}
           presentationId={presentationId}
           onSelect={onRespondToInteraction}
         />

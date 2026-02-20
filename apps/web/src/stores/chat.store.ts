@@ -398,6 +398,19 @@ export const useChatStore = create<ChatState>((set, get) => ({
   },
 
   respondToInteraction: async (presentationId: string, interactionType: string, contextId: string, selection: unknown) => {
+    // Optimistically clear the UI for this interaction
+    if (interactionType === 'theme_selection') {
+      set({ pendingThemeSelection: null });
+    } else if (interactionType === 'layout_selection') {
+      set((state) => ({
+        pendingLayoutSelections: state.pendingLayoutSelections.filter((s) => s.contextId !== contextId),
+      }));
+    } else if (interactionType === 'image_selection') {
+      set((state) => ({
+        pendingImageSelections: state.pendingImageSelections.filter((s) => s.contextId !== contextId),
+      }));
+    }
+
     try {
       await api.post(`/chat/${presentationId}/interact`, {
         interactionType,

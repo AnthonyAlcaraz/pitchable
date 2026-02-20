@@ -505,21 +505,61 @@ export class GenerationService {
         message: `Generating slide ${outlineSlide.slideNumber}/${outline.slides.length}: ${outlineSlide.title}`,
       });
 
+      // Layout Selection Gate: offer layout alternatives for eligible slides
+      let effectiveSlideType = outlineSlide.slideType;
+      if (!GenerationService.SKIP_LAYOUT_TYPES.has(outlineSlide.slideType)) {
+        const layoutOptions = this.generateLayoutOptions(outlineSlide);
+        if (layoutOptions.length > 1) {
+          const layoutContextId = `layout-${presentationId}-${outlineSlide.slideNumber}-${Date.now()}`;
+          const layoutTimeoutMs = 15_000;
+
+          yield {
+            type: 'action',
+            content: '',
+            metadata: {
+              action: 'layout_selection',
+              contextId: layoutContextId,
+              slideNumber: outlineSlide.slideNumber,
+              slideTitle: outlineSlide.title,
+              options: layoutOptions,
+              defaultLayout: outlineSlide.slideType,
+              timeoutMs: layoutTimeoutMs,
+            },
+          };
+
+          const selectedLayout = await this.interactionGate.waitForResponse<string>(
+            presentationId,
+            'layout_selection',
+            layoutContextId,
+            outlineSlide.slideType,
+            layoutTimeoutMs,
+          );
+
+          effectiveSlideType = selectedLayout;
+          if (selectedLayout !== outlineSlide.slideType) {
+            this.logger.debug(`Layout changed for slide ${outlineSlide.slideNumber}: ${outlineSlide.slideType} → ${selectedLayout}`);
+          }
+        }
+      }
+
+      // Override outlineSlide type for generation
+      const slideForGeneration = { ...outlineSlide, slideType: effectiveSlideType };
+
       // Use pre-fetched per-slide KB context
       const slideKbContext = slideKbContexts[slideIndex];
 
       const slideContent = await this.generateSlideContent(
         slideSystemPrompt,
-        outlineSlide,
+        slideForGeneration,
         generatedSlides,
         slideKbContext,
         outline.slides.length,
       );
 
       // Validate density and auto-fix
-      const validated = this.validateSlideContent(slideContent, outlineSlide, themeColors);
+      const validated = this.validateSlideContent(slideContent, slideForGeneration, themeColors);
 
-      // Save to DB
+      // Save to DB (use effectiveSlideType)
       const slide = await this.prisma.slide.create({
         data: {
           presentationId,
@@ -527,7 +567,7 @@ export class GenerationService {
           title: validated.title,
           body: validated.body,
           speakerNotes: validated.speakerNotes,
-          slideType: outlineSlide.slideType as SlideType,
+          slideType: effectiveSlideType as SlideType,
           imagePrompt: validated.imagePromptHint,
           sectionLabel: outlineSlide.sectionLabel ?? null,
         },
@@ -1184,6 +1224,64 @@ export class GenerationService {
     }
     parts.push(`---\n_${outline.slides.length} slides. Type **approve** to generate the full deck, or tell me what to change._`);
     return parts.join('\n');
+  }
+
+  /** Slide types that skip the layout selection gate. */
+  private static readonly SKIP_LAYOUT_TYPES = new Set([
+    'TITLE', 'CTA', 'QUOTE', 'VISUAL_HUMOR', 'SECTION_DIVIDER', 'OUTLINE',
+  ]);
+
+  /** Layout alternatives by slide type. */
+  private static readonly LAYOUT_ALTERNATIVES: Record<string, Array<{ slideType: string; name: string; description: string }>> = {
+    CONTENT: [
+      { slideType: 'COMPARISON', name: 'Comparison', description: 'Side-by-side comparison of two concepts' },
+      { slideType: 'PROCESS', name: 'Process', description: 'Step-by-step flow or timeline' },
+    ],
+    DATA_METRICS: [
+      { slideType: 'CONTENT', name: 'Content', description: 'Narrative explanation of the data' },
+    ],
+    PROBLEM: [
+      { slideType: 'CONTENT', name: 'Content', description: 'General content layout' },
+      { slideType: 'COMPARISON', name: 'Comparison', description: 'Before/after or problem/impact' },
+    ],
+    SOLUTION: [
+      { slideType: 'PROCESS', name: 'Process', description: 'Step-by-step solution walkthrough' },
+      { slideType: 'ARCHITECTURE', name: 'Architecture', description: 'Technical diagram layout' },
+    ],
+    ARCHITECTURE: [
+      { slideType: 'PROCESS', name: 'Process', description: 'Sequential flow diagram' },
+      { slideType: 'CONTENT', name: 'Content', description: 'Descriptive layout' },
+    ],
+    PROCESS: [
+      { slideType: 'CONTENT', name: 'Content', description: 'Narrative explanation' },
+      { slideType: 'COMPARISON', name: 'Comparison', description: 'Side-by-side step comparison' },
+    ],
+    COMPARISON: [
+      { slideType: 'CONTENT', name: 'Content', description: 'Single narrative layout' },
+      { slideType: 'DATA_METRICS', name: 'Data & Metrics', description: 'Chart/number-focused layout' },
+    ],
+  };
+
+  private generateLayoutOptions(outlineSlide: OutlineSlide): Array<{ id: string; name: string; description: string; slideType: string }> {
+    const original = {
+      id: `layout-original-${outlineSlide.slideType}`,
+      name: outlineSlide.slideType.replace(/_/g, ' '),
+      description: `Original ${outlineSlide.slideType.replace(/_/g, ' ').toLowerCase()} layout`,
+      slideType: outlineSlide.slideType,
+    };
+
+    const alternatives = GenerationService.LAYOUT_ALTERNATIVES[outlineSlide.slideType];
+    if (!alternatives || alternatives.length === 0) return [original];
+
+    return [
+      original,
+      ...alternatives.slice(0, 2).map((alt) => ({
+        id: `layout-${alt.slideType.toLowerCase()}-${outlineSlide.slideNumber}`,
+        name: alt.name,
+        description: alt.description,
+        slideType: alt.slideType,
+      })),
+    ];
   }
 
   private async resolveThemeId(themeId?: string): Promise<string> {
