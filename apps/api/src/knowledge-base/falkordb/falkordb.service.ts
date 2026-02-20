@@ -21,14 +21,19 @@ export class FalkorDbService implements OnModuleDestroy {
   private readonly host: string;
   private readonly port: number;
 
+  private readonly username: string | undefined;
+  private readonly password: string | undefined;
+
   constructor(private readonly config: ConfigService) {
     this.enabled = config.get('FALKORDB_ENABLED', 'false') === 'true';
     const url = config.get('FALKORDB_URL', 'redis://localhost:6380');
     const parsed = new URL(url);
     this.host = parsed.hostname;
     this.port = parseInt(parsed.port || '6380', 10);
+    this.username = parsed.username || undefined;
+    this.password = parsed.password || undefined;
     if (this.enabled) {
-      this.logger.log(`FalkorDB enabled at ${this.host}:${this.port}`);
+      this.logger.log(`FalkorDB enabled at ${this.host}:${this.port} (auth: ${this.password ? 'yes' : 'no'})`);
     }
   }
 
@@ -50,6 +55,8 @@ export class FalkorDbService implements OnModuleDestroy {
     if (!this.db) {
       this.db = await FalkorDB.connect({
         socket: { host: this.host, port: this.port },
+        ...(this.username ? { username: this.username } : {}),
+        ...(this.password ? { password: this.password } : {}),
       });
     }
     return this.db;
