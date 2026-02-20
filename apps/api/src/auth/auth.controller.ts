@@ -23,7 +23,6 @@ import { ForgotPasswordDto } from './dto/forgot-password.dto.js';
 import { ResetPasswordDto } from './dto/reset-password.dto.js';
 import { JwtAuthGuard } from './guards/jwt-auth.guard.js';
 import { RefreshTokenGuard } from './guards/refresh-token.guard.js';
-import { IpRegistrationGuard } from './guards/ip-registration.guard.js';
 import { CurrentUser } from './decorators/current-user.decorator.js';
 import type { RequestUser } from './decorators/current-user.decorator.js';
 
@@ -45,7 +44,6 @@ export class AuthController {
     medium: { ttl: 3600000, limit: 10 },  // 10 per hour
     long: { ttl: 86400000, limit: 20 },   // 20 per day
   })
-  @UseGuards(IpRegistrationGuard)
   async register(
     @Body() registerDto: RegisterDto,
     @Req() req: ExpressRequest,
