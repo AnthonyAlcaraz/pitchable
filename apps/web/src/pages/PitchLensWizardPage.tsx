@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { usePitchLensStore } from '@/stores/pitch-lens.store';
 import { useFigmaTemplateStore } from '@/stores/figma-template.store';
 import type { CreatePitchLensInput } from '@/stores/pitch-lens.store';
-import { ArrowLeft, ArrowRight, Check, Focus, Figma, ExternalLink } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, Focus, Figma, ExternalLink, ImageIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 function formatEnum(value: string): string {
@@ -88,6 +88,8 @@ export function PitchLensWizardPage() {
     figmaFileKey: '',
     figmaAccessToken: '',
     figmaTemplateId: undefined as string | undefined,
+    imageFrequency: 5,
+    imageLayout: 'BACKGROUND',
   });
 
   // Load existing lens for editing
@@ -116,6 +118,8 @@ export function PitchLensWizardPage() {
         showOutlineSlide: (currentLens as unknown as Record<string, unknown>).showOutlineSlide as boolean ?? false,
         figmaFileKey: (currentLens as unknown as Record<string, unknown>).figmaFileKey as string ?? '',
         figmaAccessToken: (currentLens as unknown as Record<string, unknown>).figmaAccessToken as string ? '********' : '',
+        imageFrequency: (currentLens as unknown as Record<string, unknown>).imageFrequency as number ?? 5,
+        imageLayout: (currentLens as unknown as Record<string, unknown>).imageLayout as string ?? 'BACKGROUND',
       });
     }
   }, [editId, currentLens]);
@@ -474,6 +478,63 @@ export function PitchLensWizardPage() {
               />
             </div>
 
+            {/* Image Settings */}
+            <div className="border-t border-border pt-4">
+              <div className="mb-3 flex items-center gap-2">
+                <ImageIcon className="h-4 w-4 text-muted-foreground" />
+                <label className="text-sm font-medium text-foreground">Image Generation</label>
+              </div>
+
+              <div className="mb-4">
+                <label className="mb-1.5 block text-xs text-muted-foreground">Image density</label>
+                <div className="flex gap-2">
+                  {[
+                    { value: 0, label: 'None' },
+                    { value: 5, label: 'Few (~2)' },
+                    { value: 3, label: 'Some (~4)' },
+                    { value: 2, label: 'Many (~6)' },
+                  ].map((opt) => (
+                    <button
+                      key={opt.value}
+                      onClick={() => setForm({ ...form, imageFrequency: opt.value })}
+                      className={cn(
+                        'flex-1 rounded-lg border-2 px-3 py-2 text-sm font-medium transition-colors',
+                        form.imageFrequency === opt.value
+                          ? 'border-primary bg-primary/5 text-primary'
+                          : 'border-border text-muted-foreground hover:border-primary/30',
+                      )}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="mb-4">
+                <label className="mb-1.5 block text-xs text-muted-foreground">Image layout</label>
+                <div className="flex gap-2">
+                  {[
+                    { value: 'BACKGROUND', label: 'Background', desc: 'Full-slide, 15% opacity' },
+                    { value: 'RIGHT', label: 'Side panel', desc: 'Right side, 35% width' },
+                  ].map((opt) => (
+                    <button
+                      key={opt.value}
+                      onClick={() => setForm({ ...form, imageLayout: opt.value })}
+                      className={cn(
+                        'flex-1 rounded-lg border-2 px-3 py-2 text-left transition-colors',
+                        form.imageLayout === opt.value
+                          ? 'border-primary bg-primary/5'
+                          : 'border-border hover:border-primary/30',
+                      )}
+                    >
+                      <p className="text-sm font-medium">{opt.label}</p>
+                      <p className="text-xs text-muted-foreground">{opt.desc}</p>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
             <div className="flex items-center gap-3">
               <button
                 type="button"
@@ -577,6 +638,18 @@ export function PitchLensWizardPage() {
             <div className="border-t border-border pt-3">
               <p className="text-xs text-muted-foreground">{t('pitch_lenses.wizard.review_outline_slide')}</p>
               <p className="text-sm font-medium text-foreground">{form.showOutlineSlide ? t('common.enabled') : t('common.disabled')}</p>
+            </div>
+
+            <div className="border-t border-border pt-3">
+              <p className="text-xs text-muted-foreground">Image density</p>
+              <p className="text-sm font-medium text-foreground">
+                {form.imageFrequency === 0 ? 'None' : form.imageFrequency === 5 ? 'Few (~2 per deck)' : form.imageFrequency === 3 ? 'Some (~4 per deck)' : form.imageFrequency === 2 ? 'Many (~6 per deck)' : }
+              </p>
+            </div>
+
+            <div className="border-t border-border pt-3">
+              <p className="text-xs text-muted-foreground">Image layout</p>
+              <p className="text-sm font-medium text-foreground">{form.imageLayout === 'BACKGROUND' ? 'Background (full-slide)' : 'Side panel (right)'}</p>
             </div>
 
             {(form.figmaFileKey || form.figmaAccessToken) && (

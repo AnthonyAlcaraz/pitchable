@@ -100,8 +100,8 @@ UNIVERSAL FORMATTING RULES:
 - Lead with 1 short sentence (max 20 words) BEFORE the table or bullets.
 - Speaker notes: 2-4 sentences expanding on the slide content for the presenter (put detail HERE, not on the slide).
 - Image prompt hint: a concise visual description for AI image generation. MUST NOT include any text, words, letters, numbers, or labels in the image — AI image generators render text poorly. Describe only visual scenes, objects, and abstract concepts.
-- Image frequency: ${imageFrequencyInstruction ?? 'Only generate imagePromptHint for ~1 in 8 slides. Set to empty string "" for the rest.'}
-- Image placement: ${imageLayoutInstruction ?? 'Images will be placed on the right side of the slide (35% width).'}
+- Image frequency: ${imageFrequencyInstruction ?? 'Generate imagePromptHint for roughly 1 in 5 slides (~2 images per deck). Set to empty string "" for the rest.'}
+- Image placement: ${imageLayoutInstruction ?? 'Place images as full-slide backgrounds at 15% opacity.'}
 - LESS IS MORE: If you can say it in fewer words, do it. Slides are visual aids, not documents.
 
 PHILLIPS' VISUAL HIERARCHY (enforce strictly):

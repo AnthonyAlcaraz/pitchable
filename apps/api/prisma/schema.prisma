@@ -304,8 +304,8 @@ model PitchLens {
   isPublic            Boolean        @default(false)
   createdAt           DateTime       @default(now())
   updatedAt           DateTime       @updatedAt
-  imageFrequency      Int            @default(4)
-  imageLayout         ImageLayout    @default(RIGHT)
+  imageFrequency      Int            @default(5)
+  imageLayout         ImageLayout    @default(BACKGROUND)
   maxBulletsPerSlide  Int?
   maxWordsPerSlide    Int?
   maxTableRows        Int?
