@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { GalleryNav } from '@/components/gallery/GalleryNav';
 import { SlideRenderer } from '@/components/preview/SlideRenderer';
 import { useAuthStore } from '@/stores/auth.store';
@@ -12,13 +13,6 @@ import {
   Focus,
   Eye,
 } from 'lucide-react';
-
-const TYPE_LABELS: Record<string, string> = {
-  STANDARD: 'Standard',
-  VC_PITCH: 'VC Pitch',
-  TECHNICAL: 'Technical',
-  EXECUTIVE: 'Executive',
-};
 
 interface PublicSlide {
   id: string;
@@ -53,6 +47,7 @@ interface PublicPresentation {
 }
 
 export function GalleryViewerPage() {
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const isAuthenticated = useAuthStore((s) => !!s.user);
@@ -61,6 +56,13 @@ export function GalleryViewerPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isForking, setIsForking] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const TYPE_LABELS: Record<string, string> = {
+    STANDARD: t('gallery.type_options.STANDARD'),
+    VC_PITCH: t('gallery.type_options.VC_PITCH'),
+    TECHNICAL: t('gallery.type_options.TECHNICAL'),
+    EXECUTIVE: t('gallery.type_options.EXECUTIVE'),
+  };
 
   useEffect(() => {
     if (!id) return;
@@ -75,7 +77,7 @@ export function GalleryViewerPage() {
         // Fire-and-forget view tracking
         fetch(`/analytics/view/${id}`, { method: 'POST' }).catch(() => {});
       })
-      .catch(() => setError('Presentation not found'))
+      .catch(() => setError(t('gallery.viewer.not_found')))
       .finally(() => setIsLoading(false));
   }, [id]);
 
@@ -98,7 +100,7 @@ export function GalleryViewerPage() {
       const data = await res.json();
       if (data.id) navigate(`/workspace/${data.id}`);
     } catch {
-      setError('Failed to fork presentation');
+      setError(t('gallery.viewer.failed_fork'));
     } finally {
       setIsForking(false);
     }
@@ -135,9 +137,9 @@ export function GalleryViewerPage() {
         <GalleryNav />
         <div className="flex flex-col items-center justify-center py-32">
           <Layers className="mb-4 h-12 w-12 text-muted-foreground" />
-          <p className="mb-4 text-lg text-muted-foreground">{error ?? 'Presentation not found'}</p>
+          <p className="mb-4 text-lg text-muted-foreground">{error ?? t('gallery.viewer.not_found')}</p>
           <Link to="/gallery" className="text-sm font-medium text-orange-400 hover:text-orange-300">
-            Back to Gallery
+            {t('gallery.viewer.back_to_gallery')}
           </Link>
         </div>
       </div>
@@ -175,7 +177,7 @@ export function GalleryViewerPage() {
           className="mb-6 inline-flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-orange-400"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
-          Back to Gallery
+          {t('gallery.viewer.back_to_gallery')}
         </Link>
 
         {/* Header */}
@@ -183,11 +185,11 @@ export function GalleryViewerPage() {
           <div>
             <h1 className="mb-2 text-xl font-bold text-foreground sm:text-2xl">{presentation.title}</h1>
             <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
-              <span>by {presentation.authorName}</span>
+              <span>{t('gallery.viewer.by_author', { name: presentation.authorName })}</span>
               <span className="rounded-full bg-orange-500/10 px-2.5 py-0.5 text-xs font-semibold text-orange-400">
                 {TYPE_LABELS[presentation.presentationType] ?? presentation.presentationType}
               </span>
-              <span>{presentation.slides.length} slides</span>
+              <span>{t('gallery.viewer.slides_count', { count: presentation.slides.length })}</span>
               {presentation.viewCount !== undefined && presentation.viewCount > 0 && (
                 <span className="flex items-center gap-1">
                   <Eye className="h-3 w-3" />
@@ -222,7 +224,7 @@ export function GalleryViewerPage() {
             ) : (
               <GitFork className="h-4 w-4" />
             )}
-            Use this template
+            {t('gallery.viewer.use_template')}
           </button>
         </div>
 
@@ -255,7 +257,7 @@ export function GalleryViewerPage() {
 
         {/* Slide counter */}
         <div className="mt-4 text-center text-sm text-muted-foreground">
-          Slide {currentSlide + 1} of {presentation.slides.length}
+          {t('gallery.viewer.slide_counter', { current: currentSlide + 1, total: presentation.slides.length })}
         </div>
 
         {/* Thumbnail strip */}
