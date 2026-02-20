@@ -1,5 +1,4 @@
 import { useEffect, useState, useCallback } from 'react';
-import { Monitor } from 'lucide-react';
 import { PeachLogo } from '@/components/icons/PeachLogo';
 import { usePresentationStore } from '@/stores/presentation.store';
 import { useChatStore } from '@/stores/chat.store';

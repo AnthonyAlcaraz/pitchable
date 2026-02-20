@@ -114,7 +114,7 @@ interface ChatState {
   generationComplete: GenerationCompleteData | null;
 
   loadHistory: (presentationId: string) => Promise<void>;
-  sendMessage: (presentationId: string, content: string) => Promise<void>;
+  sendMessage: (presentationId: string, content: string, opts?: { briefId?: string; lensId?: string }) => Promise<void>;
   acceptSlide: (presentationId: string, slideId: string) => Promise<void>;
   editSlide: (presentationId: string, slideId: string, edits: { title?: string; body?: string; speakerNotes?: string }) => Promise<void>;
   rejectSlide: (presentationId: string, slideId: string) => Promise<void>;
