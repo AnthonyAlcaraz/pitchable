@@ -298,17 +298,13 @@ export function OnboardingPage() {
     try {
       await completeOnboarding();
       clearState();
-      const params = new URLSearchParams();
-      if (briefId) params.set('briefId', briefId);
-      if (lensId) params.set('lensId', lensId);
-      const qs = params.toString();
-      navigate(`/workspace/new${qs ? `?${qs}` : ''}`, { replace: true });
+      navigate('/cockpit', { replace: true });
     } catch (err) {
       console.error('Failed to complete onboarding:', err);
     } finally {
       setIsSubmitting(false);
     }
-  }, [briefId, lensId, completeOnboarding, navigate]);
+  }, [completeOnboarding, clearState, navigate]);
 
   // ── Drag & Drop handlers ───────────────────────────────────
 
