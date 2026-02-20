@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { usePitchBriefStore } from '@/stores/pitch-brief.store';
 import { Plus, BookOpen, Trash2, FileText, Network } from 'lucide-react';
 
@@ -11,6 +12,7 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 export function PitchBriefListPage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { briefs, isLoading, loadBriefs, deleteBrief, createBrief } = usePitchBriefStore();
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -20,10 +22,10 @@ export function PitchBriefListPage() {
   }, [loadBriefs]);
 
   const handleCreateBrief = async () => {
-    const name = prompt('Enter brief name:');
+    const name = prompt(t('pitch_briefs.list.enter_name_prompt'));
     if (!name) return;
 
-    const description = prompt('Enter brief description (optional):') || '';
+    const description = prompt(t('pitch_briefs.list.enter_description_prompt')) || '';
     const id = await createBrief({ name, description });
     if (id) {
       navigate(`/pitch-briefs/${id}`);
@@ -54,9 +56,9 @@ export function PitchBriefListPage() {
     <div className="container mx-auto p-8 max-w-7xl">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-foreground mb-2">Pitch Briefs</h1>
+          <h1 className="text-3xl font-bold text-foreground mb-2">{t('pitch_briefs.list.title')}</h1>
           <p className="text-muted-foreground">
-            Curated knowledge collections powered by AI knowledge graphs
+            {t('pitch_briefs.list.subtitle')}
           </p>
         </div>
         <button
@@ -64,23 +66,23 @@ export function PitchBriefListPage() {
           className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
         >
           <Plus className="w-4 h-4" />
-          New Brief
+          {t('pitch_briefs.list.new_brief')}
         </button>
       </div>
 
       {briefs.length === 0 ? (
         <div className="flex flex-col items-center justify-center min-h-[400px] border-2 border-dashed border-border rounded-lg">
           <BookOpen className="w-16 h-16 text-muted-foreground mb-4" />
-          <h3 className="text-xl font-semibold text-foreground mb-2">No briefs yet</h3>
+          <h3 className="text-xl font-semibold text-foreground mb-2">{t('pitch_briefs.list.no_briefs_title')}</h3>
           <p className="text-muted-foreground mb-6 text-center max-w-md">
-            Create your first pitch brief to start building AI-powered knowledge collections
+            {t('pitch_briefs.list.no_briefs_desc')}
           </p>
           <button
             onClick={handleCreateBrief}
             className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
           >
             <Plus className="w-4 h-4" />
-            Create Brief
+            {t('pitch_briefs.list.create_brief')}
           </button>
         </div>
       ) : (
@@ -103,7 +105,7 @@ export function PitchBriefListPage() {
                 <button
                   onClick={(e) => handleDelete(e, brief.id)}
                   className="opacity-0 group-hover:opacity-100 transition-opacity p-2 hover:bg-destructive/10 rounded-lg"
-                  title={deletingId === brief.id ? 'Click again to confirm' : 'Delete'}
+                  title={deletingId === brief.id ? t('pitch_briefs.list.confirm_delete') : t('common.delete')}
                 >
                   <Trash2 className={`w-4 h-4 ${deletingId === brief.id ? 'text-destructive' : 'text-muted-foreground'}`} />
                 </button>
@@ -124,15 +126,15 @@ export function PitchBriefListPage() {
               <div className="flex items-center gap-4 text-sm text-muted-foreground">
                 <div className="flex items-center gap-1">
                   <FileText className="w-4 h-4" />
-                  <span>{brief.documentCount || 0} docs</span>
+                  <span>{t('common.docs_count', { count: brief.documentCount || 0 })}</span>
                 </div>
                 <div className="flex items-center gap-1">
                   <Network className="w-4 h-4" />
-                  <span>{brief.entityCount || 0} entities</span>
+                  <span>{t('common.entities_count', { count: brief.entityCount || 0 })}</span>
                 </div>
                 <div className="flex items-center gap-1">
                   <BookOpen className="w-4 h-4" />
-                  <span>{brief.lensCount || 0} lenses</span>
+                  <span>{t('common.lenses_count', { count: brief.lensCount || 0 })}</span>
                 </div>
               </div>
             </div>

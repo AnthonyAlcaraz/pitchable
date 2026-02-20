@@ -1,64 +1,74 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { usePitchLensStore } from '@/stores/pitch-lens.store';
 import { useFigmaTemplateStore } from '@/stores/figma-template.store';
 import type { CreatePitchLensInput } from '@/stores/pitch-lens.store';
 import { ArrowLeft, ArrowRight, Check, Focus, Figma, ExternalLink } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-const STEPS = ['Name', 'Audience', 'Goal', 'Context', 'Tone', 'Framework', 'Review'] as const;
-
-const AUDIENCE_OPTIONS = [
-  { value: 'INVESTORS', label: 'Investors', desc: 'VCs, angels, or PE firms' },
-  { value: 'CUSTOMERS', label: 'Customers', desc: 'Prospects or existing clients' },
-  { value: 'EXECUTIVES', label: 'Executives', desc: 'C-suite decision makers' },
-  { value: 'TEAM', label: 'Team', desc: 'Internal team or all-hands' },
-  { value: 'CONFERENCE', label: 'Conference', desc: 'Public talks or panels' },
-  { value: 'BOARD', label: 'Board', desc: 'Board members or stakeholders' },
-  { value: 'TECHNICAL', label: 'Technical', desc: 'Engineers or architects' },
-];
-
-const GOAL_OPTIONS = [
-  { value: 'RAISE_FUNDING', label: 'Raise Funding', desc: 'Secure investment capital' },
-  { value: 'SELL_PRODUCT', label: 'Sell Product', desc: 'Close a deal or demo' },
-  { value: 'GET_BUYIN', label: 'Get Buy-In', desc: 'Win internal approval' },
-  { value: 'EDUCATE', label: 'Educate', desc: 'Teach or train the audience' },
-  { value: 'INSPIRE', label: 'Inspire', desc: 'Motivate and energize' },
-  { value: 'REPORT_RESULTS', label: 'Report Results', desc: 'Share metrics and outcomes' },
-];
-
-const TONE_OPTIONS = [
-  { value: 'FORMAL', label: 'Formal', desc: 'Professional and polished' },
-  { value: 'CONVERSATIONAL', label: 'Conversational', desc: 'Warm and approachable' },
-  { value: 'BOLD', label: 'Bold', desc: 'Confident and assertive' },
-  { value: 'INSPIRATIONAL', label: 'Inspirational', desc: 'Visionary and forward-looking' },
-  { value: 'ANALYTICAL', label: 'Analytical', desc: 'Data-driven and precise' },
-  { value: 'STORYTELLING', label: 'Storytelling', desc: 'Narrative-driven' },
-];
-
-const STAGE_OPTIONS = [
-  { value: 'IDEA', label: 'Idea' },
-  { value: 'MVP', label: 'MVP' },
-  { value: 'GROWTH', label: 'Growth' },
-  { value: 'ENTERPRISE', label: 'Enterprise' },
-];
-
-const TECH_OPTIONS = [
-  { value: 'NON_TECHNICAL', label: 'Non-Technical' },
-  { value: 'SEMI_TECHNICAL', label: 'Semi-Technical' },
-  { value: 'TECHNICAL', label: 'Technical' },
-  { value: 'HIGHLY_TECHNICAL', label: 'Highly Technical' },
-];
-
 function formatEnum(value: string): string {
   return value.toLowerCase().replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
 export function PitchLensWizardPage() {
+  const { t } = useTranslation();
   const { id: editId } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { createLens, updateLens, loadLens, currentLens, getRecommendations, recommendations, loadFrameworks } = usePitchLensStore();
   const { templates: figmaTemplates, loadTemplates: loadFigmaTemplates } = useFigmaTemplateStore();
+
+  const STEPS = [
+    t('pitch_lenses.wizard.step_name'),
+    t('pitch_lenses.wizard.step_audience'),
+    t('pitch_lenses.wizard.step_goal'),
+    t('pitch_lenses.wizard.step_context'),
+    t('pitch_lenses.wizard.step_tone'),
+    t('pitch_lenses.wizard.step_framework'),
+    t('pitch_lenses.wizard.step_review'),
+  ] as const;
+
+  const AUDIENCE_OPTIONS = [
+    { value: 'INVESTORS', label: t('onboarding.audience_options.INVESTORS'), desc: t('onboarding.audience_options.INVESTORS_desc') },
+    { value: 'CUSTOMERS', label: t('onboarding.audience_options.CUSTOMERS'), desc: t('onboarding.audience_options.CUSTOMERS_desc') },
+    { value: 'EXECUTIVES', label: t('onboarding.audience_options.EXECUTIVES'), desc: t('onboarding.audience_options.EXECUTIVES_desc') },
+    { value: 'TEAM', label: t('onboarding.audience_options.TEAM'), desc: t('onboarding.audience_options.TEAM_desc') },
+    { value: 'CONFERENCE', label: t('onboarding.audience_options.CONFERENCE'), desc: t('onboarding.audience_options.CONFERENCE_desc') },
+    { value: 'BOARD', label: t('onboarding.audience_options.BOARD'), desc: t('onboarding.audience_options.BOARD_desc') },
+    { value: 'TECHNICAL', label: t('onboarding.audience_options.TECHNICAL'), desc: t('onboarding.audience_options.TECHNICAL_desc') },
+  ];
+
+  const GOAL_OPTIONS = [
+    { value: 'RAISE_FUNDING', label: t('onboarding.goal_options.RAISE_FUNDING'), desc: t('onboarding.goal_options.RAISE_FUNDING_desc') },
+    { value: 'SELL_PRODUCT', label: t('onboarding.goal_options.SELL_PRODUCT'), desc: t('onboarding.goal_options.SELL_PRODUCT_desc') },
+    { value: 'GET_BUYIN', label: t('onboarding.goal_options.GET_BUYIN'), desc: t('onboarding.goal_options.GET_BUYIN_desc') },
+    { value: 'EDUCATE', label: t('onboarding.goal_options.EDUCATE'), desc: t('onboarding.goal_options.EDUCATE_desc') },
+    { value: 'INSPIRE', label: t('onboarding.goal_options.INSPIRE'), desc: t('onboarding.goal_options.INSPIRE_desc') },
+    { value: 'REPORT_RESULTS', label: t('onboarding.goal_options.REPORT_RESULTS'), desc: t('onboarding.goal_options.REPORT_RESULTS_desc') },
+  ];
+
+  const TONE_OPTIONS = [
+    { value: 'FORMAL', label: t('onboarding.tone_options.FORMAL'), desc: t('onboarding.tone_options.FORMAL_desc') },
+    { value: 'CONVERSATIONAL', label: t('onboarding.tone_options.CONVERSATIONAL'), desc: t('onboarding.tone_options.CONVERSATIONAL_desc') },
+    { value: 'BOLD', label: t('onboarding.tone_options.BOLD'), desc: t('onboarding.tone_options.BOLD_desc') },
+    { value: 'INSPIRATIONAL', label: t('onboarding.tone_options.INSPIRATIONAL'), desc: t('onboarding.tone_options.INSPIRATIONAL_desc') },
+    { value: 'ANALYTICAL', label: t('onboarding.tone_options.ANALYTICAL'), desc: t('onboarding.tone_options.ANALYTICAL_desc') },
+    { value: 'STORYTELLING', label: t('onboarding.tone_options.STORYTELLING'), desc: t('onboarding.tone_options.STORYTELLING_desc') },
+  ];
+
+  const STAGE_OPTIONS = [
+    { value: 'IDEA', label: t('onboarding.stage_options.IDEA') },
+    { value: 'MVP', label: t('onboarding.stage_options.MVP') },
+    { value: 'GROWTH', label: t('onboarding.stage_options.GROWTH') },
+    { value: 'ENTERPRISE', label: t('onboarding.stage_options.ENTERPRISE') },
+  ];
+
+  const TECH_OPTIONS = [
+    { value: 'NON_TECHNICAL', label: t('onboarding.tech_options.NON_TECHNICAL') },
+    { value: 'SEMI_TECHNICAL', label: t('onboarding.tech_options.SEMI_TECHNICAL') },
+    { value: 'TECHNICAL', label: t('onboarding.tech_options.TECHNICAL') },
+    { value: 'HIGHLY_TECHNICAL', label: t('onboarding.tech_options.HIGHLY_TECHNICAL') },
+  ];
 
   const [step, setStep] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -193,7 +203,7 @@ export function PitchLensWizardPage() {
         className="mb-6 flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
       >
         <ArrowLeft className="h-4 w-4" />
-        {editId ? 'Back to Lens' : 'Back to Pitch Lenses'}
+        {editId ? t('pitch_lenses.wizard.back_to_lens') : t('pitch_lenses.wizard.back_to_lenses')}
       </button>
 
       <div className="mx-auto max-w-2xl">
@@ -221,29 +231,29 @@ export function PitchLensWizardPage() {
         </div>
 
         <h2 className="mb-6 text-xl font-bold text-foreground">
-          {editId ? 'Edit' : 'Create'} Pitch Lens — {STEPS[step]}
+          {t('pitch_lenses.wizard.title_template', { action: editId ? t('common.edit') : t('pitch_lenses.wizard.create_title').replace('Create Pitch Lens', 'Create'), step: STEPS[step] })}
         </h2>
 
         {/* Step 0: Name */}
         {step === 0 && (
           <div className="space-y-4">
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-foreground">Lens Name</label>
+              <label className="mb-1.5 block text-sm font-medium text-foreground">{t('pitch_lenses.wizard.lens_name_label')}</label>
               <input
                 type="text"
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
-                placeholder="e.g., Series A Pitch, Q1 Board Update..."
+                placeholder={t('pitch_lenses.wizard.lens_name_placeholder')}
                 className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                 autoFocus
               />
             </div>
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-foreground">Description (optional)</label>
+              <label className="mb-1.5 block text-sm font-medium text-foreground">{t('pitch_lenses.wizard.description_label')}</label>
               <textarea
                 value={form.description}
                 onChange={(e) => setForm({ ...form, description: e.target.value })}
-                placeholder="What is this lens for?"
+                placeholder={t('pitch_lenses.wizard.description_placeholder')}
                 rows={3}
                 className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
               />
@@ -273,18 +283,18 @@ export function PitchLensWizardPage() {
         {step === 3 && (
           <div className="space-y-4">
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-foreground">Industry / Domain</label>
+              <label className="mb-1.5 block text-sm font-medium text-foreground">{t('pitch_lenses.wizard.industry_label')}</label>
               <input
                 type="text"
                 value={form.industry}
                 onChange={(e) => setForm({ ...form, industry: e.target.value })}
-                placeholder="e.g., AI/SaaS, Healthcare, Fintech..."
+                placeholder={t('pitch_lenses.wizard.industry_placeholder')}
                 className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                 autoFocus
               />
             </div>
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-foreground">Company Stage</label>
+              <label className="mb-1.5 block text-sm font-medium text-foreground">{t('pitch_lenses.wizard.company_stage_label')}</label>
               <div className="flex gap-2">
                 {STAGE_OPTIONS.map((opt) => (
                   <button
@@ -303,7 +313,7 @@ export function PitchLensWizardPage() {
               </div>
             </div>
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-foreground">Audience Technical Level</label>
+              <label className="mb-1.5 block text-sm font-medium text-foreground">{t('pitch_lenses.wizard.technical_level_label')}</label>
               <div className="flex gap-2">
                 {TECH_OPTIONS.map((opt) => (
                   <button
@@ -326,65 +336,65 @@ export function PitchLensWizardPage() {
             <div className="border-t border-border pt-4">
               <div className="mb-3 flex items-center gap-2">
                 <Figma className="h-4 w-4 text-muted-foreground" />
-                <label className="text-sm font-medium text-foreground">Figma Integration (optional)</label>
+                <label className="text-sm font-medium text-foreground">{t('pitch_lenses.wizard.figma_integration_title')}</label>
               </div>
               <p className="mb-3 text-xs text-muted-foreground">
-                Connect a Figma file to pull designer-made graphics into slides generated with this lens.
+                {t('pitch_lenses.wizard.figma_integration_desc')}
               </p>
 
               {figmaTemplates.length > 0 && (
                 <div className="mb-3">
-                  <label className="mb-1 block text-xs text-muted-foreground">Figma Template (optional)</label>
+                  <label className="mb-1 block text-xs text-muted-foreground">{t('pitch_lenses.wizard.figma_template_label')}</label>
                   <select
                     value={form.figmaTemplateId ?? ''}
                     onChange={(e) => setForm({ ...form, figmaTemplateId: e.target.value || undefined })}
                     className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                   >
-                    <option value="">No template</option>
-                    {figmaTemplates.map((t) => (
-                      <option key={t.id} value={t.id}>
-                        {t.name} ({t.mappingCount} mapped)
+                    <option value="">{t('pitch_lenses.wizard.figma_template_none')}</option>
+                    {figmaTemplates.map((tmpl) => (
+                      <option key={tmpl.id} value={tmpl.id}>
+                        {t('pitch_lenses.wizard.figma_template_mapped', { name: tmpl.name, count: tmpl.mappingCount })}
                       </option>
                     ))}
                   </select>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    Use a template to render exports with Figma-designed frames per slide type.
+                    {t('pitch_lenses.wizard.figma_template_desc')}
                   </p>
                 </div>
               )}
 
               <div className="space-y-3">
                 <div>
-                  <label className="mb-1 block text-xs text-muted-foreground">Figma File Key or URL</label>
+                  <label className="mb-1 block text-xs text-muted-foreground">{t('pitch_lenses.wizard.figma_file_key_label')}</label>
                   <input
                     type="text"
                     value={form.figmaFileKey ?? ''}
                     onChange={(e) => setForm({ ...form, figmaFileKey: e.target.value })}
-                    placeholder="e.g., https://www.figma.com/file/ABC123/... or ABC123"
+                    placeholder={t('pitch_lenses.wizard.figma_file_key_placeholder')}
                     className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                   />
                 </div>
                 <div>
                   <label className="mb-1 block text-xs text-muted-foreground">
-                    Figma Access Token{' '}
+                    {t('pitch_lenses.wizard.figma_access_token_label')}{' '}
                     <a
                       href="https://www.figma.com/developers/api#access-tokens"
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-primary hover:underline"
                     >
-                      (get one <ExternalLink className="inline h-2.5 w-2.5" />)
+                      ({t('pitch_lenses.wizard.figma_access_token_link')} <ExternalLink className="inline h-2.5 w-2.5" />)
                     </a>
                   </label>
                   <input
                     type="password"
                     value={form.figmaAccessToken ?? ''}
                     onChange={(e) => setForm({ ...form, figmaAccessToken: e.target.value })}
-                    placeholder="figd_..."
+                    placeholder={t('pitch_lenses.wizard.figma_access_token_placeholder')}
                     className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                   />
                   <p className="mt-1 text-xs text-muted-foreground">
-                    Overrides global Figma token from Settings for this lens only.
+                    {t('pitch_lenses.wizard.figma_access_token_desc')}
                   </p>
                 </div>
               </div>
@@ -407,7 +417,7 @@ export function PitchLensWizardPage() {
             {recommendations.length > 0 && (
               <>
                 <p className="text-sm text-muted-foreground">
-                  Based on your profile, we recommend these storytelling frameworks:
+                  {t('pitch_lenses.wizard.framework_recommendation')}
                 </p>
                 <div className="space-y-3">
                   {recommendations.map((rec, i) => (
@@ -432,7 +442,7 @@ export function PitchLensWizardPage() {
                           <h3 className="font-semibold text-foreground">{rec.framework.name}</h3>
                         </div>
                         <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
-                          {rec.score}% match
+                          {t('common.match_percent', { score: rec.score })}
                         </span>
                       </div>
                       <p className="mb-2 text-sm text-muted-foreground">
@@ -453,12 +463,12 @@ export function PitchLensWizardPage() {
 
             <div>
               <label className="mb-1.5 block text-sm font-medium text-foreground">
-                Custom Guidance (optional)
+                {t('pitch_lenses.wizard.custom_guidance_label')}
               </label>
               <textarea
                 value={form.customGuidance}
                 onChange={(e) => setForm({ ...form, customGuidance: e.target.value })}
-                placeholder="Any additional instructions for the AI..."
+                placeholder={t('pitch_lenses.wizard.custom_guidance_placeholder')}
                 rows={3}
                 className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
               />
@@ -483,8 +493,8 @@ export function PitchLensWizardPage() {
                 />
               </button>
               <div>
-                <label className="text-sm font-medium text-foreground">Section Labels</label>
-                <p className="text-xs text-muted-foreground">Show category tags on each slide (e.g., VISION, EVIDENCE, THE ASK)</p>
+                <label className="text-sm font-medium text-foreground">{t('pitch_lenses.wizard.section_labels_title')}</label>
+                <p className="text-xs text-muted-foreground">{t('pitch_lenses.wizard.section_labels_desc')}</p>
               </div>
             </div>
 
@@ -507,8 +517,8 @@ export function PitchLensWizardPage() {
                 />
               </button>
               <div>
-                <label className="text-sm font-medium text-foreground">Outline Slide</label>
-                <p className="text-xs text-muted-foreground">Add an agenda / table of contents slide after the title</p>
+                <label className="text-sm font-medium text-foreground">{t('pitch_lenses.wizard.outline_slide_title')}</label>
+                <p className="text-xs text-muted-foreground">{t('pitch_lenses.wizard.outline_slide_desc')}</p>
               </div>
             </div>
           </div>
@@ -529,12 +539,12 @@ export function PitchLensWizardPage() {
 
             <div className="grid gap-3 sm:grid-cols-2">
               {[
-                { label: 'Audience', value: formatEnum(form.audienceType) },
-                { label: 'Goal', value: formatEnum(form.pitchGoal) },
-                { label: 'Industry', value: form.industry },
-                { label: 'Stage', value: formatEnum(form.companyStage) },
-                { label: 'Tone', value: formatEnum(form.toneStyle) },
-                { label: 'Technical Level', value: formatEnum(form.technicalLevel) },
+                { label: t('pitch_lenses.wizard.review_audience'), value: formatEnum(form.audienceType) },
+                { label: t('pitch_lenses.wizard.review_goal'), value: formatEnum(form.pitchGoal) },
+                { label: t('pitch_lenses.wizard.review_industry'), value: form.industry },
+                { label: t('pitch_lenses.wizard.review_stage'), value: formatEnum(form.companyStage) },
+                { label: t('pitch_lenses.wizard.review_tone'), value: formatEnum(form.toneStyle) },
+                { label: t('pitch_lenses.wizard.review_technical_level'), value: formatEnum(form.technicalLevel) },
               ].map((item) => (
                 <div key={item.label}>
                   <p className="text-xs text-muted-foreground">{item.label}</p>
@@ -545,7 +555,7 @@ export function PitchLensWizardPage() {
 
             {form.selectedFramework && (
               <div className="border-t border-border pt-3">
-                <p className="text-xs text-muted-foreground">Framework</p>
+                <p className="text-xs text-muted-foreground">{t('pitch_lenses.wizard.review_framework')}</p>
                 <p className="text-sm font-medium text-foreground">
                   {formatEnum(form.selectedFramework)}
                 </p>
@@ -554,34 +564,34 @@ export function PitchLensWizardPage() {
 
             {form.customGuidance && (
               <div className="border-t border-border pt-3">
-                <p className="text-xs text-muted-foreground">Custom Guidance</p>
+                <p className="text-xs text-muted-foreground">{t('pitch_lenses.wizard.review_custom_guidance')}</p>
                 <p className="text-sm text-foreground">{form.customGuidance}</p>
               </div>
             )}
 
             <div className="border-t border-border pt-3">
-              <p className="text-xs text-muted-foreground">Section Labels</p>
-              <p className="text-sm font-medium text-foreground">{form.showSectionLabels ? 'Enabled' : 'Disabled'}</p>
+              <p className="text-xs text-muted-foreground">{t('pitch_lenses.wizard.review_section_labels')}</p>
+              <p className="text-sm font-medium text-foreground">{form.showSectionLabels ? t('common.enabled') : t('common.disabled')}</p>
             </div>
 
             <div className="border-t border-border pt-3">
-              <p className="text-xs text-muted-foreground">Outline Slide</p>
-              <p className="text-sm font-medium text-foreground">{form.showOutlineSlide ? 'Enabled' : 'Disabled'}</p>
+              <p className="text-xs text-muted-foreground">{t('pitch_lenses.wizard.review_outline_slide')}</p>
+              <p className="text-sm font-medium text-foreground">{form.showOutlineSlide ? t('common.enabled') : t('common.disabled')}</p>
             </div>
 
             {(form.figmaFileKey || form.figmaAccessToken) && (
               <div className="border-t border-border pt-3">
                 <div className="flex items-center gap-1.5">
                   <Figma className="h-3.5 w-3.5 text-muted-foreground" />
-                  <p className="text-xs text-muted-foreground">Figma Integration</p>
+                  <p className="text-xs text-muted-foreground">{t('pitch_lenses.wizard.review_figma_integration')}</p>
                 </div>
                 {form.figmaFileKey && (
                   <p className="mt-1 text-sm font-medium text-foreground">
-                    File: {form.figmaFileKey.length > 30 ? `${form.figmaFileKey.slice(0, 30)}...` : form.figmaFileKey}
+                    {t('pitch_lenses.wizard.review_figma_file', { key: form.figmaFileKey.length > 30 ? `${form.figmaFileKey.slice(0, 30)}...` : form.figmaFileKey })}
                   </p>
                 )}
                 <p className="text-sm text-foreground">
-                  Token: {form.figmaAccessToken ? 'Provided' : 'Not set'}
+                  {form.figmaAccessToken ? t('pitch_lenses.wizard.review_figma_token_provided') : t('pitch_lenses.wizard.review_figma_token_not_set')}
                 </p>
               </div>
             )}
@@ -595,7 +605,7 @@ export function PitchLensWizardPage() {
             className="flex items-center gap-1.5 rounded-lg border border-border px-4 py-2 text-sm hover:bg-accent"
           >
             <ArrowLeft className="h-4 w-4" />
-            {step > 0 ? 'Back' : 'Cancel'}
+            {step > 0 ? t('common.back') : t('common.cancel')}
           </button>
 
           {step < STEPS.length - 1 ? (
@@ -609,7 +619,7 @@ export function PitchLensWizardPage() {
                   : 'cursor-not-allowed bg-muted text-muted-foreground',
               )}
             >
-              Next
+              {t('common.next')}
               <ArrowRight className="h-4 w-4" />
             </button>
           ) : (
@@ -618,7 +628,7 @@ export function PitchLensWizardPage() {
               disabled={isSubmitting}
               className="flex items-center gap-1.5 rounded-lg bg-primary px-6 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
             >
-              {isSubmitting ? 'Creating...' : editId ? 'Save Changes' : 'Create Lens'}
+              {isSubmitting ? t('common.creating') : editId ? t('pitch_lenses.wizard.save_changes') : t('pitch_lenses.wizard.create_lens')}
               <Check className="h-4 w-4" />
             </button>
           )}

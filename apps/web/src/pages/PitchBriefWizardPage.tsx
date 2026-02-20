@@ -1,18 +1,20 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { usePitchBriefStore } from '@/stores/pitch-brief.store';
 import { ArrowLeft, ArrowRight, BookOpen, Upload, Check, FileText, X } from 'lucide-react';
 
-const STEPS = [
-  { number: 1, label: 'Name & Description' },
-  { number: 2, label: 'Add Documents' },
-  { number: 3, label: 'Review' },
-];
-
 export function PitchBriefWizardPage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { id } = useParams();
   const isEditMode = !!id;
+
+  const STEPS = [
+    { number: 1, label: t('pitch_briefs.wizard.step_1') },
+    { number: 2, label: t('pitch_briefs.wizard.step_2') },
+    { number: 3, label: t('pitch_briefs.wizard.step_3') },
+  ];
 
   const { briefs, createBrief, updateBrief, loadBriefs, uploadDocument, addTextDocument, addUrlDocument } = usePitchBriefStore();
 
@@ -171,10 +173,10 @@ export function PitchBriefWizardPage() {
             className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-4"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span>Back to Pitch Briefs</span>
+            <span>{t('pitch_briefs.wizard.back_to_briefs')}</span>
           </button>
           <h1 className="text-3xl font-bold text-foreground">
-            {isEditMode ? 'Edit Pitch Brief' : 'Create New Pitch Brief'}
+            {isEditMode ? t('pitch_briefs.wizard.edit_title') : t('pitch_briefs.wizard.create_title')}
           </h1>
         </div>
 
@@ -221,7 +223,7 @@ export function PitchBriefWizardPage() {
             <div className="space-y-6">
               <div>
                 <label htmlFor="name" className="block text-sm font-medium text-foreground mb-2">
-                  Brief Name <span className="text-red-500">*</span>
+                  {t('pitch_briefs.wizard.brief_name_label')} <span className="text-red-500">{t('pitch_briefs.wizard.brief_name_required')}</span>
                 </label>
                 <input
                   id="name"
@@ -229,17 +231,17 @@ export function PitchBriefWizardPage() {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   maxLength={100}
-                  placeholder="Enter a name for your pitch brief"
+                  placeholder={t('pitch_briefs.wizard.brief_name_placeholder')}
                   className="w-full px-4 py-2 bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
                 />
                 <p className="mt-1 text-xs text-muted-foreground">
-                  {name.length}/100 characters
+                  {t('common.characters_count', { count: name.length, max: 100 })}
                 </p>
               </div>
 
               <div>
                 <label htmlFor="description" className="block text-sm font-medium text-foreground mb-2">
-                  Description
+                  {t('pitch_briefs.wizard.description_label')}
                 </label>
                 <textarea
                   id="description"
@@ -247,11 +249,11 @@ export function PitchBriefWizardPage() {
                   onChange={(e) => setDescription(e.target.value)}
                   maxLength={2000}
                   rows={6}
-                  placeholder="Describe the purpose and context of this pitch brief"
+                  placeholder={t('pitch_briefs.wizard.description_placeholder')}
                   className="w-full px-4 py-2 bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary resize-none"
                 />
                 <p className="mt-1 text-xs text-muted-foreground">
-                  {description.length}/2000 characters
+                  {t('common.characters_count', { count: description.length, max: 2000 })}
                 </p>
               </div>
 
@@ -261,7 +263,7 @@ export function PitchBriefWizardPage() {
                   disabled={!name.trim() || isSubmitting}
                   className="flex items-center gap-2 px-6 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
-                  {isEditMode ? 'Save' : 'Next'}
+                  {isEditMode ? t('common.save') : t('common.next')}
                   {!isEditMode && <ArrowRight className="w-4 h-4" />}
                 </button>
               </div>
@@ -271,14 +273,14 @@ export function PitchBriefWizardPage() {
           {step === 2 && (
             <div className="space-y-6">
               <div>
-                <h2 className="text-xl font-semibold text-foreground mb-4">Add Documents</h2>
+                <h2 className="text-xl font-semibold text-foreground mb-4">{t('pitch_briefs.wizard.add_documents_title')}</h2>
                 <p className="text-muted-foreground mb-6">
-                  Upload files, add text, or provide URLs to build your pitch brief context.
+                  {t('pitch_briefs.wizard.add_documents_desc')}
                 </p>
               </div>
 
               <div>
-                <h3 className="text-sm font-medium text-foreground mb-3">Upload Files</h3>
+                <h3 className="text-sm font-medium text-foreground mb-3">{t('pitch_briefs.wizard.upload_files_title')}</h3>
                 <div
                   onDragEnter={handleDrag}
                   onDragLeave={handleDrag}
@@ -291,10 +293,10 @@ export function PitchBriefWizardPage() {
                   }`}
                 >
                   <Upload className="w-8 h-8 text-muted-foreground mx-auto mb-3" />
-                  <p className="text-foreground mb-2">Drag and drop files here</p>
-                  <p className="text-sm text-muted-foreground mb-4">or</p>
+                  <p className="text-foreground mb-2">{t('pitch_briefs.wizard.drag_drop_text')}</p>
+                  <p className="text-sm text-muted-foreground mb-4">{t('common.or')}</p>
                   <label className="inline-block px-4 py-2 bg-primary text-primary-foreground rounded-lg cursor-pointer hover:bg-primary/90 transition-colors">
-                    Browse Files
+                    {t('pitch_briefs.wizard.browse_files')}
                     <input
                       type="file"
                       multiple
@@ -306,20 +308,20 @@ export function PitchBriefWizardPage() {
               </div>
 
               <div>
-                <h3 className="text-sm font-medium text-foreground mb-3">Add Text</h3>
+                <h3 className="text-sm font-medium text-foreground mb-3">{t('pitch_briefs.wizard.add_text_title')}</h3>
                 <div className="space-y-3">
                   <input
                     type="text"
                     value={textTitle}
                     onChange={(e) => setTextTitle(e.target.value)}
-                    placeholder="Document title"
+                    placeholder={t('pitch_briefs.wizard.document_title_placeholder')}
                     className="w-full px-4 py-2 bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
                   />
                   <textarea
                     value={textInput}
                     onChange={(e) => setTextInput(e.target.value)}
                     rows={4}
-                    placeholder="Paste or type your text content here"
+                    placeholder={t('pitch_briefs.wizard.paste_text_placeholder')}
                     className="w-full px-4 py-2 bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary resize-none"
                   />
                   <button
@@ -327,26 +329,26 @@ export function PitchBriefWizardPage() {
                     disabled={!textInput.trim() || !textTitle.trim()}
                     className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
-                    Add Text
+                    {t('pitch_briefs.wizard.add_text_button')}
                   </button>
                 </div>
               </div>
 
               <div>
-                <h3 className="text-sm font-medium text-foreground mb-3">Add URL</h3>
+                <h3 className="text-sm font-medium text-foreground mb-3">{t('pitch_briefs.wizard.add_url_title')}</h3>
                 <div className="space-y-3">
                   <input
                     type="text"
                     value={urlTitle}
                     onChange={(e) => setUrlTitle(e.target.value)}
-                    placeholder="Document title"
+                    placeholder={t('pitch_briefs.wizard.document_title_placeholder')}
                     className="w-full px-4 py-2 bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
                   />
                   <input
                     type="url"
                     value={urlInput}
                     onChange={(e) => setUrlInput(e.target.value)}
-                    placeholder="https://example.com/document"
+                    placeholder={t('pitch_briefs.wizard.url_placeholder')}
                     className="w-full px-4 py-2 bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
                   />
                   <button
@@ -354,7 +356,7 @@ export function PitchBriefWizardPage() {
                     disabled={!urlInput.trim() || !urlTitle.trim()}
                     className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
-                    Add URL
+                    {t('pitch_briefs.wizard.add_url_button')}
                   </button>
                 </div>
               </div>
@@ -362,7 +364,7 @@ export function PitchBriefWizardPage() {
               {totalDocuments > 0 && (
                 <div>
                   <h3 className="text-sm font-medium text-foreground mb-3">
-                    Added Documents ({totalDocuments})
+                    {t('pitch_briefs.wizard.added_documents', { count: totalDocuments })}
                   </h3>
                   <div className="space-y-2">
                     {pendingFiles.map((file, index) => (
@@ -426,7 +428,7 @@ export function PitchBriefWizardPage() {
                   className="flex items-center gap-2 px-6 py-2 bg-background border border-border text-foreground rounded-lg hover:bg-muted transition-colors"
                 >
                   <ArrowLeft className="w-4 h-4" />
-                  Back
+                  {t('common.back')}
                 </button>
                 <div className="flex gap-3">
                   <button
@@ -434,14 +436,14 @@ export function PitchBriefWizardPage() {
                     disabled={isSubmitting}
                     className="px-6 py-2 bg-background border border-border text-foreground rounded-lg hover:bg-muted transition-colors"
                   >
-                    Skip
+                    {t('common.skip')}
                   </button>
                   <button
                     onClick={handleNext}
                     disabled={isSubmitting}
                     className="flex items-center gap-2 px-6 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
-                    Next
+                    {t('common.next')}
                     <ArrowRight className="w-4 h-4" />
                   </button>
                 </div>
@@ -456,28 +458,28 @@ export function PitchBriefWizardPage() {
                   <Check className="w-8 h-8 text-primary" />
                 </div>
                 <h2 className="text-2xl font-semibold text-foreground mb-2">
-                  Pitch Brief Created Successfully!
+                  {t('pitch_briefs.wizard.success_title')}
                 </h2>
                 <p className="text-muted-foreground">
-                  Your pitch brief has been created. Documents are being processed.
+                  {t('pitch_briefs.wizard.success_desc')}
                 </p>
               </div>
 
               <div className="bg-background border border-border rounded-lg p-6 space-y-4">
                 <div>
-                  <h3 className="text-sm font-medium text-muted-foreground mb-1">Name</h3>
+                  <h3 className="text-sm font-medium text-muted-foreground mb-1">{t('pitch_briefs.wizard.review_name')}</h3>
                   <p className="text-foreground">{name}</p>
                 </div>
                 {description && (
                   <div>
-                    <h3 className="text-sm font-medium text-muted-foreground mb-1">Description</h3>
+                    <h3 className="text-sm font-medium text-muted-foreground mb-1">{t('pitch_briefs.wizard.review_description')}</h3>
                     <p className="text-foreground">{description}</p>
                   </div>
                 )}
                 <div>
-                  <h3 className="text-sm font-medium text-muted-foreground mb-1">Documents</h3>
+                  <h3 className="text-sm font-medium text-muted-foreground mb-1">{t('pitch_briefs.wizard.review_documents')}</h3>
                   <p className="text-foreground">
-                    {totalDocuments} {totalDocuments === 1 ? 'document' : 'documents'} added
+                    {totalDocuments} {totalDocuments === 1 ? t('common.document') : t('common.documents')} added
                   </p>
                 </div>
               </div>
@@ -487,14 +489,14 @@ export function PitchBriefWizardPage() {
                   onClick={handleCreateAnother}
                   className="px-6 py-2 bg-background border border-border text-foreground rounded-lg hover:bg-muted transition-colors"
                 >
-                  Create Another
+                  {t('pitch_briefs.wizard.create_another')}
                 </button>
                 <button
                   onClick={() => navigate(`/pitch-briefs/${briefId}`)}
                   className="flex items-center gap-2 px-6 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
                 >
                   <BookOpen className="w-4 h-4" />
-                  Go to Brief
+                  {t('pitch_briefs.wizard.go_to_brief')}
                 </button>
               </div>
             </div>

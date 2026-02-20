@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { usePitchBriefStore } from '@/stores/pitch-brief.store';
 import type { SearchResult } from '@/stores/pitch-brief.store';
 import { usePitchLensStore } from '@/stores/pitch-lens.store';
@@ -36,6 +37,7 @@ const ENTITY_COLORS: Record<string, string> = {
 };
 
 export function PitchBriefDetailPage() {
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -173,7 +175,7 @@ export function PitchBriefDetailPage() {
         className="flex items-center gap-2 text-muted-foreground hover:text-foreground mb-6 transition-colors"
       >
         <ArrowLeft className="w-4 h-4" />
-        Back to Briefs
+        {t('pitch_briefs.detail.back_to_briefs')}
       </button>
 
       <div className="flex items-start justify-between mb-8">
@@ -197,7 +199,7 @@ export function PitchBriefDetailPage() {
           onClick={() => navigate(`/pitch-briefs/${id}/edit`)}
           className="px-4 py-2 bg-card border border-border rounded-lg hover:border-primary/50 transition-colors text-foreground"
         >
-          Edit
+          {t('common.edit')}
         </button>
       </div>
 
@@ -209,14 +211,14 @@ export function PitchBriefDetailPage() {
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-semibold text-foreground flex items-center gap-2">
                 <FileText className="w-5 h-5" />
-                Documents ({docs.length})
+                {t('pitch_briefs.detail.documents_title', { count: docs.length })}
               </h2>
               <button
                 onClick={() => fileInputRef.current?.click()}
                 className="flex items-center gap-2 px-3 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors text-sm"
               >
                 <Upload className="w-4 h-4" />
-                Upload
+                {t('pitch_briefs.detail.upload')}
               </button>
             </div>
 
@@ -228,8 +230,8 @@ export function PitchBriefDetailPage() {
               onClick={() => fileInputRef.current?.click()}
             >
               <Upload className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
-              <p className="text-foreground mb-1">Drop files here or click to upload</p>
-              <p className="text-sm text-muted-foreground">PDF, DOCX, TXT, MD, CSV, XLSX, PPTX</p>
+              <p className="text-foreground mb-1">{t('pitch_briefs.detail.drop_files')}</p>
+              <p className="text-sm text-muted-foreground">{t('pitch_briefs.detail.supported_formats')}</p>
               <input
                 ref={fileInputRef}
                 type="file"
@@ -258,7 +260,7 @@ export function PitchBriefDetailPage() {
                       </span>
                       {doc.chunkCount > 0 && (
                         <span className="text-xs text-muted-foreground">
-                          {doc.chunkCount} chunks
+                          {t('common.chunks_count', { count: doc.chunkCount })}
                         </span>
                       )}
                     </div>
@@ -266,7 +268,7 @@ export function PitchBriefDetailPage() {
                   <button
                     onClick={() => handleDeleteDoc(doc.id)}
                     className="p-2 hover:bg-destructive/10 rounded-lg transition-colors"
-                    title={deletingDocId === doc.id ? 'Click again to confirm' : 'Delete'}
+                    title={deletingDocId === doc.id ? t('pitch_briefs.list.confirm_delete') : t('common.delete')}
                   >
                     <Trash2 className={`w-4 h-4 ${deletingDocId === doc.id ? 'text-destructive' : 'text-muted-foreground'}`} />
                   </button>
@@ -276,16 +278,16 @@ export function PitchBriefDetailPage() {
 
             {/* Add Text Document */}
             <div className="mb-6 p-4 bg-background border border-border rounded-lg">
-              <h3 className="text-sm font-medium text-foreground mb-3">Add Text Document</h3>
+              <h3 className="text-sm font-medium text-foreground mb-3">{t('pitch_briefs.detail.add_text_document')}</h3>
               <input
                 type="text"
-                placeholder="Title"
+                placeholder={t('pitch_briefs.detail.title_placeholder')}
                 value={textTitle}
                 onChange={(e) => setTextTitle(e.target.value)}
                 className="w-full px-3 py-2 bg-card border border-border rounded-lg mb-2 text-foreground placeholder:text-muted-foreground"
               />
               <textarea
-                placeholder="Content"
+                placeholder={t('pitch_briefs.detail.content_placeholder')}
                 value={textContent}
                 onChange={(e) => setTextContent(e.target.value)}
                 className="w-full px-3 py-2 bg-card border border-border rounded-lg mb-2 text-foreground placeholder:text-muted-foreground min-h-[100px]"
@@ -295,23 +297,23 @@ export function PitchBriefDetailPage() {
                 disabled={!textTitle || !textContent}
                 className="w-full px-3 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm"
               >
-                Add Text
+                {t('pitch_briefs.detail.add_text')}
               </button>
             </div>
 
             {/* Add URL Document */}
             <div className="p-4 bg-background border border-border rounded-lg">
-              <h3 className="text-sm font-medium text-foreground mb-3">Add URL Document</h3>
+              <h3 className="text-sm font-medium text-foreground mb-3">{t('pitch_briefs.detail.add_url_document')}</h3>
               <input
                 type="text"
-                placeholder="URL"
+                placeholder={t('pitch_briefs.detail.url_placeholder')}
                 value={urlInput}
                 onChange={(e) => setUrlInput(e.target.value)}
                 className="w-full px-3 py-2 bg-card border border-border rounded-lg mb-2 text-foreground placeholder:text-muted-foreground"
               />
               <input
                 type="text"
-                placeholder="Title"
+                placeholder={t('pitch_briefs.detail.title_placeholder')}
                 value={urlTitle}
                 onChange={(e) => setUrlTitle(e.target.value)}
                 className="w-full px-3 py-2 bg-card border border-border rounded-lg mb-2 text-foreground placeholder:text-muted-foreground"
@@ -321,7 +323,7 @@ export function PitchBriefDetailPage() {
                 disabled={!urlInput || !urlTitle}
                 className="w-full px-3 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm"
               >
-                Add URL
+                {t('pitch_briefs.detail.add_url')}
               </button>
             </div>
           </div>
@@ -331,23 +333,23 @@ export function PitchBriefDetailPage() {
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-semibold text-foreground flex items-center gap-2">
                 <Link2 className="w-5 h-5" />
-                Linked Lenses ({briefLenses.length})
+                {t('pitch_briefs.detail.linked_lenses_title', { count: briefLenses.length })}
               </h2>
               <button
                 onClick={() => setShowLinkModal(!showLinkModal)}
                 className="flex items-center gap-2 px-3 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors text-sm"
               >
                 <Plus className="w-4 h-4" />
-                Link Lens
+                {t('pitch_briefs.detail.link_lens')}
               </button>
             </div>
 
             {showLinkModal && (
               <div className="mb-4 p-4 bg-background border border-border rounded-lg">
-                <h3 className="text-sm font-medium text-foreground mb-3">Available Lenses</h3>
+                <h3 className="text-sm font-medium text-foreground mb-3">{t('pitch_briefs.detail.available_lenses')}</h3>
                 <div className="space-y-2 max-h-64 overflow-y-auto">
                   {availableLenses.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">No available lenses</p>
+                    <p className="text-sm text-muted-foreground">{t('pitch_briefs.detail.no_available_lenses')}</p>
                   ) : (
                     availableLenses.map((lens) => (
                       <button
@@ -395,7 +397,7 @@ export function PitchBriefDetailPage() {
                 ))}
               </div>
             ) : (
-              <p className="text-sm text-muted-foreground text-center py-8">No lenses linked yet</p>
+              <p className="text-sm text-muted-foreground text-center py-8">{t('pitch_briefs.detail.no_lenses_linked')}</p>
             )}
           </div>
         </div>
@@ -406,7 +408,7 @@ export function PitchBriefDetailPage() {
           <div className="bg-card border border-border rounded-lg p-6">
             <h2 className="text-xl font-semibold text-foreground mb-6 flex items-center gap-2">
               <Network className="w-5 h-5" />
-              Graph Stats
+              {t('pitch_briefs.detail.graph_stats_title')}
             </h2>
 
             {graphStats ? (
@@ -414,25 +416,25 @@ export function PitchBriefDetailPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="p-4 bg-background rounded-lg">
                     <div className="text-2xl font-bold text-foreground">{graphStats.total_nodes}</div>
-                    <div className="text-sm text-muted-foreground">Nodes</div>
+                    <div className="text-sm text-muted-foreground">{t('pitch_briefs.detail.nodes')}</div>
                   </div>
                   <div className="p-4 bg-background rounded-lg">
                     <div className="text-2xl font-bold text-foreground">{graphStats.total_edges}</div>
-                    <div className="text-sm text-muted-foreground">Edges</div>
+                    <div className="text-sm text-muted-foreground">{t('pitch_briefs.detail.edges')}</div>
                   </div>
                   <div className="p-4 bg-background rounded-lg">
                     <div className="text-2xl font-bold text-foreground">{graphStats.density?.toFixed(3)}</div>
-                    <div className="text-sm text-muted-foreground">Density</div>
+                    <div className="text-sm text-muted-foreground">{t('pitch_briefs.detail.density')}</div>
                   </div>
                   <div className="p-4 bg-background rounded-lg">
                     <div className="text-2xl font-bold text-foreground">{graphStats.avg_degree?.toFixed(1)}</div>
-                    <div className="text-sm text-muted-foreground">Avg Degree</div>
+                    <div className="text-sm text-muted-foreground">{t('pitch_briefs.detail.avg_degree')}</div>
                   </div>
                 </div>
 
                 {graphStats.node_types && Object.keys(graphStats.node_types).length > 0 && (
                   <div>
-                    <h3 className="text-sm font-medium text-foreground mb-3">Node Types</h3>
+                    <h3 className="text-sm font-medium text-foreground mb-3">{t('pitch_briefs.detail.node_types')}</h3>
                     <div className="flex flex-wrap gap-2">
                       {Object.entries(graphStats.node_types).map(([type, count]) => (
                         <span
@@ -450,7 +452,7 @@ export function PitchBriefDetailPage() {
 
                 {graphStats.edge_types && Object.keys(graphStats.edge_types).length > 0 && (
                   <div>
-                    <h3 className="text-sm font-medium text-foreground mb-3">Edge Types</h3>
+                    <h3 className="text-sm font-medium text-foreground mb-3">{t('pitch_briefs.detail.edge_types')}</h3>
                     <div className="flex flex-wrap gap-2">
                       {Object.entries(graphStats.edge_types).map(([type, count]) => (
                         <span
@@ -465,19 +467,19 @@ export function PitchBriefDetailPage() {
                 )}
               </div>
             ) : (
-              <p className="text-sm text-muted-foreground text-center py-8">No graph data available</p>
+              <p className="text-sm text-muted-foreground text-center py-8">{t('pitch_briefs.detail.no_graph_data')}</p>
             )}
           </div>
 
           {/* Knowledge Graph Visualization */}
           <div className="bg-card border border-border rounded-lg p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold text-foreground">Knowledge Graph</h2>
+              <h2 className="text-xl font-semibold text-foreground">{t('pitch_briefs.detail.knowledge_graph_title')}</h2>
               <button
                 onClick={() => id && loadGraph(id)}
                 className="px-3 py-1 text-sm bg-background border border-border rounded-lg hover:border-primary/50 transition-colors"
               >
-                Refresh
+                {t('common.refresh')}
               </button>
             </div>
 
@@ -551,7 +553,7 @@ export function PitchBriefDetailPage() {
             ) : (
               <div className="flex flex-col items-center justify-center h-[400px] bg-background rounded-lg border border-border">
                 <Network className="w-12 h-12 text-muted-foreground mb-3" />
-                <p className="text-sm text-muted-foreground">Upload documents to build the knowledge graph</p>
+                <p className="text-sm text-muted-foreground">{t('pitch_briefs.detail.empty_graph')}</p>
               </div>
             )}
           </div>
@@ -560,13 +562,13 @@ export function PitchBriefDetailPage() {
           <div className="bg-card border border-border rounded-lg p-6">
             <h2 className="text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
               <Search className="w-5 h-5" />
-              Search
+              {t('pitch_briefs.detail.search_title')}
             </h2>
 
             <div className="flex gap-2 mb-4">
               <input
                 type="text"
-                placeholder="Search knowledge base..."
+                placeholder={t('pitch_briefs.detail.search_placeholder')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && void handleSearch()}
@@ -576,7 +578,7 @@ export function PitchBriefDetailPage() {
                 onClick={() => void handleSearch()}
                 className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
               >
-                Search
+                {t('common.search')}
               </button>
             </div>
 
@@ -594,7 +596,7 @@ export function PitchBriefDetailPage() {
                   >
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-xs font-medium text-primary">
-                        Score: {source.score.toFixed(3)}
+                        {t('pitch_briefs.detail.score_label', { score: source.score.toFixed(3) })}
                       </span>
                     </div>
                     <p className="text-sm text-foreground line-clamp-3">{source.content}</p>
@@ -604,7 +606,7 @@ export function PitchBriefDetailPage() {
             )}
 
             {searchResults && searchResults.sources.length === 0 && searchQuery && (
-              <p className="text-sm text-muted-foreground text-center py-8">No results found</p>
+              <p className="text-sm text-muted-foreground text-center py-8">{t('pitch_briefs.detail.no_results')}</p>
             )}
           </div>
         </div>

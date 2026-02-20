@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { usePitchLensStore } from '@/stores/pitch-lens.store';
 import { Plus, Focus, Star, Trash2 } from 'lucide-react';
 
@@ -8,6 +9,7 @@ function formatEnum(value: string): string {
 }
 
 export function PitchLensListPage() {
+  const { t } = useTranslation();
   const { lenses, isLoading, loadLenses, deleteLens } = usePitchLensStore();
   const navigate = useNavigate();
 
@@ -17,9 +19,9 @@ export function PitchLensListPage() {
     <div className="p-8">
       <div className="mb-8 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Pitch Lens</h1>
+          <h1 className="text-2xl font-bold text-foreground">{t('pitch_lenses.list.title')}</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Create reusable profiles that guide your presentation strategy
+            {t('pitch_lenses.list.subtitle')}
           </p>
         </div>
         <button
@@ -27,7 +29,7 @@ export function PitchLensListPage() {
           className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
         >
           <Plus className="h-4 w-4" />
-          New Lens
+          {t('pitch_lenses.list.new_lens')}
         </button>
       </div>
 
@@ -38,16 +40,16 @@ export function PitchLensListPage() {
       ) : lenses.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-border py-16">
           <Focus className="mb-4 h-12 w-12 text-muted-foreground/50" />
-          <h2 className="mb-2 text-lg font-semibold text-foreground">No Pitch Lenses yet</h2>
+          <h2 className="mb-2 text-lg font-semibold text-foreground">{t('pitch_lenses.list.no_lenses_title')}</h2>
           <p className="mb-6 max-w-md text-center text-sm text-muted-foreground">
-            A Pitch Lens captures your audience, goals, and storytelling strategy. All presentations created under a lens inherit its guidance.
+            {t('pitch_lenses.list.no_lenses_desc')}
           </p>
           <button
             onClick={() => navigate('/pitch-lens/new')}
             className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
           >
             <Plus className="h-4 w-4" />
-            Create your first Lens
+            {t('pitch_lenses.list.create_first_lens')}
           </button>
         </div>
       ) : (
@@ -70,7 +72,7 @@ export function PitchLensListPage() {
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      if (confirm('Delete this Pitch Lens?')) deleteLens(lens.id);
+                      if (confirm(t('pitch_lenses.list.confirm_delete'))) deleteLens(lens.id);
                     }}
                     className="rounded p-1 opacity-0 transition-opacity hover:bg-destructive/10 group-hover:opacity-100"
                   >
@@ -100,7 +102,7 @@ export function PitchLensListPage() {
               </div>
 
               <div className="flex items-center justify-between text-xs text-muted-foreground">
-                <span>{lens.presentationCount} presentation{lens.presentationCount !== 1 ? 's' : ''}</span>
+                <span>{lens.presentationCount} {lens.presentationCount !== 1 ? t('common.presentations') : t('common.presentation')}</span>
                 <span>{lens.industry}</span>
               </div>
             </div>
