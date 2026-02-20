@@ -643,7 +643,7 @@ export function PitchLensWizardPage() {
             <div className="border-t border-border pt-3">
               <p className="text-xs text-muted-foreground">Image density</p>
               <p className="text-sm font-medium text-foreground">
-                {form.imageFrequency === 0 ? 'None' : form.imageFrequency === 5 ? 'Few (~2 per deck)' : form.imageFrequency === 3 ? 'Some (~4 per deck)' : form.imageFrequency === 2 ? 'Many (~6 per deck)' : }
+                {form.imageFrequency === 0 ? 'None' : form.imageFrequency === 5 ? 'Few (~2 per deck)' : form.imageFrequency === 3 ? 'Some (~4 per deck)' : form.imageFrequency === 2 ? 'Many (~6 per deck)' : `Custom (1 per ${form.imageFrequency} slides)`}
               </p>
             </div>
 
