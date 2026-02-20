@@ -196,14 +196,38 @@ export class DocumentProcessingProcessor extends WorkerHost {
           } else {
             const extraction = await this.entityExtractor.extractFromChunks(storedChunks);
             if (extraction.entities.length > 0) {
-              const graphName = FalkorDbService.kbGraphName(userId);
+              // Index into user's global KB graph
+              const kbGraphName = FalkorDbService.kbGraphName(userId);
               await this.falkordb.indexDocument(
-                graphName,
+                kbGraphName,
                 documentId,
                 docTitle,
                 extraction.entities,
                 extraction.relationships,
               );
+
+              // Also index into the brief's graph if document belongs to a brief
+              const docRecord2 = await this.prisma.document.findUnique({
+                where: { id: documentId },
+                select: { briefId: true, brief: { select: { graphName: true } } },
+              });
+              if (docRecord2?.brief?.graphName) {
+                await this.falkordb.indexDocument(
+                  docRecord2.brief.graphName,
+                  documentId,
+                  docTitle,
+                  extraction.entities,
+                  extraction.relationships,
+                );
+                // Update brief entity count
+                await this.prisma.pitchBrief.update({
+                  where: { id: docRecord2.briefId! },
+                  data: { entityCount: { increment: extraction.entities.length } },
+                });
+                this.logger.log(
+                  `Document ${documentId}: also indexed into brief graph ${docRecord2.brief.graphName}`,
+                );
+              }
 
               // Charge credits after successful extraction + indexing
               await this.credits.deductCredits(
