@@ -71,6 +71,7 @@
     "socket.io": "^4.8.3",
     "stripe": "^20.3.1",
     "swagger-ui-express": "^5.0.1",
+    "undici": "^7.22.0",
     "uuid": "^13.0.0",
     "xlsx": "^0.18.5",
     "zeroentropy": "^0.1.0-alpha.7",
