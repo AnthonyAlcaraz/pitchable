@@ -1,10 +1,12 @@
 import { Link, useParams, useSearchParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { ArrowLeft, Layers, BookOpen, Focus } from 'lucide-react';
 import { SplitScreen } from '@/components/layout/SplitScreen';
 import { ChatPanel } from '@/components/chat/ChatPanel';
 import { PreviewPanel } from '@/components/preview/PreviewPanel';
 
 export function WorkspacePage() {
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const [searchParams] = useSearchParams();
   const briefId = searchParams.get('briefId');
@@ -19,13 +21,13 @@ export function WorkspacePage() {
           className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
         >
           <ArrowLeft className="h-4 w-4" />
-          Cockpit
+          {t('workspace.cockpit')}
         </Link>
         <div className="h-5 w-px bg-border" />
         <div className="flex items-center gap-2">
           <Layers className="h-4 w-4 text-primary" />
           <span className="text-sm font-medium text-foreground">
-            {id === 'new' ? 'New Presentation' : `Presentation ${id ?? ''}`}
+            {id === 'new' ? t('workspace.new_presentation') : t('workspace.presentation_label', { id: id ?? '' })}
           </span>
         </div>
         {briefId && (
@@ -36,7 +38,7 @@ export function WorkspacePage() {
               className="flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary hover:bg-primary/20"
             >
               <BookOpen className="h-3 w-3" />
-              Brief
+              {t('workspace.brief')}
             </Link>
           </>
         )}
@@ -48,7 +50,7 @@ export function WorkspacePage() {
               className="flex items-center gap-1.5 rounded-full bg-accent px-2.5 py-1 text-xs font-medium text-accent-foreground hover:bg-accent/80"
             >
               <Focus className="h-3 w-3" />
-              Lens
+              {t('workspace.lens')}
             </Link>
           </>
         )}

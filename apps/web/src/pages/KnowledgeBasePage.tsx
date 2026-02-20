@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Search, X } from 'lucide-react';
 import { useKbStore } from '@/stores/kb.store';
 import { FileUploadZone } from '@/components/knowledge-base/FileUploadZone';
@@ -6,6 +7,7 @@ import { DocumentList } from '@/components/knowledge-base/DocumentList';
 import { TextUrlInput } from '@/components/knowledge-base/TextUrlInput';
 
 export function KnowledgeBasePage() {
+  const { t } = useTranslation();
   const {
     documents,
     searchResults,
@@ -63,9 +65,9 @@ export function KnowledgeBasePage() {
   return (
     <div className="p-8">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-foreground">Knowledge Base</h1>
+        <h1 className="text-2xl font-bold text-foreground">{t('knowledge_base.title')}</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Upload documents, paste text, or add URLs to build your knowledge base
+          {t('knowledge_base.subtitle')}
         </p>
       </div>
 
@@ -82,12 +84,12 @@ export function KnowledgeBasePage() {
         {/* Left column: Upload & Input */}
         <div className="space-y-6">
           <section>
-            <h2 className="mb-3 text-sm font-semibold text-foreground">Upload Files</h2>
+            <h2 className="mb-3 text-sm font-semibold text-foreground">{t('knowledge_base.upload_files_title')}</h2>
             <FileUploadZone onUpload={handleUpload} isUploading={isUploading} />
           </section>
 
           <section>
-            <h2 className="mb-3 text-sm font-semibold text-foreground">Add Text or URL</h2>
+            <h2 className="mb-3 text-sm font-semibold text-foreground">{t('knowledge_base.add_text_url_title')}</h2>
             <TextUrlInput
               onSubmitText={createTextSource}
               onSubmitUrl={createUrlSource}
@@ -99,13 +101,13 @@ export function KnowledgeBasePage() {
         {/* Right column: Search & Document List */}
         <div className="space-y-6">
           <section>
-            <h2 className="mb-3 text-sm font-semibold text-foreground">Search Knowledge Base</h2>
+            <h2 className="mb-3 text-sm font-semibold text-foreground">{t('knowledge_base.search_title')}</h2>
             <form onSubmit={handleSearch} className="flex gap-2">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <input
                   type="text"
-                  placeholder="Search your documents..."
+                  placeholder={t('knowledge_base.search_placeholder')}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full rounded-md border border-border bg-background pl-9 pr-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
@@ -116,7 +118,7 @@ export function KnowledgeBasePage() {
                 disabled={!searchQuery.trim() || isSearching}
                 className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
               >
-                Search
+                {t('common.search')}
               </button>
             </form>
 
@@ -124,13 +126,13 @@ export function KnowledgeBasePage() {
               <div className="mt-4 space-y-2">
                 <div className="flex items-center justify-between">
                   <p className="text-xs font-medium text-muted-foreground">
-                    {searchResults.length} results
+                    {t('common.results_count', { count: searchResults.length })}
                   </p>
                   <button
                     onClick={clearSearch}
                     className="text-xs text-muted-foreground hover:text-foreground"
                   >
-                    Clear
+                    {t('common.clear')}
                   </button>
                 </div>
                 {searchResults.map((result) => (
@@ -140,10 +142,10 @@ export function KnowledgeBasePage() {
                   >
                     <div className="flex items-center gap-2 mb-1">
                       <span className="text-xs font-medium text-primary">
-                        {Math.round(result.similarity * 100)}% match
+                        {t('knowledge_base.match_percent', { percent: Math.round(result.similarity * 100) })}
                       </span>
                       <span className="text-xs text-muted-foreground">
-                        from {result.documentTitle}
+                        {t('knowledge_base.from_document', { title: result.documentTitle })}
                       </span>
                     </div>
                     {result.heading && (
@@ -162,7 +164,7 @@ export function KnowledgeBasePage() {
 
           <section>
             <h2 className="mb-3 text-sm font-semibold text-foreground">
-              Documents ({documents.length})
+              {t('knowledge_base.documents_title', { count: documents.length })}
             </h2>
             <DocumentList
               documents={documents}

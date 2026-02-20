@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/stores/auth.store';
 import { usePitchBriefStore } from '@/stores/pitch-brief.store';
 import { usePitchLensStore } from '@/stores/pitch-lens.store';
@@ -21,48 +22,6 @@ import { cn } from '@/lib/utils';
 // ── Constants ─────────────────────────────────────────────────
 
 type Phase = 'welcome' | 'brief' | 'lens' | 'generate';
-
-const AUDIENCE_OPTIONS = [
-  { value: 'INVESTORS', label: 'Investors', desc: 'VCs, angels, or PE firms' },
-  { value: 'CUSTOMERS', label: 'Customers', desc: 'Prospects or existing clients' },
-  { value: 'EXECUTIVES', label: 'Executives', desc: 'C-suite decision makers' },
-  { value: 'TEAM', label: 'Team', desc: 'Internal team or all-hands' },
-  { value: 'CONFERENCE', label: 'Conference', desc: 'Public talks or panels' },
-  { value: 'BOARD', label: 'Board', desc: 'Board members or stakeholders' },
-  { value: 'TECHNICAL', label: 'Technical', desc: 'Engineers or architects' },
-];
-
-const GOAL_OPTIONS = [
-  { value: 'RAISE_FUNDING', label: 'Raise Funding', desc: 'Secure investment capital' },
-  { value: 'SELL_PRODUCT', label: 'Sell Product', desc: 'Close a deal or demo' },
-  { value: 'GET_BUYIN', label: 'Get Buy-In', desc: 'Win internal approval' },
-  { value: 'EDUCATE', label: 'Educate', desc: 'Teach or train the audience' },
-  { value: 'INSPIRE', label: 'Inspire', desc: 'Motivate and energize' },
-  { value: 'REPORT_RESULTS', label: 'Report Results', desc: 'Share metrics and outcomes' },
-];
-
-const TONE_OPTIONS = [
-  { value: 'FORMAL', label: 'Formal', desc: 'Professional and polished' },
-  { value: 'CONVERSATIONAL', label: 'Conversational', desc: 'Warm and approachable' },
-  { value: 'BOLD', label: 'Bold', desc: 'Confident and assertive' },
-  { value: 'INSPIRATIONAL', label: 'Inspirational', desc: 'Visionary and forward-looking' },
-  { value: 'ANALYTICAL', label: 'Analytical', desc: 'Data-driven and precise' },
-  { value: 'STORYTELLING', label: 'Storytelling', desc: 'Narrative-driven' },
-];
-
-const STAGE_OPTIONS = [
-  { value: 'IDEA', label: 'Idea' },
-  { value: 'MVP', label: 'MVP' },
-  { value: 'GROWTH', label: 'Growth' },
-  { value: 'ENTERPRISE', label: 'Enterprise' },
-];
-
-const TECH_OPTIONS = [
-  { value: 'NON_TECHNICAL', label: 'Non-Technical' },
-  { value: 'SEMI_TECHNICAL', label: 'Semi-Technical' },
-  { value: 'TECHNICAL', label: 'Technical' },
-  { value: 'HIGHLY_TECHNICAL', label: 'Highly Technical' },
-];
 
 function formatEnum(value: string): string {
   return value.toLowerCase().replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
@@ -128,8 +87,53 @@ function CardSelector({ options, value, onChange }: {
 
 export function OnboardingPage() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const user = useAuthStore((s) => s.user);
   const completeOnboarding = useAuthStore((s) => s.completeOnboarding);
+
+  // ── Option arrays (must be inside component for t() access) ──
+
+  const AUDIENCE_OPTIONS = [
+    { value: 'INVESTORS', label: t('onboarding.audience_options.INVESTORS'), desc: t('onboarding.audience_options.INVESTORS_desc') },
+    { value: 'CUSTOMERS', label: t('onboarding.audience_options.CUSTOMERS'), desc: t('onboarding.audience_options.CUSTOMERS_desc') },
+    { value: 'EXECUTIVES', label: t('onboarding.audience_options.EXECUTIVES'), desc: t('onboarding.audience_options.EXECUTIVES_desc') },
+    { value: 'TEAM', label: t('onboarding.audience_options.TEAM'), desc: t('onboarding.audience_options.TEAM_desc') },
+    { value: 'CONFERENCE', label: t('onboarding.audience_options.CONFERENCE'), desc: t('onboarding.audience_options.CONFERENCE_desc') },
+    { value: 'BOARD', label: t('onboarding.audience_options.BOARD'), desc: t('onboarding.audience_options.BOARD_desc') },
+    { value: 'TECHNICAL', label: t('onboarding.audience_options.TECHNICAL'), desc: t('onboarding.audience_options.TECHNICAL_desc') },
+  ];
+
+  const GOAL_OPTIONS = [
+    { value: 'RAISE_FUNDING', label: t('onboarding.goal_options.RAISE_FUNDING'), desc: t('onboarding.goal_options.RAISE_FUNDING_desc') },
+    { value: 'SELL_PRODUCT', label: t('onboarding.goal_options.SELL_PRODUCT'), desc: t('onboarding.goal_options.SELL_PRODUCT_desc') },
+    { value: 'GET_BUYIN', label: t('onboarding.goal_options.GET_BUYIN'), desc: t('onboarding.goal_options.GET_BUYIN_desc') },
+    { value: 'EDUCATE', label: t('onboarding.goal_options.EDUCATE'), desc: t('onboarding.goal_options.EDUCATE_desc') },
+    { value: 'INSPIRE', label: t('onboarding.goal_options.INSPIRE'), desc: t('onboarding.goal_options.INSPIRE_desc') },
+    { value: 'REPORT_RESULTS', label: t('onboarding.goal_options.REPORT_RESULTS'), desc: t('onboarding.goal_options.REPORT_RESULTS_desc') },
+  ];
+
+  const TONE_OPTIONS = [
+    { value: 'FORMAL', label: t('onboarding.tone_options.FORMAL'), desc: t('onboarding.tone_options.FORMAL_desc') },
+    { value: 'CONVERSATIONAL', label: t('onboarding.tone_options.CONVERSATIONAL'), desc: t('onboarding.tone_options.CONVERSATIONAL_desc') },
+    { value: 'BOLD', label: t('onboarding.tone_options.BOLD'), desc: t('onboarding.tone_options.BOLD_desc') },
+    { value: 'INSPIRATIONAL', label: t('onboarding.tone_options.INSPIRATIONAL'), desc: t('onboarding.tone_options.INSPIRATIONAL_desc') },
+    { value: 'ANALYTICAL', label: t('onboarding.tone_options.ANALYTICAL'), desc: t('onboarding.tone_options.ANALYTICAL_desc') },
+    { value: 'STORYTELLING', label: t('onboarding.tone_options.STORYTELLING'), desc: t('onboarding.tone_options.STORYTELLING_desc') },
+  ];
+
+  const STAGE_OPTIONS = [
+    { value: 'IDEA', label: t('onboarding.stage_options.IDEA') },
+    { value: 'MVP', label: t('onboarding.stage_options.MVP') },
+    { value: 'GROWTH', label: t('onboarding.stage_options.GROWTH') },
+    { value: 'ENTERPRISE', label: t('onboarding.stage_options.ENTERPRISE') },
+  ];
+
+  const TECH_OPTIONS = [
+    { value: 'NON_TECHNICAL', label: t('onboarding.tech_options.NON_TECHNICAL') },
+    { value: 'SEMI_TECHNICAL', label: t('onboarding.tech_options.SEMI_TECHNICAL') },
+    { value: 'TECHNICAL', label: t('onboarding.tech_options.TECHNICAL') },
+    { value: 'HIGHLY_TECHNICAL', label: t('onboarding.tech_options.HIGHLY_TECHNICAL') },
+  ];
 
   // Already completed onboarding — redirect
   useEffect(() => {
@@ -321,7 +325,15 @@ export function OnboardingPage() {
 
   // ── LENS STEPS labels ──────────────────────────────────────
 
-  const LENS_STEPS = ['Name', 'Audience', 'Goal', 'Context', 'Tone', 'Framework', 'Review'] as const;
+  const LENS_STEPS = [
+    t('onboarding.lens.step_name'),
+    t('onboarding.lens.step_audience'),
+    t('onboarding.lens.step_goal'),
+    t('onboarding.lens.step_context'),
+    t('onboarding.lens.step_tone'),
+    t('onboarding.lens.step_framework'),
+    t('onboarding.lens.step_review'),
+  ] as const;
 
   // ── Render ─────────────────────────────────────────────────
 
@@ -331,7 +343,7 @@ export function OnboardingPage() {
       <header className="flex h-14 items-center justify-center border-b border-border">
         <div className="flex items-center gap-2">
           <Layers className="h-5 w-5 text-primary" />
-          <span className="text-lg font-bold text-foreground">Pitchable</span>
+          <span className="text-lg font-bold text-foreground">{t('common.app_name')}</span>
         </div>
       </header>
 
@@ -344,17 +356,17 @@ export function OnboardingPage() {
                 <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
                   <Sparkles className="h-8 w-8 text-primary" />
                 </div>
-                <h1 className="text-3xl font-bold text-foreground">Welcome to Pitchable!</h1>
+                <h1 className="text-3xl font-bold text-foreground">{t('onboarding.welcome.title')}</h1>
                 <p className="mt-2 text-muted-foreground">
-                  Let's set up your first pitch deck in 3 steps.
+                  {t('onboarding.welcome.subtitle')}
                 </p>
               </div>
 
               <div className="mx-auto max-w-md space-y-4">
                 {[
-                  { icon: BookOpen, label: 'Add your context', desc: 'Upload documents or paste text to ground your pitch in real content' },
-                  { icon: Focus, label: 'Define your strategy', desc: 'Choose audience, goal, tone, and storytelling framework' },
-                  { icon: Layers, label: 'Generate your deck', desc: 'Describe your topic and watch slides appear in real-time' },
+                  { icon: BookOpen, label: t('onboarding.welcome.step_1_label'), desc: t('onboarding.welcome.step_1_desc') },
+                  { icon: Focus, label: t('onboarding.welcome.step_2_label'), desc: t('onboarding.welcome.step_2_desc') },
+                  { icon: Layers, label: t('onboarding.welcome.step_3_label'), desc: t('onboarding.welcome.step_3_desc') },
                 ].map((step, i) => (
                   <div key={i} className="flex items-start gap-4 rounded-lg border border-border bg-card p-4 text-left">
                     <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary">
@@ -372,7 +384,7 @@ export function OnboardingPage() {
                 onClick={() => goToPhase('brief')}
                 className="inline-flex items-center gap-2 rounded-lg bg-primary px-8 py-3 font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
               >
-                Get Started
+                {t('onboarding.welcome.get_started')}
                 <ArrowRight className="h-4 w-4" />
               </button>
             </div>
@@ -382,16 +394,16 @@ export function OnboardingPage() {
           {phase === 'brief' && (
             <div className="space-y-6">
               <div>
-                <p className="text-sm font-medium text-primary">Step 1 of 3</p>
-                <h2 className="text-2xl font-bold text-foreground">Add Your Context</h2>
+                <p className="text-sm font-medium text-primary">{t('onboarding.brief.step_label')}</p>
+                <h2 className="text-2xl font-bold text-foreground">{t('onboarding.brief.title')}</h2>
                 <p className="mt-1 text-muted-foreground">
-                  Upload documents, paste text, or add URLs to improve AI generation quality.
+                  {t('onboarding.brief.subtitle')}
                 </p>
               </div>
 
               {/* Brief step indicators */}
               <div className="flex items-center gap-2">
-                {['Name', 'Documents', 'Done'].map((label, i) => (
+                {[t('onboarding.brief.step_name'), t('onboarding.brief.step_documents'), t('onboarding.brief.step_done')].map((label, i) => (
                   <div key={label} className="flex items-center gap-2">
                     <div className={cn(
                       'flex h-7 w-7 items-center justify-center rounded-full text-xs font-medium',
@@ -411,25 +423,25 @@ export function OnboardingPage() {
                 {briefStep === 0 && (
                   <div className="space-y-4">
                     <div>
-                      <label className="mb-1.5 block text-sm font-medium text-foreground">Brief Name</label>
+                      <label className="mb-1.5 block text-sm font-medium text-foreground">{t('onboarding.brief.brief_name_label')}</label>
                       <input
                         type="text"
                         value={briefName}
                         onChange={(e) => setBriefName(e.target.value)}
                         maxLength={100}
-                        placeholder="e.g., Series A Pitch Context, Q1 Board Materials..."
+                        placeholder={t('onboarding.brief.brief_name_placeholder')}
                         className="w-full rounded-lg border border-border bg-background px-4 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
                         autoFocus
                       />
                     </div>
                     <div>
-                      <label className="mb-1.5 block text-sm font-medium text-foreground">Description (optional)</label>
+                      <label className="mb-1.5 block text-sm font-medium text-foreground">{t('onboarding.brief.description_label')}</label>
                       <textarea
                         value={briefDesc}
                         onChange={(e) => setBriefDesc(e.target.value)}
                         rows={3}
                         maxLength={2000}
-                        placeholder="What is this brief about?"
+                        placeholder={t('onboarding.brief.description_placeholder')}
                         className="w-full rounded-lg border border-border bg-background px-4 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary resize-none"
                       />
                     </div>
@@ -451,9 +463,9 @@ export function OnboardingPage() {
                       )}
                     >
                       <Upload className="mx-auto mb-2 h-6 w-6 text-muted-foreground" />
-                      <p className="text-sm text-foreground">Drag and drop files or</p>
+                      <p className="text-sm text-foreground">{t('onboarding.brief.drag_drop_files')}</p>
                       <label className="mt-2 inline-block cursor-pointer rounded-lg bg-primary px-4 py-1.5 text-sm text-primary-foreground hover:bg-primary/90">
-                        Browse Files
+                        {t('onboarding.brief.browse_files')}
                         <input type="file" multiple onChange={(e) => {
                           setPendingFiles((prev) => [...prev, ...Array.from(e.target.files || [])]);
                         }} className="hidden" />
@@ -462,18 +474,18 @@ export function OnboardingPage() {
 
                     {/* Text input */}
                     <div className="space-y-2">
-                      <h3 className="text-sm font-medium text-foreground">Add Text</h3>
+                      <h3 className="text-sm font-medium text-foreground">{t('onboarding.brief.add_text_title')}</h3>
                       <input
                         type="text" value={textTitle}
                         onChange={(e) => setTextTitle(e.target.value)}
-                        placeholder="Document title"
+                        placeholder={t('onboarding.brief.document_title_placeholder')}
                         className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
                       />
                       <textarea
                         value={textInput}
                         onChange={(e) => setTextInput(e.target.value)}
                         rows={3}
-                        placeholder="Paste your text content"
+                        placeholder={t('onboarding.brief.paste_text_placeholder')}
                         className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary resize-none"
                       />
                       <button
@@ -486,23 +498,23 @@ export function OnboardingPage() {
                         disabled={!textTitle.trim() || !textInput.trim()}
                         className="rounded-lg bg-primary px-4 py-1.5 text-sm text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
                       >
-                        Add Text
+                        {t('onboarding.brief.add_text_title')}
                       </button>
                     </div>
 
                     {/* URL input */}
                     <div className="space-y-2">
-                      <h3 className="text-sm font-medium text-foreground">Add URL</h3>
+                      <h3 className="text-sm font-medium text-foreground">{t('onboarding.brief.add_url_title')}</h3>
                       <input
                         type="text" value={urlTitle}
                         onChange={(e) => setUrlTitle(e.target.value)}
-                        placeholder="Document title"
+                        placeholder={t('onboarding.brief.document_title_placeholder')}
                         className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
                       />
                       <input
                         type="url" value={urlInput}
                         onChange={(e) => setUrlInput(e.target.value)}
-                        placeholder="https://example.com/document"
+                        placeholder={t('onboarding.brief.url_placeholder')}
                         className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
                       />
                       <button
@@ -515,14 +527,14 @@ export function OnboardingPage() {
                         disabled={!urlTitle.trim() || !urlInput.trim()}
                         className="rounded-lg bg-primary px-4 py-1.5 text-sm text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
                       >
-                        Add URL
+                        {t('onboarding.brief.add_url_title')}
                       </button>
                     </div>
 
                     {/* Pending documents list */}
                     {totalDocs > 0 && (
                       <div>
-                        <h3 className="mb-2 text-sm font-medium text-foreground">Added ({totalDocs})</h3>
+                        <h3 className="mb-2 text-sm font-medium text-foreground">{t('onboarding.brief.added_count', { count: totalDocs })}</h3>
                         <div className="space-y-2">
                           {pendingFiles.map((f, i) => (
                             <div key={`f-${i}`} className="flex items-center justify-between rounded-lg border border-border bg-background p-2.5">
@@ -535,11 +547,11 @@ export function OnboardingPage() {
                               </button>
                             </div>
                           ))}
-                          {pendingTexts.map((t, i) => (
+                          {pendingTexts.map((pt, i) => (
                             <div key={`t-${i}`} className="flex items-center justify-between rounded-lg border border-border bg-background p-2.5">
                               <div className="flex items-center gap-2">
                                 <FileText className="h-4 w-4 text-muted-foreground" />
-                                <span className="text-sm text-foreground">{t.title}</span>
+                                <span className="text-sm text-foreground">{pt.title}</span>
                               </div>
                               <button onClick={() => setPendingTexts((prev) => prev.filter((_, j) => j !== i))} className="text-muted-foreground hover:text-foreground">
                                 <X className="h-4 w-4" />
@@ -570,9 +582,9 @@ export function OnboardingPage() {
                       <Check className="h-6 w-6 text-green-500" />
                     </div>
                     <div>
-                      <h3 className="text-lg font-semibold text-foreground">Brief Created</h3>
+                      <h3 className="text-lg font-semibold text-foreground">{t('onboarding.brief.brief_created')}</h3>
                       <p className="text-sm text-muted-foreground">
-                        "{briefName}" — {totalDocs} {totalDocs === 1 ? 'document' : 'documents'} added
+                        {t('onboarding.brief.brief_created_desc', { name: briefName, count: totalDocs, documentWord: totalDocs === 1 ? t('common.document') : t('common.documents') })}
                       </p>
                     </div>
                   </div>
@@ -586,7 +598,7 @@ export function OnboardingPage() {
                   className="flex items-center gap-1.5 rounded-lg border border-border px-4 py-2 text-sm hover:bg-accent"
                 >
                   <ArrowLeft className="h-4 w-4" />
-                  Back
+                  {t('common.back')}
                 </button>
                 <div className="flex gap-3">
                   {briefStep === 0 && (
@@ -594,7 +606,7 @@ export function OnboardingPage() {
                       onClick={() => goToPhase('lens')}
                       className="rounded-lg border border-border px-4 py-2 text-sm text-muted-foreground hover:bg-accent"
                     >
-                      Skip Brief
+                      {t('onboarding.brief.skip_brief')}
                     </button>
                   )}
                   {briefStep === 1 && (
@@ -603,7 +615,7 @@ export function OnboardingPage() {
                       disabled={isSubmitting}
                       className="rounded-lg border border-border px-4 py-2 text-sm text-muted-foreground hover:bg-accent"
                     >
-                      Skip Documents
+                      {t('onboarding.brief.skip_documents')}
                     </button>
                   )}
                   <button
@@ -611,7 +623,7 @@ export function OnboardingPage() {
                     disabled={isSubmitting || (briefStep === 0 && !briefName.trim())}
                     className="flex items-center gap-1.5 rounded-lg bg-primary px-6 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
                   >
-                    {isSubmitting ? 'Saving...' : briefStep === 2 ? 'Continue to Strategy' : 'Next'}
+                    {isSubmitting ? t('common.saving') : briefStep === 2 ? t('onboarding.brief.continue_to_strategy') : t('common.next')}
                     <ArrowRight className="h-4 w-4" />
                   </button>
                 </div>
@@ -623,10 +635,10 @@ export function OnboardingPage() {
           {phase === 'lens' && (
             <div className="space-y-6">
               <div>
-                <p className="text-sm font-medium text-primary">Step 2 of 3</p>
-                <h2 className="text-2xl font-bold text-foreground">Define Your Strategy</h2>
+                <p className="text-sm font-medium text-primary">{t('onboarding.lens.step_label')}</p>
+                <h2 className="text-2xl font-bold text-foreground">{t('onboarding.lens.title')}</h2>
                 <p className="mt-1 text-muted-foreground">
-                  Configure audience, goal, tone, and storytelling framework for your pitch.
+                  {t('onboarding.lens.subtitle')}
                 </p>
               </div>
 
@@ -654,22 +666,22 @@ export function OnboardingPage() {
                 {lensStep === 0 && (
                   <div className="space-y-4">
                     <div>
-                      <label className="mb-1.5 block text-sm font-medium text-foreground">Lens Name</label>
+                      <label className="mb-1.5 block text-sm font-medium text-foreground">{t('onboarding.lens.lens_name_label')}</label>
                       <input
                         type="text"
                         value={lensForm.name}
                         onChange={(e) => setLensForm({ ...lensForm, name: e.target.value })}
-                        placeholder="e.g., Series A Pitch, Q1 Board Update..."
+                        placeholder={t('onboarding.lens.lens_name_placeholder')}
                         className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                         autoFocus
                       />
                     </div>
                     <div>
-                      <label className="mb-1.5 block text-sm font-medium text-foreground">Description (optional)</label>
+                      <label className="mb-1.5 block text-sm font-medium text-foreground">{t('onboarding.lens.description_label')}</label>
                       <textarea
                         value={lensForm.description}
                         onChange={(e) => setLensForm({ ...lensForm, description: e.target.value })}
-                        placeholder="What is this lens for?"
+                        placeholder={t('onboarding.lens.description_placeholder')}
                         rows={3}
                         className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                       />
@@ -699,18 +711,18 @@ export function OnboardingPage() {
                 {lensStep === 3 && (
                   <div className="space-y-4">
                     <div>
-                      <label className="mb-1.5 block text-sm font-medium text-foreground">Industry / Domain</label>
+                      <label className="mb-1.5 block text-sm font-medium text-foreground">{t('onboarding.lens.industry_label')}</label>
                       <input
                         type="text"
                         value={lensForm.industry}
                         onChange={(e) => setLensForm({ ...lensForm, industry: e.target.value })}
-                        placeholder="e.g., AI/SaaS, Healthcare, Fintech..."
+                        placeholder={t('onboarding.lens.industry_placeholder')}
                         className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                         autoFocus
                       />
                     </div>
                     <div>
-                      <label className="mb-1.5 block text-sm font-medium text-foreground">Company Stage</label>
+                      <label className="mb-1.5 block text-sm font-medium text-foreground">{t('onboarding.lens.company_stage_label')}</label>
                       <div className="flex gap-2">
                         {STAGE_OPTIONS.map((opt) => (
                           <button
@@ -729,7 +741,7 @@ export function OnboardingPage() {
                       </div>
                     </div>
                     <div>
-                      <label className="mb-1.5 block text-sm font-medium text-foreground">Audience Technical Level</label>
+                      <label className="mb-1.5 block text-sm font-medium text-foreground">{t('onboarding.lens.technical_level_label')}</label>
                       <div className="flex gap-2">
                         {TECH_OPTIONS.map((opt) => (
                           <button
@@ -765,7 +777,7 @@ export function OnboardingPage() {
                     {recommendations.length > 0 && (
                       <>
                         <p className="text-sm text-muted-foreground">
-                          Based on your profile, we recommend these storytelling frameworks:
+                          {t('onboarding.lens.framework_recommendation')}
                         </p>
                         <div className="space-y-3">
                           {recommendations.map((rec, i) => (
@@ -790,7 +802,7 @@ export function OnboardingPage() {
                                   <h3 className="font-semibold text-foreground">{rec.framework.name}</h3>
                                 </div>
                                 <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
-                                  {rec.score}% match
+                                  {t('common.match_percent', { score: rec.score })}
                                 </span>
                               </div>
                               <p className="mb-2 text-sm text-muted-foreground">{rec.framework.shortDescription}</p>
@@ -808,12 +820,12 @@ export function OnboardingPage() {
                     )}
                     <div>
                       <label className="mb-1.5 block text-sm font-medium text-foreground">
-                        Custom Guidance (optional)
+                        {t('onboarding.lens.custom_guidance_label')}
                       </label>
                       <textarea
                         value={lensForm.customGuidance}
                         onChange={(e) => setLensForm({ ...lensForm, customGuidance: e.target.value })}
-                        placeholder="Any additional instructions for the AI..."
+                        placeholder={t('onboarding.lens.custom_guidance_placeholder')}
                         rows={3}
                         className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                       />
@@ -835,12 +847,12 @@ export function OnboardingPage() {
                     </div>
                     <div className="grid gap-3 sm:grid-cols-2">
                       {[
-                        { label: 'Audience', value: formatEnum(lensForm.audienceType) },
-                        { label: 'Goal', value: formatEnum(lensForm.pitchGoal) },
-                        { label: 'Industry', value: lensForm.industry },
-                        { label: 'Stage', value: formatEnum(lensForm.companyStage) },
-                        { label: 'Tone', value: formatEnum(lensForm.toneStyle) },
-                        { label: 'Technical Level', value: formatEnum(lensForm.technicalLevel) },
+                        { label: t('onboarding.lens.review_audience'), value: formatEnum(lensForm.audienceType) },
+                        { label: t('onboarding.lens.review_goal'), value: formatEnum(lensForm.pitchGoal) },
+                        { label: t('onboarding.lens.review_industry'), value: lensForm.industry },
+                        { label: t('onboarding.lens.review_stage'), value: formatEnum(lensForm.companyStage) },
+                        { label: t('onboarding.lens.review_tone'), value: formatEnum(lensForm.toneStyle) },
+                        { label: t('onboarding.lens.review_technical_level'), value: formatEnum(lensForm.technicalLevel) },
                       ].map((item) => (
                         <div key={item.label}>
                           <p className="text-xs text-muted-foreground">{item.label}</p>
@@ -850,7 +862,7 @@ export function OnboardingPage() {
                     </div>
                     {lensForm.selectedFramework && (
                       <div className="border-t border-border pt-3">
-                        <p className="text-xs text-muted-foreground">Framework</p>
+                        <p className="text-xs text-muted-foreground">{t('onboarding.lens.review_framework')}</p>
                         <p className="text-sm font-medium text-foreground">{formatEnum(lensForm.selectedFramework)}</p>
                       </div>
                     )}
@@ -865,7 +877,7 @@ export function OnboardingPage() {
                   className="flex items-center gap-1.5 rounded-lg border border-border px-4 py-2 text-sm hover:bg-accent"
                 >
                   <ArrowLeft className="h-4 w-4" />
-                  Back
+                  {t('common.back')}
                 </button>
 
                 {lensStep < LENS_STEPS.length - 1 ? (
@@ -879,7 +891,7 @@ export function OnboardingPage() {
                         : 'cursor-not-allowed bg-muted text-muted-foreground',
                     )}
                   >
-                    Next
+                    {t('common.next')}
                     <ArrowRight className="h-4 w-4" />
                   </button>
                 ) : (
@@ -888,7 +900,7 @@ export function OnboardingPage() {
                     disabled={isSubmitting}
                     className="flex items-center gap-1.5 rounded-lg bg-primary px-6 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
                   >
-                    {isSubmitting ? 'Creating...' : 'Create Lens'}
+                    {isSubmitting ? t('common.creating') : t('onboarding.lens.create_lens')}
                     <Check className="h-4 w-4" />
                   </button>
                 )}
@@ -900,10 +912,10 @@ export function OnboardingPage() {
           {phase === 'generate' && (
             <div className="space-y-8 text-center">
               <div>
-                <p className="text-sm font-medium text-primary">Step 3 of 3</p>
-                <h2 className="text-2xl font-bold text-foreground">Generate Your First Deck</h2>
+                <p className="text-sm font-medium text-primary">{t('onboarding.generate.step_label')}</p>
+                <h2 className="text-2xl font-bold text-foreground">{t('onboarding.generate.title')}</h2>
                 <p className="mt-1 text-muted-foreground">
-                  You're all set! Head to the workspace to describe your topic and generate slides.
+                  {t('onboarding.generate.subtitle')}
                 </p>
               </div>
 
@@ -912,8 +924,8 @@ export function OnboardingPage() {
                   <div className="flex items-center gap-3 rounded-lg border border-border bg-card p-3">
                     <BookOpen className="h-5 w-5 text-primary" />
                     <div className="text-left">
-                      <p className="text-xs text-muted-foreground">Brief</p>
-                      <p className="text-sm font-medium text-foreground">{briefName || 'Created'}</p>
+                      <p className="text-xs text-muted-foreground">{t('onboarding.generate.brief_label')}</p>
+                      <p className="text-sm font-medium text-foreground">{briefName || t('onboarding.generate.created')}</p>
                     </div>
                     <Check className="ml-auto h-4 w-4 text-green-500" />
                   </div>
@@ -922,8 +934,8 @@ export function OnboardingPage() {
                   <div className="flex items-center gap-3 rounded-lg border border-border bg-card p-3">
                     <Focus className="h-5 w-5 text-primary" />
                     <div className="text-left">
-                      <p className="text-xs text-muted-foreground">Lens</p>
-                      <p className="text-sm font-medium text-foreground">{lensForm.name || 'Created'}</p>
+                      <p className="text-xs text-muted-foreground">{t('onboarding.generate.lens_label')}</p>
+                      <p className="text-sm font-medium text-foreground">{lensForm.name || t('onboarding.generate.created')}</p>
                     </div>
                     <Check className="ml-auto h-4 w-4 text-green-500" />
                   </div>
@@ -935,7 +947,7 @@ export function OnboardingPage() {
                 disabled={isSubmitting}
                 className="inline-flex items-center gap-2 rounded-lg bg-primary px-8 py-3 font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors"
               >
-                {isSubmitting ? 'Setting up...' : 'Open Workspace'}
+                {isSubmitting ? t('onboarding.generate.setting_up') : t('onboarding.generate.open_workspace')}
                 <ArrowRight className="h-4 w-4" />
               </button>
             </div>
