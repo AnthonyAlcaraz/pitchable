@@ -13,8 +13,7 @@ const PLANS = [
     price: 'Free',
     description: 'See what Pitchable can do',
     features: [
-      '2 sample decks',
-      '4 slides per deck (preview)',
+      '4-slide sample deck',
       'No credit card required',
       'PPTX, PDF, HTML export',
     ],
@@ -25,10 +24,10 @@ const PLANS = [
     price: '$19',
     description: 'For regular presenters',
     features: [
-      '40 credits per month',
-      '10 decks per month',
-      'AI image generation',
+      'Up to 10 decks per month',
       'Up to 15 slides per deck',
+      '~20 AI-generated images',
+      'PPTX, PDF, HTML export',
     ],
     isPopular: true,
   },
@@ -38,9 +37,9 @@ const PLANS = [
     price: '$49',
     description: 'For power users and teams',
     features: [
-      '100 credits per month',
-      'Unlimited decks & slides',
-      'AI image generation',
+      'Up to 50 decks per month',
+      'No slide limit per deck',
+      'Up to 100 AI-generated images',
       'Priority support',
     ],
   },
@@ -178,9 +177,9 @@ export function BillingPage() {
           </div>
 
           <div className="rounded-lg border border-border bg-card p-5">
-            <p className="text-sm text-muted-foreground">Image Credits / Month</p>
+            <p className="text-sm text-muted-foreground">Credits / Month</p>
             <p className="mt-1 text-xl font-semibold text-foreground">
-              {tierStatus.imageCreditsPerMonth}
+              {tierStatus.creditsPerMonth}
             </p>
             {tierStatus.creditsReserved > 0 && (
               <p className="mt-1 text-xs text-muted-foreground">

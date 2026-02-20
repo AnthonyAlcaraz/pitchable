@@ -17,7 +17,7 @@ export interface TierStatus {
   decksLimit: number | null;
   decksRemaining: number | null;
   creditBalance: number;
-  imageCreditsPerMonth: number;
+  creditsPerMonth: number;
   maxSlidesPerDeck: number | null;
 }
 
@@ -100,7 +100,8 @@ export class TierEnforcementService {
    */
   canGenerateImages(tier: string): boolean {
     const limits = TIER_LIMITS[tier];
-    return limits ? limits.imageCreditsPerMonth > 0 : false;
+    // FREE tier has 0 monthly credits → no images; paid tiers > 0 → images allowed
+    return limits ? limits.creditsPerMonth > 0 : false;
   }
 
   /**
@@ -114,7 +115,7 @@ export class TierEnforcementService {
    * Get the monthly credit allocation for a tier.
    */
   getMonthlyAllocation(tier: string): number {
-    return TIER_LIMITS[tier]?.imageCreditsPerMonth ?? 0;
+    return TIER_LIMITS[tier]?.creditsPerMonth ?? 0;
   }
 
   /**
@@ -157,7 +158,7 @@ export class TierEnforcementService {
         decksLimit: freeLimits.maxDecksPerMonth,
         decksRemaining: freeLimits.maxDecksPerMonth,
         creditBalance: 0,
-        imageCreditsPerMonth: freeLimits.imageCreditsPerMonth,
+        creditsPerMonth: freeLimits.creditsPerMonth,
         maxSlidesPerDeck: freeLimits.maxSlidesPerDeck,
       };
     }
@@ -177,7 +178,7 @@ export class TierEnforcementService {
       decksLimit,
       decksRemaining,
       creditBalance: user.creditBalance,
-      imageCreditsPerMonth: limits.imageCreditsPerMonth,
+      creditsPerMonth: limits.creditsPerMonth,
       maxSlidesPerDeck: limits.maxSlidesPerDeck,
     };
   }

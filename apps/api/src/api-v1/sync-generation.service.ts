@@ -6,6 +6,7 @@ import { ConstraintsService } from '../constraints/constraints.service.js';
 import { ContentReviewerService } from '../chat/content-reviewer.service.js';
 import { TierEnforcementService } from '../credits/tier-enforcement.service.js';
 import { CreditsService } from '../credits/credits.service.js';
+import { CreditReservationService } from '../credits/credit-reservation.service.js';
 import { DECK_GENERATION_COST } from '../credits/tier-config.js';
 import { ImagesService } from '../images/images.service.js';
 import { NanoBananaService } from '../images/nano-banana.service.js';
@@ -59,6 +60,7 @@ export class SyncGenerationService {
     private readonly contentReviewer: ContentReviewerService,
     private readonly tierEnforcement: TierEnforcementService,
     private readonly credits: CreditsService,
+    private readonly creditReservation: CreditReservationService,
     private readonly imagesService: ImagesService,
     private readonly nanoBanana: NanoBananaService,
     private readonly qualityAgents: QualityAgentsService,
@@ -91,13 +93,14 @@ export class SyncGenerationService {
       throw new BadRequestException('pitchLensId is required for deck generation.');
     }
 
-    // 2. Credit check
-    const hasCredits = await this.credits.hasEnoughCredits(userId, DECK_GENERATION_COST);
-    if (!hasCredits) {
+    // 2. Reserve credits upfront (prevents race conditions)
+    const { reservationId } = await this.creditReservation.reserve(
+      userId, DECK_GENERATION_COST, CreditReason.API_GENERATION,
+    ).catch(() => {
       throw new BadRequestException(
         `Insufficient credits. Generation costs ${DECK_GENERATION_COST} credits.`,
       );
-    }
+    });
 
     timings['preflight'] = Date.now() - t0;
     this.logger.log(`[TIMING] Preflight checks: ${this.elapsed(t0)}`);
@@ -494,12 +497,8 @@ ${slideKbContext}`;
         data: { status: PresentationStatus.COMPLETED },
       });
 
-      await this.credits.deductCredits(
-        userId,
-        DECK_GENERATION_COST,
-        CreditReason.API_GENERATION,
-        presentation.id,
-      );
+      // Commit the credit reservation (actually deducts)
+      await this.creditReservation.commit(reservationId);
 
       // 12b. Auto-generate images (non-blocking) — skip for FREE tier
       if (this.nanoBanana.isConfigured && this.tierEnforcement.canGenerateImages(syncTier)) {
@@ -533,6 +532,9 @@ ${slideKbContext}`;
         },
       });
     } catch (err) {
+      // Release credit reservation on failure
+      await this.creditReservation.release(reservationId).catch(() => {});
+
       // Mark failed on error
       await this.prisma.presentation
         .update({

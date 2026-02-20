@@ -1,7 +1,7 @@
 export interface TierLimits {
   maxDecksPerMonth: number | null; // null = unlimited
   maxSlidesPerDeck: number | null; // null = unlimited, FREE = 4 sample slides
-  imageCreditsPerMonth: number;
+  creditsPerMonth: number; // total monthly credit allocation (shared: decks + images)
 }
 
 /**
@@ -18,10 +18,14 @@ export interface TierLimits {
  *   → Enough for 2 sample decks (4 slides each, no images)
  *
  * Pricing (optimized for 60%+ margin):
- *   FREE       — 5 credits on signup, 2 decks/month (4 slides max), no images
- *   STARTER    — $19/mo → 40 credits/month (~10 decks, 15 slides max)
- *   PRO        — $49/mo → 100 credits/month (unlimited decks + slides)
+ *   FREE       — 5 credits on signup (one-time), 2 decks max, 4 slides max, no images
+ *   STARTER    — $19/mo → 40 credits/month (10 decks, 15 slides, ~20 images)
+ *   PRO        — $49/mo → 100 credits/month (up to 50 decks, unlimited slides, ~100 images)
  *   ENTERPRISE — custom
+ *
+ * Credits are SHARED between decks and images:
+ *   STARTER: 10 decks × 2 = 20 credits + 20 images × 1 = 20 credits = 40 total
+ *   PRO:     25 decks × 2 = 50 credits + 50 images × 1 = 50 credits = 100 total
  *
  * Margin at average usage:
  *   STARTER: $19 revenue - $7.50 cost = $11.50 profit (60%)
@@ -46,21 +50,21 @@ export const TIER_LIMITS: Record<string, TierLimits> = {
   FREE: {
     maxDecksPerMonth: 2,
     maxSlidesPerDeck: 4, // sample preview only
-    imageCreditsPerMonth: 0, // no monthly refresh; one-time 5 credits on signup
+    creditsPerMonth: 0, // no monthly refresh; one-time 5 credits on signup
   },
   STARTER: {
     maxDecksPerMonth: 10,
     maxSlidesPerDeck: 15,
-    imageCreditsPerMonth: 40,
+    creditsPerMonth: 40,
   },
   PRO: {
     maxDecksPerMonth: null,
     maxSlidesPerDeck: null,
-    imageCreditsPerMonth: 100,
+    creditsPerMonth: 100,
   },
   ENTERPRISE: {
     maxDecksPerMonth: null,
     maxSlidesPerDeck: null,
-    imageCreditsPerMonth: 300,
+    creditsPerMonth: 300,
   },
 };

@@ -9,6 +9,7 @@ import { FeedbackLogService } from './feedback-log.service.js';
 import { ValidationGateService } from './validation-gate.service.js';
 import { TierEnforcementService } from '../credits/tier-enforcement.service.js';
 import { CreditsService } from '../credits/credits.service.js';
+import { CreditReservationService } from '../credits/credit-reservation.service.js';
 import { DECK_GENERATION_COST } from '../credits/tier-config.js';
 import { ImagesService } from '../images/images.service.js';
 import { NanoBananaService } from '../images/nano-banana.service.js';
@@ -76,6 +77,7 @@ export class GenerationService {
     private readonly validationGate: ValidationGateService,
     private readonly tierEnforcement: TierEnforcementService,
     private readonly credits: CreditsService,
+    private readonly creditReservation: CreditReservationService,
     private readonly imagesService: ImagesService,
     private readonly nanoBanana: NanoBananaService,
     private readonly qualityAgents: QualityAgentsService,
@@ -247,10 +249,14 @@ export class GenerationService {
       return;
     }
 
-    // Credit check: deck generation costs credits (covers LLM costs)
-    const user = await this.prisma.user.findUnique({ where: { id: userId }, select: { creditBalance: true } });
-    if ((user?.creditBalance ?? 0) < DECK_GENERATION_COST) {
-      yield { type: 'error', content: `Not enough credits. Deck generation costs ${DECK_GENERATION_COST} credits. You have ${user?.creditBalance ?? 0}. Upgrade your plan or purchase credits.` };
+    // Reserve credits upfront to prevent race conditions with concurrent requests
+    let reservationId: string | undefined;
+    try {
+      const reservation = await this.creditReservation.reserve(userId, DECK_GENERATION_COST, CreditReason.DECK_GENERATION, presentationId);
+      reservationId = reservation.reservationId;
+    } catch {
+      const balance = await this.credits.getBalance(userId).catch(() => 0);
+      yield { type: 'error', content: `Not enough credits. Deck generation costs ${DECK_GENERATION_COST} credits. You have ${balance}. Upgrade your plan or purchase credits.` };
       return;
     }
 
@@ -261,6 +267,7 @@ export class GenerationService {
     const originalSlideCount = outline.slides.length;
     let isSamplePreview = false;
 
+    try {
     if (maxSlides !== null && outline.slides.length > maxSlides) {
       outline.slides = outline.slides.slice(0, maxSlides);
       // Renumber truncated slides
@@ -757,8 +764,10 @@ export class GenerationService {
 
     await this.tierEnforcement.incrementDeckCount(userId);
 
-    // Deduct deck generation credits (covers Opus 4.6 LLM costs)
-    await this.credits.deductCredits(userId, DECK_GENERATION_COST, CreditReason.DECK_GENERATION, presentationId);
+    // Commit the credit reservation (actually deducts credits)
+    if (reservationId) {
+      await this.creditReservation.commit(reservationId);
+    }
 
     const totalSlides = outline.slides.length + slideNumberOffset;
     yield {
@@ -795,6 +804,13 @@ export class GenerationService {
     });
 
     yield { type: 'done', content: '' };
+    } catch (genErr) {
+      // Release credit reservation on generation failure
+      if (reservationId) {
+        await this.creditReservation.release(reservationId).catch(() => {});
+      }
+      throw genErr;
+    }
   }
 
   /**
@@ -831,10 +847,14 @@ export class GenerationService {
       return;
     }
 
-    // Credit check
-    const user = await this.prisma.user.findUnique({ where: { id: userId }, select: { creditBalance: true } });
-    if ((user?.creditBalance ?? 0) < DECK_GENERATION_COST) {
-      yield { type: 'error', content: `Not enough credits. Rewrite costs ${DECK_GENERATION_COST} credits. You have ${user?.creditBalance ?? 0}.` };
+    // Reserve credits for rewrite
+    let rewriteReservationId: string | undefined;
+    try {
+      const res = await this.creditReservation.reserve(userId, DECK_GENERATION_COST, CreditReason.DECK_GENERATION, presentationId);
+      rewriteReservationId = res.reservationId;
+    } catch {
+      const bal = await this.credits.getBalance(userId).catch(() => 0);
+      yield { type: 'error', content: `Not enough credits. Rewrite costs ${DECK_GENERATION_COST} credits. You have ${bal}.` };
       return;
     }
 
@@ -939,8 +959,10 @@ export class GenerationService {
       data: { status: PresentationStatus.COMPLETED },
     });
 
-    // Deduct credits
-    await this.credits.deductCredits(userId, DECK_GENERATION_COST, CreditReason.DECK_GENERATION, presentationId);
+    // Commit the credit reservation
+    if (rewriteReservationId) {
+      await this.creditReservation.commit(rewriteReservationId);
+    }
 
     // Clear all existing images so batch generation regenerates them
     await this.prisma.slide.updateMany({

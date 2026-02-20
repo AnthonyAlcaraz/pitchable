@@ -23,7 +23,7 @@ interface TierStatus {
   creditBalance: number;
   decksUsed: number;
   decksLimit: number | null;
-  imageCreditsPerMonth: number;
+  creditsPerMonth: number;
   creditsReserved: number;
 }
 

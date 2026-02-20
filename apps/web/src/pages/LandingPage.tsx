@@ -90,19 +90,19 @@ export function LandingPage() {
         <div className="relative mx-auto max-w-5xl px-6 pb-24 pt-20 text-center sm:pb-32 sm:pt-28 md:pb-40 md:pt-36">
           <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-orange-500/20 bg-orange-500/10 px-4 py-1.5 text-sm text-orange-300">
             <Sparkles className="h-3.5 w-3.5" />
-            AI-powered pitch decks
+            For builders and thinkers
           </div>
 
           <h1 className="mx-auto mb-6 max-w-3xl text-4xl font-extrabold leading-[1.1] tracking-tight text-white sm:text-5xl md:text-6xl lg:text-7xl">
-            Make your ideas{' '}
+            Every idea deserves to be{' '}
             <span className="bg-gradient-to-r from-orange-400 via-amber-400 to-orange-300 bg-clip-text text-transparent">
               pitchable
             </span>
           </h1>
 
           <p className="mx-auto mb-12 max-w-xl text-lg leading-relaxed text-[#a1a1a1]">
-            Generate persuasive presentations tailored to your audience,
-            story framework, and industry knowledge.
+            Turn any thought, project, or vision into a persuasive
+            presentation — tailored to your audience and story.
           </p>
 
           <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
@@ -257,8 +257,7 @@ export function LandingPage() {
                 period: '',
                 description: 'See what Pitchable can do',
                 features: [
-                  '2 sample decks',
-                  '4 slides per deck (preview)',
+                  '4-slide sample deck',
                   'No credit card required',
                   'PPTX, PDF, HTML export',
                 ],
@@ -271,10 +270,10 @@ export function LandingPage() {
                 period: '/month',
                 description: 'For regular presenters',
                 features: [
-                  '40 credits per month',
-                  '10 decks per month',
-                  'AI image generation',
+                  'Up to 10 decks per month',
                   'Up to 15 slides per deck',
+                  '~20 AI-generated images',
+                  'PPTX, PDF, HTML export',
                 ],
                 cta: 'Start Free Trial',
                 popular: true,
@@ -285,9 +284,9 @@ export function LandingPage() {
                 period: '/month',
                 description: 'For power users and teams',
                 features: [
-                  '100 credits per month',
-                  'Unlimited decks & slides',
-                  'AI image generation',
+                  'Up to 50 decks per month',
+                  'No slide limit per deck',
+                  'Up to 100 AI-generated images',
                   'Priority support',
                 ],
                 cta: 'Start Free Trial',
@@ -382,10 +381,11 @@ export function LandingPage() {
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_120%,rgba(249,115,22,0.25),transparent)]" />
         <div className="relative mx-auto max-w-3xl px-6 text-center">
           <h2 className="mb-4 text-3xl font-bold text-white">
-            Ready to pitch with confidence?
+            Your next idea is worth sharing
           </h2>
           <p className="mb-8 text-lg text-[#a1a1a1]">
-            Start creating AI-powered presentations for free. No credit card required.
+            Builders, founders, researchers, teachers — if you have an idea,
+            we'll help you pitch it. Free sample, no credit card.
           </p>
           <Link
             to="/register"
