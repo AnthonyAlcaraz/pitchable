@@ -23,11 +23,14 @@ export function ChatPanel({ presentationId, briefId: _briefId, lensId: _lensId }
     error,
     pendingValidations,
     inlineSlideCards,
+    pendingThemeSelection,
+    pendingLayoutSelections,
     loadHistory,
     sendMessage,
     acceptSlide,
     editSlide,
     rejectSlide,
+    respondToInteraction,
     clearError,
   } = useChatStore();
 
@@ -107,10 +110,13 @@ export function ChatPanel({ presentationId, briefId: _briefId, lensId: _lensId }
         agentSteps={agentSteps}
         pendingValidations={pendingValidations}
         inlineSlideCards={inlineSlideCards}
+        pendingThemeSelection={pendingThemeSelection}
+        pendingLayoutSelections={pendingLayoutSelections}
         presentationId={presentationId}
         onAcceptSlide={handleAcceptSlide}
         onEditSlide={handleEditSlide}
         onRejectSlide={handleRejectSlide}
+        onRespondToInteraction={respondToInteraction}
       />
 
       <ChatInput onSend={handleSend} disabled={isStreaming} />

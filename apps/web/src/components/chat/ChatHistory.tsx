@@ -2,7 +2,8 @@ import { useEffect, useRef } from 'react';
 import { ChatMessage } from './ChatMessage.js';
 import { AgentActivity } from './AgentActivity.js';
 import { InlineSlideCard } from './InlineSlideCard.js';
-import type { ChatMessage as ChatMessageType, PendingValidation, AgentStep, InlineSlideCard as InlineSlideCardType } from '../../stores/chat.store.js';
+import { ThemeSelector } from './ThemeSelector.js';
+import type { ChatMessage as ChatMessageType, PendingValidation, AgentStep, InlineSlideCard as InlineSlideCardType, PendingThemeSelection, PendingLayoutSelection } from '../../stores/chat.store.js';
 
 interface ChatHistoryProps {
   messages: ChatMessageType[];
@@ -12,10 +13,13 @@ interface ChatHistoryProps {
   agentSteps: AgentStep[];
   pendingValidations?: PendingValidation[];
   inlineSlideCards?: InlineSlideCardType[];
+  pendingThemeSelection?: PendingThemeSelection | null;
+  pendingLayoutSelections?: PendingLayoutSelection[];
   presentationId?: string;
   onAcceptSlide?: (slideId: string) => void;
   onEditSlide?: (slideId: string, edits: { title?: string; body?: string; speakerNotes?: string }) => void;
   onRejectSlide?: (slideId: string) => void;
+  onRespondToInteraction?: (presentationId: string, interactionType: string, contextId: string, selection: unknown) => void;
 }
 
 export function ChatHistory({
@@ -26,10 +30,13 @@ export function ChatHistory({
   agentSteps,
   pendingValidations,
   inlineSlideCards,
+  pendingThemeSelection,
+  pendingLayoutSelections,
   presentationId,
   onAcceptSlide,
   onEditSlide,
   onRejectSlide,
+  onRespondToInteraction,
 }: ChatHistoryProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -94,6 +101,14 @@ export function ChatHistory({
           thinkingText={thinkingText}
           steps={agentSteps}
           streamingContent={streamingContent}
+        />
+      )}
+
+      {pendingThemeSelection && presentationId && onRespondToInteraction && (
+        <ThemeSelector
+          selection={pendingThemeSelection}
+          presentationId={presentationId}
+          onSelect={onRespondToInteraction}
         />
       )}
 

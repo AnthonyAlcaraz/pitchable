@@ -27,7 +27,8 @@ import {
 import { DEFAULT_SLIDE_RANGES } from './dto/generation-config.dto.js';
 import { getFrameworkConfig } from '../pitch-lens/frameworks/story-frameworks.config.js';
 import { buildPitchLensInjection } from '../pitch-lens/prompts/pitch-lens-injection.prompt.js';
-import { getImageFrequencyForTheme, getThemeCategoryByName } from '../themes/themes.service.js';
+import { ThemesService, getImageFrequencyForTheme, getThemeCategoryByName } from '../themes/themes.service.js';
+import { InteractionGateService } from './interaction-gate.service.js';
 import { ArchetypeResolverService } from '../pitch-lens/archetypes/archetype-resolver.service.js';
 import {
   PresentationType,
@@ -82,6 +83,8 @@ export class GenerationService {
     private readonly nanoBanana: NanoBananaService,
     private readonly qualityAgents: QualityAgentsService,
     private readonly archetypeResolver: ArchetypeResolverService,
+    private readonly themesService: ThemesService,
+    private readonly interactionGate: InteractionGateService,
   ) {}
 
   /**
@@ -287,7 +290,7 @@ export class GenerationService {
 
     // 1. Parallel setup: resolve theme, get briefId, build feedback block
     yield { type: 'progress', content: 'Resolving theme', metadata: { step: 'theme', status: 'running' } };
-    const [themeId, presForBrief, feedbackBlock] = await Promise.all([
+    let [themeId, presForBrief, feedbackBlock] = await Promise.all([
       this.resolveThemeId(config.themeId),
       this.prisma.presentation.findUnique({
         where: { id: presentationId },
@@ -295,9 +298,52 @@ export class GenerationService {
       }),
       this.contextBuilder.buildFeedbackBlock(userId),
     ]);
-    const theme = await this.prisma.theme.findUnique({ where: { id: themeId } });
-    const themeName = theme?.displayName ?? 'Pitchable Dark';
-    const themeColors = theme?.colorPalette
+    let theme = await this.prisma.theme.findUnique({ where: { id: themeId } });
+
+    // Theme Selection Gate: if user didn't specify a theme, offer interactive choice
+    if (!config.themeId) {
+      const presType = config.presentationType || 'STANDARD';
+      const lens = await this.prisma.presentation.findUnique({
+        where: { id: presentationId },
+        include: { pitchLens: true },
+      });
+      const audience = (lens?.pitchLens as unknown as Record<string, unknown> | null)?.targetAudience as string | undefined;
+      const goals = (lens?.pitchLens as unknown as Record<string, unknown> | null)?.goals as string[] | undefined;
+
+      const recommended = await this.themesService.recommendThemes(presType, audience, goals, 3);
+
+      if (recommended.length > 0) {
+        const contextId = `theme-${presentationId}-${Date.now()}`;
+        const timeoutMs = 20_000;
+
+        yield {
+          type: 'action',
+          content: '',
+          metadata: {
+            action: 'theme_selection',
+            contextId,
+            options: recommended,
+            defaultThemeId: recommended[0].id,
+            timeoutMs,
+          },
+        };
+
+        const selectedThemeId = await this.interactionGate.waitForResponse<string>(
+          presentationId,
+          'theme_selection',
+          contextId,
+          recommended[0].id,
+          timeoutMs,
+        );
+
+        // Override theme with user selection
+        themeId = selectedThemeId;
+        theme = await this.prisma.theme.findUnique({ where: { id: themeId } });
+      }
+    }
+
+    let themeName = theme?.displayName ?? 'Pitchable Dark';
+    let themeColors = theme?.colorPalette
       ? { ...(theme.colorPalette as { primary: string; secondary: string; accent: string; background: string; text: string }), headingFont: theme.headingFont, bodyFont: theme.bodyFont }
       : undefined;
     yield { type: 'progress', content: 'Resolving theme', metadata: { step: 'theme', status: 'complete' } };

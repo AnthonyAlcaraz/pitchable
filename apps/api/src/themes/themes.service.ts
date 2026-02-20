@@ -782,4 +782,87 @@ export class ThemesService implements OnModuleInit {
       meta: t.meta,
     }));
   }
+
+  /**
+   * Recommend top themes based on presentation type, audience, and goals.
+   * Scores each built-in theme and returns the top N with scores.
+   */
+  async recommendThemes(
+    presentationType: string,
+    targetAudience?: string,
+    goals?: string[],
+    limit = 3,
+  ): Promise<Array<{
+    id: string;
+    name: string;
+    displayName: string;
+    colorPalette: ThemeDefinition['colorPalette'];
+    headingFont: string;
+    bodyFont: string;
+    score: number;
+    category: string;
+  }>> {
+    const scored = BUILT_IN_THEMES.map((theme) => {
+      let score = 0;
+
+      // Audience match (+3 each)
+      if (targetAudience && theme.meta.bestForAudience.includes(targetAudience.toUpperCase())) {
+        score += 3;
+      }
+
+      // Goal match (+2 each)
+      if (goals) {
+        for (const goal of goals) {
+          if (theme.meta.bestForGoals.includes(goal.toUpperCase())) {
+            score += 2;
+          }
+        }
+      }
+
+      // Presentation type heuristics (+1)
+      if (presentationType === 'VC_PITCH' && (theme.meta.category === 'consulting' || theme.name.includes('yc') || theme.name.includes('sequoia'))) {
+        score += 1;
+      }
+      if (presentationType === 'TECHNICAL' && theme.meta.category === 'dark') {
+        score += 1;
+      }
+      if (presentationType === 'EXECUTIVE' && (theme.meta.category === 'consulting' || theme.meta.category === 'light')) {
+        score += 1;
+      }
+
+      return { theme, score };
+    });
+
+    // Sort by score descending, take top N
+    scored.sort((a, b) => b.score - a.score);
+    const topThemes = scored.slice(0, limit);
+
+    // Fetch DB records to get IDs
+    const dbThemes = await this.prisma.theme.findMany({
+      where: { name: { in: topThemes.map((t) => t.theme.name) } },
+      select: { id: true, name: true },
+    });
+
+    const nameToId = new Map(dbThemes.map((t) => [t.name, t.id]));
+
+    return topThemes.map((t) => ({
+      id: nameToId.get(t.theme.name) ?? '',
+      name: t.theme.name,
+      displayName: t.theme.displayName,
+      colorPalette: t.theme.colorPalette,
+      headingFont: t.theme.headingFont,
+      bodyFont: t.theme.bodyFont,
+      score: t.score,
+      category: t.theme.meta.category,
+    }));
+  }
+
+  /**
+   * Fetch full theme records by an array of theme names.
+   */
+  async findByNames(names: string[]) {
+    return this.prisma.theme.findMany({
+      where: { name: { in: names } },
+    });
+  }
 }
