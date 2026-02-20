@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { GalleryNav } from '@/components/gallery/GalleryNav';
@@ -15,6 +15,70 @@ import {
   Check,
 } from 'lucide-react';
 import { PeachLogo } from '@/components/icons/PeachLogo';
+
+// ── Showcase Deck ──────────────────────────────────────────────
+
+function ShowcaseDeck({ title, theme, slides, images }: { title: string; theme: string; slides: number; images: string[] }) {
+  const [idx, setIdx] = useState(0);
+
+  const next = useCallback(() => setIdx((i) => (i + 1) % images.length), [images.length]);
+  const prev = useCallback(() => setIdx((i) => (i - 1 + images.length) % images.length), [images.length]);
+
+  // Auto-advance every 4s
+  useEffect(() => {
+    const timer = setInterval(next, 4000);
+    return () => clearInterval(timer);
+  }, [next]);
+
+  return (
+    <div className="overflow-hidden rounded-2xl border border-white/[0.06] bg-card">
+      {/* Slide viewer */}
+      <div className="relative aspect-video w-full bg-black">
+        <img
+          src={images[idx]}
+          alt={`${title} - slide ${idx + 1}`}
+          className="h-full w-full object-contain transition-opacity duration-300"
+        />
+        {/* Nav arrows */}
+        <button
+          onClick={prev}
+          className="absolute left-3 top-1/2 -translate-y-1/2 rounded-full bg-black/60 p-2 text-white/80 backdrop-blur-sm transition-colors hover:bg-black/80 hover:text-white"
+        >
+          <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+        </button>
+        <button
+          onClick={next}
+          className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full bg-black/60 p-2 text-white/80 backdrop-blur-sm transition-colors hover:bg-black/80 hover:text-white"
+        >
+          <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+        </button>
+        {/* Dots */}
+        <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 gap-1.5">
+          {images.map((_, i) => (
+            <button
+              key={i}
+              onClick={() => setIdx(i)}
+              className={`h-1.5 rounded-full transition-all ${i === idx ? 'w-6 bg-orange-500' : 'w-1.5 bg-white/40'}`}
+            />
+          ))}
+        </div>
+      </div>
+      {/* Info bar */}
+      <div className="flex items-center justify-between px-5 py-3">
+        <div>
+          <p className="text-sm font-medium text-foreground">{title}</p>
+          <p className="text-xs text-muted-foreground">{theme} &middot; {slides} slides</p>
+        </div>
+        <Link
+          to="/register"
+          className="rounded-lg bg-orange-500 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-orange-400"
+        >
+          Create yours
+        </Link>
+      </div>
+    </div>
+  );
+}
 
 // ── Animated Counter ─────────────────────────────────────────
 
@@ -347,6 +411,46 @@ export function LandingPage() {
               </div>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* ── Showcase — Featured Presentations ────────── */}
+      <section className="bg-[#0a0a0a] py-24">
+        <div className="mx-auto max-w-6xl px-6">
+          <div className="mb-10 text-center">
+            <h2 className="mb-3 text-3xl font-bold text-foreground">
+              {t('landing.showcase.title')}
+            </h2>
+            <p className="text-muted-foreground">
+              {t('landing.showcase.subtitle')}
+            </p>
+          </div>
+
+          <ShowcaseDeck
+            title="The Future of Autonomous AI Agents in Enterprise"
+            theme="McKinsey Executive"
+            slides={4}
+            images={[
+              '/showcase/ai-agents-web-02.jpg',
+              '/showcase/ai-agents-web-03.jpg',
+              '/showcase/ai-agents-web-04.jpg',
+              '/showcase/ai-agents-web-05.jpg',
+            ]}
+          />
+
+          <div className="mt-12" />
+
+          <ShowcaseDeck
+            title="GenAI Trends 2025-2026: LLMs, Agents, and Key Players"
+            theme="Dark Professional"
+            slides={4}
+            images={[
+              '/showcase/genai-web-02.jpg',
+              '/showcase/genai-web-03.jpg',
+              '/showcase/genai-web-04.jpg',
+              '/showcase/genai-web-05.jpg',
+            ]}
+          />
         </div>
       </section>
 
