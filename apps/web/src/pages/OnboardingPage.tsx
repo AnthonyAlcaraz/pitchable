@@ -6,7 +6,6 @@ import { usePitchBriefStore } from '@/stores/pitch-brief.store';
 import { usePitchLensStore } from '@/stores/pitch-lens.store';
 import type { CreatePitchLensInput } from '@/stores/pitch-lens.store';
 import {
-  Layers,
   ArrowRight,
   ArrowLeft,
   Check,
@@ -17,6 +16,7 @@ import {
   BookOpen,
   Sparkles,
 } from 'lucide-react';
+import { PeachLogo } from '@/components/icons/PeachLogo';
 import { cn } from '@/lib/utils';
 
 // ── Constants ─────────────────────────────────────────────────
@@ -342,7 +342,7 @@ export function OnboardingPage() {
       {/* Minimal header */}
       <header className="flex h-14 items-center justify-center border-b border-border">
         <div className="flex items-center gap-2">
-          <Layers className="h-5 w-5 text-primary" />
+          <PeachLogo className="h-5 w-5" />
           <span className="text-lg font-bold text-foreground">{t('common.app_name')}</span>
         </div>
       </header>
@@ -366,7 +366,7 @@ export function OnboardingPage() {
                 {[
                   { icon: BookOpen, label: t('onboarding.welcome.step_1_label'), desc: t('onboarding.welcome.step_1_desc') },
                   { icon: Focus, label: t('onboarding.welcome.step_2_label'), desc: t('onboarding.welcome.step_2_desc') },
-                  { icon: Layers, label: t('onboarding.welcome.step_3_label'), desc: t('onboarding.welcome.step_3_desc') },
+                  { icon: PeachLogo, label: t('onboarding.welcome.step_3_label'), desc: t('onboarding.welcome.step_3_desc') },
                 ].map((step, i) => (
                   <div key={i} className="flex items-start gap-4 rounded-lg border border-border bg-card p-4 text-left">
                     <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary">

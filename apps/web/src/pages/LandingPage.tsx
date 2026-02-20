@@ -5,7 +5,6 @@ import { GalleryNav } from '@/components/gallery/GalleryNav';
 import { GalleryCard } from '@/components/gallery/GalleryCard';
 import type { GalleryPresentation } from '@/components/gallery/GalleryCard';
 import {
-  Layers,
   BookOpen,
   Focus,
   Sparkles,
@@ -15,6 +14,7 @@ import {
   GitFork,
   Check,
 } from 'lucide-react';
+import { PeachLogo } from '@/components/icons/PeachLogo';
 
 // ── Animated Counter ─────────────────────────────────────────
 
@@ -377,7 +377,7 @@ export function LandingPage() {
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-border py-20">
-              <Layers className="mb-4 h-12 w-12 text-muted-foreground/30" />
+              <PeachLogo className="mb-4 h-12 w-12 opacity-30" />
               <p className="mb-2 text-lg font-medium text-muted-foreground">{t('landing.gallery.empty_title')}</p>
               <p className="text-sm text-muted-foreground">
                 {t('landing.gallery.empty_subtitle')}
@@ -412,7 +412,7 @@ export function LandingPage() {
       <footer className="bg-card py-10">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-6 sm:flex-row">
           <div className="flex items-center gap-2">
-            <Layers className="h-5 w-5 text-orange-500" />
+            <PeachLogo className="h-5 w-5" />
             <span className="font-semibold text-foreground">{t('common.app_name')}</span>
           </div>
           <div className="flex gap-6 text-sm text-muted-foreground">

@@ -3,7 +3,7 @@ import type { FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/stores/auth.store';
-import { Layers } from 'lucide-react';
+import { PeachLogo } from '@/components/icons/PeachLogo';
 
 export function ForgotPasswordPage() {
   const { t } = useTranslation();
@@ -25,7 +25,7 @@ export function ForgotPasswordPage() {
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="w-full max-w-md rounded-lg border border-border bg-card p-8 shadow-md">
         <div className="mb-8 flex flex-col items-center gap-2">
-          <Layers className="h-10 w-10 text-primary" />
+          <PeachLogo className="h-10 w-10" />
           <h1 className="text-2xl font-bold text-foreground">{t('common.app_name')}</h1>
           <p className="text-sm text-muted-foreground">{t('auth.forgot_password.title')}</p>
         </div>

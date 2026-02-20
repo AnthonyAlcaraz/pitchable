@@ -3,7 +3,6 @@ import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/stores/auth.store';
 import {
-  Layers,
   Gauge,
   BarChart3,
   BookOpen,
@@ -17,6 +16,7 @@ import {
   Focus,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { PeachLogo } from '@/components/icons/PeachLogo';
 import { LanguageSwitcher } from './LanguageSwitcher';
 
 export function AppLayout() {
@@ -69,7 +69,7 @@ export function AppLayout() {
         {/* Logo */}
         <div className="flex h-14 items-center justify-between border-b border-border px-4">
           <div className="flex items-center gap-2">
-            <Layers className="h-6 w-6 shrink-0 text-orange-500" />
+            <PeachLogo className="h-6 w-6 shrink-0" />
             {!collapsed && (
               <span className="text-lg font-semibold text-foreground">
                 {t('common.app_name')}
@@ -164,7 +164,7 @@ export function AppLayout() {
           >
             <Menu className="h-5 w-5" />
           </button>
-          <Layers className="h-5 w-5 text-orange-500" />
+          <PeachLogo className="h-5 w-5" />
           <span className="text-sm font-semibold text-foreground">{t('common.app_name')}</span>
         </header>
 

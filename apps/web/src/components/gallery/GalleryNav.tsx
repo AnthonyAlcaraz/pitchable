@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/stores/auth.store';
-import { Layers } from 'lucide-react';
+import { PeachLogo } from '@/components/icons/PeachLogo';
 import { LanguageSwitcher } from '../layout/LanguageSwitcher';
 
 export function GalleryNav() {
@@ -12,7 +12,7 @@ export function GalleryNav() {
     <nav className="sticky top-0 z-50 border-b border-white/[0.06] bg-[#1c1c1c]/75 backdrop-blur-xl">
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-6">
         <Link to="/" className="flex items-center gap-2">
-          <Layers className="h-6 w-6 text-orange-500" />
+          <PeachLogo className="h-6 w-6" />
           <span className="text-lg font-bold text-foreground">{t('common.app_name')}</span>
         </Link>
         <div className="flex items-center gap-2 sm:gap-4">
