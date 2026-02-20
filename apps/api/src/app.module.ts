@@ -19,6 +19,7 @@ import { ConstraintsModule } from './constraints/constraints.module.js';
 import { HealthModule } from './health/health.module.js';
 import { KnowledgeBaseModule } from './knowledge-base/knowledge-base.module.js';
 import { EventsModule } from './events/events.module.js';
+import { InteractionGateModule } from './chat/interaction-gate.module.js';
 import { ChatModule } from './chat/chat.module.js';
 import { BillingModule } from './billing/billing.module.js';
 import { PitchLensModule } from './pitch-lens/pitch-lens.module.js';
@@ -104,6 +105,7 @@ const redisConnection = redisUrl
     ExportsModule,
     KnowledgeBaseModule,
     EventsModule,
+    InteractionGateModule,
     ChatModule,
     BillingModule,
     PitchLensModule,

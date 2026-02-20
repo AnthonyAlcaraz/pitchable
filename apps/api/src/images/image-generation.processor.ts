@@ -10,6 +10,7 @@ import { S3Service } from '../knowledge-base/storage/s3.service.js';
 import { CreditsService } from '../credits/credits.service.js';
 import { IMAGE_GENERATION_COST } from '../credits/tier-config.js';
 import { EventsGateway } from '../events/events.gateway.js';
+import { InteractionGateService } from '../chat/interaction-gate.service.js';
 import { JobStatus, CreditReason } from '../../generated/prisma/enums.js';
 
 // ── Job Data Interface ──────────────────────────────────────
@@ -37,6 +38,7 @@ export class ImageGenerationProcessor extends WorkerHost {
     private readonly s3: S3Service,
     private readonly credits: CreditsService,
     private readonly events: EventsGateway,
+    private readonly interactionGate: InteractionGateService,
     configService: ConfigService,
   ) {
     super();
@@ -64,13 +66,24 @@ export class ImageGenerationProcessor extends WorkerHost {
       });
 
       // 3. PaperBanana Critic Loop: Generate → Evaluate → Refine (up to N rounds)
-      const maxRounds = this.critic.isEnabled() ? this.critic.getMaxRounds() : 1;
+      // Generate at least 2 candidates for user selection when critic is enabled
+      const maxRounds = this.critic.isEnabled() ? Math.max(this.critic.getMaxRounds(), 2) : 1;
       let currentPrompt = prompt;
       let bestBase64 = '';
       let bestMimeType = '';
       let bestScore = 0;
       let bestEval: CriticEvaluation | null = null;
       let accepted = false;
+
+      // Collect all candidates for user selection
+      const candidates: Array<{
+        id: string;
+        base64: string;
+        mimeType: string;
+        score: number;
+        prompt: string;
+        evaluation: CriticEvaluation;
+      }> = [];
 
       for (let round = 1; round <= maxRounds; round++) {
         // Generate image via Replicate Imagen 3 (NanoBanana)
@@ -95,6 +108,17 @@ export class ImageGenerationProcessor extends WorkerHost {
           `${evaluation.accepted ? 'ACCEPTED' : 'REJECTED'}`,
         );
 
+        // Collect candidate
+        const candidateId = `candidate-${slideId}-${round}`;
+        candidates.push({
+          id: candidateId,
+          base64,
+          mimeType,
+          score: evaluation.averageScore,
+          prompt: currentPrompt,
+          evaluation,
+        });
+
         // Track best result across all rounds
         if (evaluation.averageScore > bestScore) {
           bestScore = evaluation.averageScore;
@@ -108,7 +132,8 @@ export class ImageGenerationProcessor extends WorkerHost {
           bestMimeType = mimeType;
           bestEval = evaluation;
           accepted = true;
-          break;
+          // Don't break early — keep generating to offer alternatives
+          if (candidates.length >= 2) break;
         }
 
         // Refine prompt for next round
@@ -126,16 +151,85 @@ export class ImageGenerationProcessor extends WorkerHost {
         );
       }
 
-      // 4. Upload best image — try S3/MinIO first, fall back to Imgur
-      let imageUrl: string;
-      try {
-        imageUrl = await this.uploadToS3(slideId, bestBase64, bestMimeType);
-        this.logger.log(`Image uploaded to S3: ${imageUrl}`);
-      } catch (s3Err) {
-        this.logger.warn(`S3 upload failed, trying Imgur: ${s3Err instanceof Error ? s3Err.message : 'unknown'}`);
-        imageUrl = await this.imgur.uploadFromBase64(bestBase64, `slide-${slideId}`);
-        this.logger.log(`Image uploaded to Imgur: ${imageUrl}`);
+      // 4. Upload all candidates to S3 and offer user selection
+      const uploadedCandidates: Array<{ id: string; imageUrl: string; score: number; prompt: string }> = [];
+
+      for (const candidate of candidates) {
+        try {
+          const ext = candidate.mimeType.includes('png') ? 'png' : 'jpg';
+          const key = `images/slides/${slideId}-${candidate.id}.${ext}`;
+          const buffer = Buffer.from(candidate.base64, 'base64');
+          await this.s3.upload(key, buffer, candidate.mimeType);
+          const bucket = 'pitchable-documents';
+          const url = `${this.s3Endpoint}/${bucket}/${key}`;
+          uploadedCandidates.push({
+            id: candidate.id,
+            imageUrl: url,
+            score: candidate.score,
+            prompt: candidate.prompt,
+          });
+        } catch {
+          this.logger.warn(`Failed to upload candidate ${candidate.id}, skipping`);
+        }
       }
+
+      // If we have multiple candidates, offer selection via WebSocket
+      let selectedImageUrl: string;
+      if (uploadedCandidates.length > 1) {
+        const contextId = `image-${slideId}-${Date.now()}`;
+        const timeoutMs = 30_000;
+
+        // Sort by score descending — best first
+        uploadedCandidates.sort((a, b) => b.score - a.score);
+
+        // Get presentationId for WebSocket emission
+        const slideRecord = await this.prisma.slide.findUnique({
+          where: { id: slideId },
+          select: { presentationId: true },
+        });
+        const presId = slideRecord?.presentationId ?? '';
+
+        this.events.emitImageSelectionRequest({
+          presentationId: presId,
+          slideId,
+          contextId,
+          candidates: uploadedCandidates,
+          defaultImageId: uploadedCandidates[0].id,
+          timeoutMs,
+        });
+
+        const selectedId = await this.interactionGate.waitForResponse<string>(
+          presId,
+          'image_selection',
+          contextId,
+          uploadedCandidates[0].id,
+          timeoutMs,
+        );
+
+        const selected = uploadedCandidates.find((c) => c.id === selectedId);
+        selectedImageUrl = selected?.imageUrl ?? uploadedCandidates[0].imageUrl;
+
+        // Cleanup unselected candidates from S3 (best-effort)
+        for (const c of uploadedCandidates) {
+          if (c.id !== selectedId) {
+            const ext = c.imageUrl.endsWith('.png') ? 'png' : 'jpg';
+            const key = `images/slides/${slideId}-${c.id}.${ext}`;
+            this.s3.delete(key).catch(() => {});
+          }
+        }
+      } else {
+        // Single candidate or S3 upload failed — use best from memory
+        try {
+          selectedImageUrl = await this.uploadToS3(slideId, bestBase64, bestMimeType);
+          this.logger.log(`Image uploaded to S3: ${selectedImageUrl}`);
+        } catch (s3Err) {
+          this.logger.warn(`S3 upload failed, trying Imgur: ${s3Err instanceof Error ? s3Err.message : 'unknown'}`);
+          selectedImageUrl = await this.imgur.uploadFromBase64(bestBase64, `slide-${slideId}`);
+          this.logger.log(`Image uploaded to Imgur: ${selectedImageUrl}`);
+        }
+      }
+
+      const imageUrl = selectedImageUrl;
 
       // 5. Update ImageJob with results + critic metrics
       await this.prisma.imageJob.update({

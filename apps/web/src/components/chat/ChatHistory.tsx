@@ -4,7 +4,8 @@ import { AgentActivity } from './AgentActivity.js';
 import { InlineSlideCard } from './InlineSlideCard.js';
 import { ThemeSelector } from './ThemeSelector.js';
 import { LayoutSelector } from './LayoutSelector.js';
-import type { ChatMessage as ChatMessageType, PendingValidation, AgentStep, InlineSlideCard as InlineSlideCardType, PendingThemeSelection, PendingLayoutSelection } from '../../stores/chat.store.js';
+import { ImageSelector } from './ImageSelector.js';
+import type { ChatMessage as ChatMessageType, PendingValidation, AgentStep, InlineSlideCard as InlineSlideCardType, PendingThemeSelection, PendingLayoutSelection, PendingImageSelection } from '../../stores/chat.store.js';
 
 interface ChatHistoryProps {
   messages: ChatMessageType[];
@@ -16,6 +17,7 @@ interface ChatHistoryProps {
   inlineSlideCards?: InlineSlideCardType[];
   pendingThemeSelection?: PendingThemeSelection | null;
   pendingLayoutSelections?: PendingLayoutSelection[];
+  pendingImageSelections?: PendingImageSelection[];
   presentationId?: string;
   onAcceptSlide?: (slideId: string) => void;
   onEditSlide?: (slideId: string, edits: { title?: string; body?: string; speakerNotes?: string }) => void;
@@ -33,6 +35,7 @@ export function ChatHistory({
   inlineSlideCards,
   pendingThemeSelection,
   pendingLayoutSelections,
+  pendingImageSelections,
   presentationId,
   onAcceptSlide,
   onEditSlide,
@@ -137,6 +140,17 @@ export function ChatHistory({
             ))}
           </div>
         </div>
+      )}
+
+      {pendingImageSelections && pendingImageSelections.length > 0 && presentationId && onRespondToInteraction && (
+        pendingImageSelections.map((sel) => (
+          <ImageSelector
+            key={sel.contextId}
+            selection={sel}
+            presentationId={presentationId}
+            onSelect={onRespondToInteraction}
+          />
+        ))
       )}
 
       <div ref={bottomRef} />

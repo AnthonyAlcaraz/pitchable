@@ -243,4 +243,17 @@ export class EventsGateway
       .to(`presentation:${event.presentationId}`)
       .emit('images:complete', event);
   }
+
+  emitImageSelectionRequest(event: {
+    presentationId: string;
+    slideId: string;
+    contextId: string;
+    candidates: Array<{ id: string; imageUrl: string; score: number; prompt: string }>;
+    defaultImageId: string;
+    timeoutMs: number;
+  }): void {
+    this.server
+      .to(`presentation:${event.presentationId}`)
+      .emit('image:selectionRequest', event);
+  }
 }

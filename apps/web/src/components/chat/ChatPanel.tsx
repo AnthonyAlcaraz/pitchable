@@ -25,6 +25,7 @@ export function ChatPanel({ presentationId, briefId: _briefId, lensId: _lensId }
     inlineSlideCards,
     pendingThemeSelection,
     pendingLayoutSelections,
+    pendingImageSelections,
     loadHistory,
     sendMessage,
     acceptSlide,
@@ -112,6 +113,7 @@ export function ChatPanel({ presentationId, briefId: _briefId, lensId: _lensId }
         inlineSlideCards={inlineSlideCards}
         pendingThemeSelection={pendingThemeSelection}
         pendingLayoutSelections={pendingLayoutSelections}
+        pendingImageSelections={pendingImageSelections}
         presentationId={presentationId}
         onAcceptSlide={handleAcceptSlide}
         onEditSlide={handleEditSlide}
