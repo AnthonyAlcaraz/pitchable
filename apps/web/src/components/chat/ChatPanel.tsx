@@ -22,6 +22,7 @@ export function ChatPanel({ presentationId, briefId: _briefId, lensId: _lensId }
     isLoading,
     error,
     pendingValidations,
+    inlineSlideCards,
     loadHistory,
     sendMessage,
     acceptSlide,
@@ -105,6 +106,7 @@ export function ChatPanel({ presentationId, briefId: _briefId, lensId: _lensId }
         thinkingText={thinkingText}
         agentSteps={agentSteps}
         pendingValidations={pendingValidations}
+        inlineSlideCards={inlineSlideCards}
         presentationId={presentationId}
         onAcceptSlide={handleAcceptSlide}
         onEditSlide={handleEditSlide}

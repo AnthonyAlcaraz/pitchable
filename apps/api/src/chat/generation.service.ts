@@ -503,6 +503,23 @@ export class GenerationService {
         position: actualSlideNumber,
       });
 
+      // Emit inline slide preview card to chat stream
+      yield {
+        type: 'action',
+        content: '',
+        metadata: {
+          action: 'slide_preview',
+          slide: {
+            id: slide.id,
+            slideNumber: slide.slideNumber,
+            title: slide.title,
+            body: slide.body,
+            slideType: slide.slideType,
+            imageUrl: null,
+          },
+        },
+      };
+
       // Track for prior-slides context (Recommendation #5)
       generatedSlides.push({ title: validated.title, body: validated.body });
 

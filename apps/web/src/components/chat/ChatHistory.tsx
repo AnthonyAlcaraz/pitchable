@@ -1,7 +1,8 @@
 import { useEffect, useRef } from 'react';
 import { ChatMessage } from './ChatMessage.js';
 import { AgentActivity } from './AgentActivity.js';
-import type { ChatMessage as ChatMessageType, PendingValidation, AgentStep } from '../../stores/chat.store.js';
+import { InlineSlideCard } from './InlineSlideCard.js';
+import type { ChatMessage as ChatMessageType, PendingValidation, AgentStep, InlineSlideCard as InlineSlideCardType } from '../../stores/chat.store.js';
 
 interface ChatHistoryProps {
   messages: ChatMessageType[];
@@ -10,6 +11,7 @@ interface ChatHistoryProps {
   thinkingText: string | null;
   agentSteps: AgentStep[];
   pendingValidations?: PendingValidation[];
+  inlineSlideCards?: InlineSlideCardType[];
   presentationId?: string;
   onAcceptSlide?: (slideId: string) => void;
   onEditSlide?: (slideId: string, edits: { title?: string; body?: string; speakerNotes?: string }) => void;
@@ -23,6 +25,7 @@ export function ChatHistory({
   thinkingText,
   agentSteps,
   pendingValidations,
+  inlineSlideCards,
   presentationId,
   onAcceptSlide,
   onEditSlide,
@@ -36,7 +39,7 @@ export function ChatHistory({
     if (!userScrolled.current) {
       bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [messages, streamingContent, pendingValidations, thinkingText, agentSteps]);
+  }, [messages, streamingContent, pendingValidations, inlineSlideCards, thinkingText, agentSteps]);
 
   const handleScroll = () => {
     const el = containerRef.current;
@@ -100,6 +103,16 @@ export function ChatHistory({
           content={streamingContent}
           isStreaming
         />
+      )}
+
+      {isStreaming && inlineSlideCards && inlineSlideCards.length > 0 && (
+        <div className="px-4 py-2">
+          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin">
+            {inlineSlideCards.map((slide) => (
+              <InlineSlideCard key={slide.id} slide={slide} />
+            ))}
+          </div>
+        </div>
       )}
 
       <div ref={bottomRef} />
