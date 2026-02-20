@@ -41,6 +41,17 @@ export function ChatMessage({
   const isUser = role === 'user';
   const theme = usePresentationStore((s) => s.presentation?.theme ?? null);
 
+  // Extract typed metadata to avoid `unknown` leaking into JSX (React 19 strict)
+  const outlineSlides = messageType === 'outline' && Array.isArray(metadata?.slides)
+    ? (metadata.slides as Array<{ slideNumber: number; title: string; bulletPoints: string[]; slideType: string }>)
+    : [];
+  const slideCards = Array.isArray(metadata?.slideCards)
+    ? (metadata.slideCards as InlineSlideCardType[])
+    : [];
+  const genComplete = metadata?.generationComplete
+    ? (metadata.generationComplete as GenerationCompleteData)
+    : null;
+
   return (
     <div className={`flex gap-3 p-4 ${isUser ? 'bg-card' : 'bg-background'}`}>
       <div
@@ -64,9 +75,9 @@ export function ChatMessage({
         </div>
 
         {/* Render slide preview cards for outline messages */}
-        {messageType === 'outline' && Array.isArray(metadata?.slides) && (
+        {outlineSlides.length > 0 && (
           <div className="mt-3 flex flex-wrap gap-2">
-            {(metadata.slides as Array<{ slideNumber: number; title: string; bulletPoints: string[]; slideType: string }>).slice(0, 4).map((slide) => (
+            {outlineSlides.slice(0, 4).map((slide) => (
               <SlidePreviewCard
                 key={slide.slideNumber}
                 slideNumber={slide.slideNumber}
@@ -94,9 +105,9 @@ export function ChatMessage({
         ) : null}
 
         {/* Render persisted inline slide cards from message metadata */}
-        {Array.isArray(metadata?.slideCards) && (metadata.slideCards as InlineSlideCardType[]).length > 0 && (
+        {slideCards.length > 0 && (
           <div className="mt-3 flex gap-2 overflow-x-auto pb-2 scrollbar-thin" style={themeToStyleVars(theme)}>
-            {(metadata.slideCards as InlineSlideCardType[]).map((slide) => (
+            {slideCards.map((slide) => (
               <InlineSlideCard
                 key={slide.id}
                 slide={slide}
@@ -108,12 +119,12 @@ export function ChatMessage({
         )}
 
         {/* Render persisted generation complete card */}
-        {metadata?.generationComplete && onExport && (
+        {genComplete && onExport ? (
           <GenerationCompleteCard
-            data={metadata.generationComplete as GenerationCompleteData}
+            data={genComplete}
             onExport={onExport}
           />
-        )}
+        ) : null}
       </div>
     </div>
   );
