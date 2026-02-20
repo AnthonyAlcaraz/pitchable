@@ -24,6 +24,8 @@ const NODE_COLORS: Record<string, string> = {
   PRODUCT: '#f43f5e',
   EVENT: '#06b6d4',
   LOCATION: '#f97316',
+  METRIC: '#14b8a6',
+  Document: '#64748b',
 };
 
 const ENTITY_COLORS: Record<string, string> = {
@@ -415,28 +417,20 @@ export function PitchBriefDetailPage() {
               <div className="space-y-6">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="p-4 bg-background rounded-lg">
-                    <div className="text-2xl font-bold text-foreground">{graphStats.total_nodes}</div>
+                    <div className="text-2xl font-bold text-foreground">{graphStats.totalNodes}</div>
                     <div className="text-sm text-muted-foreground">{t('pitch_briefs.detail.nodes')}</div>
                   </div>
                   <div className="p-4 bg-background rounded-lg">
-                    <div className="text-2xl font-bold text-foreground">{graphStats.total_edges}</div>
+                    <div className="text-2xl font-bold text-foreground">{graphStats.totalEdges}</div>
                     <div className="text-sm text-muted-foreground">{t('pitch_briefs.detail.edges')}</div>
-                  </div>
-                  <div className="p-4 bg-background rounded-lg">
-                    <div className="text-2xl font-bold text-foreground">{graphStats.density?.toFixed(3)}</div>
-                    <div className="text-sm text-muted-foreground">{t('pitch_briefs.detail.density')}</div>
-                  </div>
-                  <div className="p-4 bg-background rounded-lg">
-                    <div className="text-2xl font-bold text-foreground">{graphStats.avg_degree?.toFixed(1)}</div>
-                    <div className="text-sm text-muted-foreground">{t('pitch_briefs.detail.avg_degree')}</div>
                   </div>
                 </div>
 
-                {graphStats.node_types && Object.keys(graphStats.node_types).length > 0 && (
+                {graphStats.nodeTypes && Object.keys(graphStats.nodeTypes).length > 0 && (
                   <div>
                     <h3 className="text-sm font-medium text-foreground mb-3">{t('pitch_briefs.detail.node_types')}</h3>
                     <div className="flex flex-wrap gap-2">
-                      {Object.entries(graphStats.node_types).map(([type, count]) => (
+                      {Object.entries(graphStats.nodeTypes).map(([type, count]) => (
                         <span
                           key={type}
                           className={`px-2 py-1 rounded-full text-xs font-medium ${
@@ -450,11 +444,11 @@ export function PitchBriefDetailPage() {
                   </div>
                 )}
 
-                {graphStats.edge_types && Object.keys(graphStats.edge_types).length > 0 && (
+                {graphStats.edgeTypes && Object.keys(graphStats.edgeTypes).length > 0 && (
                   <div>
                     <h3 className="text-sm font-medium text-foreground mb-3">{t('pitch_briefs.detail.edge_types')}</h3>
                     <div className="flex flex-wrap gap-2">
-                      {Object.entries(graphStats.edge_types).map(([type, count]) => (
+                      {Object.entries(graphStats.edgeTypes).map(([type, count]) => (
                         <span
                           key={type}
                           className="px-2 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary"
@@ -523,8 +517,8 @@ export function PitchBriefDetailPage() {
                   const radius = 150;
                   const x = 200 + Math.cos(angle) * radius;
                   const y = 200 + Math.sin(angle) * radius;
-                  const color = NODE_COLORS[node.node_type] || '#6b7280';
-                  const displayLabel = node.label.length > 12 ? node.label.substring(0, 12) + '...' : node.label;
+                  const color = NODE_COLORS[node.type] || '#6b7280';
+                  const displayLabel = (node.name || '').length > 12 ? node.name.substring(0, 12) + '...' : (node.name || '');
 
                   return (
                     <g key={node.id}>

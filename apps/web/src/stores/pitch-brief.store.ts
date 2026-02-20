@@ -46,36 +46,34 @@ export interface PitchBriefDetail extends PitchBriefListItem {
 
 export interface GraphNode {
   id: string;
-  label: string;
-  node_type: string;
+  name: string;
+  type: string;
   description: string;
-  degree: number;
+  documentId?: string;
   properties: Record<string, unknown>;
 }
 
 export interface GraphEdge {
   source: string;
   target: string;
-  edge_type: string;
+  type: string;
+  description: string;
   weight: number;
-  properties: Record<string, unknown>;
+  documentId?: string;
 }
 
 export interface GraphData {
   nodes: GraphNode[];
   edges: GraphEdge[];
-  total_nodes: number;
-  total_edges: number;
-  is_truncated: boolean;
+  totalNodes: number;
+  totalEdges: number;
 }
 
 export interface GraphStats {
-  total_nodes: number;
-  total_edges: number;
-  node_types: Record<string, number>;
-  edge_types: Record<string, number>;
-  avg_degree: number;
-  density: number;
+  totalNodes: number;
+  totalEdges: number;
+  nodeTypes: Record<string, number>;
+  edgeTypes: Record<string, number>;
 }
 
 export interface SearchResult {
