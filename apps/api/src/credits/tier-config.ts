@@ -27,9 +27,10 @@ export interface TierLimits {
  * Cost per illustrated deck (5 images): ~$0.21 + $0.675 = ~$0.89
  *
  * Credit value: 1 credit = $0.25 user-facing
- * Free signup gift: 10 credits = $2.50 value
- *   → Upload doc (1) + entities (1) + outline (1) + deck (2) + 3 images (3) = 8 credits
- *   → 2 credits left for chat/edits — meaningful trial
+ * Free signup gift: 5 credits = $1.25 value (sample only, incentivizes upgrade)
+ *   → Path A: outline (1) + deck (2) + 2 images (2) = 5 credits (no docs)
+ *   → Path B: doc (1) + entities (1) + outline (1) + deck (2) = 5 credits (no images)
+ *   → Either way: see the product, can't get the full experience
  *
  * Credit deductions:
  *   Outline generation: 1 credit
@@ -43,7 +44,7 @@ export interface TierLimits {
  *   Export: free
  *
  * Pricing (targeting 50%+ margin):
- *   FREE       — 10 credits on signup (one-time), 2 decks max, 4 slides max, no images
+ *   FREE       — 5 credits on signup (one-time), 1 deck max, 4 slides max, sample only
  *   STARTER    — $19/mo → 40 credits (6 illustrated decks, or 13 text-only)
  *   PRO        — $49/mo → 100 credits (16 illustrated, or 33 text-only)
  *   ENTERPRISE — custom → 300 credits
@@ -77,8 +78,8 @@ export const FREE_CHAT_MESSAGES_PER_PRESENTATION = 10;
 /** Credits deducted per chat message after free allowance. */
 export const CHAT_MESSAGE_COST = 1;
 
-/** Credits granted to new free-tier users on signup. */
-export const FREE_SIGNUP_CREDITS = 10;
+/** Credits granted to new free-tier users on signup (sample deck only). */
+export const FREE_SIGNUP_CREDITS = 5;
 
 export interface CreditPack {
   id: string;
@@ -103,9 +104,9 @@ export const CREDIT_PACKS: CreditPack[] = [
 
 export const TIER_LIMITS: Record<string, TierLimits> = {
   FREE: {
-    maxDecksPerMonth: 2,
+    maxDecksPerMonth: 1, // one sample deck only
     maxSlidesPerDeck: 4, // sample preview only
-    creditsPerMonth: 0, // no monthly refresh; one-time 10 credits on signup
+    creditsPerMonth: 0, // no monthly refresh; one-time 5 credits on signup
     maxBriefs: 1,
     maxLenses: 1,
     maxCustomGuidanceLength: 200,
