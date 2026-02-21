@@ -12,6 +12,7 @@ import { ValidationGateService } from './validation-gate.service.js';
 import { QualityAgentsService } from './quality-agents.service.js';
 import { VisualCriticService } from './visual-critic.service.js';
 import { ChatCleanupService } from './chat-cleanup.service.js';
+import { DraftPromotionService } from './draft-promotion.service.js';
 import { PrismaModule } from '../prisma/prisma.module.js';
 import { KnowledgeBaseModule } from '../knowledge-base/knowledge-base.module.js';
 import { ConstraintsModule } from '../constraints/constraints.module.js';
@@ -38,6 +39,7 @@ import { ThemesModule } from '../themes/themes.module.js';
     QualityAgentsService,
     VisualCriticService,
     ChatCleanupService,
+    DraftPromotionService,
   ],
   exports: [
     ChatService,
@@ -51,6 +53,7 @@ import { ThemesModule } from '../themes/themes.module.js';
     ValidationGateService,
     QualityAgentsService,
     VisualCriticService,
+    DraftPromotionService,
   ],
 })
 export class ChatModule {}
