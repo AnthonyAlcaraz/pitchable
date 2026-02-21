@@ -77,6 +77,7 @@ model Presentation {
   user             User               @relation(fields: [userId], references: [id], onDelete: Cascade)
   views            PresentationView[]
   slides           Slide[]
+  draftSlides      DraftSlide[]
 
   @@index([userId])
   @@index([status])
@@ -105,11 +106,13 @@ model Slide {
   figmaNodeName  String?
   previewUrl     String?
   sectionLabel      String?
+  contentHash       String?
   createdAt         DateTime     @default(now())
   updatedAt         DateTime     @default(now()) @updatedAt
   figmaLastSyncAt   DateTime?
   figmaSyncVersion  Int          @default(0)
   imageJobs         ImageJob[]
+  slideSources      SlideSource[]
   presentation      Presentation @relation(fields: [presentationId], references: [id], onDelete: Cascade)
 
   @@index([presentationId, createdAt])
@@ -187,6 +190,38 @@ model ExportJob {
   presentation   Presentation @relation(fields: [presentationId], references: [id], onDelete: Cascade)
 
   @@index([presentationId])
+  @@index([presentationId, format, status])
+}
+
+model DraftSlide {
+  id             String       @id @default(uuid()) @db.Uuid
+  presentationId String       @db.Uuid
+  slideNumber    Int
+  title          String
+  body           String
+  speakerNotes   String?
+  slideType      SlideType
+  imagePrompt    String?
+  sectionLabel   String?
+  contentHash    String?
+  createdAt      DateTime     @default(now())
+  presentation   Presentation @relation(fields: [presentationId], references: [id], onDelete: Cascade)
+
+  @@index([presentationId])
+}
+
+model SlideSource {
+  id        String        @id @default(uuid()) @db.Uuid
+  slideId   String        @db.Uuid
+  chunkId   String        @db.Uuid
+  relevance Float         @default(0)
+  createdAt DateTime      @default(now())
+  slide     Slide         @relation(fields: [slideId], references: [id], onDelete: Cascade)
+  chunk     DocumentChunk @relation(fields: [chunkId], references: [id], onDelete: Cascade)
+
+  @@unique([slideId, chunkId])
+  @@index([slideId])
+  @@index([chunkId])
 }
 
 model ImageJob {
@@ -244,16 +279,19 @@ model GraphMapping {
 }
 
 model DocumentChunk {
-  id           String                 @id @default(uuid()) @db.Uuid
-  documentId   String                 @db.Uuid
-  content      String
-  heading      String?
-  headingLevel Int                    @default(0)
-  chunkIndex   Int
-  metadata     Json                   @default("{}")
-  contentHash  String?
-  createdAt    DateTime               @default(now())
-  document     Document               @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  id            String                 @id @default(uuid()) @db.Uuid
+  documentId    String                 @db.Uuid
+  content       String
+  heading       String?
+  headingLevel  Int                    @default(0)
+  chunkIndex    Int
+  metadata      Json                   @default("{}")
+  contentHash   String?
+  approvalScore Float                  @default(0)
+  usageCount    Int                    @default(0)
+  createdAt     DateTime               @default(now())
+  document      Document               @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  slideSources  SlideSource[]
 
   @@index([documentId])
   @@index([contentHash])
@@ -316,9 +354,15 @@ model PitchLens {
   maxTableRows        Int?
   showSectionLabels   Boolean        @default(false)
   showOutlineSlide    Boolean        @default(false)
+  useCount            Int            @default(0)
+  rating              Float          @default(0)
+  ratingCount         Int            @default(0)
+  clonedFromId        String?        @db.Uuid
   figmaFileKey        String?
   figmaAccessToken    String?
   figmaTemplateId     String?        @db.Uuid
+  clonedFrom          PitchLens?     @relation("PitchLensClone", fields: [clonedFromId], references: [id])
+  clones              PitchLens[]    @relation("PitchLensClone")
   figmaTemplate       FigmaTemplate? @relation("PitchLensTemplate", fields: [figmaTemplateId], references: [id])
   briefLenses         BriefLens[]
   user                User           @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -327,6 +371,8 @@ model PitchLens {
   @@index([userId])
   @@index([userId, isDefault])
   @@index([isPublic])
+  @@index([isPublic, useCount])
+  @@index([isPublic, rating])
 }
 
 model PitchBrief {
@@ -472,6 +518,7 @@ enum PresentationType {
 enum PresentationStatus {
   DRAFT
   PROCESSING
+  REVIEWING
   COMPLETED
   FAILED
 }
@@ -529,6 +576,7 @@ enum JobStatus {
   PROCESSING
   COMPLETED
   FAILED
+  PENDING_RETRY
 }
 
 enum DocumentStatus {
