@@ -12,6 +12,7 @@ import { ConfigService } from '@nestjs/config';
 import { Server, Socket } from 'socket.io';
 import { verify } from 'jsonwebtoken';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { EventStreamService } from './event-stream.service.js';
 
 interface JwtPayload {
   sub: string;
@@ -96,6 +97,7 @@ export class EventsGateway
   constructor(
     configService: ConfigService,
     private readonly prisma: PrismaService,
+    private readonly eventStream: EventStreamService,
   ) {
     this.jwtSecret =
       configService.get<string>('JWT_ACCESS_SECRET') ||
@@ -216,18 +218,33 @@ export class EventsGateway
     this.server
       .to(`presentation:${event.presentationId}`)
       .emit('slide:updated', event);
+    this.eventStream.appendEvent({
+      type: 'slide_edit',
+      presentationId: event.presentationId,
+      data: event.data,
+    });
   }
 
   emitSlideAdded(event: SlideAddedEvent): void {
     this.server
       .to(`presentation:${event.presentationId}`)
       .emit('slide:added', event);
+    this.eventStream.appendEvent({
+      type: 'slide_add',
+      presentationId: event.presentationId,
+      data: { slide: event.slide, position: event.position },
+    });
   }
 
   emitSlideRemoved(event: SlideRemovedEvent): void {
     this.server
       .to(`presentation:${event.presentationId}`)
       .emit('slide:removed', event);
+    this.eventStream.appendEvent({
+      type: 'slide_remove',
+      presentationId: event.presentationId,
+      data: { slideId: event.slideId },
+    });
   }
 
   emitSlideReordered(event: SlideReorderedEvent): void {
@@ -240,12 +257,22 @@ export class EventsGateway
     this.server
       .to(`presentation:${event.presentationId}`)
       .emit('presentation:themeChanged', event);
+    this.eventStream.appendEvent({
+      type: 'theme_change',
+      presentationId: event.presentationId,
+      data: { themeId: event.themeId, theme: event.theme },
+    });
   }
 
   emitGenerationProgress(event: GenerationProgressEvent): void {
     this.server
       .to(`presentation:${event.presentationId}`)
       .emit('generation:progress', event);
+    this.eventStream.appendEvent({
+      type: 'generation_progress',
+      presentationId: event.presentationId,
+      data: { step: event.step, progress: event.progress, message: event.message },
+    });
   }
 
   emitImageGenerated(event: {
@@ -256,6 +283,11 @@ export class EventsGateway
     this.server
       .to(`presentation:${event.presentationId}`)
       .emit('image:generated', event);
+    this.eventStream.appendEvent({
+      type: 'image_generated',
+      presentationId: event.presentationId,
+      data: { slideId: event.slideId, imageUrl: event.imageUrl },
+    });
   }
 
   emitImagesComplete(event: { presentationId: string }): void {
@@ -281,6 +313,11 @@ export class EventsGateway
     this.server
       .to(`presentation:${presentationId}`)
       .emit('export:progress', event);
+    this.eventStream.appendEvent({
+      type: 'export_progress',
+      presentationId: event.presentationId,
+      data: { jobId: event.jobId, step: event.step, progress: event.progress, message: event.message },
+    });
   }
 
   emitDocumentProgress(userId: string, event: DocumentProgressEvent): void {
