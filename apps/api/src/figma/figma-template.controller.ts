@@ -79,6 +79,15 @@ export class FigmaTemplateController {
     return this.templateService.autoMapFrames(id, req.user.userId);
   }
 
+  /** AI-powered auto-map: uses Sonnet 4.6 vision to classify frames by visual layout. */
+  @Post(':id/auto-map-ai')
+  async autoMapFramesAi(
+    @Request() req: AuthRequest,
+    @Param('id') id: string,
+  ) {
+    return this.templateService.autoMapFrames(id, req.user.userId, true);
+  }
+
   @Post(':id/refresh')
   async refreshThumbnails(
     @Request() req: AuthRequest,

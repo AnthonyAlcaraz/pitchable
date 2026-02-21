@@ -53,10 +53,32 @@ export class FigmaController {
     return { connected: false };
   }
 
-  /** Check Figma connection status. */
+  /** Check Figma connection status (includes plan tier & API limits). */
   @Get('status')
   async status(@Request() req: AuthRequest) {
-    return this.figmaService.getStatus(req.user.userId);
+    const base = await this.figmaService.getStatus(req.user.userId);
+    if (!base.connected) return base;
+
+    // Enrich with plan tier and rate limit info
+    const token = await this.figmaService.getToken(req.user.userId);
+    if (token) {
+      const rateLimitStatus = await this.figmaService.checkRateLimitStatus(token);
+      const planTier = rateLimitStatus.planTier;
+      const planInfo = planTier
+        ? FigmaService.PLAN_LIMITS[planTier]
+        : undefined;
+
+      return {
+        ...base,
+        planTier: planInfo?.label ?? planTier ?? 'unknown',
+        dailyApiReads: planInfo?.dailyReads,
+        planWarning: planInfo?.warning || undefined,
+        isRateLimited: rateLimitStatus.isRateLimited,
+        retryAfterSeconds: rateLimitStatus.retryAfterSeconds,
+      };
+    }
+
+    return base;
   }
 
   /** Re-validate stored Figma token. */
@@ -88,8 +110,54 @@ export class FigmaController {
       };
     }
 
+    // Check rate limit before making the expensive getFrames call
+    const rateLimitStatus = await this.figmaService.checkRateLimitStatus(token);
+    if (rateLimitStatus.isRateLimited) {
+      const planTier = rateLimitStatus.planTier;
+      const planInfo = planTier
+        ? FigmaService.PLAN_LIMITS[planTier]
+        : undefined;
+
+      return {
+        frames: [],
+        isRateLimited: true,
+        retryAfterSeconds: rateLimitStatus.retryAfterSeconds,
+        planTier: planInfo?.label ?? planTier,
+        planWarning: rateLimitStatus.warning,
+      };
+    }
+
     const frames = await this.figmaService.getFrames(token, fileKey);
-    return { frames };
+
+    // Include plan info so frontend can show proactive warnings
+    const planTier = rateLimitStatus.planTier;
+    const planInfo = planTier
+      ? FigmaService.PLAN_LIMITS[planTier]
+      : undefined;
+
+    return {
+      frames,
+      planTier: planInfo?.label ?? planTier,
+      dailyApiReads: planInfo?.dailyReads,
+      ...(planInfo?.warning && { planWarning: planInfo.warning }),
+    };
+  }
+
+  /** Get Figma plan limits reference (no auth token needed, static data). */
+  @Get('plan-limits')
+  getPlanLimits() {
+    return {
+      plans: Object.entries(FigmaService.PLAN_LIMITS).map(([key, info]) => ({
+        tier: key,
+        label: info.label,
+        dailyReads: info.dailyReads,
+        warning: info.warning || undefined,
+      })),
+      recommendation:
+        'Starter (free) plans have very limited API access (~50 file reads/day). ' +
+        'Auto-map and template sync may exhaust your quota quickly. ' +
+        'Professional plans support ~500 reads/day — sufficient for normal usage.',
+    };
   }
 
   /** Assign a Figma frame to a slide (exports PNG → S3 → Slide.imageUrl). */

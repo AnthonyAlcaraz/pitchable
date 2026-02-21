@@ -481,8 +481,9 @@ model FigmaTemplateMapping {
   createdAt     DateTime      @default(now())
   template      FigmaTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
 
-  @@unique([templateId, slideType])
+  @@unique([templateId, slideType, figmaNodeId])
   @@index([templateId])
+  @@index([templateId, slideType])
 }
 
 model PresentationView {

@@ -3,8 +3,10 @@ import { BullModule } from '@nestjs/bullmq';
 import { PrismaModule } from '../prisma/prisma.module.js';
 import { EventsModule } from '../events/events.module.js';
 import { KnowledgeBaseModule } from '../knowledge-base/knowledge-base.module.js';
+import { LlmModule } from '../chat/llm.module.js';
 import { FigmaService } from './figma.service.js';
 import { FigmaImageSyncService } from './figma-image-sync.service.js';
+import { FigmaAiMapperService } from './figma-ai-mapper.service.js';
 import { FigmaController } from './figma.controller.js';
 import { FigmaTemplateController } from './figma-template.controller.js';
 import { FigmaTemplateService } from './figma-template.service.js';
@@ -18,12 +20,14 @@ import { FigmaSyncProcessor } from './figma-sync.processor.js';
     PrismaModule,
     EventsModule,
     KnowledgeBaseModule,
+    LlmModule,
     BullModule.registerQueue({ name: 'figma-sync' }),
   ],
   controllers: [FigmaController, FigmaTemplateController, FigmaWebhookController],
   providers: [
     FigmaService,
     FigmaImageSyncService,
+    FigmaAiMapperService,
     FigmaTemplateService,
     FigmaRendererService,
     FigmaWebhookService,
@@ -32,6 +36,7 @@ import { FigmaSyncProcessor } from './figma-sync.processor.js';
   exports: [
     FigmaService,
     FigmaImageSyncService,
+    FigmaAiMapperService,
     FigmaTemplateService,
     FigmaRendererService,
     FigmaWebhookService,

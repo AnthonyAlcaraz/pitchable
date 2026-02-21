@@ -3,9 +3,11 @@ import {
   Logger,
   NotFoundException,
   ForbiddenException,
+  Optional,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { FigmaService } from './figma.service.js';
+import { FigmaAiMapperService } from './figma-ai-mapper.service.js';
 import type { CreateFigmaTemplateDto } from './dto/create-figma-template.dto.js';
 import type { MapFrameDto } from './dto/map-frame.dto.js';
 import { SlideType } from '../../generated/prisma/enums.js';
@@ -34,6 +36,9 @@ const SLIDE_TYPE_KEYWORDS: Record<string, string[]> = {
   SPLIT_STATEMENT: ['split', 'statement', 'big idea'],
 };
 
+/** Minimum confidence to accept an AI classification. */
+const AI_MIN_CONFIDENCE = 0.6;
+
 @Injectable()
 export class FigmaTemplateService {
   private readonly logger = new Logger(FigmaTemplateService.name);
@@ -41,6 +46,7 @@ export class FigmaTemplateService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly figmaService: FigmaService,
+    @Optional() private readonly aiMapper?: FigmaAiMapperService,
   ) {}
 
   async createTemplate(userId: string, dto: CreateFigmaTemplateDto) {
@@ -144,9 +150,10 @@ export class FigmaTemplateService {
 
     const mapping = await this.prisma.figmaTemplateMapping.upsert({
       where: {
-        templateId_slideType: {
+        templateId_slideType_figmaNodeId: {
           templateId,
           slideType: dto.slideType,
+          figmaNodeId: dto.figmaNodeId,
         },
       },
       create: {
@@ -157,7 +164,6 @@ export class FigmaTemplateService {
         thumbnailUrl,
       },
       update: {
-        figmaNodeId: dto.figmaNodeId,
         figmaNodeName,
         thumbnailUrl,
       },
@@ -184,7 +190,14 @@ export class FigmaTemplateService {
     return { deleted: true };
   }
 
-  async autoMapFrames(templateId: string, userId: string) {
+  /**
+   * Auto-map Figma frames to slide types.
+   *
+   * @param templateId - Template to map
+   * @param userId - Owner of the template
+   * @param useAi - If true, use Sonnet 4.6 vision to classify unmatched frames (default: false)
+   */
+  async autoMapFrames(templateId: string, userId: string, useAi = false) {
     const template = await this.ensureOwnership(templateId, userId);
     const token = await this.figmaService.resolveToken(userId);
 
@@ -195,7 +208,17 @@ export class FigmaTemplateService {
     }
 
     const frames = await this.figmaService.getFrames(token, template.figmaFileKey);
-    const mappings: Array<{ slideType: string; nodeId: string; nodeName: string }> = [];
+    const mappings: Array<{
+      slideType: string;
+      nodeId: string;
+      nodeName: string;
+      confidence?: number;
+      source: 'keyword' | 'ai';
+      reasoning?: string;
+    }> = [];
+
+    // Phase 1: keyword matching (same as before)
+    const keywordMappedNodeIds = new Set<string>();
 
     for (const frame of frames) {
       const nameLower = frame.name.toLowerCase();
@@ -210,9 +233,10 @@ export class FigmaTemplateService {
 
         await this.prisma.figmaTemplateMapping.upsert({
           where: {
-            templateId_slideType: {
+            templateId_slideType_figmaNodeId: {
               templateId,
               slideType: slideType as SlideType,
+              figmaNodeId: frame.nodeId,
             },
           },
           create: {
@@ -223,7 +247,6 @@ export class FigmaTemplateService {
             thumbnailUrl: frame.thumbnailUrl,
           },
           update: {
-            figmaNodeId: frame.nodeId,
             figmaNodeName: frame.name,
             thumbnailUrl: frame.thumbnailUrl,
           },
@@ -233,17 +256,89 @@ export class FigmaTemplateService {
           slideType,
           nodeId: frame.nodeId,
           nodeName: frame.name,
+          confidence: 0.9,
+          source: 'keyword',
         });
 
+        keywordMappedNodeIds.add(frame.nodeId);
         break; // Move to next frame
       }
     }
 
+    // Phase 2: AI vision fallback for unmapped frames
+    if (useAi && this.aiMapper) {
+      const unmappedFrames = frames.filter((f) => !keywordMappedNodeIds.has(f.nodeId));
+      const mappedSlideTypes = new Set(mappings.map((m) => m.slideType));
+
+      if (unmappedFrames.length > 0) {
+        this.logger.log(
+          `AI analysis: ${unmappedFrames.length} unmapped frames to classify`,
+        );
+
+        try {
+          const aiResults = await this.aiMapper.analyzeFrames(unmappedFrames);
+
+          for (const result of aiResults) {
+            // Skip low-confidence results
+            if (result.confidence < AI_MIN_CONFIDENCE) continue;
+
+            // Skip if this slideType is already mapped
+            if (mappedSlideTypes.has(result.slideType)) continue;
+
+            await this.prisma.figmaTemplateMapping.upsert({
+              where: {
+                templateId_slideType_figmaNodeId: {
+                  templateId,
+                  slideType: result.slideType as SlideType,
+                  figmaNodeId: result.nodeId,
+                },
+              },
+              create: {
+                templateId,
+                slideType: result.slideType as SlideType,
+                figmaNodeId: result.nodeId,
+                figmaNodeName: result.name,
+                thumbnailUrl: unmappedFrames.find((f) => f.nodeId === result.nodeId)?.thumbnailUrl,
+              },
+              update: {
+                figmaNodeName: result.name,
+                thumbnailUrl: unmappedFrames.find((f) => f.nodeId === result.nodeId)?.thumbnailUrl,
+              },
+            });
+
+            mappings.push({
+              slideType: result.slideType,
+              nodeId: result.nodeId,
+              nodeName: result.name,
+              confidence: result.confidence,
+              source: 'ai',
+              reasoning: result.reasoning,
+            });
+
+            mappedSlideTypes.add(result.slideType);
+          }
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : 'unknown';
+          this.logger.warn(`AI frame analysis failed (non-fatal): ${msg}`);
+          // Keyword-only results still returned
+        }
+      }
+    }
+
     this.logger.log(
-      `Auto-mapped ${mappings.length} frames in template ${templateId}`,
+      `Auto-mapped ${mappings.length} frames in template ${templateId} (keyword: ${mappings.filter((m) => m.source === 'keyword').length}, ai: ${mappings.filter((m) => m.source === 'ai').length})`,
     );
 
-    return { mapped: mappings.length, mappings };
+    // Check rate limit status and include plan warning in response
+    const rateLimitStatus = await this.figmaService.checkRateLimitStatus(token);
+
+    return {
+      mapped: mappings.length,
+      mappings,
+      ...(rateLimitStatus.warning && { rateLimitWarning: rateLimitStatus.warning }),
+      ...(rateLimitStatus.planTier && { figmaPlanTier: rateLimitStatus.planTier }),
+      ...(rateLimitStatus.isRateLimited && { isRateLimited: true }),
+    };
   }
 
   async deleteTemplate(templateId: string, userId: string) {

@@ -336,6 +336,72 @@ export class FigmaService {
     return { buffer: Buffer.from(arrayBuffer), mimeType };
   }
 
+  // ── Rate Limit Awareness ───────────────────────────────────
+
+  /** Figma plan tier limits (approximate daily file-read budgets). */
+  static readonly PLAN_LIMITS: Record<string, { label: string; dailyReads: number; warning: string }> = {
+    starter: {
+      label: 'Starter (Free)',
+      dailyReads: 50,
+      warning: 'Figma Starter plan has very limited API access (~50 file reads/day). Auto-map and template sync may exhaust your quota quickly. Upgrade to Professional for higher limits.',
+    },
+    professional: {
+      label: 'Professional',
+      dailyReads: 500,
+      warning: 'Figma Professional plan supports ~500 file reads/day. Sufficient for normal usage.',
+    },
+    organization: {
+      label: 'Organization',
+      dailyReads: 2000,
+      warning: '',
+    },
+    enterprise: {
+      label: 'Enterprise',
+      dailyReads: 5000,
+      warning: '',
+    },
+  };
+
+  /**
+   * Check API rate limit status by making a lightweight /me call.
+   * Returns plan tier info and whether the token is currently rate-limited.
+   */
+  async checkRateLimitStatus(token: string): Promise<{
+    isRateLimited: boolean;
+    retryAfterSeconds?: number;
+    planTier?: string;
+    warning?: string;
+  }> {
+    try {
+      const res = await fetch(`${FIGMA_API}/me`, {
+        headers: { 'x-figma-token': token },
+        signal: AbortSignal.timeout(10_000),
+      });
+
+      const planTier = res.headers.get('x-figma-plan-tier') ?? undefined;
+      const retryAfter = parseInt(res.headers.get('retry-after') ?? '', 10);
+
+      if (res.status === 429) {
+        const planInfo = planTier ? FigmaService.PLAN_LIMITS[planTier] : undefined;
+        return {
+          isRateLimited: true,
+          retryAfterSeconds: retryAfter > 0 ? retryAfter : undefined,
+          planTier,
+          warning: planInfo?.warning ?? `Figma API rate limit exceeded. ${retryAfter > 3600 ? `Reset in ~${Math.ceil(retryAfter / 3600)} hours.` : 'Try again in a few minutes.'} Consider upgrading your Figma plan for higher API limits.`,
+        };
+      }
+
+      const planInfo = planTier ? FigmaService.PLAN_LIMITS[planTier] : undefined;
+      return {
+        isRateLimited: false,
+        planTier,
+        warning: planInfo?.warning || undefined,
+      };
+    } catch {
+      return { isRateLimited: false };
+    }
+  }
+
   // ── Private helpers ─────────────────────────────────────────
 
   private async fetchFigmaUser(token: string): Promise<FigmaUser> {

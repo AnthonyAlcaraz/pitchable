@@ -4,6 +4,7 @@ import { ConfigModule } from '@nestjs/config';
 import { PrismaModule } from '../prisma/prisma.module.js';
 import { CreditsModule } from '../credits/credits.module.js';
 import { EventsModule } from '../events/events.module.js';
+import { LlmModule } from '../chat/llm.module.js';
 import { KnowledgeBaseController } from './knowledge-base.controller.js';
 import { KnowledgeBaseService } from './knowledge-base.service.js';
 import { S3Service } from './storage/s3.service.js';
@@ -22,7 +23,6 @@ import { EmbeddingService } from './embedding/embedding.service.js';
 import { VectorStoreService } from './embedding/vector-store.service.js';
 import { FalkorDbService } from './falkordb/falkordb.service.js';
 import { EntityExtractorService } from './falkordb/entity-extractor.service.js';
-import { LlmService } from '../chat/llm.service.js';
 import { ZeroEntropyRetrievalService } from './zeroentropy/zeroentropy-retrieval.service.js';
 import { OmnisearchService } from './omnisearch.service.js';
 import { RerankerService } from './reranker.service.js';
@@ -35,6 +35,7 @@ import { ChunkScoringService } from './chunk-scoring.service.js';
     ConfigModule,
     CreditsModule,
     EventsModule,
+    LlmModule,
     BullModule.registerQueue({ name: 'document-processing' }),
     BullModule.registerQueue({ name: 'website-crawl' }),
   ],
@@ -57,7 +58,6 @@ import { ChunkScoringService } from './chunk-scoring.service.js';
     VectorStoreService,
     FalkorDbService,
     EntityExtractorService,
-    LlmService,
     ZeroEntropyRetrievalService,
     OmnisearchService,
     RerankerService,

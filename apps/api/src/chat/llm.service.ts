@@ -249,4 +249,119 @@ export class LlmService {
     // Should never reach here, but TypeScript needs it
     throw lastError ?? new Error('completeJson failed');
   }
+
+  /**
+   * Complete with vision (image+text) content blocks + JSON parse + validate + retry.
+   *
+   * Similar to completeJson<T>() but accepts Anthropic ContentBlockParam[] for
+   * multimodal inputs (e.g. image thumbnails + text instructions).
+   *
+   * @param systemPrompt - System prompt text
+   * @param contentBlocks - Array of Anthropic content blocks (text + image)
+   * @param model - Model to use (defaults to SONNET for vision tasks)
+   * @param validator - Optional type guard to validate the parsed structure
+   * @param maxRetries - Number of retries on parse/validation failure (default: 1)
+   */
+  async completeJsonVision<T>(
+    systemPrompt: string,
+    contentBlocks: Array<Anthropic.ContentBlockParam>,
+    model?: string,
+    validator?: JsonValidator<T>,
+    maxRetries = 1,
+  ): Promise<T> {
+    let lastError: Error | null = null;
+
+    const jsonInstruction = '\n\nIMPORTANT: You MUST respond with valid JSON only. No markdown fences, no explanation, no text before or after the JSON. Output ONLY a single JSON object.';
+    const fullSystem = systemPrompt + jsonInstruction;
+
+    // Start with the user content blocks as-is
+    let messages: Array<{ role: 'user' | 'assistant'; content: string | Array<Anthropic.ContentBlockParam> }> = [
+      { role: 'user' as const, content: contentBlocks },
+    ];
+
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        const result = await this.anthropic.messages.create({
+          model: model ?? LlmModel.SONNET,
+          max_tokens: 4096,
+          system: fullSystem,
+          messages,
+        });
+
+        const textBlock = result.content.find((block) => block.type === 'text');
+        const rawContent = (textBlock?.text ?? '').trim();
+
+        // Strip markdown fences if present
+        const content = rawContent
+          .replace(/^```(?:json)?\s*\n?/i, '')
+          .replace(/\n?```\s*$/, '')
+          .trim();
+
+        let parsed: unknown;
+        try {
+          parsed = JSON.parse(content);
+        } catch (parseErr) {
+          const msg = parseErr instanceof Error ? parseErr.message : 'JSON parse failed';
+          this.logger.warn(
+            `JSON parse failed in vision call (attempt ${attempt + 1}/${maxRetries + 1}): ${msg}\nRaw: ${content.substring(0, 200)}`,
+          );
+          lastError = new Error(`LLM vision returned invalid JSON: ${msg}`);
+
+          if (attempt < maxRetries) {
+            messages = [
+              ...messages,
+              { role: 'assistant' as const, content: rawContent },
+              {
+                role: 'user' as const,
+                content: 'Your previous response was not valid JSON. Please respond with ONLY a valid JSON object. No markdown fences, no explanation.',
+              },
+            ];
+            continue;
+          }
+          throw lastError;
+        }
+
+        // Structural validation
+        if (validator) {
+          if (!validator(parsed)) {
+            this.logger.warn(
+              `JSON structure validation failed in vision call (attempt ${attempt + 1}/${maxRetries + 1})`,
+            );
+            lastError = new Error('LLM vision response failed structural validation');
+
+            if (attempt < maxRetries) {
+              messages = [
+                ...messages,
+                { role: 'assistant' as const, content: rawContent },
+                {
+                  role: 'user' as const,
+                  content: 'Your previous JSON response had missing or incorrect fields. Please ensure all required fields are present with correct types.',
+                },
+              ];
+              continue;
+            }
+            throw lastError;
+          }
+        }
+
+        return parsed as T;
+      } catch (err) {
+        if (err === lastError) throw err;
+
+        const msg = err instanceof Error ? err.message : 'Unknown LLM error';
+        this.logger.error(
+          `LLM vision API call failed (attempt ${attempt + 1}/${maxRetries + 1}): ${msg}`,
+        );
+        lastError = err instanceof Error ? err : new Error(msg);
+
+        if (attempt < maxRetries) {
+          await new Promise((r) => setTimeout(r, 1000 * (attempt + 1)));
+          continue;
+        }
+        throw lastError;
+      }
+    }
+
+    throw lastError ?? new Error('completeJsonVision failed');
+  }
 }

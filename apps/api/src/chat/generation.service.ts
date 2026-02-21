@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Optional } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { LlmService, LlmModel } from './llm.service.js';
 import { getModelForSlideType } from './model-router.js';
@@ -46,6 +46,8 @@ import type { ChatStreamEvent } from './chat.service.js';
 import { isValidOutline, isValidSlideContent } from './validators.js';
 import { truncateToLimits, passesDensityCheck } from '../constraints/density-truncator.js';
 import type { GeneratedSlideContent } from './validators.js';
+import { FigmaImageSyncService, type FigmaBatchItem } from '../figma/figma-image-sync.service.js';
+import { FigmaTemplateService } from '../figma/figma-template.service.js';
 
 // ── Interfaces ──────────────────────────────────────────────
 
@@ -89,6 +91,8 @@ export class GenerationService {
     private readonly archetypeResolver: ArchetypeResolverService,
     private readonly themesService: ThemesService,
     private readonly interactionGate: InteractionGateService,
+    @Optional() private readonly figmaImageSync?: FigmaImageSyncService,
+    @Optional() private readonly figmaTemplateService?: FigmaTemplateService,
   ) {}
 
   /**
@@ -960,6 +964,16 @@ export class GenerationService {
       yield { type: 'progress', content: 'Quality review skipped', metadata: { step: 'quality_review', status: 'complete' } };
     }
 
+    // 6b. Apply Figma template designs to slides (if PitchLens has figmaTemplateId)
+    if (presWithLens?.pitchLens?.figmaTemplateId && this.figmaImageSync) {
+      yield { type: 'progress', content: 'Applying Figma template designs', metadata: { step: 'figma_template', status: 'running' } };
+    }
+    const figmaSlideIds = await this.applyFigmaTemplateToSlides(presentationId, userId, presWithLens);
+    if (figmaSlideIds.size > 0) {
+      yield { type: 'progress', content: `Applied ${figmaSlideIds.size} Figma designs`, metadata: { step: 'figma_template', status: 'complete' } };
+      yield { type: 'token', content: `\n**Figma Template:** Applied ${figmaSlideIds.size} design frames from your Figma file.\n` };
+    }
+
     // 7. Mark presentation as completed and increment deck count
     await this.prisma.presentation.update({
       where: { id: presentationId },
@@ -1424,6 +1438,106 @@ export class GenerationService {
         slideType: alt.slideType,
       })),
     ];
+  }
+
+  /**
+   * Apply Figma template designs to generated slides.
+   *
+   * Supports multiple frames per slide type: if a template has 3 CONTENT frames
+   * and the deck has 5 CONTENT slides, the frames cycle (1→2→3→1→2).
+   *
+   * Uses batch export: ONE Figma API call for all frames, then parallel CDN
+   * downloads + S3 uploads. This avoids the 30 req/min Figma rate limit.
+   *
+   * @returns Set of slideIds that received Figma images
+   */
+  private async applyFigmaTemplateToSlides(
+    presentationId: string,
+    userId: string,
+    presWithLens: { pitchLens: { figmaTemplateId?: string | null; id?: string } | null } | null,
+  ): Promise<Set<string>> {
+    const figmaSlideIds = new Set<string>();
+
+    const figmaTemplateId = presWithLens?.pitchLens?.figmaTemplateId;
+    if (!figmaTemplateId || !this.figmaImageSync) {
+      return figmaSlideIds;
+    }
+
+    try {
+      // Load template with mappings
+      const template = await this.prisma.figmaTemplate.findUnique({
+        where: { id: figmaTemplateId },
+        include: { mappings: { orderBy: { createdAt: 'asc' } } },
+      });
+
+      if (!template || template.mappings.length === 0) {
+        return figmaSlideIds;
+      }
+
+      // Build multi-frame mapping: slideType → array of mappings
+      const mappingsByType = new Map<string, typeof template.mappings>();
+      for (const m of template.mappings) {
+        const existing = mappingsByType.get(m.slideType) ?? [];
+        existing.push(m);
+        mappingsByType.set(m.slideType, existing);
+      }
+
+      // Track per-type usage counter for round-robin
+      const typeCounter = new Map<string, number>();
+
+      // Load all generated slides
+      const slides = await this.prisma.slide.findMany({
+        where: { presentationId },
+        orderBy: { slideNumber: 'asc' },
+        select: { id: true, slideNumber: true, slideType: true },
+      });
+
+      // Build batch items: assign frames to slides (cycling for multi-frame)
+      const batchItems: FigmaBatchItem[] = [];
+      for (const slide of slides) {
+        const mappings = mappingsByType.get(slide.slideType);
+        if (!mappings || mappings.length === 0) continue;
+
+        // Round-robin: cycle through available frames for this type
+        const counter = typeCounter.get(slide.slideType) ?? 0;
+        const mapping = mappings[counter % mappings.length];
+        typeCounter.set(slide.slideType, counter + 1);
+
+        batchItems.push({
+          slideId: slide.id,
+          nodeId: mapping.figmaNodeId,
+          nodeName: mapping.figmaNodeName ?? undefined,
+        });
+      }
+
+      if (batchItems.length === 0) {
+        return figmaSlideIds;
+      }
+
+      // ONE Figma API call + parallel CDN downloads
+      const lensId = presWithLens?.pitchLens?.id;
+      const applied = await this.figmaImageSync.batchSyncFramesToSlides(
+        batchItems,
+        userId,
+        template.figmaFileKey,
+        lensId,
+      );
+
+      for (const item of batchItems) {
+        figmaSlideIds.add(item.slideId);
+      }
+
+      if (applied > 0) {
+        this.logger.log(
+          `Applied ${applied} Figma template frames to presentation ${presentationId}`,
+        );
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'unknown';
+      this.logger.warn(`Figma template application failed (non-fatal): ${msg}`);
+    }
+
+    return figmaSlideIds;
   }
 
   private async resolveThemeId(themeId?: string): Promise<string> {

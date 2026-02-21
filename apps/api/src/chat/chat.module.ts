@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ChatController } from './chat.controller.js';
 import { ChatService } from './chat.service.js';
-import { LlmService } from './llm.service.js';
+import { LlmModule } from './llm.module.js';
 import { ContextBuilderService } from './context-builder.service.js';
 import { GenerationService } from './generation.service.js';
 import { IntentClassifierService } from './intent-classifier.service.js';
@@ -22,13 +22,13 @@ import { ImagesModule } from '../images/images.module.js';
 import { EmailModule } from '../email/email.module.js';
 import { PitchLensModule } from '../pitch-lens/pitch-lens.module.js';
 import { ThemesModule } from '../themes/themes.module.js';
+import { FigmaModule } from '../figma/figma.module.js';
 
 @Module({
-  imports: [PrismaModule, KnowledgeBaseModule, ConstraintsModule, ExportsModule, CreditsModule, ImagesModule, EmailModule, PitchLensModule, ThemesModule],
+  imports: [PrismaModule, KnowledgeBaseModule, ConstraintsModule, ExportsModule, CreditsModule, ImagesModule, EmailModule, PitchLensModule, ThemesModule, LlmModule, FigmaModule],
   controllers: [ChatController],
   providers: [
     ChatService,
-    LlmService,
     ContextBuilderService,
     GenerationService,
     IntentClassifierService,
@@ -43,7 +43,7 @@ import { ThemesModule } from '../themes/themes.module.js';
   ],
   exports: [
     ChatService,
-    LlmService,
+    LlmModule,
     ContextBuilderService,
     GenerationService,
     IntentClassifierService,
