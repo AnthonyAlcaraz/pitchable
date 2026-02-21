@@ -3,13 +3,16 @@ import {
   Post,
   Get,
   Req,
+  Res,
   Headers,
   Body,
   UseGuards,
   BadRequestException,
   NotFoundException,
   Logger,
+  HttpCode,
 } from '@nestjs/common';
+import type { Response } from 'express';
 import { SkipThrottle } from '@nestjs/throttler';
 import { StripeService } from './stripe.service.js';
 import { BillingService } from './billing.service.js';
@@ -135,8 +138,14 @@ export class BillingController {
   @UseGuards(JwtAuthGuard)
   async getSubscription(
     @CurrentUserModule.CurrentUser() user: CurrentUserModule.RequestUser,
+    @Res({ passthrough: true }) res: Response,
   ) {
-    return this.billing.getSubscription(user.userId);
+    const sub = await this.billing.getSubscription(user.userId);
+    if (!sub) {
+      res.status(204);
+      return;
+    }
+    return sub;
   }
 
   /**
