@@ -253,7 +253,7 @@ ${slide.imagePromptHint ? `Image Prompt: ${slide.imagePromptHint}` : ''}`;
                 { role: 'system', content: systemPrompt },
                 { role: 'user', content: userContent },
               ],
-              LlmModel.SONNET,
+              LlmModel.HAIKU,
               isValidStyleEnforcerResult,
               1,
             );

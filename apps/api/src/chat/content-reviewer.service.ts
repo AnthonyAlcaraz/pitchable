@@ -42,7 +42,7 @@ Speaker Notes: ${slide.speakerNotes}`;
           { role: 'system', content: customLimits ? buildContentReviewerPrompt(customLimits) : CONTENT_REVIEWER_SYSTEM_PROMPT },
           { role: 'user', content: `Review this slide:\n\n${slideDescription}` },
         ],
-        LlmModel.SONNET,
+        LlmModel.HAIKU,
         isValidReviewResult,
         2,
       );

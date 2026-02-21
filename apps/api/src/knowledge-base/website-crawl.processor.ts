@@ -37,6 +37,14 @@ export class WebsiteCrawlProcessor extends WorkerHost {
     this.logger.log(`Website crawl started: url=${url}, maxPages=${maxPages}, briefId=${briefId}`);
 
     try {
+      // 0. Pre-check: ensure user has enough credits for estimated crawl cost
+      const estimatedCost = Math.ceil(maxPages / 5);
+      const hasCredits = await this.credits.hasEnoughCredits(userId, estimatedCost);
+      if (!hasCredits) {
+        this.logger.warn(`Website crawl aborted: insufficient credits for ~${estimatedCost} credit cost`);
+        return;
+      }
+
       // 1. Crawl website via Firecrawl
       const result = await this.firecrawl.crawlWebsite(url, { maxPages, maxDepth });
 

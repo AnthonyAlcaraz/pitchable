@@ -3,7 +3,7 @@ import { PrismaService } from '../prisma/prisma.service.js';
 import { CreditsService } from './credits.service.js';
 import { CreditReservationService } from './credit-reservation.service.js';
 import { CreditReason } from '../../generated/prisma/enums.js';
-import { TIER_LIMITS } from './tier-config.js';
+import { TIER_LIMITS, DOCUMENT_INGESTION_COST } from './tier-config.js';
 
 export interface DeckLimitResult {
   allowed: boolean;
@@ -237,18 +237,16 @@ export class TierEnforcementService {
       }
     }
 
-    // Check credits
-    const { documentIngestionCost } = await import('./tier-config.js');
-    const creditCost = documentIngestionCost(fileSizeBytes);
-    if ((user?.creditBalance ?? 0) < creditCost) {
+    // Check credits (flat 1 credit per document)
+    if ((user?.creditBalance ?? 0) < DOCUMENT_INGESTION_COST) {
       return {
         allowed: false,
-        reason: `Document ingestion costs ${creditCost} credit${creditCost === 1 ? '' : 's'} (based on file size). You have ${user?.creditBalance ?? 0}. Top up or upgrade.`,
-        creditCost,
+        reason: `Document ingestion costs ${DOCUMENT_INGESTION_COST} credit. You have ${user?.creditBalance ?? 0}. Top up or upgrade.`,
+        creditCost: DOCUMENT_INGESTION_COST,
       };
     }
 
-    return { allowed: true, creditCost };
+    return { allowed: true, creditCost: DOCUMENT_INGESTION_COST };
   }
 
   /**

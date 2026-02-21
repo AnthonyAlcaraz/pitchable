@@ -12,7 +12,7 @@ import { FirecrawlService } from './parsers/firecrawl.service.js';
 import { ZeroEntropyRetrievalService } from './zeroentropy/zeroentropy-retrieval.service.js';
 import { TierEnforcementService } from '../credits/tier-enforcement.service.js';
 import { CreditsService } from '../credits/credits.service.js';
-import { documentIngestionCost } from '../credits/tier-config.js';
+import { DOCUMENT_INGESTION_COST } from '../credits/tier-config.js';
 import { DocumentSourceType, DocumentStatus, CreditReason } from '../../generated/prisma/enums.js';
 import { randomUUID } from 'node:crypto';
 
@@ -59,12 +59,11 @@ export class KnowledgeBaseService {
       }
     }
 
-    // Calculate and charge ingestion credits
-    const creditCost = documentIngestionCost(file.size);
-    const hasCredits = await this.creditsService.hasEnoughCredits(userId, creditCost);
+    // Check ingestion credits (flat 1 credit per document)
+    const hasCredits = await this.creditsService.hasEnoughCredits(userId, DOCUMENT_INGESTION_COST);
     if (!hasCredits) {
       throw new BadRequestException(
-        `Document ingestion costs ${creditCost} credit${creditCost === 1 ? '' : 's'}. You don't have enough credits.`,
+        `Document ingestion costs ${DOCUMENT_INGESTION_COST} credit. You don't have enough credits.`,
       );
     }
 
@@ -93,7 +92,7 @@ export class KnowledgeBaseService {
     // Deduct credits after successful upload
     await this.creditsService.deductCredits(
       userId,
-      creditCost,
+      DOCUMENT_INGESTION_COST,
       CreditReason.DOCUMENT_INGESTION,
       document.id,
     );
@@ -109,7 +108,7 @@ export class KnowledgeBaseService {
       ...(!s3Key ? { fileBase64: file.buffer.toString('base64') } : {}),
     } satisfies DocumentProcessingJobData);
 
-    this.logger.log(`Document ${document.id} uploaded and queued (charged ${creditCost} credits)`);
+    this.logger.log(`Document ${document.id} uploaded and queued (charged ${DOCUMENT_INGESTION_COST} credit)`);
     return document;
   }
 

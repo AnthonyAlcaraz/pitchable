@@ -541,6 +541,9 @@ ${slideKbContext}`;
       // Commit the credit reservation (actually deducts)
       await this.creditReservation.commit(reservationId);
 
+      // Increment monthly deck count for tier tracking
+      await this.tierEnforcement.incrementDeckCount(userId);
+
       // 12b. Auto-generate images (non-blocking) — skip for FREE tier
       if (this.nanoBanana.isConfigured && this.tierEnforcement.canGenerateImages(syncTier)) {
         this.imagesService

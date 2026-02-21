@@ -101,9 +101,17 @@ export class GenerationService {
     presentationId: string,
     config: GenerationConfig,
   ): AsyncGenerator<ChatStreamEvent> {
-    // Credit pre-check: outline generation costs credits
-    const hasOutlineCredits = await this.credits.hasEnoughCredits(userId, OUTLINE_GENERATION_COST);
-    if (!hasOutlineCredits) {
+    // Reserve credits for outline generation (prevents race conditions with concurrent requests)
+    let outlineReservationId: string;
+    try {
+      const reservation = await this.creditReservation.reserve(
+        userId,
+        OUTLINE_GENERATION_COST,
+        CreditReason.OUTLINE_GENERATION,
+        presentationId,
+      );
+      outlineReservationId = reservation.reservationId;
+    } catch {
       const bal = await this.credits.getBalance(userId).catch(() => 0);
       yield { type: 'error', content: `Not enough credits. Outline generation costs ${OUTLINE_GENERATION_COST} credit. You have ${bal}. Upgrade your plan or purchase credits.` };
       return;
@@ -174,6 +182,7 @@ export class GenerationService {
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Unknown error';
       this.logger.error(`Outline generation failed: ${msg}`);
+      await this.creditReservation.release(outlineReservationId);
       yield { type: 'error', content: `Failed to generate outline: ${msg}` };
       return;
     }
@@ -188,9 +197,9 @@ export class GenerationService {
     // 2b. Attach deck-level sources to outline
     outline.sources = kbSources.map((s) => ({ documentTitle: s.documentTitle, documentId: s.documentId }));
 
-    // 3. Store pending outline + charge credit
+    // 3. Store pending outline + commit credit reservation
     this.pendingOutlines.set(presentationId, { outline, config });
-    await this.credits.deductCredits(userId, OUTLINE_GENERATION_COST, CreditReason.OUTLINE_GENERATION, presentationId);
+    await this.creditReservation.commit(outlineReservationId);
     this.logger.log(`Outline generated for ${presentationId}, charged ${OUTLINE_GENERATION_COST} credit`);
 
     // 4. Stream outline as readable markdown

@@ -35,7 +35,7 @@ export interface CriticEvaluation {
 export class ImageCriticService {
   private readonly logger = new Logger(ImageCriticService.name);
   private readonly anthropic: Anthropic | null;
-  private readonly model = 'claude-sonnet-4-6';
+  private readonly model = 'claude-haiku-4-5-20251001';
   private readonly maxRefinementRounds = 2;
 
   constructor(private readonly config: ConfigService) {
