@@ -23,13 +23,13 @@ export function SlidePreviewCard({
 
   return (
     <div
-      className={`rounded-lg border border-border bg-card overflow-hidden ${className}`}
-      style={{ aspectRatio: '16/9', maxWidth: '280px' }}
+      className={`rounded-lg border border-border bg-card overflow-hidden border-l-2 border-l-orange-500/40 ${className}`}
+      style={{ aspectRatio: '16/9', maxWidth: '320px' }}
     >
       <div className="flex h-full flex-col p-3">
         {/* Header */}
         <div className="mb-1 flex items-center gap-1.5">
-          <span className="rounded bg-primary/10 px-1 py-0.5 text-[9px] font-medium text-primary">
+          <span className="rounded bg-orange-500/10 px-1 py-0.5 text-[9px] font-medium text-orange-400">
             {slideType.replace('_', ' ')}
           </span>
           <span className="text-[9px] text-muted-foreground">
@@ -38,16 +38,16 @@ export function SlidePreviewCard({
         </div>
 
         {/* Title */}
-        <h5 className="mb-1 text-xs font-bold leading-tight text-foreground line-clamp-2">
+        <h5 className="mb-1 text-sm font-bold leading-tight text-foreground line-clamp-2">
           {title}
         </h5>
 
         {/* Body preview */}
         <div className="flex-1 overflow-hidden">
           {hasBullets ? (
-            <ul className="space-y-0.5">
+            <ul className="space-y-1.5">
               {lines.slice(0, 4).map((line, i) => (
-                <li key={i} className="text-[9px] leading-tight text-foreground/60 truncate">
+                <li key={i} className="text-[10px] leading-relaxed text-foreground/60 truncate">
                   {line.replace(/^[-•]\s*/, '• ')}
                 </li>
               ))}

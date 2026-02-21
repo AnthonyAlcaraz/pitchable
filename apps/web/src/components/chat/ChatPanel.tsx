@@ -39,6 +39,7 @@ export function ChatPanel({ presentationId, briefId, lensId }: ChatPanelProps) {
     rejectSlide,
     respondToInteraction,
     clearError,
+    outlineReviewState,
   } = useChatStore();
 
   const phase = useWorkflowStore((s) => s.phase);
@@ -183,6 +184,7 @@ export function ChatPanel({ presentationId, briefId, lensId }: ChatPanelProps) {
           onEditSlide={handleEditSlide}
           onRejectSlide={handleRejectSlide}
           onRespondToInteraction={respondToInteraction}
+          onSendMessage={handleSend}
         />
       )}
 
@@ -196,7 +198,7 @@ export function ChatPanel({ presentationId, briefId, lensId }: ChatPanelProps) {
       )}
 
       {/* Phase-dependent bottom controls */}
-      {phase === 'outline_review' && !isStreaming ? (
+      {phase === 'outline_review' && !isStreaming && !outlineReviewState ? (
         <OutlineApproveBar
           onApprove={() => handleSend('approve')}
           onRetry={(feedback) => handleSend(feedback)}

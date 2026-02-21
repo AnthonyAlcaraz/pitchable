@@ -1,6 +1,7 @@
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { User, Bot } from 'lucide-react';
+import { User } from 'lucide-react';
+import { PeachLogo } from '../icons/PeachLogo.js';
 import { ValidationPrompt } from './ValidationPrompt';
 import { SlidePreviewCard } from './SlidePreviewCard';
 import { InlineSlideCard } from './InlineSlideCard.js';
@@ -59,10 +60,10 @@ export function ChatMessage({
     <div className={`flex gap-3 p-4 ${isUser ? 'bg-card' : 'bg-background'}`}>
       <div
         className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${
-          isUser ? 'bg-orange-500/10 text-orange-400' : 'bg-purple-500/10 text-purple-400'
+          isUser ? 'bg-orange-500/10 text-orange-400' : 'bg-orange-500/10'
         }`}
       >
-        {isUser ? <User className="h-4 w-4" /> : <Bot className="h-4 w-4" />}
+        {isUser ? <User className="h-4 w-4" /> : <PeachLogo className="h-5 w-5" />}
       </div>
       <div className="min-w-0 flex-1">
         <p className="mb-1 text-xs font-medium text-muted-foreground">
@@ -73,13 +74,13 @@ export function ChatMessage({
             {content}
           </ReactMarkdown>
           {isStreaming && (
-            <span className="inline-block h-4 w-1.5 animate-pulse bg-purple-500" />
+            <span className="inline-block h-4 w-1.5 animate-pulse bg-orange-500" />
           )}
         </div>
 
         {/* Render slide preview cards for outline messages */}
         {outlineSlides.length > 0 && (
-          <div className="mt-3 flex flex-wrap gap-2">
+          <div className="mt-4 flex flex-wrap gap-3">
             {outlineSlides.slice(0, 4).map((slide) => (
               <SlidePreviewCard
                 key={slide.slideNumber}
@@ -95,7 +96,7 @@ export function ChatMessage({
 
         {/* Deck-level KB sources summary */}
         {outlineSources.length > 0 && (
-          <div className="mt-2 rounded-md bg-muted/30 px-3 py-2">
+          <div className="mt-2 rounded-md bg-muted/30 px-3 py-2 border-l-2 border-orange-500/30">
             <p className="text-[10px] font-medium text-muted-foreground mb-1">Knowledge Base Sources</p>
             {outlineSources.map((s) => (
               <p key={s.documentId} className="text-[9px] text-muted-foreground/70">{s.documentTitle}</p>

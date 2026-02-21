@@ -5,6 +5,8 @@ import { InlineSlideCard } from './InlineSlideCard.js';
 import { ThemeSelector } from './ThemeSelector.js';
 import { LayoutSelector } from './LayoutSelector.js';
 import { ImageSelector } from './ImageSelector.js';
+import { OutlineReviewFlow } from './OutlineReviewFlow.js';
+import { useChatStore } from '../../stores/chat.store.js';
 import type { ChatMessage as ChatMessageType, PendingValidation, AgentStep, InlineSlideCard as InlineSlideCardType, PendingThemeSelection, PendingLayoutSelection, PendingImageSelection } from '../../stores/chat.store.js';
 import { usePresentationStore } from '../../stores/presentation.store.js';
 import { themeToStyleVars } from '../preview/SlideRenderer.js';
@@ -26,6 +28,7 @@ interface ChatHistoryProps {
   onEditSlide?: (slideId: string, edits: { title?: string; body?: string; speakerNotes?: string }) => void;
   onRejectSlide?: (slideId: string) => void;
   onRespondToInteraction?: (presentationId: string, interactionType: string, contextId: string, selection: unknown) => void;
+  onSendMessage?: (content: string) => void;
 }
 
 export function ChatHistory({
@@ -45,6 +48,7 @@ export function ChatHistory({
   onEditSlide,
   onRejectSlide,
   onRespondToInteraction,
+  onSendMessage,
 }: ChatHistoryProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -52,11 +56,16 @@ export function ChatHistory({
   const { presentation, setCurrentSlide } = usePresentationStore();
   const theme = presentation?.theme ?? null;
 
+  const outlineReviewState = useChatStore((s) => s.outlineReviewState);
+  const approveOutlineStep = useChatStore((s) => s.approveOutlineStep);
+  const editOutlineTitle = useChatStore((s) => s.editOutlineTitle);
+  const skipToApproveAll = useChatStore((s) => s.skipToApproveAll);
+
   useEffect(() => {
     if (!userScrolled.current) {
       bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [messages, streamingContent, pendingValidations, inlineSlideCards, thinkingText, agentSteps]);
+  }, [messages, streamingContent, pendingValidations, inlineSlideCards, thinkingText, agentSteps, outlineReviewState]);
 
   const handleScroll = () => {
     const el = containerRef.current;
@@ -107,6 +116,17 @@ export function ChatHistory({
           />
         );
       })}
+
+      {/* Outline step-by-step review flow */}
+      {outlineReviewState && (
+        <OutlineReviewFlow
+          state={outlineReviewState}
+          onApproveStep={approveOutlineStep}
+          onEditTitle={editOutlineTitle}
+          onSkipToApproveAll={skipToApproveAll}
+          onFinalApprove={() => onSendMessage?.('approve')}
+        />
+      )}
 
       {isStreaming && (thinkingText || agentSteps.length > 0) && (
         <AgentActivity

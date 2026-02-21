@@ -88,6 +88,23 @@ export interface GenerationCompleteData {
   isSamplePreview?: boolean;
 }
 
+export interface OutlineReviewState {
+  outlineData: {
+    title: string;
+    slides: Array<{
+      slideNumber: number;
+      title: string;
+      bulletPoints: string[];
+      slideType: string;
+      sources?: string[];
+    }>;
+    sources?: Array<{ documentTitle: string; documentId: string }>;
+  } | null;
+  currentStep: number; // 0 = title, 1..N = slide index
+  approvedSteps: number[];
+  titleEdited?: string;
+}
+
 export interface AgentStep {
   id: string;
   content: string;
@@ -114,6 +131,8 @@ interface ChatState {
   pendingLayoutSelections: PendingLayoutSelection[];
   pendingImageSelections: PendingImageSelection[];
   generationComplete: GenerationCompleteData | null;
+  receivedOutlineReady: boolean;
+  outlineReviewState: OutlineReviewState | null;
 
   loadHistory: (presentationId: string) => Promise<void>;
   sendMessage: (presentationId: string, content: string, opts?: { briefId?: string; lensId?: string }) => Promise<void>;
@@ -126,6 +145,9 @@ interface ChatState {
   addOrUpdateAgentStep: (id: string, content: string, status: AgentStep['status'], extra?: Partial<AgentStep>) => void;
   clearMessages: () => void;
   clearError: () => void;
+  approveOutlineStep: (step: number) => void;
+  editOutlineTitle: (newTitle: string) => void;
+  skipToApproveAll: () => void;
 }
 
 function getToken(): string | null {
@@ -154,6 +176,9 @@ export const useChatStore = create<ChatState>((set, get) => ({
   pendingLayoutSelections: [],
   pendingImageSelections: [],
   generationComplete: null,
+  receivedOutlineReady: false,
+      outlineReviewState: null,
+  outlineReviewState: null,
 
   loadHistory: async (presentationId: string) => {
     set({ isLoading: true, error: null });
@@ -205,6 +230,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
       generationComplete: null,
       pendingThemeSelection: null,
       pendingLayoutSelections: [],
+      receivedOutlineReady: false,
+      outlineReviewState: null,
     }));
 
     try {
@@ -253,6 +280,23 @@ export const useChatStore = create<ChatState>((set, get) => ({
             }
           } else if (metadata?.action === 'outline_ready') {
             useWorkflowStore.getState().setPhase('outline_review');
+            // Update presentation title from outline
+            const outlineTitle = (metadata?.outline as Record<string, unknown>)?.title as string | undefined;
+            if (outlineTitle) {
+              usePresentationStore.getState().setTitle(outlineTitle);
+            }
+            set({ receivedOutlineReady: true });
+            // Populate outline review state from metadata
+            const outlineData = metadata?.outline as OutlineReviewState['outlineData'];
+            if (outlineData) {
+              set({
+                outlineReviewState: {
+                  outlineData,
+                  currentStep: 0,
+                  approvedSteps: [],
+                },
+              });
+            }
           } else if (metadata?.action === 'slide_preview') {
             const slide = metadata.slide as InlineSlideCard;
             if (slide) {
@@ -362,7 +406,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
       // Add assistant message (persist inline slide cards in metadata)
       const currentSlideCards = get().inlineSlideCards;
       const currentCompletion = get().generationComplete;
-      if (fullContent) {
+      if (fullContent && !get().receivedOutlineReady) {
         const assistantMsg: ChatMessage = {
           id: crypto.randomUUID(),
           role: 'assistant',
@@ -381,7 +425,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
           thinkingText: null,
           agentSteps: [],
         }));
-      } else {
+      }
+      if (get().receivedOutlineReady || !fullContent) {
         set({ isStreaming: false, streamingContent: '', thinkingText: null, agentSteps: [] });
       }
     } catch (err) {
@@ -501,6 +546,50 @@ export const useChatStore = create<ChatState>((set, get) => ({
     pendingThemeSelection: null,
     pendingLayoutSelections: [],
     pendingImageSelections: [],
+    outlineReviewState: null,
   }),
   clearError: () => set({ error: null }),
+
+  approveOutlineStep: (step: number) => {
+    set((state) => {
+      if (!state.outlineReviewState) return state;
+      const approved = [...state.outlineReviewState.approvedSteps, step];
+      const totalSteps = (state.outlineReviewState.outlineData?.slides.length ?? 0) + 1; // +1 for title
+      const nextStep = step + 1 < totalSteps ? step + 1 : step;
+      return {
+        outlineReviewState: {
+          ...state.outlineReviewState,
+          approvedSteps: approved,
+          currentStep: nextStep,
+        },
+      };
+    });
+  },
+
+  editOutlineTitle: (newTitle: string) => {
+    set((state) => {
+      if (!state.outlineReviewState) return state;
+      return {
+        outlineReviewState: {
+          ...state.outlineReviewState,
+          titleEdited: newTitle,
+        },
+      };
+    });
+  },
+
+  skipToApproveAll: () => {
+    set((state) => {
+      if (!state.outlineReviewState?.outlineData) return state;
+      const totalSteps = state.outlineReviewState.outlineData.slides.length + 1;
+      const allSteps = Array.from({ length: totalSteps }, (_, i) => i);
+      return {
+        outlineReviewState: {
+          ...state.outlineReviewState,
+          approvedSteps: allSteps,
+          currentStep: totalSteps - 1,
+        },
+      };
+    });
+  },
 }));

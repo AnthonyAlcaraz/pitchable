@@ -203,6 +203,13 @@ export class GenerationService {
 
     // 3. Store pending outline + commit credit reservation
     this.pendingOutlines.set(presentationId, { outline, config });
+
+    // Update presentation title immediately so the UI shows the real title
+    await this.prisma.presentation.update({
+      where: { id: presentationId },
+      data: { title: outline.title },
+    });
+
     await this.creditReservation.commit(outlineReservationId);
     this.logger.log(`Outline generated for ${presentationId}, charged ${OUTLINE_GENERATION_COST} credit`);
 
@@ -248,7 +255,7 @@ export class GenerationService {
     yield {
       type: 'action',
       content: '',
-      metadata: { action: 'outline_ready', slideCount: outline.slides.length, sources: kbSources },
+      metadata: { action: 'outline_ready', slideCount: outline.slides.length, sources: kbSources, outline: JSON.parse(JSON.stringify(outline)) },
     };
 
     yield { type: 'done', content: '' };
