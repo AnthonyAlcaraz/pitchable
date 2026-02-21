@@ -1,10 +1,22 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { usePitchBriefStore } from '@/stores/pitch-brief.store';
 import { useKbStore } from '@/stores/kb.store';
 import { useDocumentProgress } from '@/hooks/useDocumentProgress';
 import { ArrowLeft, ArrowRight, BookOpen, Upload, Check, FileText, X, Loader2, Globe } from 'lucide-react';
+
+const PIPELINE_STEPS = ['Parse', 'Chunk', 'Index', 'Embed', 'Done'] as const;
+
+function getStepIndex(step?: string): number {
+  if (!step) return -1;
+  if (step === 'parsing' || step === 'hashing') return 0;
+  if (step === 'chunking' || step === 'storing_chunks') return 1;
+  if (step === 'deduplicating' || step === 'indexing') return 2;
+  if (step === 'embedding') return 3;
+  if (step === 'ready') return 4;
+  return -1;
+}
 
 export function PitchBriefWizardPage() {
   const { t } = useTranslation();
@@ -43,6 +55,11 @@ export function PitchBriefWizardPage() {
   const [urlCrawlMode, setUrlCrawlMode] = useState(false);
   const [crawlMaxPages, setCrawlMaxPages] = useState(20);
   const [crawlMaxDepth, setCrawlMaxDepth] = useState(2);
+  const [uploadProgress, setUploadProgress] = useState<{ current: number; total: number } | null>(null);
+
+  // Track elapsed time during processing
+  const processingStartRef = useRef<number | null>(null);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
 
   useEffect(() => {
     if (isEditMode && id) {
@@ -67,6 +84,34 @@ export function PitchBriefWizardPage() {
     const poll = setInterval(() => { loadBrief(briefId); }, 5000);
     return () => clearInterval(poll);
   }, [isUploaded, briefId, loadBrief]);
+
+  // Track elapsed time during processing
+  useEffect(() => {
+    if (isUploaded && currentBrief) {
+      const hasProcessing = currentBrief.documents.some(
+        (d) => d.status !== 'READY' && d.status !== 'ERROR'
+      );
+      if (hasProcessing && !processingStartRef.current) {
+        processingStartRef.current = Date.now();
+      }
+      if (!hasProcessing) {
+        processingStartRef.current = null;
+      }
+    }
+  }, [isUploaded, currentBrief]);
+
+  useEffect(() => {
+    if (!processingStartRef.current) {
+      setElapsedSeconds(0);
+      return;
+    }
+    const tick = setInterval(() => {
+      if (processingStartRef.current) {
+        setElapsedSeconds(Math.floor((Date.now() - processingStartRef.current) / 1000));
+      }
+    }, 1000);
+    return () => clearInterval(tick);
+  }, [isUploaded, currentBrief]);
 
   // Auto-advance when all docs reach terminal state
   useEffect(() => {
@@ -110,24 +155,32 @@ export function PitchBriefWizardPage() {
 
       setIsSubmitting(true);
       try {
+        let idx = 0;
+        setUploadProgress({ current: 0, total: totalDocs });
+
         for (const file of pendingFiles) {
+          setUploadProgress({ current: ++idx, total: totalDocs });
           await uploadDocument(briefId, file);
         }
         for (const text of pendingTexts) {
+          setUploadProgress({ current: ++idx, total: totalDocs });
           await addTextDocument(briefId, text.content, text.title);
         }
         for (const url of pendingUrls) {
+          setUploadProgress({ current: ++idx, total: totalDocs });
           if (url.crawl) {
             await crawlWebsite(briefId, url.url, url.maxPages, url.maxDepth);
           } else {
             await addUrlDocument(briefId, url.url, url.title);
           }
         }
+        setUploadProgress(null);
         // Stay on step 2, show processing progress
         setIsUploaded(true);
         await loadBrief(briefId);
       } catch (error) {
         console.error('Failed to upload documents:', error);
+        setUploadProgress(null);
       } finally {
         setIsSubmitting(false);
       }
@@ -210,6 +263,7 @@ export function PitchBriefWizardPage() {
     setPendingTexts([]);
     setPendingUrls([]);
     setIsUploaded(false);
+    setUploadProgress(null);
   }, []);
 
   const totalDocuments = pendingFiles.length + pendingTexts.length + pendingUrls.length;
@@ -327,26 +381,55 @@ export function PitchBriefWizardPage() {
 
           {step === 2 && (
             <div className="space-y-6">
-              {/* Processing progress view */}
-              {isUploaded && currentBrief ? (
+              {/* Upload progress overlay */}
+              {isSubmitting && uploadProgress ? (
+                <div className="space-y-4 py-8">
+                  <div className="text-center mb-6">
+                    <Loader2 className="w-10 h-10 animate-spin mx-auto mb-3" style={{ color: '#E88D67' }} />
+                    <h2 className="text-xl font-semibold text-foreground">Uploading documents...</h2>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">
+                      Uploading {uploadProgress.current} of {uploadProgress.total}...
+                    </span>
+                    <span className="font-mono tabular-nums" style={{ color: '#E88D67' }}>
+                      {Math.round((uploadProgress.current / uploadProgress.total) * 100)}%
+                    </span>
+                  </div>
+                  <div className="h-2 overflow-hidden rounded-full" style={{ backgroundColor: '#FFF0E6' }}>
+                    <div
+                      className="h-full rounded-full transition-all duration-300"
+                      style={{
+                        width: `${(uploadProgress.current / uploadProgress.total) * 100}%`,
+                        background: 'linear-gradient(90deg, #FFAB76, #FF9F6B, #E88D67)',
+                      }}
+                    />
+                  </div>
+                </div>
+              ) : isUploaded && currentBrief ? (
+                /* Processing progress view */
                 <div className="space-y-4">
-                  <h2 className="text-xl font-semibold text-foreground">
-                    {isProcessing ? 'Processing documents...' : 'Documents ready'}
-                  </h2>
-
-                  {/* Aggregate progress bar */}
                   {(() => {
                     const docs = currentBrief.documents;
                     const readyCount = docs.filter(d => d.status === 'READY').length;
                     const errorCount = docs.filter(d => d.status === 'ERROR').length;
+                    const processingCount = docs.length - readyCount - errorCount;
                     const totalCount = docs.length;
                     const doneCount = readyCount + errorCount;
                     const pct = totalCount > 0 ? Math.round((doneCount / totalCount) * 100) : 0;
                     return (
                       <>
+                        <h2 className="text-xl font-semibold text-foreground">
+                          {processingCount > 0
+                            ? `Processing ${processingCount} document${processingCount !== 1 ? 's' : ''}...`
+                            : `All ${totalCount} document${totalCount !== 1 ? 's' : ''} ready`}
+                        </h2>
                         <div className="flex items-center justify-between text-sm">
                           <span className="text-muted-foreground">
                             {doneCount}/{totalCount} documents ready
+                            {elapsedSeconds > 0 && processingCount > 0 && (
+                              <span className="ml-2 text-xs">({elapsedSeconds}s elapsed)</span>
+                            )}
                           </span>
                           <span className="font-mono tabular-nums" style={{ color: '#E88D67' }}>
                             {pct}%
@@ -370,19 +453,54 @@ export function PitchBriefWizardPage() {
                       <div key={doc.id} className="p-3 bg-background border border-border rounded-lg">
                         <div className="flex items-center justify-between mb-1">
                           <span className="text-sm text-foreground truncate">{doc.title}</span>
-                          <span className={`text-xs ${doc.status === 'ERROR' ? 'text-red-500' : 'text-muted-foreground'}`}>
-                            {isTerminal ? doc.status : progress?.message || 'Queued...'}
-                          </span>
+                          {isTerminal && (
+                            <span className={`text-xs font-medium ${doc.status === 'ERROR' ? 'text-red-500' : 'text-green-600'}`}>
+                              {doc.status === 'READY' ? 'Ready' : 'Error'}
+                            </span>
+                          )}
                         </div>
-                        {!isTerminal && (
-                          <div className="h-1.5 overflow-hidden rounded-full" style={{ backgroundColor: '#FFF0E6' }}>
-                            <div
-                              className="h-full rounded-full transition-all duration-500 ease-out"
-                              style={{
-                                width: `${progress?.progress || 5}%`,
-                                background: 'linear-gradient(90deg, #FFAB76, #FF9F6B, #E88D67)',
-                              }}
-                            />
+                        {isTerminal ? (
+                          <div className="flex items-center gap-1 mt-2">
+                            {PIPELINE_STEPS.map((label, i) => (
+                              <div key={label} className="flex items-center gap-1 flex-1">
+                                <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-medium ${
+                                  doc.status === 'ERROR'
+                                    ? 'bg-red-100 text-red-500'
+                                    : 'bg-[#E88D67] text-white'
+                                }`}>
+                                  {doc.status === 'ERROR' ? (i === PIPELINE_STEPS.length - 1 ? 'X' : (String.fromCharCode(10003))) : String.fromCharCode(10003)}
+                                </div>
+                                <span className="text-[10px] text-foreground">{label}</span>
+                                {i < PIPELINE_STEPS.length - 1 && (
+                                  <div className={`flex-1 h-0.5 mx-0.5 ${doc.status === 'ERROR' ? 'bg-red-200' : 'bg-[#E88D67]'}`} />
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-1 mt-2">
+                            {PIPELINE_STEPS.map((label, i) => {
+                              const currentStep = getStepIndex(progress?.step);
+                              const isDone = i < currentStep;
+                              const isCurrent = i === currentStep;
+                              return (
+                                <div key={label} className="flex items-center gap-1 flex-1">
+                                  <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-medium shrink-0 ${
+                                    isDone ? 'bg-[#E88D67] text-white' :
+                                    isCurrent ? 'bg-[#E88D67] text-white animate-pulse' :
+                                    'bg-muted text-muted-foreground'
+                                  }`}>
+                                    {isDone ? String.fromCharCode(10003) : i + 1}
+                                  </div>
+                                  <span className={`text-[10px] whitespace-nowrap ${isDone || isCurrent ? 'text-foreground' : 'text-muted-foreground'}`}>
+                                    {label}
+                                  </span>
+                                  {i < PIPELINE_STEPS.length - 1 && (
+                                    <div className={`flex-1 h-0.5 mx-0.5 ${isDone ? 'bg-[#E88D67]' : 'bg-border'}`} />
+                                  )}
+                                </div>
+                              );
+                            })}
                           </div>
                         )}
                       </div>
@@ -592,7 +710,7 @@ export function PitchBriefWizardPage() {
 
               {/* Footer buttons */}
               <div className="flex justify-between gap-3 pt-4">
-                {!isUploaded && (
+                {!isUploaded && !uploadProgress && (
                   <button
                     onClick={handleBack}
                     className="flex items-center gap-2 px-6 py-2 bg-background border border-border text-foreground rounded-lg hover:bg-muted transition-colors"
@@ -601,9 +719,9 @@ export function PitchBriefWizardPage() {
                     {t('common.back')}
                   </button>
                 )}
-                {isUploaded && <div />}
+                {(isUploaded || uploadProgress) && <div />}
                 <div className="flex gap-3">
-                  {!isUploaded && (
+                  {!isUploaded && !uploadProgress && (
                     <button
                       onClick={handleSkip}
                       disabled={isSubmitting}
@@ -612,23 +730,25 @@ export function PitchBriefWizardPage() {
                       {t('common.skip')}
                     </button>
                   )}
-                  <button
-                    onClick={isProcessing ? undefined : handleNext}
-                    disabled={isSubmitting || !!isProcessing}
-                    className="flex items-center gap-2 px-6 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                  >
-                    {isProcessing ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        Processing...
-                      </>
-                    ) : (
-                      <>
-                        {t('common.next')}
-                        <ArrowRight className="w-4 h-4" />
-                      </>
-                    )}
-                  </button>
+                  {!uploadProgress && (
+                    <button
+                      onClick={isProcessing ? undefined : handleNext}
+                      disabled={isSubmitting || !!isProcessing}
+                      className="flex items-center gap-2 px-6 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      {isProcessing ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          Processing...
+                        </>
+                      ) : (
+                        <>
+                          {t('common.next')}
+                          <ArrowRight className="w-4 h-4" />
+                        </>
+                      )}
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
