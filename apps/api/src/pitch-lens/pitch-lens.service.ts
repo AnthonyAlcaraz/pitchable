@@ -8,6 +8,7 @@ import {
 import { PrismaService } from '../prisma/prisma.service.js';
 import { ThemesService } from '../themes/themes.service.js';
 import { TemplateSelectorService } from '../exports/template-selector.service.js';
+import { TierEnforcementService } from '../credits/tier-enforcement.service.js';
 import type { CreatePitchLensDto } from './dto/create-pitch-lens.dto.js';
 import type { UpdatePitchLensDto } from './dto/update-pitch-lens.dto.js';
 import type { RecommendFrameworksDto } from './dto/recommend-frameworks.dto.js';
@@ -31,9 +32,24 @@ export class PitchLensService {
     private readonly themesService: ThemesService,
     private readonly archetypeResolver: ArchetypeResolverService,
     private readonly templateSelector: TemplateSelectorService,
+    private readonly tierEnforcement: TierEnforcementService,
   ) {}
 
   async create(userId: string, dto: CreatePitchLensDto) {
+    const check = await this.tierEnforcement.canCreateLens(userId);
+    if (!check.allowed) {
+      throw new BadRequestException(check.reason);
+    }
+
+    // Enforce custom guidance length per tier
+    if (dto.customGuidance) {
+      const user = await this.prisma.user.findUnique({ where: { id: userId }, select: { tier: true } });
+      const maxLen = this.tierEnforcement.getMaxCustomGuidanceLength(user?.tier ?? 'FREE');
+      if (dto.customGuidance.length > maxLen) {
+        throw new BadRequestException(`Custom guidance exceeds ${maxLen} character limit for your plan. Upgrade for more.`);
+      }
+    }
+
     // If this is set as default, unset any existing default
     if (dto.isDefault) {
       await this.prisma.pitchLens.updateMany({

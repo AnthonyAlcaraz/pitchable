@@ -232,6 +232,15 @@ export class PitchBriefController {
     return this.briefService.search(user.userId, id, query, limit);
   }
 
+  @Post(':id/graph/backfill')
+  @HttpCode(HttpStatus.OK)
+  async backfillGraph(
+    @CurrentUser() user: RequestUser,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.briefService.backfillGraph(user.userId, id);
+  }
+
   // ─── Lens Linking ─────────────────────────────────────────────────────────
 
   @Post(':id/link-lens/:lensId')

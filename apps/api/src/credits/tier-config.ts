@@ -2,6 +2,9 @@ export interface TierLimits {
   maxDecksPerMonth: number | null; // null = unlimited
   maxSlidesPerDeck: number | null; // null = unlimited, FREE = 4 sample slides
   creditsPerMonth: number; // total monthly credit allocation (shared: decks + images)
+  maxBriefs: number; // total briefs per user (not monthly)
+  maxLenses: number; // total lenses per user (not monthly)
+  maxCustomGuidanceLength: number; // max chars for lens customGuidance field
 }
 
 /**
@@ -91,20 +94,32 @@ export const TIER_LIMITS: Record<string, TierLimits> = {
     maxDecksPerMonth: 2,
     maxSlidesPerDeck: 4, // sample preview only
     creditsPerMonth: 0, // no monthly refresh; one-time 5 credits on signup
+    maxBriefs: 1,
+    maxLenses: 1,
+    maxCustomGuidanceLength: 200,
   },
   STARTER: {
     maxDecksPerMonth: 10,
     maxSlidesPerDeck: 15,
     creditsPerMonth: 40,
+    maxBriefs: 5,
+    maxLenses: 5,
+    maxCustomGuidanceLength: 500,
   },
   PRO: {
     maxDecksPerMonth: null,
     maxSlidesPerDeck: null,
     creditsPerMonth: 100,
+    maxBriefs: 20,
+    maxLenses: 20,
+    maxCustomGuidanceLength: 1000,
   },
   ENTERPRISE: {
     maxDecksPerMonth: null,
     maxSlidesPerDeck: null,
     creditsPerMonth: 300,
+    maxBriefs: 100,
+    maxLenses: 100,
+    maxCustomGuidanceLength: 2000,
   },
 };

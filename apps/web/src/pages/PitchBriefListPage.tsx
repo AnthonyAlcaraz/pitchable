@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { usePitchBriefStore } from '@/stores/pitch-brief.store';
-import { Plus, BookOpen, Trash2, FileText, Network } from 'lucide-react';
+import { useBillingStore } from '@/stores/billing.store';
+import { Plus, BookOpen, Trash2, FileText, Network, Lock } from 'lucide-react';
 
 const STATUS_COLORS: Record<string, string> = {
   EMPTY: 'bg-gray-500/10 text-gray-400',
@@ -15,11 +16,14 @@ export function PitchBriefListPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { briefs, isLoading, loadBriefs, deleteBrief, createBrief } = usePitchBriefStore();
+  const { tierStatus, loadTierStatus } = useBillingStore();
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const atLimit = tierStatus ? tierStatus.briefsUsed >= tierStatus.briefsLimit : false;
 
   useEffect(() => {
     loadBriefs();
-  }, [loadBriefs]);
+    loadTierStatus();
+  }, [loadBriefs, loadTierStatus]);
 
   const handleCreateBrief = async () => {
     const name = prompt(t('pitch_briefs.list.enter_name_prompt'));
@@ -61,13 +65,31 @@ export function PitchBriefListPage() {
             {t('pitch_briefs.list.subtitle')}
           </p>
         </div>
-        <button
-          onClick={handleCreateBrief}
-          className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
-        >
-          <Plus className="w-4 h-4" />
-          {t('pitch_briefs.list.new_brief')}
-        </button>
+        <div className="flex items-center gap-3">
+          {tierStatus && (
+            <span className="text-xs text-muted-foreground">
+              {tierStatus.briefsUsed}/{tierStatus.briefsLimit}
+            </span>
+          )}
+          {atLimit ? (
+            <button
+              disabled
+              className="flex items-center gap-2 px-4 py-2 bg-muted text-muted-foreground rounded-lg cursor-not-allowed"
+              title={t('common.upgrade_to_create_more')}
+            >
+              <Lock className="w-4 h-4" />
+              {t('pitch_briefs.list.new_brief')}
+            </button>
+          ) : (
+            <button
+              onClick={handleCreateBrief}
+              className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+              {t('pitch_briefs.list.new_brief')}
+            </button>
+          )}
+        </div>
       </div>
 
       {briefs.length === 0 ? (

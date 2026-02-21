@@ -2,7 +2,8 @@ import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { usePitchLensStore } from '@/stores/pitch-lens.store';
-import { Plus, Focus, Star, Trash2, Image, Coins } from 'lucide-react';
+import { useBillingStore } from '@/stores/billing.store';
+import { Plus, Focus, Star, Trash2, Image, Coins, Lock } from 'lucide-react';
 
 function formatEnum(value: string): string {
   return value.toLowerCase().replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
@@ -15,9 +16,11 @@ function lensOneLiner(lens: { audienceType: string; pitchGoal: string; toneStyle
 export function PitchLensListPage() {
   const { t } = useTranslation();
   const { lenses, isLoading, loadLenses, deleteLens } = usePitchLensStore();
+  const { tierStatus, loadTierStatus } = useBillingStore();
   const navigate = useNavigate();
+  const atLimit = tierStatus ? tierStatus.lensesUsed >= tierStatus.lensesLimit : false;
 
-  useEffect(() => { loadLenses(); }, [loadLenses]);
+  useEffect(() => { loadLenses(); loadTierStatus(); }, [loadLenses, loadTierStatus]);
 
   return (
     <div className="p-8">
@@ -28,13 +31,31 @@ export function PitchLensListPage() {
             {t('pitch_lenses.list.subtitle')}
           </p>
         </div>
-        <button
-          onClick={() => navigate('/pitch-lens/new')}
-          className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-        >
-          <Plus className="h-4 w-4" />
-          {t('pitch_lenses.list.new_lens')}
-        </button>
+        <div className="flex items-center gap-3">
+          {tierStatus && (
+            <span className="text-xs text-muted-foreground">
+              {tierStatus.lensesUsed}/{tierStatus.lensesLimit}
+            </span>
+          )}
+          {atLimit ? (
+            <button
+              disabled
+              className="flex items-center gap-2 rounded-lg bg-muted px-4 py-2 text-sm font-medium text-muted-foreground cursor-not-allowed"
+              title={t('common.upgrade_to_create_more')}
+            >
+              <Lock className="h-4 w-4" />
+              {t('pitch_lenses.list.new_lens')}
+            </button>
+          ) : (
+            <button
+              onClick={() => navigate('/pitch-lens/new')}
+              className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+            >
+              <Plus className="h-4 w-4" />
+              {t('pitch_lenses.list.new_lens')}
+            </button>
+          )}
+        </div>
       </div>
 
       {isLoading ? (

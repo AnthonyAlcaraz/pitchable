@@ -4,10 +4,16 @@ import {
   NotFoundException,
   ForbiddenException,
   ConflictException,
+  BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { FalkorDbService } from '../knowledge-base/falkordb/falkordb.service.js';
+import { EntityExtractorService } from '../knowledge-base/falkordb/entity-extractor.service.js';
+import { CreditsService } from '../credits/credits.service.js';
+import { ENTITY_EXTRACTION_COST } from '../credits/tier-config.js';
+import { CreditReason } from '../../generated/prisma/enums.js';
 import { KnowledgeBaseService } from '../knowledge-base/knowledge-base.service.js';
+import { TierEnforcementService } from '../credits/tier-enforcement.service.js';
 import type { CreatePitchBriefDto } from './dto/create-pitch-brief.dto.js';
 import type { UpdatePitchBriefDto } from './dto/update-pitch-brief.dto.js';
 import { BriefStatus } from '../../generated/prisma/enums.js';
@@ -20,11 +26,44 @@ export class PitchBriefService {
     private readonly prisma: PrismaService,
     private readonly falkordb: FalkorDbService,
     private readonly kbService: KnowledgeBaseService,
+    private readonly tierEnforcement: TierEnforcementService,
+    private readonly entityExtractor: EntityExtractorService,
+    private readonly credits: CreditsService,
   ) {}
+
+  /**
+   * Lazily provision a FalkorDB graph for a brief that doesn't have one yet.
+   * Returns the graphName (existing or newly created), or null if FalkorDB is disabled.
+   */
+  private async ensureGraphName(briefId: string, currentGraphName: string | null): Promise<string | null> {
+    if (currentGraphName) return currentGraphName;
+    if (!this.falkordb.isEnabled()) return null;
+
+    try {
+      const graphName = FalkorDbService.briefGraphName(briefId);
+      await this.falkordb.ensureGraph(graphName);
+      await this.prisma.pitchBrief.update({
+        where: { id: briefId },
+        data: { graphName },
+      });
+      this.logger.log(`Lazy-provisioned FalkorDB graph ${graphName} for brief ${briefId}`);
+      return graphName;
+    } catch (error) {
+      this.logger.warn(
+        `Failed to lazy-provision FalkorDB graph for brief ${briefId}: ${error instanceof Error ? error.message : String(error)}`,
+      );
+      return null;
+    }
+  }
 
   // ─── CRUD ───────────────────────────────────────────────────────────────────
 
   async create(userId: string, dto: CreatePitchBriefDto) {
+    const check = await this.tierEnforcement.canCreateBrief(userId);
+    if (!check.allowed) {
+      throw new BadRequestException(check.reason);
+    }
+
     const brief = await this.prisma.pitchBrief.create({
       data: {
         userId,
@@ -252,18 +291,20 @@ export class PitchBriefService {
     opts?: { depth?: number; limit?: number },
   ) {
     const brief = await this.ensureOwnership(userId, briefId);
-    if (!brief.graphName || !this.falkordb.isEnabled()) {
+    const graphName = await this.ensureGraphName(briefId, brief.graphName);
+    if (!graphName) {
       return { nodes: [], edges: [], totalNodes: 0, totalEdges: 0 };
     }
-    return this.falkordb.getFullGraph(brief.graphName, opts);
+    return this.falkordb.getFullGraph(graphName, opts);
   }
 
   async getGraphStats(userId: string, briefId: string) {
     const brief = await this.ensureOwnership(userId, briefId);
-    if (!brief.graphName || !this.falkordb.isEnabled()) {
+    const graphName = await this.ensureGraphName(briefId, brief.graphName);
+    if (!graphName) {
       return { totalNodes: 0, totalEdges: 0, nodeTypes: {}, edgeTypes: {} };
     }
-    return this.falkordb.getGraphStats(brief.graphName);
+    return this.falkordb.getGraphStats(graphName);
   }
 
   async getEntities(
@@ -272,10 +313,11 @@ export class PitchBriefService {
     opts?: { type?: string; limit?: number },
   ) {
     const brief = await this.ensureOwnership(userId, briefId);
-    if (!brief.graphName || !this.falkordb.isEnabled()) {
+    const graphName = await this.ensureGraphName(briefId, brief.graphName);
+    if (!graphName) {
       return [];
     }
-    return this.falkordb.getEntities(brief.graphName, opts);
+    return this.falkordb.getEntities(graphName, opts);
   }
 
   async search(
@@ -285,10 +327,73 @@ export class PitchBriefService {
     limit = 10,
   ) {
     const brief = await this.ensureOwnership(userId, briefId);
-    if (!brief.graphName || !this.falkordb.isEnabled()) {
+    const graphName = await this.ensureGraphName(briefId, brief.graphName);
+    if (!graphName) {
       return { entities: [], relationships: [] };
     }
-    return this.falkordb.query(brief.graphName, query);
+    return this.falkordb.query(graphName, query);
+  }
+
+  /**
+   * Backfill graph for a brief: ensure graphName exists, then re-extract entities
+   * from all READY documents that haven't been indexed yet (entityCount === 0).
+   */
+  async backfillGraph(userId: string, briefId: string) {
+    const brief = await this.ensureOwnership(userId, briefId);
+    if (!this.falkordb.isEnabled()) {
+      return { status: 'skipped', reason: 'FalkorDB is not enabled' };
+    }
+
+    const graphName = await this.ensureGraphName(briefId, brief.graphName);
+    if (!graphName) {
+      return { status: 'error', reason: 'Failed to provision graph' };
+    }
+
+    // Find all READY documents linked to this brief
+    const docs = await this.prisma.document.findMany({
+      where: { briefId, status: 'READY' },
+      include: { chunks: { select: { id: true, content: true, heading: true, chunkIndex: true } } },
+    });
+
+    let totalEntities = 0;
+    const processed: string[] = [];
+
+    for (const doc of docs) {
+      if (doc.chunks.length === 0) continue;
+
+      const hasCredits = await this.credits.hasEnoughCredits(userId, ENTITY_EXTRACTION_COST);
+      if (!hasCredits) {
+        this.logger.warn(`Backfill: insufficient credits for doc ${doc.id}`);
+        break;
+      }
+
+      try {
+        const extraction = await this.entityExtractor.extractFromChunks(doc.chunks);
+        if (extraction.entities.length > 0) {
+          // Index into user's KB graph
+          const kbGraphName = FalkorDbService.kbGraphName(userId);
+          await this.falkordb.indexDocument(kbGraphName, doc.id, doc.title, extraction.entities, extraction.relationships);
+          // Index into brief graph
+          await this.falkordb.indexDocument(graphName, doc.id, doc.title, extraction.entities, extraction.relationships);
+          totalEntities += extraction.entities.length;
+          processed.push(doc.id);
+
+          await this.credits.deductCredits(userId, ENTITY_EXTRACTION_COST, CreditReason.ENTITY_EXTRACTION, doc.id);
+        }
+      } catch (err) {
+        this.logger.warn(`Backfill: entity extraction failed for doc ${doc.id}: ${err}`);
+      }
+    }
+
+    // Update entity count
+    if (totalEntities > 0) {
+      await this.prisma.pitchBrief.update({
+        where: { id: briefId },
+        data: { entityCount: { increment: totalEntities } },
+      });
+    }
+
+    return { status: 'ok', graphName, documentsProcessed: processed.length, totalEntities };
   }
 
   // ─── Lens Linking ─────────────────────────────────────────────────────────

@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { usePitchLensStore } from '@/stores/pitch-lens.store';
 import { useFigmaTemplateStore } from '@/stores/figma-template.store';
+import { useBillingStore } from '@/stores/billing.store';
 import type { CreatePitchLensInput } from '@/stores/pitch-lens.store';
 import { ArrowLeft, ArrowRight, Check, Focus, Figma, ExternalLink, ImageIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -17,6 +18,8 @@ export function PitchLensWizardPage() {
   const navigate = useNavigate();
   const { createLens, updateLens, loadLens, currentLens, getRecommendations, recommendations, loadFrameworks } = usePitchLensStore();
   const { templates: figmaTemplates, loadTemplates: loadFigmaTemplates } = useFigmaTemplateStore();
+  const { tierStatus, loadTierStatus } = useBillingStore();
+  const maxGuidanceLength = tierStatus?.maxCustomGuidanceLength ?? 200;
 
   const STEPS = [
     t('pitch_lenses.wizard.step_name'),
@@ -99,7 +102,8 @@ export function PitchLensWizardPage() {
     }
     loadFrameworks();
     loadFigmaTemplates();
-  }, [editId, loadLens, loadFrameworks, loadFigmaTemplates]);
+    loadTierStatus();
+  }, [editId, loadLens, loadFrameworks, loadFigmaTemplates, loadTierStatus]);
 
   useEffect(() => {
     if (editId && currentLens) {
@@ -471,11 +475,28 @@ export function PitchLensWizardPage() {
               </label>
               <textarea
                 value={form.customGuidance}
-                onChange={(e) => setForm({ ...form, customGuidance: e.target.value })}
+                onChange={(e) => {
+                  if (e.target.value.length <= maxGuidanceLength) {
+                    setForm({ ...form, customGuidance: e.target.value });
+                  }
+                }}
                 placeholder={t('pitch_lenses.wizard.custom_guidance_placeholder')}
                 rows={3}
-                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                className={cn(
+                  'w-full rounded-lg border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1',
+                  (form.customGuidance?.length ?? 0) >= maxGuidanceLength
+                    ? 'border-amber-500 focus:border-amber-500 focus:ring-amber-500'
+                    : 'border-border focus:border-primary focus:ring-primary',
+                )}
               />
+              <div className="mt-1 flex items-center justify-between text-xs">
+                <span className="text-muted-foreground">
+                  {maxGuidanceLength <= 200 ? 'Upgrade for more characters' : ''}
+                </span>
+                <span className={(form.customGuidance?.length ?? 0) >= maxGuidanceLength ? 'text-amber-500 font-medium' : 'text-muted-foreground'}>
+                  {form.customGuidance?.length ?? 0}/{maxGuidanceLength}
+                </span>
+              </div>
             </div>
 
             {/* Image Settings */}

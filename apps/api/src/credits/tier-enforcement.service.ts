@@ -12,6 +12,13 @@ export interface DeckLimitResult {
   decksLimit: number | null;
 }
 
+export interface ResourceLimitResult {
+  allowed: boolean;
+  reason?: string;
+  used: number;
+  limit: number;
+}
+
 export interface TierStatus {
   tier: string;
   decksUsed: number;
@@ -21,6 +28,11 @@ export interface TierStatus {
   creditsPerMonth: number;
   creditsReserved: number;
   maxSlidesPerDeck: number | null;
+  briefsUsed: number;
+  briefsLimit: number;
+  lensesUsed: number;
+  lensesLimit: number;
+  maxCustomGuidanceLength: number;
 }
 
 @Injectable()
@@ -140,6 +152,59 @@ export class TierEnforcementService {
   }
 
   /**
+   * Check if user can create a new Pitch Brief.
+   */
+  async canCreateBrief(userId: string): Promise<ResourceLimitResult> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { tier: true },
+    });
+    const tier = user?.tier ?? 'FREE';
+    const limits = TIER_LIMITS[tier] ?? TIER_LIMITS['FREE'];
+    const used = await this.prisma.pitchBrief.count({ where: { userId } });
+
+    if (used >= limits.maxBriefs) {
+      return {
+        allowed: false,
+        reason: `You've reached the limit of ${limits.maxBriefs} brief${limits.maxBriefs === 1 ? '' : 's'} on the ${tier} plan. Upgrade for more.`,
+        used,
+        limit: limits.maxBriefs,
+      };
+    }
+    return { allowed: true, used, limit: limits.maxBriefs };
+  }
+
+  /**
+   * Check if user can create a new Pitch Lens.
+   */
+  async canCreateLens(userId: string): Promise<ResourceLimitResult> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { tier: true },
+    });
+    const tier = user?.tier ?? 'FREE';
+    const limits = TIER_LIMITS[tier] ?? TIER_LIMITS['FREE'];
+    const used = await this.prisma.pitchLens.count({ where: { userId } });
+
+    if (used >= limits.maxLenses) {
+      return {
+        allowed: false,
+        reason: `You've reached the limit of ${limits.maxLenses} lens${limits.maxLenses === 1 ? '' : 'es'} on the ${tier} plan. Upgrade for more.`,
+        used,
+        limit: limits.maxLenses,
+      };
+    }
+    return { allowed: true, used, limit: limits.maxLenses };
+  }
+
+  /**
+   * Get max custom guidance length for a tier.
+   */
+  getMaxCustomGuidanceLength(tier: string): number {
+    return TIER_LIMITS[tier]?.maxCustomGuidanceLength ?? TIER_LIMITS['FREE'].maxCustomGuidanceLength;
+  }
+
+  /**
    * Get full tier status for a user.
    */
   async getTierStatus(userId: string): Promise<TierStatus> {
@@ -164,6 +229,11 @@ export class TierEnforcementService {
         creditsPerMonth: freeLimits.creditsPerMonth,
         creditsReserved: 0,
         maxSlidesPerDeck: freeLimits.maxSlidesPerDeck,
+        briefsUsed: 0,
+        briefsLimit: freeLimits.maxBriefs,
+        lensesUsed: 0,
+        lensesLimit: freeLimits.maxLenses,
+        maxCustomGuidanceLength: freeLimits.maxCustomGuidanceLength,
       };
     }
 
@@ -176,7 +246,11 @@ export class TierEnforcementService {
     const decksLimit = limits.maxDecksPerMonth;
     const decksRemaining = decksLimit !== null ? Math.max(0, decksLimit - decksUsed) : null;
 
-    const creditsReserved = await this.reservations.getReservedAmount(userId);
+    const [creditsReserved, briefsUsed, lensesUsed] = await Promise.all([
+      this.reservations.getReservedAmount(userId),
+      this.prisma.pitchBrief.count({ where: { userId } }),
+      this.prisma.pitchLens.count({ where: { userId } }),
+    ]);
 
     return {
       tier: user.tier,
@@ -187,6 +261,11 @@ export class TierEnforcementService {
       creditsPerMonth: limits.creditsPerMonth,
       creditsReserved,
       maxSlidesPerDeck: limits.maxSlidesPerDeck,
+      briefsUsed,
+      briefsLimit: limits.maxBriefs,
+      lensesUsed,
+      lensesLimit: limits.maxLenses,
+      maxCustomGuidanceLength: limits.maxCustomGuidanceLength,
     };
   }
 

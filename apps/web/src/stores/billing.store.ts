@@ -18,13 +18,18 @@ interface CreditTransaction {
   createdAt: string;
 }
 
-interface TierStatus {
+export interface TierStatus {
   tier: string;
   creditBalance: number;
   decksUsed: number;
   decksLimit: number | null;
   creditsPerMonth: number;
   creditsReserved: number;
+  briefsUsed: number;
+  briefsLimit: number;
+  lensesUsed: number;
+  lensesLimit: number;
+  maxCustomGuidanceLength: number;
 }
 
 interface BillingState {

@@ -310,9 +310,25 @@ export class DocumentProcessingProcessor extends WorkerHost {
                 where: { id: documentId },
                 select: { briefId: true, brief: { select: { graphName: true } } },
               });
-              if (docRecord2?.brief?.graphName) {
+              // Lazy-provision graphName for briefs created before FalkorDB was enabled
+              let briefGraphName = docRecord2?.brief?.graphName ?? null;
+              if (!briefGraphName && docRecord2?.briefId) {
+                try {
+                  briefGraphName = FalkorDbService.briefGraphName(docRecord2.briefId);
+                  await this.falkordb.ensureGraph(briefGraphName);
+                  await this.prisma.pitchBrief.update({
+                    where: { id: docRecord2.briefId },
+                    data: { graphName: briefGraphName },
+                  });
+                  this.logger.log(`Lazy-provisioned graph ${briefGraphName} for brief ${docRecord2.briefId}`);
+                } catch (provisionErr) {
+                  this.logger.warn(`Failed to provision graph for brief ${docRecord2.briefId}: ${provisionErr}`);
+                  briefGraphName = null;
+                }
+              }
+              if (briefGraphName) {
                 await this.falkordb.indexDocument(
-                  docRecord2.brief.graphName,
+                  briefGraphName,
                   documentId,
                   docTitle,
                   extraction.entities,
@@ -320,11 +336,11 @@ export class DocumentProcessingProcessor extends WorkerHost {
                 );
                 // Update brief entity count
                 await this.prisma.pitchBrief.update({
-                  where: { id: docRecord2.briefId! },
+                  where: { id: docRecord2!.briefId! },
                   data: { entityCount: { increment: extraction.entities.length } },
                 });
                 this.logger.log(
-                  `Document ${documentId}: also indexed into brief graph ${docRecord2.brief.graphName}`,
+                  `Document ${documentId}: also indexed into brief graph ${briefGraphName}`,
                 );
               }
 

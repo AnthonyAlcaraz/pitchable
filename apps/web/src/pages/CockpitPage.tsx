@@ -19,6 +19,8 @@ import { useAuthStore } from '@/stores/auth.store';
 import { usePresentationsStore } from '@/stores/presentations.store';
 import { usePitchBriefStore } from '@/stores/pitch-brief.store';
 import { usePitchLensStore } from '@/stores/pitch-lens.store';
+import { useBillingStore } from '@/stores/billing.store';
+import type { TierStatus } from '@/stores/billing.store';
 import { PresentationGrid } from '@/components/dashboard/PresentationGrid';
 import { ForkDialog } from '@/components/dashboard/ForkDialog';
 import type { PresentationListItem } from '@/stores/presentations.store';
@@ -53,21 +55,22 @@ export function CockpitPage() {
   const toggleVisibility = usePresentationsStore((s) => s.toggleVisibility);
   const { briefs, isLoading: briefsLoading, loadBriefs } = usePitchBriefStore();
   const { lenses, isLoading: lensesLoading, loadLenses } = usePitchLensStore();
+  const { tierStatus, loadTierStatus } = useBillingStore();
 
   const [selectedBriefId, setSelectedBriefId] = useState('');
   const [selectedLensId, setSelectedLensId] = useState('');
   const [selectedSourceId, setSelectedSourceId] = useState('');
   const [forkTarget, setForkTarget] = useState<PresentationListItem | null>(null);
-  const [, setDeckStats] = useState<{ decksUsed: number; decksLimit: number | null } | null>(null);
+
+  const briefsAtLimit = tierStatus ? tierStatus.briefsUsed >= tierStatus.briefsLimit : false;
+  const lensesAtLimit = tierStatus ? tierStatus.lensesUsed >= tierStatus.lensesLimit : false;
 
   useEffect(() => {
     loadPresentations();
     loadBriefs();
     loadLenses();
-    api.get<{ decksUsed: number; decksLimit: number | null }>('/credits/tier-status')
-      .then((s) => setDeckStats(s))
-      .catch(() => {});
-  }, [loadPresentations, loadBriefs, loadLenses]);
+    loadTierStatus();
+  }, [loadPresentations, loadBriefs, loadLenses, loadTierStatus]);
 
   const handleGenerate = async () => {
     if (selectedSourceId) {
@@ -310,10 +313,19 @@ export function CockpitPage() {
       {/* Pitch Briefs */}
       <div className="mb-10">
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-foreground">{t('cockpit.pitch_briefs')}</h2>
+          <div className="flex items-center gap-3">
+            <h2 className="text-lg font-semibold text-foreground">{t('cockpit.pitch_briefs')}</h2>
+            {tierStatus && (
+              <span className="text-xs text-muted-foreground">
+                {tierStatus.briefsUsed}/{tierStatus.briefsLimit}
+              </span>
+            )}
+          </div>
           <button
             onClick={() => navigate('/pitch-briefs/new')}
-            className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+            disabled={briefsAtLimit}
+            className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+            title={briefsAtLimit ? `Limit reached (${tierStatus?.briefsLimit}). Upgrade your plan.` : ''}
           >
             <Plus className="h-4 w-4" />
             {t('cockpit.new_brief')}
@@ -382,10 +394,19 @@ export function CockpitPage() {
       {/* Pitch Lenses */}
       <div>
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-foreground">{t('cockpit.pitch_lenses')}</h2>
+          <div className="flex items-center gap-3">
+            <h2 className="text-lg font-semibold text-foreground">{t('cockpit.pitch_lenses')}</h2>
+            {tierStatus && (
+              <span className="text-xs text-muted-foreground">
+                {tierStatus.lensesUsed}/{tierStatus.lensesLimit}
+              </span>
+            )}
+          </div>
           <button
             onClick={() => navigate('/pitch-lens/new')}
-            className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+            disabled={lensesAtLimit}
+            className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+            title={lensesAtLimit ? `Limit reached (${tierStatus?.lensesLimit}). Upgrade your plan.` : ''}
           >
             <Plus className="h-4 w-4" />
             {t('cockpit.new_lens')}
