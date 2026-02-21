@@ -23,6 +23,8 @@ import {
   ImageSource,
 } from '../../generated/prisma/enums.js';
 import type { SlideContent } from '../constraints/density-validator.js';
+import { CreditsService } from '../credits/credits.service.js';
+import { IMAGE_GENERATION_COST } from '../credits/tier-config.js';
 
 // ── Interfaces ──────────────────────────────────────────────
 
@@ -89,6 +91,7 @@ export class PresentationsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly constraints: ConstraintsService,
+    private readonly credits: CreditsService,
     private readonly exportsService: ExportsService,
     private readonly emailService: EmailService,
     private readonly contentParser: ContentParserService,
@@ -415,6 +418,14 @@ export class PresentationsService {
 
     if (!slide.imagePrompt) {
       throw new BadRequestException('This slide has no image prompt configured');
+    }
+
+    // Credit pre-check: ensure user can afford image regeneration
+    const hasCredits = await this.credits.hasEnoughCredits(userId, IMAGE_GENERATION_COST);
+    if (!hasCredits) {
+      throw new BadRequestException(
+        'Insufficient credits to regenerate image. Each image costs 1 credit.',
+      );
     }
 
     // Create a new image job

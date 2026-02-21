@@ -15,6 +15,7 @@ import { JobStatus, ImageSource } from '../../generated/prisma/enums.js';
 import type { ImageJobModel } from '../../generated/prisma/models.js';
 import type { ImageGenerationJobData } from './image-generation.processor.js';
 import { CreditsService } from '../credits/credits.service.js';
+import { CreditReservationService } from '../credits/credit-reservation.service.js';
 import { IMAGE_GENERATION_COST } from '../credits/tier-config.js';
 
 // ── Service ─────────────────────────────────────────────────
@@ -27,6 +28,7 @@ export class ImagesService {
     private readonly prisma: PrismaService,
     private readonly promptBuilder: ImagePromptBuilderService,
     private readonly credits: CreditsService,
+    private readonly creditReservation: CreditReservationService,
     @InjectQueue('image-generation')
     private readonly imageQueue: Queue<ImageGenerationJobData>,
   ) {}
@@ -127,8 +129,8 @@ export class ImagesService {
 
     const totalEligible = needsImage.length;
 
-    // Credit pre-check: cap batch to what the user can afford
-    const balance = await this.credits.getBalance(userId);
+    // Credit pre-check: cap batch to what the user can afford (accounts for active reservations)
+    const balance = await this.creditReservation.getAvailableBalance(userId);
     const affordableCount = Math.floor(balance / IMAGE_GENERATION_COST);
     const skippedForCredits = Math.max(0, totalEligible - affordableCount);
     const slidesToProcess = needsImage.slice(0, affordableCount);
