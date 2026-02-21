@@ -189,9 +189,14 @@ export function PreviewPanel({ presentationId }: PreviewPanelProps) {
                   {currentSlide.previewUrl ? (
                     <div className="overflow-hidden rounded-lg border border-border shadow-sm" style={{ aspectRatio: '16/9' }}>
                       <img
-                        src={`/slides/${currentSlide.id}/preview`}
+                        src={`/slides/${currentSlide.id}/preview?t=${Date.now()}`}
                         alt={`Slide ${currentSlide.slideNumber} preview`}
                         className="h-full w-full object-contain bg-black"
+                        onError={(e) => {
+                          const target = e.currentTarget;
+                          target.style.display = 'none';
+                          target.parentElement?.classList.add('preview-fallback');
+                        }}
                       />
                     </div>
                   ) : (

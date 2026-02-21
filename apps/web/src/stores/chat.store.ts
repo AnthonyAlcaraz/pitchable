@@ -229,12 +229,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
           } else if (metadata?.action === 'export_ready') {
             const downloadUrl = metadata.downloadUrl as string;
             if (downloadUrl) {
-              const a = document.createElement('a');
-              a.href = downloadUrl;
-              a.download = '';
-              document.body.appendChild(a);
-              a.click();
-              document.body.removeChild(a);
+              window.open(downloadUrl, '_blank');
             }
           } else if (metadata?.action === 'presentation_created') {
             // Backend created the presentation — update the URL to use the real ID

@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { marked } from 'marked';
 import type { PresentationModel } from '../../generated/prisma/models/Presentation.js';
 import type { SlideModel } from '../../generated/prisma/models/Slide.js';
 import type { ThemeModel } from '../../generated/prisma/models/Theme.js';
@@ -224,37 +225,7 @@ ${slideSections}
   }
 
   private convertBodyToHtml(body: string): string {
-    let html = this.escapeHtml(body);
-
-    // Convert markdown-style bullets to HTML lists
-    const lines = html.split('\n');
-    const result: string[] = [];
-    let inList = false;
-
-    for (const line of lines) {
-      const bulletMatch = line.match(/^[\s]*[-*]\s+(.+)/);
-      if (bulletMatch) {
-        if (!inList) {
-          result.push('<ul>');
-          inList = true;
-        }
-        result.push(`<li>${bulletMatch[1]}</li>`);
-      } else {
-        if (inList) {
-          result.push('</ul>');
-          inList = false;
-        }
-        if (line.trim()) {
-          result.push(`<p>${line}</p>`);
-        }
-      }
-    }
-
-    if (inList) {
-      result.push('</ul>');
-    }
-
-    return result.join('\n');
+    return marked.parse(body, { async: false }) as string;
   }
 
   private escapeHtml(text: string): string {
