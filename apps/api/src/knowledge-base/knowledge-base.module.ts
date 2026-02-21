@@ -27,6 +27,7 @@ import { ZeroEntropyRetrievalService } from './zeroentropy/zeroentropy-retrieval
 import { OmnisearchService } from './omnisearch.service.js';
 import { RerankerService } from './reranker.service.js';
 import { StalenessService } from './staleness.service.js';
+import { ChunkScoringService } from './chunk-scoring.service.js';
 
 @Module({
   imports: [
@@ -61,7 +62,8 @@ import { StalenessService } from './staleness.service.js';
     OmnisearchService,
     RerankerService,
     StalenessService,
+    ChunkScoringService,
   ],
-  exports: [KnowledgeBaseService, S3Service, EmbeddingService, VectorStoreService, FalkorDbService, EntityExtractorService, ZeroEntropyRetrievalService, OmnisearchService, RerankerService, StalenessService],
+  exports: [KnowledgeBaseService, S3Service, EmbeddingService, VectorStoreService, FalkorDbService, EntityExtractorService, ZeroEntropyRetrievalService, OmnisearchService, RerankerService, StalenessService, ChunkScoringService],
 })
 export class KnowledgeBaseModule {}
