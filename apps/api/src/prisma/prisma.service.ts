@@ -83,6 +83,8 @@ export class PrismaService
       `ALTER TABLE "PitchLens" ADD COLUMN IF NOT EXISTS "ratingCount" INTEGER NOT NULL DEFAULT 0`,
       `ALTER TABLE "PitchLens" ADD COLUMN IF NOT EXISTS "clonedFromId" UUID`,
       // Slide missing columns
+      `ALTER TABLE "Slide" ADD COLUMN IF NOT EXISTS "imageLayout" TEXT`,
+      `ALTER TABLE "Slide" ADD COLUMN IF NOT EXISTS "imageLocalPath" TEXT`,
       `ALTER TABLE "Slide" ADD COLUMN IF NOT EXISTS "contentHash" TEXT`,
       `ALTER TABLE "Slide" ADD COLUMN IF NOT EXISTS "sectionLabel" TEXT`,
       `ALTER TABLE "Slide" ADD COLUMN IF NOT EXISTS "figmaFileKey" TEXT`,
