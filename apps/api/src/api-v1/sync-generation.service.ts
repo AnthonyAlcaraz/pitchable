@@ -40,7 +40,9 @@ import { isValidOutline, isValidSlideContent } from '../chat/validators.js';
 import type { GeneratedSlideContent } from '../chat/validators.js';
 import { validateSlideContent, suggestSplit, DENSITY_LIMITS } from '../constraints/density-validator.js';
 import { truncateToLimits, passesDensityCheck } from '../constraints/density-truncator.js';
+import { computeSlideHash } from '../common/content-hash.js';
 import type { DensityLimits } from '../constraints/density-validator.js';
+import type { SlideSpecDto } from './dto/generate.dto.js';
 
 export interface SyncGenerationInput {
   topic: string;
@@ -48,6 +50,7 @@ export interface SyncGenerationInput {
   briefId?: string;
   pitchLensId?: string;
   themeId?: string;
+  slides?: SlideSpecDto[];
 }
 
 @Injectable()
@@ -179,28 +182,46 @@ export class SyncGenerationService {
         ? this.archetypeResolver.buildArchetypeInjection(pitchLens.deckArchetype as DeckArchetype)
         : undefined;
 
-      // 7. Generate outline
+      // 7. Generate outline (or use pre-specified slides)
       const tOutline = Date.now();
-      const outlineSystemPrompt = buildOutlineSystemPrompt(
-        presType,
-        range,
-        kbContext,
-        pitchLensContext,
-        syncArchetypeContext,
-      );
-      const outlineUserPrompt = buildOutlineUserPrompt(input.topic, frameworkSlideStructure);
+      let outline: GeneratedOutline;
 
-      const outline = await this.llm.completeJson<GeneratedOutline>(
-        [
-          { role: 'system', content: outlineSystemPrompt },
-          { role: 'user', content: outlineUserPrompt },
-        ],
-        LlmModel.SONNET,
-        isValidOutline,
-        2,
-      );
-      timings['outline'] = Date.now() - tOutline;
-      this.logger.log(`[TIMING] Outline generation (Opus): ${((Date.now() - tOutline) / 1000).toFixed(1)}s — ${outline.slides?.length ?? 0} slides planned`);
+      if (input.slides && input.slides.length > 0) {
+        // Map SlideSpecDto[] to synthetic outline — skip LLM outline generation
+        outline = {
+          title: input.topic,
+          slides: input.slides.map((spec, i) => ({
+            slideNumber: i + 1,
+            slideType: spec.type as SlideType,
+            title: spec.title,
+            bulletPoints: spec.contentHints ? [spec.contentHints] : [],
+            sectionLabel: spec.sectionLabel ?? undefined,
+          })),
+        };
+        timings['outline'] = Date.now() - tOutline;
+        this.logger.log(`[TIMING] Using ${input.slides.length} pre-specified slides, skipping outline generation`);
+      } else {
+        const outlineSystemPrompt = buildOutlineSystemPrompt(
+          presType,
+          range,
+          kbContext,
+          pitchLensContext,
+          syncArchetypeContext,
+        );
+        const outlineUserPrompt = buildOutlineUserPrompt(input.topic, frameworkSlideStructure);
+
+        outline = await this.llm.completeJson<GeneratedOutline>(
+          [
+            { role: 'system', content: outlineSystemPrompt },
+            { role: 'user', content: outlineUserPrompt },
+          ],
+          LlmModel.SONNET,
+          isValidOutline,
+          2,
+        );
+        timings['outline'] = Date.now() - tOutline;
+        this.logger.log(`[TIMING] Outline generation (Sonnet): ${((Date.now() - tOutline) / 1000).toFixed(1)}s — ${outline.slides?.length ?? 0} slides planned`);
+      }
 
       if (!outline.slides?.length) {
         throw new Error('Generated outline was empty');
@@ -425,6 +446,7 @@ ${slideKbContext}`;
             slideType: (outlineSlide.slideType as SlideType) ?? SlideType.CONTENT,
             imagePrompt: slideContent.imagePromptHint ?? null,
             sectionLabel: outlineSlide.sectionLabel ?? null,
+            contentHash: computeSlideHash(finalTitle, finalBody, slideContent.speakerNotes ?? null, outlineSlide.slideType, null),
           },
         });
 

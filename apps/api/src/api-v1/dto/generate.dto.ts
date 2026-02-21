@@ -1,4 +1,22 @@
-import { IsString, MinLength, IsOptional, IsUUID, IsEmail } from 'class-validator';
+import { IsString, MinLength, IsOptional, IsUUID, IsEmail, IsArray, ValidateNested } from 'class-validator';
+import { Type } from 'class-transformer';
+
+export class SlideSpecDto {
+  @IsString()
+  type!: string; // SlideType string value
+
+  @IsString()
+  @MinLength(1)
+  title!: string;
+
+  @IsOptional()
+  @IsString()
+  contentHints?: string;
+
+  @IsOptional()
+  @IsString()
+  sectionLabel?: string;
+}
 
 export class GenerateDto {
   @IsString()
@@ -20,6 +38,12 @@ export class GenerateDto {
   @IsOptional()
   @IsUUID()
   themeId?: string;
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => SlideSpecDto)
+  slides?: SlideSpecDto[];
 }
 
 export class ExportDto {
