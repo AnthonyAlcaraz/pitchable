@@ -117,6 +117,21 @@ export class ChatService {
 
     // Classify intent (works with or without slides)
     const slideCount = await this.prisma.slide.count({ where: { presentationId } });
+
+    // If this is a brand-new presentation (0 slides) and the first user message,
+    // treat it as a generation request — the wizard sends bare topic text.
+    if (slideCount === 0) {
+      const userMsgCount = await this.prisma.chatMessage.count({
+        where: { presentationId, role: 'user' },
+      });
+      if (userMsgCount <= 1) {
+        yield* this.generation.generateOutline(userId, presentationId, {
+          topic: content,
+          presentationType: 'STANDARD',
+        });
+        return;
+      }
+    }
     const intent = await this.intentClassifier.classify(content, slideCount > 0);
 
     // Block off-topic messages regardless of slide state
