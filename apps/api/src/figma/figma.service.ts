@@ -11,18 +11,34 @@ const FIGMA_API = 'https://api.figma.com/v1';
 
 // Simple rate limiter: Figma allows ~30 requests/minute
 let lastRequestTime = 0;
-const MIN_REQUEST_GAP_MS = 2100; // ~28 req/min max
+const MIN_REQUEST_GAP_MS = 2500; // ~24 req/min max (conservative)
+const MAX_RETRIES = 3;
 
 async function rateLimitedFetch(
   url: string,
   options: RequestInit,
 ): Promise<Response> {
-  const now = Date.now();
-  const elapsed = now - lastRequestTime;
-  if (elapsed < MIN_REQUEST_GAP_MS) {
-    await new Promise((r) => setTimeout(r, MIN_REQUEST_GAP_MS - elapsed));
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    const now = Date.now();
+    const elapsed = now - lastRequestTime;
+    if (elapsed < MIN_REQUEST_GAP_MS) {
+      await new Promise((r) => setTimeout(r, MIN_REQUEST_GAP_MS - elapsed));
+    }
+    lastRequestTime = Date.now();
+
+    const res = await fetch(url, options);
+
+    if (res.status === 429 && attempt < MAX_RETRIES) {
+      const retryAfter = parseInt(res.headers.get('retry-after') ?? '', 10);
+      const waitMs = retryAfter > 0 ? retryAfter * 1000 : 5000 * (attempt + 1);
+      await new Promise((r) => setTimeout(r, waitMs));
+      continue;
+    }
+
+    return res;
   }
-  lastRequestTime = Date.now();
+
+  // Unreachable, but satisfies TypeScript
   return fetch(url, options);
 }
 
