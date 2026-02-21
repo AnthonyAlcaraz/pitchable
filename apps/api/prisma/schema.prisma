@@ -218,6 +218,7 @@ model Document {
   status       DocumentStatus     @default(UPLOADED)
   chunkCount   Int                @default(0)
   errorMessage String?
+  contentHash  String?
   processedAt  DateTime?
   createdAt    DateTime           @default(now())
   updatedAt    DateTime           @updatedAt
@@ -229,6 +230,7 @@ model Document {
   @@index([userId])
   @@index([status])
   @@index([briefId])
+  @@index([userId, contentHash])
 }
 
 model GraphMapping {
@@ -249,10 +251,12 @@ model DocumentChunk {
   headingLevel Int                    @default(0)
   chunkIndex   Int
   metadata     Json                   @default("{}")
+  contentHash  String?
   createdAt    DateTime               @default(now())
   document     Document               @relation(fields: [documentId], references: [id], onDelete: Cascade)
 
   @@index([documentId])
+  @@index([contentHash])
 }
 
 model ChatMessage {

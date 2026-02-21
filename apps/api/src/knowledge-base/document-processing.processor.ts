@@ -17,6 +17,7 @@ import { EntityExtractorService } from './falkordb/entity-extractor.service.js';
 import { ZeroEntropyRetrievalService } from './zeroentropy/zeroentropy-retrieval.service.js';
 import { CreditsService } from '../credits/credits.service.js';
 import { chunkByHeadings } from './chunking/heading-chunker.js';
+import { contentHash } from './utils/content-hash.js';
 import { BriefStatus, CreditReason, DocumentStatus } from '../../generated/prisma/enums.js';
 import { ENTITY_EXTRACTION_COST } from '../credits/tier-config.js';
 import type { DocumentProcessingJobData } from './knowledge-base.service.js';
@@ -90,6 +91,29 @@ export class DocumentProcessingProcessor extends WorkerHost {
         throw new Error('No text could be extracted from the document');
       }
 
+      // 2b. Compute and store document-level content hash
+      const docHash = contentHash(extractedText);
+      await this.prisma.document.update({
+        where: { id: documentId },
+        data: { contentHash: docHash },
+      });
+
+      // Warn if an identical document already exists for this user
+      const duplicateDoc = await this.prisma.document.findFirst({
+        where: {
+          userId,
+          contentHash: docHash,
+          id: { not: documentId },
+          status: DocumentStatus.READY,
+        },
+        select: { id: true, title: true },
+      });
+      if (duplicateDoc) {
+        this.logger.warn(
+          `Document ${documentId}: identical content already exists in document ${duplicateDoc.id} (${duplicateDoc.title})`,
+        );
+      }
+
       // 3. Chunk the extracted text
       const chunks = chunkByHeadings(extractedText, {
         maxChunkSize: 2000,
@@ -110,6 +134,7 @@ export class DocumentProcessingProcessor extends WorkerHost {
               headingLevel: chunk.headingLevel,
               chunkIndex: chunk.chunkIndex,
               metadata: chunk.metadata,
+              contentHash: contentHash(chunk.content),
             },
           }),
         ),
@@ -128,7 +153,7 @@ export class DocumentProcessingProcessor extends WorkerHost {
       const storedChunks = await this.prisma.documentChunk.findMany({
         where: { documentId },
         orderBy: { chunkIndex: 'asc' },
-        select: { id: true, content: true, heading: true },
+        select: { id: true, content: true, heading: true, contentHash: true },
       });
 
       // Get document title for metadata
@@ -138,6 +163,43 @@ export class DocumentProcessingProcessor extends WorkerHost {
       });
       const docTitle = docRecord?.title ?? 'Untitled';
 
+      // 5b. Deduplicate chunks - find which ones already have embeddings in this user's KB
+      const chunkHashes = storedChunks
+        .map((c) => c.contentHash)
+        .filter((h): h is string => h != null);
+
+      let newChunks = storedChunks;
+      let skippedCount = 0;
+
+      if (chunkHashes.length > 0) {
+        const existingHashes = await this.prisma.documentChunk.findMany({
+          where: {
+            contentHash: { in: chunkHashes },
+            document: {
+              userId,
+              status: DocumentStatus.READY,
+              id: { not: documentId },
+            },
+          },
+          select: { contentHash: true },
+          distinct: ['contentHash'],
+        });
+
+        if (existingHashes.length > 0) {
+          const alreadyEmbedded = new Set(existingHashes.map((h) => h.contentHash!));
+          newChunks = storedChunks.filter(
+            (c) => !c.contentHash || !alreadyEmbedded.has(c.contentHash),
+          );
+          skippedCount = storedChunks.length - newChunks.length;
+
+          if (skippedCount > 0) {
+            this.logger.log(
+              `Document ${documentId}: dedup skipping ${skippedCount}/${storedChunks.length} chunks (already embedded in user KB)`,
+            );
+          }
+        }
+      }
+
       // 6. Index into ZeroEntropy (primary retrieval, non-fatal)
       if (this.zeRetrieval.isAvailable()) {
         try {
@@ -146,7 +208,7 @@ export class DocumentProcessingProcessor extends WorkerHost {
             collectionName,
             documentId,
             docTitle,
-            storedChunks,
+            newChunks,
           );
         } catch (zeError) {
           this.logger.warn(
@@ -158,11 +220,11 @@ export class DocumentProcessingProcessor extends WorkerHost {
       // 7. Generate OpenAI embeddings for pgvector (fallback retrieval, non-fatal)
       if (this.embeddingService.isAvailable()) {
         try {
-          const texts = storedChunks.map((c) => c.content);
+          const texts = newChunks.map((c) => c.content);
           const embeddings = await this.embeddingService.batchEmbed(texts);
 
           if (embeddings.length > 0) {
-            const chunkEmbeddings = storedChunks.map((chunk, i) => ({
+            const chunkEmbeddings = newChunks.map((chunk, i) => ({
               chunkId: chunk.id,
               embedding: embeddings[i],
             }));
