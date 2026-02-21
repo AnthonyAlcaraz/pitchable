@@ -12,6 +12,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
 import { FigmaTemplateService } from './figma-template.service.js';
 import { CreateFigmaTemplateDto } from './dto/create-figma-template.dto.js';
 import { MapFrameDto } from './dto/map-frame.dto.js';
+import { CreateFromUrlDto } from './dto/create-from-url.dto.js';
 
 interface AuthRequest {
   user: { userId: string };
@@ -35,6 +36,15 @@ export class FigmaTemplateController {
   @Get()
   async listTemplates(@Request() req: AuthRequest) {
     return this.templateService.listTemplates(req.user.userId);
+  }
+
+  /** Create template from Figma URL and auto-map with AI in one step. */
+  @Post('from-url')
+  async createFromUrl(
+    @Request() req: AuthRequest,
+    @Body() dto: CreateFromUrlDto,
+  ) {
+    return this.templateService.createFromUrl(req.user.userId, dto.figmaUrl, dto.name);
   }
 
   @Get(':id')
@@ -69,6 +79,17 @@ export class FigmaTemplateController {
     @Param('slideType') slideType: string,
   ) {
     return this.templateService.unmapSlideType(id, slideType, req.user.userId);
+  }
+
+  /** Remove a single frame from a multi-frame mapping. */
+  @Delete(':id/map/:slideType/:nodeId')
+  async unmapSingleFrame(
+    @Request() req: AuthRequest,
+    @Param('id') id: string,
+    @Param('slideType') slideType: string,
+    @Param('nodeId') nodeId: string,
+  ) {
+    return this.templateService.unmapSingleFrame(id, req.user.userId, slideType, nodeId);
   }
 
   @Post(':id/auto-map')

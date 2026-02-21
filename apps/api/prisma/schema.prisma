@@ -565,6 +565,7 @@ enum CreditReason {
   CHAT_MESSAGE
   WEBSITE_CRAWL
   DOCUMENT_INGESTION
+  FIGMA_AI_MAPPING
 }
 
 enum ExportFormat {

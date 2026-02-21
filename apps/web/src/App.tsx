@@ -26,6 +26,7 @@ const ApiKeysPage = lazy(() => import('@/pages/ApiKeysPage'));
 const DocsPage = lazy(() => import('@/pages/DocsPage'));
 const AnalyticsPage = lazy(() => import('@/pages/AnalyticsPage'));
 const OnboardingPage = lazy(() => import('@/pages/OnboardingPage'));
+const FigmaTemplatesPage = lazy(() => import('@/pages/FigmaTemplatesPage'));
 const NewPresentationWizardPage = lazy(() => import('@/pages/NewPresentationWizardPage'));
 
 function PageFallback() {
@@ -74,6 +75,7 @@ function App() {
             <Route path="/billing" element={<BillingPage />} />
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="/settings/api-keys" element={<ApiKeysPage />} />
+            <Route path="/settings/figma-templates" element={<FigmaTemplatesPage />} />
           </Route>
 
           {/* Protected onboarding route (full-width, no sidebar) */}

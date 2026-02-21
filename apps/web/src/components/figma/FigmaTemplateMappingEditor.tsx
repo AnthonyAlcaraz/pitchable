@@ -78,6 +78,7 @@ export function FigmaTemplateMappingEditor({
     autoMap,
     autoMapAi,
     refreshThumbnails,
+    unmapSingleFrame,
     clearAutoMapResult,
   } = useFigmaTemplateStore();
 
@@ -440,6 +441,7 @@ export function FigmaTemplateMappingEditor({
                     onToggleExpand={() => toggleExpanded(type)}
                     onAssign={() => handleMapFrame(type)}
                     onUnmap={() => handleUnmap(type)}
+                    onUnmapSingle={(nodeId) => unmapSingleFrame(templateId, type, nodeId)}
                   />
                 );
               })}
@@ -460,6 +462,7 @@ function SlotRow({
   onToggleExpand,
   onAssign,
   onUnmap,
+  onUnmapSingle,
 }: {
   slideType: string;
   mappings: FigmaTemplateMapping[];
@@ -469,6 +472,7 @@ function SlotRow({
   onToggleExpand: () => void;
   onAssign: () => void;
   onUnmap: () => void;
+  onUnmapSingle: (nodeId: string) => void;
 }) {
   const hasMappings = mappings.length > 0;
   const hasMultiple = mappings.length > 1;
@@ -605,7 +609,7 @@ function SlotRow({
           {mappings.map((m, idx) => (
             <div
               key={m.id}
-              className="flex items-center gap-2 rounded py-1"
+              className="group/frame flex items-center gap-2 rounded py-1"
             >
               <span className="w-4 text-center text-[10px] text-muted-foreground">
                 {idx + 1}
@@ -622,6 +626,13 @@ function SlotRow({
               <span className="min-w-0 flex-1 truncate text-[11px] text-foreground">
                 {m.figmaNodeName ?? m.figmaNodeId}
               </span>
+              <button
+                onClick={() => onUnmapSingle(m.figmaNodeId)}
+                className="rounded p-0.5 text-muted-foreground opacity-0 transition-opacity hover:text-red-500 group-hover/frame:opacity-100"
+                title="Remove this frame"
+              >
+                <X className="h-3 w-3" />
+              </button>
             </div>
           ))}
         </div>

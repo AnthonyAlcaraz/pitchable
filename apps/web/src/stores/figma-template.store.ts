@@ -58,6 +58,11 @@ export interface AutoMapResult {
   isRateLimited?: boolean;
 }
 
+export interface CreateFromUrlResult {
+  template: FigmaTemplateDetail;
+  autoMapResult: AutoMapResult;
+}
+
 interface FigmaTemplateState {
   templates: FigmaTemplateListItem[];
   currentTemplate: FigmaTemplateDetail | null;
@@ -75,6 +80,8 @@ interface FigmaTemplateState {
   autoMapAi: (templateId: string) => Promise<AutoMapResult>;
   refreshThumbnails: (templateId: string) => Promise<void>;
   clearError: () => void;
+  unmapSingleFrame: (templateId: string, slideType: string, nodeId: string) => Promise<void>;
+  createFromUrl: (figmaUrl: string, name?: string) => Promise<string>;
   clearAutoMapResult: () => void;
 }
 
@@ -176,6 +183,31 @@ export const useFigmaTemplateStore = create<FigmaTemplateState>((set, get) => ({
       const updated = await api.get<FigmaTemplateDetail>(`/figma/templates/${templateId}`);
       set({ currentTemplate: updated });
     }
+  },
+
+  async unmapSingleFrame(templateId: string, slideType: string, nodeId: string) {
+    await api.delete(`/figma/templates/${templateId}/map/${slideType}/${nodeId}`);
+    const { currentTemplate } = get();
+    if (currentTemplate?.id === templateId) {
+      set({
+        currentTemplate: {
+          ...currentTemplate,
+          mappings: currentTemplate.mappings.filter(
+            (m) => !(m.slideType === slideType && m.figmaNodeId === nodeId),
+          ),
+          mappingCount: Math.max(0, currentTemplate.mappingCount - 1),
+        },
+      });
+    }
+  },
+
+  async createFromUrl(figmaUrl: string, name?: string) {
+    const data = await api.post<CreateFromUrlResult>('/figma/templates/from-url', {
+      figmaUrl,
+      ...(name && { name }),
+    });
+    set((state) => ({ templates: [data.template, ...state.templates] }));
+    return data.template.id;
   },
 
   clearError() {

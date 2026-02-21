@@ -4,6 +4,7 @@ import { PrismaModule } from '../prisma/prisma.module.js';
 import { EventsModule } from '../events/events.module.js';
 import { KnowledgeBaseModule } from '../knowledge-base/knowledge-base.module.js';
 import { LlmModule } from '../chat/llm.module.js';
+import { CreditsModule } from '../credits/credits.module.js';
 import { FigmaService } from './figma.service.js';
 import { FigmaImageSyncService } from './figma-image-sync.service.js';
 import { FigmaAiMapperService } from './figma-ai-mapper.service.js';
@@ -21,6 +22,7 @@ import { FigmaSyncProcessor } from './figma-sync.processor.js';
     EventsModule,
     KnowledgeBaseModule,
     LlmModule,
+    CreditsModule,
     BullModule.registerQueue({ name: 'figma-sync' }),
   ],
   controllers: [FigmaController, FigmaTemplateController, FigmaWebhookController],

@@ -41,6 +41,7 @@ export interface TierLimits {
  *   Entity extraction: 1 credit per document (FalkorDB)
  *   Chat message: 1 credit (after 10 free per presentation)
  *   Website crawl: 1 credit per 5 pages
+ *   Figma AI mapping: 1 credit per template
  *   Export: free
  *
  * Pricing (targeting 50%+ margin):
@@ -68,6 +69,9 @@ export const IMAGE_GENERATION_COST = 1;
 
 /** Credits deducted per document entity extraction (Sonnet 4.6 LLM cost). */
 export const ENTITY_EXTRACTION_COST = 1;
+
+/** Credits deducted per Figma AI template mapping (Sonnet 4.6 vision). */
+export const FIGMA_AI_MAPPING_COST = 1;
 
 /** Credits deducted per document ingestion (flat rate regardless of size). */
 export const DOCUMENT_INGESTION_COST = 1;

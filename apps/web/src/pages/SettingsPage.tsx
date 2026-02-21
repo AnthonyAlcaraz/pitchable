@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuthStore } from '@/stores/auth.store'
-import { CreditCard, User, Shield, Key } from 'lucide-react'
+import { CreditCard, User, Shield, Key, Figma } from 'lucide-react'
 import { FigmaIntegrationCard } from '@/components/settings/FigmaIntegrationCard'
 
 export function SettingsPage() {
@@ -80,6 +80,23 @@ export function SettingsPage() {
 
         {/* Integrations section */}
         <FigmaIntegrationCard />
+
+        {/* Figma Templates */}
+        <section className="rounded-lg border border-border bg-card p-6">
+          <div className="mb-4 flex items-center gap-2">
+            <Figma className="h-5 w-5 text-muted-foreground" />
+            <h2 className="text-lg font-semibold text-foreground">Figma Templates</h2>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Manage your Figma template mappings for slide generation.
+          </p>
+          <Link
+            to="/settings/figma-templates"
+            className="mt-3 inline-block text-sm text-primary hover:underline"
+          >
+            Manage templates &rarr;
+          </Link>
+        </section>
 
         {/* Security section */}
         <section className="rounded-lg border border-border bg-card p-6">

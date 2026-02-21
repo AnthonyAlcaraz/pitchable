@@ -2,6 +2,7 @@ import {
   Injectable,
   Logger,
   NotFoundException,
+  BadRequestException,
   ForbiddenException,
   Optional,
 } from '@nestjs/common';
@@ -10,7 +11,10 @@ import { FigmaService } from './figma.service.js';
 import { FigmaAiMapperService } from './figma-ai-mapper.service.js';
 import type { CreateFigmaTemplateDto } from './dto/create-figma-template.dto.js';
 import type { MapFrameDto } from './dto/map-frame.dto.js';
-import { SlideType } from '../../generated/prisma/enums.js';
+import { CreditsService } from '../credits/credits.service.js';
+import { CreditReason, SlideType } from '../../generated/prisma/enums.js';
+import { FIGMA_AI_MAPPING_COST } from '../credits/tier-config.js';
+
 
 /** Keyword map for auto-mapping Figma frame names to SlideTypes. */
 const SLIDE_TYPE_KEYWORDS: Record<string, string[]> = {
@@ -46,6 +50,7 @@ export class FigmaTemplateService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly figmaService: FigmaService,
+    private readonly creditsService: CreditsService,
     @Optional() private readonly aiMapper?: FigmaAiMapperService,
   ) {}
 
@@ -271,6 +276,12 @@ export class FigmaTemplateService {
       const mappedSlideTypes = new Set(mappings.map((m) => m.slideType));
 
       if (unmappedFrames.length > 0) {
+        // Credit check for AI mapping
+        const hasCredits = await this.creditsService.hasEnoughCredits(userId, FIGMA_AI_MAPPING_COST);
+        if (!hasCredits) {
+          throw new BadRequestException('Insufficient credits for AI mapping (1 credit required)');
+        }
+
         this.logger.log(
           `AI analysis: ${unmappedFrames.length} unmapped frames to classify`,
         );
@@ -317,7 +328,15 @@ export class FigmaTemplateService {
 
             mappedSlideTypes.add(result.slideType);
           }
+          // Deduct credit for AI mapping
+          await this.creditsService.deductCredits(
+            userId,
+            FIGMA_AI_MAPPING_COST,
+            CreditReason.FIGMA_AI_MAPPING,
+            templateId,
+          );
         } catch (err) {
+          if (err instanceof BadRequestException) throw err; // Re-throw credit errors
           const msg = err instanceof Error ? err.message : 'unknown';
           this.logger.warn(`AI frame analysis failed (non-fatal): ${msg}`);
           // Keyword-only results still returned
@@ -388,6 +407,78 @@ export class FigmaTemplateService {
       `Refreshed ${refreshed} thumbnails in template ${templateId}`,
     );
     return { refreshed };
+  }
+
+  /**
+   * Remove a single frame mapping from a template.
+   */
+  async unmapSingleFrame(
+    templateId: string,
+    userId: string,
+    slideType: string,
+    nodeId: string,
+  ) {
+    await this.ensureOwnership(templateId, userId);
+
+    await this.prisma.figmaTemplateMapping.deleteMany({
+      where: {
+        templateId,
+        slideType: slideType as SlideType,
+        figmaNodeId: nodeId,
+      },
+    });
+
+    this.logger.log(
+      `Unmapped single frame ${nodeId} from ${slideType} in template ${templateId}`,
+    );
+    return { deleted: true };
+  }
+
+  /** Figma URL regex: extracts file key from figma.com/file/KEY or figma.com/design/KEY */
+  private static readonly FIGMA_URL_RE = /figma\.com\/(?:file|design)\/([a-zA-Z0-9]+)/;
+
+  /**
+   * One-shot: create a template from a Figma URL and auto-map all frames with AI.
+   */
+  async createFromUrl(
+    userId: string,
+    figmaUrl: string,
+    name?: string,
+  ) {
+    const match = figmaUrl.match(FigmaTemplateService.FIGMA_URL_RE);
+    if (!match) {
+      throw new BadRequestException(
+        'Invalid Figma URL. Expected: https://www.figma.com/file/KEY/... or https://www.figma.com/design/KEY/...',
+      );
+    }
+    const fileKey = match[1];
+
+    // Derive name from URL slug if not provided
+    const derivedName =
+      name ??
+      figmaUrl
+        .split('/').pop()
+        ?.split('?')[0]
+        ?.replace(/-/g, ' ')
+        ?.replace(/\w/g, (c) => c.toUpperCase()) ??
+      `Figma ${fileKey.slice(0, 8)}`;
+
+    // Create the template
+    const template = await this.createTemplate(userId, {
+      name: derivedName,
+      figmaFileKey: fileKey,
+    });
+
+    // Auto-map with AI
+    const autoMapResult = await this.autoMapFrames(template.id, userId, true);
+
+    // Re-fetch full template with mappings
+    const full = await this.getTemplate(template.id, userId);
+
+    return {
+      template: full,
+      autoMapResult,
+    };
   }
 
   private async ensureOwnership(templateId: string, userId: string) {
