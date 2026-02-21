@@ -915,6 +915,7 @@
     "confirm_subtitle": "Review your selections and launch the workspace.",
     "summary_brief": "Pitch Brief",
     "summary_lens": "Pitch Lens",
+    "summary_images": "Image Generation",
     "summary_topic": "Topic",
     "topic_empty": "You'll describe your topic in the workspace",
     "launch": "Launch Workspace",
