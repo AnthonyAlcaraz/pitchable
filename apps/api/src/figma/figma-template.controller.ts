@@ -14,7 +14,7 @@ import { CreateFigmaTemplateDto } from './dto/create-figma-template.dto.js';
 import { MapFrameDto } from './dto/map-frame.dto.js';
 
 interface AuthRequest {
-  user: { sub: string };
+  user: { userId: string };
 }
 
 @Controller('figma/templates')
@@ -29,12 +29,12 @@ export class FigmaTemplateController {
     @Request() req: AuthRequest,
     @Body() dto: CreateFigmaTemplateDto,
   ) {
-    return this.templateService.createTemplate(req.user.sub, dto);
+    return this.templateService.createTemplate(req.user.userId, dto);
   }
 
   @Get()
   async listTemplates(@Request() req: AuthRequest) {
-    return this.templateService.listTemplates(req.user.sub);
+    return this.templateService.listTemplates(req.user.userId);
   }
 
   @Get(':id')
@@ -42,7 +42,7 @@ export class FigmaTemplateController {
     @Request() req: AuthRequest,
     @Param('id') id: string,
   ) {
-    return this.templateService.getTemplate(id, req.user.sub);
+    return this.templateService.getTemplate(id, req.user.userId);
   }
 
   @Delete(':id')
@@ -50,7 +50,7 @@ export class FigmaTemplateController {
     @Request() req: AuthRequest,
     @Param('id') id: string,
   ) {
-    return this.templateService.deleteTemplate(id, req.user.sub);
+    return this.templateService.deleteTemplate(id, req.user.userId);
   }
 
   @Post(':id/map')
@@ -59,7 +59,7 @@ export class FigmaTemplateController {
     @Param('id') id: string,
     @Body() dto: MapFrameDto,
   ) {
-    return this.templateService.mapFrame(id, req.user.sub, dto);
+    return this.templateService.mapFrame(id, req.user.userId, dto);
   }
 
   @Delete(':id/map/:slideType')
@@ -68,7 +68,7 @@ export class FigmaTemplateController {
     @Param('id') id: string,
     @Param('slideType') slideType: string,
   ) {
-    return this.templateService.unmapSlideType(id, slideType, req.user.sub);
+    return this.templateService.unmapSlideType(id, slideType, req.user.userId);
   }
 
   @Post(':id/auto-map')
@@ -76,7 +76,7 @@ export class FigmaTemplateController {
     @Request() req: AuthRequest,
     @Param('id') id: string,
   ) {
-    return this.templateService.autoMapFrames(id, req.user.sub);
+    return this.templateService.autoMapFrames(id, req.user.userId);
   }
 
   @Post(':id/refresh')
@@ -84,6 +84,6 @@ export class FigmaTemplateController {
     @Request() req: AuthRequest,
     @Param('id') id: string,
   ) {
-    return this.templateService.refreshThumbnails(id, req.user.sub);
+    return this.templateService.refreshThumbnails(id, req.user.userId);
   }
 }

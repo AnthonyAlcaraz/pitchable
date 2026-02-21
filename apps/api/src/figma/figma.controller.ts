@@ -18,7 +18,7 @@ import { ConnectFigmaDto } from './dto/connect-figma.dto.js';
 import { AssignFigmaFrameDto } from './dto/assign-figma-frame.dto.js';
 
 interface AuthRequest {
-  user: { sub: string };
+  user: { userId: string };
 }
 
 @Controller('figma')
@@ -37,7 +37,7 @@ export class FigmaController {
     @Body() dto: ConnectFigmaDto,
   ) {
     try {
-      await this.figmaService.saveToken(req.user.sub, dto.accessToken);
+      await this.figmaService.saveToken(req.user.userId, dto.accessToken);
       return { connected: true };
     } catch (err) {
       if (err instanceof BadRequestException) throw err;
@@ -49,20 +49,20 @@ export class FigmaController {
   /** Remove Figma integration. */
   @Delete('disconnect')
   async disconnect(@Request() req: AuthRequest) {
-    await this.figmaService.disconnect(req.user.sub);
+    await this.figmaService.disconnect(req.user.userId);
     return { connected: false };
   }
 
   /** Check Figma connection status. */
   @Get('status')
   async status(@Request() req: AuthRequest) {
-    return this.figmaService.getStatus(req.user.sub);
+    return this.figmaService.getStatus(req.user.userId);
   }
 
   /** Re-validate stored Figma token. */
   @Post('validate')
   async validate(@Request() req: AuthRequest) {
-    const valid = await this.figmaService.validateToken(req.user.sub);
+    const valid = await this.figmaService.validateToken(req.user.userId);
     return { valid };
   }
 
@@ -77,7 +77,7 @@ export class FigmaController {
     @Query('lensId') lensId?: string,
   ) {
     const token = await this.figmaService.resolveToken(
-      req.user.sub,
+      req.user.userId,
       lensId,
     );
 
@@ -102,7 +102,7 @@ export class FigmaController {
   ) {
     const imageUrl = await this.figmaImageSync.syncFigmaFrameToSlide(
       slideId,
-      req.user.sub,
+      req.user.userId,
       dto.fileKey,
       dto.nodeId,
       lensId,
@@ -119,7 +119,7 @@ export class FigmaController {
   ) {
     const imageUrl = await this.figmaImageSync.refreshFigmaImage(
       slideId,
-      req.user.sub,
+      req.user.userId,
       lensId,
     );
     return { imageUrl };

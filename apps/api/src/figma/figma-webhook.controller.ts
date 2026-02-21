@@ -36,11 +36,11 @@ export class FigmaWebhookController {
   @UseGuards(JwtAuthGuard)
   @Post('register')
   async registerWebhook(
-    @Req() req: { user: { id: string } },
+    @Req() req: { user: { userId: string } },
     @Body() body: RegisterWebhookDto,
   ) {
     return this.webhookService.registerWebhook(
-      req.user.id,
+      req.user.userId,
       body.fileKey,
       body.callbackUrl,
     );
@@ -62,8 +62,8 @@ export class FigmaWebhookController {
    */
   @UseGuards(JwtAuthGuard)
   @Get()
-  async listWebhooks(@Req() req: { user: { id: string } }) {
-    return this.webhookService.listWebhooks(req.user.id);
+  async listWebhooks(@Req() req: { user: { userId: string } }) {
+    return this.webhookService.listWebhooks(req.user.userId);
   }
 
   /**
@@ -72,10 +72,10 @@ export class FigmaWebhookController {
   @UseGuards(JwtAuthGuard)
   @Delete(':id')
   async deregisterWebhook(
-    @Req() req: { user: { id: string } },
+    @Req() req: { user: { userId: string } },
     @Param('id') webhookId: string,
   ) {
-    await this.webhookService.deregisterWebhook(webhookId, req.user.id);
+    await this.webhookService.deregisterWebhook(webhookId, req.user.userId);
     return { ok: true };
   }
 }
