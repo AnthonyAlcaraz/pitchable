@@ -7,6 +7,7 @@ import { useWorkflowStore } from '../../stores/workflow.store.js';
 import { ChatHistory } from './ChatHistory.js';
 import { ChatInput } from './ChatInput.js';
 import { SubjectSelector } from './SubjectSelector.js';
+import { OutlineApproveBar } from './OutlineApproveBar.js';
 import { api } from '../../lib/api.js';
 
 interface ChatPanelProps {
@@ -178,7 +179,16 @@ export function ChatPanel({ presentationId, briefId, lensId }: ChatPanelProps) {
         />
       )}
 
-      <ChatInput onSend={handleSend} disabled={isStreaming} />
+      {/* Phase-dependent bottom controls */}
+      {phase === 'outline_review' && !isStreaming ? (
+        <OutlineApproveBar
+          onApprove={() => handleSend('approve')}
+          onRetry={(feedback) => handleSend(feedback)}
+          disabled={isStreaming}
+        />
+      ) : (
+        <ChatInput onSend={handleSend} disabled={isStreaming} />
+      )}
     </div>
   );
 }
