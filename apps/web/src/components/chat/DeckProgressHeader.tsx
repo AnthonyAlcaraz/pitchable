@@ -17,7 +17,7 @@ export function DeckProgressHeader({ current, total, label, isComplete }: DeckPr
       {/* Header row */}
       <div className="mb-2 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Layers className="h-4 w-4 text-primary" />
+          <Layers className="h-4 w-4" style={{ color: '#E88D67' }} />
           <span className="text-sm font-medium text-foreground">
             {isComplete ? t('chat.progress.generated') : t('chat.progress.generating')}
           </span>
@@ -26,7 +26,7 @@ export function DeckProgressHeader({ current, total, label, isComplete }: DeckPr
           <span className="text-xs font-mono text-muted-foreground tabular-nums">
             {t('chat.progress.slide_count', { current, total })}
           </span>
-          <span className="text-xs font-mono font-semibold text-primary tabular-nums">
+          <span className="text-xs font-mono font-semibold tabular-nums" style={{ color: '#E88D67' }}>
             {percent}%
           </span>
         </div>
@@ -40,10 +40,10 @@ export function DeckProgressHeader({ current, total, label, isComplete }: DeckPr
       )}
 
       {/* Progress bar */}
-      <div className="h-1.5 overflow-hidden rounded-full bg-muted">
+      <div className="h-1.5 overflow-hidden rounded-full" style={{ backgroundColor: '#FFF0E6' }}>
         <div
-          className="h-full rounded-full bg-primary transition-all duration-700 ease-out"
-          style={{ width: `${percent}%` }}
+          className="h-full rounded-full transition-all duration-700 ease-out"
+          style={{ width: `${percent}%`, background: 'linear-gradient(90deg, #FFAB76, #FF9F6B, #E88D67)' }}
         />
       </div>
     </div>

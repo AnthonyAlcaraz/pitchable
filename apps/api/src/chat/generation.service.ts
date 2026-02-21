@@ -155,7 +155,7 @@ export class GenerationService {
     const systemPrompt = buildOutlineSystemPrompt(presType, range, kbContext, pitchLensContext, archetypeContext);
     const userPrompt = buildOutlineUserPrompt(config.topic, chatFrameworkSlideStructure);
 
-    yield { type: 'progress', content: 'Generating outline structure', metadata: { step: 'outline_llm', status: 'running' } };
+    yield { type: 'progress', content: `Generating ${range.min}-${range.max} slide outline`, metadata: { step: 'outline_llm', status: 'running' } };
 
     let outline: GeneratedOutline;
     try {
@@ -174,7 +174,7 @@ export class GenerationService {
       yield { type: 'error', content: `Failed to generate outline: ${msg}` };
       return;
     }
-    yield { type: 'progress', content: 'Generating outline structure', metadata: { step: 'outline_llm', status: 'complete' } };
+    yield { type: 'progress', content: `Generated ${outline.slides.length}-slide outline`, metadata: { step: 'outline_llm', status: 'complete' } };
 
     // Validate outline has slides
     if (!outline.slides || outline.slides.length === 0) {
@@ -396,10 +396,10 @@ export class GenerationService {
     let themeColors = theme?.colorPalette
       ? { ...(theme.colorPalette as { primary: string; secondary: string; accent: string; background: string; text: string }), headingFont: theme.headingFont, bodyFont: theme.bodyFont }
       : undefined;
-    yield { type: 'progress', content: 'Resolving theme', metadata: { step: 'theme', status: 'complete' } };
+    yield { type: 'progress', content: `Applying ${themeName} theme`, metadata: { step: 'theme', status: 'complete' } };
 
     // 2. Parallel: KB context + Pitch Lens fetch
-    yield { type: 'progress', content: 'Building knowledge context', metadata: { step: 'kb_context', status: 'running' } };
+    yield { type: 'progress', content: `Building context from ${presForBrief?.briefId ? 'brief' : 'knowledge base'}`, metadata: { step: 'kb_context', status: 'running' } };
     const [kbContext, presWithLens] = await Promise.all([
       presForBrief?.briefId
         ? this.contextBuilder.retrieveBriefContext(userId, presForBrief.briefId, config.topic, 8)
@@ -409,7 +409,7 @@ export class GenerationService {
         include: { pitchLens: true },
       }),
     ]);
-    yield { type: 'progress', content: 'Building knowledge context', metadata: { step: 'kb_context', status: 'complete' } };
+    yield { type: 'progress', content: `Building context from ${presForBrief?.briefId ? 'brief' : 'knowledge base'}`, metadata: { step: 'kb_context', status: 'complete' } };
 
     // 3. Update presentation metadata
     const presType = config.presentationType as PresentationType ?? PresentationType.STANDARD;
