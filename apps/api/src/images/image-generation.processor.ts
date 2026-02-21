@@ -1,3 +1,4 @@
+import type { BaseJobData } from '../common/base-job-data.js';
 import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -26,12 +27,11 @@ function createPlaceholderSvg(title: string): { base64: string; mimeType: string
 
 // ── Job Data Interface ──────────────────────────────────────
 
-export interface ImageGenerationJobData {
+export interface ImageGenerationJobData extends BaseJobData {
   imageJobId: string;
   slideId: string;
   prompt: string;
   negativePrompt: string;
-  userId: string;
 }
 
 // ── Processor ───────────────────────────────────────────────

@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import {
   Injectable,
   Logger,
@@ -56,6 +57,8 @@ export class ImagesService {
         slideId,
         prompt: prompt.prompt,
         negativePrompt: prompt.negativePrompt,
+        correlationId: randomUUID(),
+        timestamp: Date.now(),
         userId,
       },
       {
@@ -352,6 +355,8 @@ export class ImagesService {
       negativePrompt:
         'text, words, labels, numbers, letters, watermark, low quality, blurry, cartoon, anime, photorealistic faces, hands',
       userId: slide.presentation.userId,
+      correlationId: randomUUID(),
+      timestamp: Date.now(),
     });
 
     this.logger.log(`Retried image job ${jobId}`);

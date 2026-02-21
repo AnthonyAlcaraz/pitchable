@@ -1,3 +1,4 @@
+import type { BaseJobData } from '../common/base-job-data.js';
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
@@ -12,9 +13,8 @@ import { ZeroEntropyRetrievalService } from './zeroentropy/zeroentropy-retrieval
 import { DocumentSourceType, DocumentStatus } from '../../generated/prisma/enums.js';
 import { randomUUID } from 'node:crypto';
 
-export interface DocumentProcessingJobData {
+export interface DocumentProcessingJobData extends BaseJobData {
   documentId: string;
-  userId: string;
   sourceType: 'FILE' | 'TEXT' | 'URL';
   mimeType?: string;
   s3Key?: string;
@@ -73,6 +73,8 @@ export class KnowledgeBaseService {
       sourceType: 'FILE',
       mimeType: file.mimetype,
       s3Key,
+      correlationId: randomUUID(),
+      timestamp: Date.now(),
       ...(!s3Key ? { fileBase64: file.buffer.toString('base64') } : {}),
     } satisfies DocumentProcessingJobData);
 
@@ -97,6 +99,8 @@ export class KnowledgeBaseService {
       userId,
       sourceType: 'TEXT',
       rawText: content,
+      correlationId: randomUUID(),
+      timestamp: Date.now(),
     } satisfies DocumentProcessingJobData);
 
     this.logger.log(`Text source ${document.id} created and queued`);
@@ -120,6 +124,8 @@ export class KnowledgeBaseService {
       userId,
       sourceType: 'URL',
       url,
+      correlationId: randomUUID(),
+      timestamp: Date.now(),
     } satisfies DocumentProcessingJobData);
 
     this.logger.log(`URL source ${document.id} created and queued`);
@@ -320,6 +326,8 @@ export class KnowledgeBaseService {
       url,
       maxPages,
       maxDepth,
+      correlationId: randomUUID(),
+      timestamp: Date.now(),
     });
 
     const estimatedCredits = Math.ceil(maxPages / 5);

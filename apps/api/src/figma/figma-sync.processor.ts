@@ -1,11 +1,11 @@
+import type { BaseJobData } from '../common/base-job-data.js';
 import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
 import { FigmaWebhookService } from './figma-webhook.service.js';
 
-interface FigmaSyncJobData {
+interface FigmaSyncJobData extends BaseJobData {
   fileKey: string;
-  userId: string;
 }
 
 @Processor('figma-sync', { concurrency: 1 } as Record<string, unknown>)

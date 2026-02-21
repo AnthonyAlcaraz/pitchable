@@ -1,3 +1,5 @@
+import type { BaseJobData } from '../common/base-job-data.js';
+import { randomUUID } from 'node:crypto';
 import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Logger } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
@@ -9,8 +11,7 @@ import { EventsGateway } from '../events/events.gateway.js';
 import { BriefStatus, CreditReason, DocumentSourceType, DocumentStatus } from '../../generated/prisma/enums.js';
 import type { DocumentProcessingJobData } from './knowledge-base.service.js';
 
-export interface WebsiteCrawlJobData {
-  userId: string;
+export interface WebsiteCrawlJobData extends BaseJobData {
   briefId: string;
   url: string;
   maxPages: number;
@@ -65,6 +66,8 @@ export class WebsiteCrawlProcessor extends WorkerHost {
           userId,
           sourceType: 'TEXT',
           rawText: page.markdown,
+          correlationId: randomUUID(),
+          timestamp: Date.now(),
         } satisfies DocumentProcessingJobData);
 
         this.logger.log(`Crawled page ${page.url} → document ${document.id}`);

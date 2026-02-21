@@ -5,7 +5,7 @@ import { PrismaService } from '../prisma/prisma.service.js';
 import { FigmaService } from './figma.service.js';
 import { FigmaImageSyncService } from './figma-image-sync.service.js';
 import { EventsGateway } from '../events/events.gateway.js';
-import { randomBytes } from 'crypto';
+import { randomBytes, randomUUID } from 'crypto';
 
 interface FigmaWebhookPayload {
   event_type: string;
@@ -107,7 +107,7 @@ export class FigmaWebhookService {
     // Add debounced job (10s delay, deduplicate by fileKey)
     await this.syncQueue.add(
       'process-file-update',
-      { fileKey: payload.file_key, userId: webhook.userId },
+      { fileKey: payload.file_key, userId: webhook.userId, correlationId: randomUUID(), timestamp: Date.now() },
       {
         delay: 10000,
         jobId: `figma-sync-${payload.file_key}`,
