@@ -525,30 +525,73 @@ export function NewPresentationWizardPage() {
                 </div>
 
                 {/* Lens summary */}
-                <div className="flex items-center gap-3 rounded-lg border border-border bg-card p-4">
-                  <Focus className="h-5 w-5 text-primary" />
-                  <div className="flex-1 text-left">
-                    <p className="text-xs text-muted-foreground">{t('wizard.summary_lens')}</p>
-                    <p className="text-sm font-medium text-foreground">
-                      {selectedLens ? selectedLens.name : '—'}
-                    </p>
-                    {selectedLens && (
-                      <div className="mt-1 flex gap-1">
-                        <span className="rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] text-primary">
-                          {formatEnum(selectedLens.audienceType)}
-                        </span>
-                        <span className="rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] text-primary">
-                          {formatEnum(selectedLens.pitchGoal)}
-                        </span>
-                      </div>
-                    )}
+                <div className="rounded-lg border border-border bg-card p-4">
+                  <div className="flex items-center gap-3">
+                    <Focus className="h-5 w-5 text-primary" />
+                    <div className="flex-1 text-left">
+                      <p className="text-xs text-muted-foreground">{t('wizard.summary_lens')}</p>
+                      <p className="text-sm font-medium text-foreground">
+                        {selectedLens ? selectedLens.name : '—'}
+                      </p>
+                      {selectedLens && (
+                        <div className="mt-1 flex gap-1">
+                          <span className="rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] text-primary">
+                            {formatEnum(selectedLens.audienceType)}
+                          </span>
+                          <span className="rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] text-primary">
+                            {formatEnum(selectedLens.pitchGoal)}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => goTo('lens')}
+                      className="text-xs text-primary hover:text-primary/80"
+                    >
+                      {t('common.edit')}
+                    </button>
                   </div>
-                  <button
-                    onClick={() => goTo('lens')}
-                    className="text-xs text-primary hover:text-primary/80"
-                  >
-                    {t('common.edit')}
-                  </button>
+                  {selectedLens && (() => {
+                    const slideRange = selectedLens.framework?.idealSlideRange;
+                    const freq = selectedLens.imageFrequency || 5;
+                    const isBackground = selectedLens.imageLayout === 'BACKGROUND';
+                    const minImages = slideRange ? Math.max(1, Math.floor(slideRange.min / freq)) : 0;
+                    const maxImages = slideRange ? Math.max(1, Math.floor(slideRange.max / freq)) : 0;
+                    const noImages = freq === 0;
+
+                    return (
+                      <div className="mt-3 flex items-center gap-2 rounded-md bg-muted/50 p-2.5">
+                        <Image className="h-4 w-4 shrink-0 text-muted-foreground" />
+                        <div className="flex-1 text-xs text-muted-foreground">
+                          {noImages ? (
+                            <span>{t('wizard.confirm_no_images')}</span>
+                          ) : (
+                            <>
+                              <span className="font-medium text-foreground">
+                                {minImages === maxImages
+                                  ? t('wizard.image_count_exact', { count: minImages })
+                                  : t('wizard.image_count_range', { min: minImages, max: maxImages })}
+                              </span>
+                              {' · '}
+                              {isBackground
+                                ? t('wizard.image_layout_background')
+                                : t('wizard.image_layout_side')}
+                            </>
+                          )}
+                        </div>
+                        {!noImages && (
+                          <div className="flex items-center gap-1 text-xs">
+                            <Coins className="h-3 w-3 text-amber-500" />
+                            <span className="text-amber-600 dark:text-amber-400">
+                              {minImages === maxImages
+                                ? t('wizard.image_credits_exact', { count: minImages })
+                                : t('wizard.image_credits_range', { min: minImages, max: maxImages })}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
                 </div>
 
                 {/* Topic summary */}

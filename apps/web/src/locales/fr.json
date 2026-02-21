@@ -913,7 +913,8 @@
     "image_layout_background": "Arrière-plans pleine diapositive",
     "image_layout_side": "Panneau latéral (droite)",
     "image_credits_exact": "{{count}} crédit pour les images",
-    "image_credits_range": "{{min}}–{{max}} crédits pour les images"
+    "image_credits_range": "{{min}}–{{max}} crédits pour les images",
+    "confirm_no_images": "Aucune image ne sera générée"
   },
   "forms": {
     "email": "E-mail",

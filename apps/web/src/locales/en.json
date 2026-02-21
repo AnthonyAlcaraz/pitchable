@@ -913,7 +913,8 @@
     "image_layout_background": "Full-slide backgrounds",
     "image_layout_side": "Side panel (right)",
     "image_credits_exact": "{{count}} credit for images",
-    "image_credits_range": "{{min}}–{{max}} credits for images"
+    "image_credits_range": "{{min}}–{{max}} credits for images",
+    "confirm_no_images": "No images will be generated"
   },
   "forms": {
     "email": "Email",
