@@ -205,6 +205,13 @@ export class GenerationService {
       },
     });
 
+    // 6. Tell the frontend the outline is ready for review
+    yield {
+      type: 'action',
+      content: '',
+      metadata: { action: 'outline_ready', slideCount: outline.slides.length },
+    };
+
     yield { type: 'done', content: '' };
   }
 
@@ -226,6 +233,26 @@ export class GenerationService {
    */
   hasPendingOutline(presentationId: string): boolean {
     return this.pendingOutlines.has(presentationId);
+  }
+
+  /**
+   * Clear a pending outline (e.g. when the user sends a new topic).
+   */
+  clearPendingOutline(presentationId: string): void {
+    this.pendingOutlines.delete(presentationId);
+  }
+
+  /**
+   * Check if the user wants to retry the outline with changes.
+   */
+  isRetryRequest(content: string): boolean {
+    const lower = content.trim().toLowerCase();
+    const retryPhrases = [
+      'change', 'modify', 'update', 'redo', 'retry', 'try again',
+      'different', 'more', 'less', 'add', 'remove', 'replace',
+      'instead', 'rather', 'actually', 'but', 'however',
+    ];
+    return retryPhrases.some((p) => lower.includes(p));
   }
 
   /**

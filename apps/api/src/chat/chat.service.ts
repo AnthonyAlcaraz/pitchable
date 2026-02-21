@@ -68,6 +68,25 @@ export class ChatService {
       return;
     }
 
+    // If outline is pending, only allow approval, retry, or slash commands — block free chat
+    if (this.generation.hasPendingOutline(presentationId)) {
+      if (this.generation.isRetryRequest(content)) {
+        // Clear old outline and regenerate with the user's feedback
+        this.generation.clearPendingOutline(presentationId);
+        yield* this.generation.generateOutline(userId, presentationId, {
+          topic: content,
+          presentationType: 'STANDARD',
+        });
+        return;
+      }
+      // Block anything else — nudge toward approve/retry
+      const msg = 'Please **approve** the outline to generate slides, or tell me what to change.';
+      yield { type: 'token', content: msg };
+      yield { type: 'done', content: '' };
+      await this.persistAssistantMessage(presentationId, msg);
+      return;
+    }
+
     // Check for validation responses (accept/edit/reject)
     const validationResponse = this.parseValidationResponse(content);
     if (validationResponse && this.validationGate.hasPendingValidation(presentationId)) {
@@ -725,6 +744,11 @@ export class ChatService {
     const items = hasMore ? messages.slice(0, take) : messages;
     const nextCursor = hasMore ? items[items.length - 1].id : undefined;
 
-    return { messages: items, hasMore, nextCursor };
+    return {
+      messages: items,
+      hasMore,
+      nextCursor,
+      hasPendingOutline: this.generation.hasPendingOutline(presentationId),
+    };
   }
 }

@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { api } from '../lib/api.js';
 import { streamSse } from '../lib/sse.js';
 import { usePresentationStore } from './presentation.store.js';
+import { useWorkflowStore } from './workflow.store.js';
 
 export interface ChatMessage {
   id: string;
@@ -155,12 +156,17 @@ export const useChatStore = create<ChatState>((set, get) => ({
   loadHistory: async (presentationId: string) => {
     set({ isLoading: true, error: null });
     try {
-      const res = await api.get<{ messages: ChatMessage[]; hasMore: boolean }>(
+      const res = await api.get<{ messages: ChatMessage[]; hasMore: boolean; hasPendingOutline?: boolean }>(
         `/chat/${presentationId}/history`,
       );
-      // Backend returns { messages, hasMore } — unwrap to array
+      // Backend returns { messages, hasMore, hasPendingOutline } — unwrap to array
       const msgs = Array.isArray(res) ? res : (res.messages ?? []);
+      const hasPendingOutline = !Array.isArray(res) && !!res.hasPendingOutline;
       set({ messages: msgs, isLoading: false });
+
+      // Restore workflow phase from message history + slide count
+      const slideCount = usePresentationStore.getState().presentation?.slides?.length ?? 0;
+      useWorkflowStore.getState().restoreFromState(msgs, slideCount, hasPendingOutline);
     } catch (err) {
       set({
         error: err instanceof Error ? err.message : 'Failed to load history',
@@ -243,12 +249,18 @@ export const useChatStore = create<ChatState>((set, get) => ({
             if (pid) {
               usePresentationStore.getState().loadPresentation(pid);
             }
+          } else if (metadata?.action === 'outline_ready') {
+            useWorkflowStore.getState().setPhase('outline_review');
           } else if (metadata?.action === 'slide_preview') {
             const slide = metadata.slide as InlineSlideCard;
             if (slide) {
               set((state) => ({
                 inlineSlideCards: [...state.inlineSlideCards, slide],
               }));
+              // First slide preview means generation has started
+              if (get().inlineSlideCards.length === 0) {
+                useWorkflowStore.getState().setPhase('generating');
+              }
             }
           } else if (metadata?.action === 'theme_selection') {
             set({
@@ -284,6 +296,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
                 isSamplePreview: metadata.isSamplePreview as boolean | undefined,
               },
             });
+            useWorkflowStore.getState().setPhase('editing');
           }
         } else if (event.type === 'thinking') {
           set({ thinkingText: event.content });

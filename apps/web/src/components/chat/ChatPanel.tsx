@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { MessageSquare } from 'lucide-react';
 import { PeachLogo } from '../icons/PeachLogo.js';
 import { useChatStore } from '../../stores/chat.store.js';
+import { useWorkflowStore } from '../../stores/workflow.store.js';
 import { ChatHistory } from './ChatHistory.js';
 import { ChatInput } from './ChatInput.js';
 
@@ -36,11 +37,15 @@ export function ChatPanel({ presentationId, briefId, lensId }: ChatPanelProps) {
     clearError,
   } = useChatStore();
 
+  const resetWorkflow = useWorkflowStore((s) => s.reset);
+
   useEffect(() => {
     if (presentationId && presentationId !== 'new') {
       loadHistory(presentationId);
+    } else {
+      resetWorkflow();
     }
-  }, [presentationId, loadHistory]);
+  }, [presentationId, loadHistory, resetWorkflow]);
 
   const handleSend = (content: string) => {
     if (!presentationId) return;

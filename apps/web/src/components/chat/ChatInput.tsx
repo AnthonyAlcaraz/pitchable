@@ -2,6 +2,7 @@ import { useState, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Send } from 'lucide-react';
 import { SlashCommandMenu } from './SlashCommandMenu.js';
+import { useWorkflowStore } from '../../stores/workflow.store.js';
 
 interface ChatInputProps {
   onSend: (message: string) => void;
@@ -9,6 +10,7 @@ interface ChatInputProps {
 }
 
 export function ChatInput({ onSend, disabled }: ChatInputProps) {
+  const phase = useWorkflowStore((s) => s.phase);
   const { t } = useTranslation();
   const [value, setValue] = useState('');
   const [showCommands, setShowCommands] = useState(false);
@@ -77,14 +79,14 @@ export function ChatInput({ onSend, disabled }: ChatInputProps) {
           onChange={handleChange}
           onKeyDown={handleKeyDown}
           placeholder={t('chat.input.placeholder')}
-          disabled={disabled}
+          disabled={disabled || phase === 'generating'}
           rows={1}
           className="flex-1 resize-none rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-orange-500/50 focus:bg-background disabled:opacity-50"
         />
         <button
           type="button"
           onClick={handleSend}
-          disabled={disabled || !value.trim()}
+          disabled={disabled || phase === 'generating' || !value.trim()}
           className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-orange-500 text-white transition-colors hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-50"
         >
           <Send className="h-4 w-4" />
