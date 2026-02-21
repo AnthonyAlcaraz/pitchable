@@ -27,6 +27,9 @@ export function PreviewPanel({ presentationId }: PreviewPanelProps) {
   const nextSlide = usePresentationStore((s) => s.nextSlide);
   const previousSlide = usePresentationStore((s) => s.previousSlide);
 
+  // Must be called unconditionally (Rules of Hooks)
+  const phase = useWorkflowStore((s) => s.phase);
+
   // Subscribe to real-time slide updates
   useSlideUpdates(presentationId);
 
@@ -140,7 +143,6 @@ export function PreviewPanel({ presentationId }: PreviewPanelProps) {
   }
 
   // No slides yet — show phase-aware guidance
-  const phase = useWorkflowStore((s) => s.phase);
 
   if (slides.length === 0) {
     const phaseContent = {
