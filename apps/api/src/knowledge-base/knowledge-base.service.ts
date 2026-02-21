@@ -215,7 +215,24 @@ export class KnowledgeBaseService {
       try {
         const collectionName = this.zeRetrieval.collectionNameForUser(userId);
         const results = await this.zeRetrieval.search(collectionName, query, limit);
-        if (results.length > 0) return results;
+        if (results.length > 0) {
+          // ZeroEntropy may not return document_title in metadata — enrich from DB
+          const missingTitles = results.filter((r) => !r.documentTitle && r.documentId);
+          if (missingTitles.length > 0) {
+            const docIds = [...new Set(missingTitles.map((r) => r.documentId))];
+            const docs = await this.prisma.document.findMany({
+              where: { id: { in: docIds } },
+              select: { id: true, title: true },
+            });
+            const titleMap = new Map(docs.map((d) => [d.id, d.title]));
+            for (const r of results) {
+              if (!r.documentTitle && r.documentId) {
+                r.documentTitle = titleMap.get(r.documentId) ?? '';
+              }
+            }
+          }
+          return results;
+        }
       } catch (zeError) {
         this.logger.warn(
           `ZeroEntropy search failed, falling back: ${zeError instanceof Error ? zeError.message : String(zeError)}`,
