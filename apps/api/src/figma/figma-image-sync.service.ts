@@ -39,56 +39,64 @@ export class FigmaImageSyncService {
     this.logger.log(
       `Exporting Figma node ${nodeId} from file ${fileKey} for slide ${slideId}`,
     );
-    const { buffer, mimeType } = await this.figma.exportNodeAsBuffer(
-      token,
-      fileKey,
-      nodeId,
-      'png',
-      2,
-    );
 
-    // 3. Upload to R2/S3
-    const extension = mimeType.includes('svg') ? 'svg' : 'png';
-    const s3Key = `images/figma/${slideId}.${extension}`;
-    await this.s3.upload(s3Key, buffer, mimeType);
-    const imageUrl = this.s3.getPublicUrl(s3Key);
-
-    this.logger.log(`Figma image uploaded to R2: ${imageUrl}`);
-
-    // 4. Fetch node name for reference
-    let nodeName: string | undefined;
+    let imageUrl: string | undefined;
     try {
-      const frames = await this.figma.getFrames(token, fileKey);
-      nodeName = frames.find((f) => f.nodeId === nodeId)?.name;
-    } catch {
-      // Non-critical — just for display
+      const { buffer, mimeType } = await this.figma.exportNodeAsBuffer(
+        token,
+        fileKey,
+        nodeId,
+        'png',
+        2,
+      );
+
+      // 3. Upload to R2/S3
+      const extension = mimeType.includes('svg') ? 'svg' : 'png';
+      const s3Key = `images/figma/${slideId}.${extension}`;
+      await this.s3.upload(s3Key, buffer, mimeType);
+      imageUrl = this.s3.getPublicUrl(s3Key);
+      this.logger.log(`Figma image uploaded to R2: ${imageUrl}`);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (msg.includes('429') || msg.includes('Rate limit')) {
+        this.logger.warn(
+          `Figma rate-limited during image export for slide ${slideId} — saving metadata only, image can be refreshed later`,
+        );
+      } else {
+        throw err;
+      }
     }
 
-    // 5. Update Slide with Figma metadata
+    // 4. Update Slide with Figma metadata (even if image export failed)
+    const updateData: Record<string, unknown> = {
+      imageSource: ImageSource.FIGMA,
+      figmaFileKey: fileKey,
+      figmaNodeId: nodeId,
+    };
+    if (imageUrl) {
+      updateData.imageUrl = imageUrl;
+    }
+
     const slide = await this.prisma.slide.update({
       where: { id: slideId },
-      data: {
-        imageUrl,
-        imageSource: ImageSource.FIGMA,
-        figmaFileKey: fileKey,
-        figmaNodeId: nodeId,
-        figmaNodeName: nodeName ?? null,
-      },
+      data: updateData,
       select: { presentationId: true },
     });
 
-    // 6. Emit WebSocket event (reuses existing event — frontend already handles it)
-    this.events.emitImageGenerated({
-      presentationId: slide.presentationId,
-      slideId,
-      imageUrl,
-    });
+    // 5. Emit WebSocket event if image was successfully exported
+    if (imageUrl) {
+      this.events.emitImageGenerated({
+        presentationId: slide.presentationId,
+        slideId,
+        imageUrl,
+      });
+    }
 
     this.logger.log(
-      `Figma frame "${nodeName ?? nodeId}" synced to slide ${slideId}`,
+      `Figma frame "${nodeId}" assigned to slide ${slideId}${imageUrl ? ' (with image)' : ' (metadata only — refresh later)'}`,
     );
 
-    return imageUrl;
+    return imageUrl ?? `figma://${fileKey}/${nodeId}`;
   }
 
   /**
