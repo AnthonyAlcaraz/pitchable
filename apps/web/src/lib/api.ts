@@ -29,7 +29,7 @@ class ApiClient {
     method: HttpMethod,
     url: string,
     body?: unknown,
-    skipAuth = false,
+    { skipAuth = false, isRetry = false } = {},
   ): Promise<T> {
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
@@ -48,10 +48,10 @@ class ApiClient {
       body: body ? JSON.stringify(body) : undefined,
     });
 
-    if (response.status === 401 && !skipAuth) {
+    if (response.status === 401 && !skipAuth && !isRetry) {
       const refreshed = await this.attemptRefresh();
       if (refreshed) {
-        return this.request<T>(method, url, body, true);
+        return this.request<T>(method, url, body, { isRetry: true });
       }
       // Refresh failed - clear auth and redirect
       localStorage.removeItem('auth-storage');
