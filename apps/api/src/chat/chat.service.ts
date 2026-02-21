@@ -718,6 +718,49 @@ export class ChatService {
     return null;
   }
 
+  async suggestSubjects(lensId?: string, briefId?: string): Promise<{ title: string; description: string; source: string }[]> {
+    // Build context from lens
+    let context = '';
+    if (lensId) {
+      const lens = await this.prisma.pitchLens.findUnique({ where: { id: lensId } });
+      if (lens) {
+        context += `Audience: ${lens.audienceType}. Goal: ${lens.pitchGoal}. Industry: ${lens.industry}. Stage: ${lens.companyStage}. Tone: ${lens.toneStyle}.`;
+        if (lens.customGuidance) context += ` Custom guidance: ${lens.customGuidance}`;
+      }
+    }
+    if (briefId) {
+      const brief = await this.prisma.pitchBrief.findUnique({ where: { id: briefId } });
+      if (brief) {
+        context += ` Brief: ${brief.name}${brief.description ? '. ' + brief.description : ''}.`;
+      }
+    }
+
+    if (!context) {
+      return [
+        { title: 'Product Overview', description: 'Showcase your product features and value proposition', source: 'default' },
+        { title: 'Investor Pitch', description: 'Present your business case for potential investors', source: 'default' },
+        { title: 'Team Update', description: 'Share progress and milestones with your team', source: 'default' },
+      ];
+    }
+
+    try {
+      const suggestions = await this.llm.completeJson<{ suggestions: { title: string; description: string }[] }>(
+        [
+          { role: 'system', content: 'Generate 3 specific presentation topic suggestions based on the context. Each should have a concise title (max 8 words) and a one-sentence description. Return JSON: { "suggestions": [{ "title": "...", "description": "..." }] }' },
+          { role: 'user', content: context },
+        ],
+        LlmModel.HAIKU,
+      );
+      return (suggestions.suggestions ?? []).map((s) => ({ ...s, source: lensId ? 'pitchlens' : 'brief' }));
+    } catch {
+      return [
+        { title: 'Product Overview', description: 'Showcase your product features and value proposition', source: 'default' },
+        { title: 'Investor Pitch', description: 'Present your business case for potential investors', source: 'default' },
+        { title: 'Team Update', description: 'Share progress and milestones with your team', source: 'default' },
+      ];
+    }
+  }
+
   async getHistory(
     presentationId: string,
     options?: { limit?: number; cursor?: string },

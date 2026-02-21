@@ -6,6 +6,8 @@ import { useChatStore } from '../../stores/chat.store.js';
 import { useWorkflowStore } from '../../stores/workflow.store.js';
 import { ChatHistory } from './ChatHistory.js';
 import { ChatInput } from './ChatInput.js';
+import { SubjectSelector } from './SubjectSelector.js';
+import { api } from '../../lib/api.js';
 
 interface ChatPanelProps {
   presentationId: string | undefined;
@@ -37,6 +39,9 @@ export function ChatPanel({ presentationId, briefId, lensId }: ChatPanelProps) {
     clearError,
   } = useChatStore();
 
+  const phase = useWorkflowStore((s) => s.phase);
+  const subjectSuggestions = useWorkflowStore((s) => s.subjectSuggestions);
+  const setSubjectSuggestions = useWorkflowStore((s) => s.setSubjectSuggestions);
   const resetWorkflow = useWorkflowStore((s) => s.reset);
 
   useEffect(() => {
@@ -46,6 +51,29 @@ export function ChatPanel({ presentationId, briefId, lensId }: ChatPanelProps) {
       resetWorkflow();
     }
   }, [presentationId, loadHistory, resetWorkflow]);
+
+  // Fetch subject suggestions when entering a new presentation with lens/brief
+  useEffect(() => {
+    if (phase !== 'subject_selection') return;
+    if (subjectSuggestions.length > 0) return;
+    if (!lensId && !briefId) return;
+
+    let cancelled = false;
+    api.post<{ suggestions: { title: string; description: string; source: string }[] }>(
+      '/chat/suggest-subjects',
+      { lensId, briefId },
+    ).then((res) => {
+      if (!cancelled && res.suggestions?.length) {
+        setSubjectSuggestions(res.suggestions.map((s) => ({
+          title: s.title,
+          description: s.description,
+          source: (s.source as 'pitchlens' | 'brief' | 'custom') ?? 'pitchlens',
+        })));
+      }
+    }).catch(() => { /* ignore — suggestions are optional */ });
+
+    return () => { cancelled = true; };
+  }, [phase, lensId, briefId, subjectSuggestions.length, setSubjectSuggestions]);
 
   const handleSend = (content: string) => {
     if (!presentationId) return;
@@ -138,6 +166,15 @@ export function ChatPanel({ presentationId, briefId, lensId }: ChatPanelProps) {
           onEditSlide={handleEditSlide}
           onRejectSlide={handleRejectSlide}
           onRespondToInteraction={respondToInteraction}
+        />
+      )}
+
+      {/* Subject suggestions during topic selection phase */}
+      {phase === 'subject_selection' && subjectSuggestions.length > 0 && (
+        <SubjectSelector
+          suggestions={subjectSuggestions}
+          onSelect={handleSend}
+          disabled={isStreaming}
         />
       )}
 

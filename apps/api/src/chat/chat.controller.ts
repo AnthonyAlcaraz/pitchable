@@ -214,6 +214,14 @@ export class ChatController {
     });
   }
 
+  @Post('suggest-subjects')
+  async suggestSubjects(
+    @Body() body: { lensId?: string; briefId?: string },
+  ) {
+    const suggestions = await this.chatService.suggestSubjects(body.lensId, body.briefId);
+    return { suggestions };
+  }
+
   @Post(':presentationId/interact')
   @UseGuards(PresentationOwnerGuard)
   async interact(
