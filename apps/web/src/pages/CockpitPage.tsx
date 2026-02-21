@@ -425,19 +425,22 @@ export function CockpitPage() {
                     {formatEnum(lens.pitchGoal)}
                   </span>
                 </div>
-                {lens.imageFrequency > 0 && lens.framework?.idealSlideRange && (() => {
-                  const freq = lens.imageFrequency;
+                {(lens.backgroundImageFrequency > 0 || lens.sidePanelImageFrequency > 0) && lens.framework?.idealSlideRange && (() => {
+                  const bgF = lens.backgroundImageFrequency;
+                  const spF = lens.sidePanelImageFrequency;
                   const range = lens.framework.idealSlideRange;
-                  const minImg = Math.max(1, Math.floor(range.min / freq));
-                  const maxImg = Math.max(1, Math.floor(range.max / freq));
+                  const bgCount = bgF > 0 ? Math.max(1, Math.floor(range.max / bgF)) : 0;
+                  const spCount = spF > 0 ? Math.max(1, Math.floor(range.max / spF)) : 0;
+                  const totalUnique = Math.min(range.max, bgCount + spCount);
+                  const labels: string[] = [];
+                  if (bgF > 0) labels.push('bg');
+                  if (spF > 0) labels.push('side');
                   return (
                     <div className="mb-2 flex items-center gap-1.5 text-xs text-muted-foreground">
                       <Image className="h-3 w-3 shrink-0" />
-                      <span>
-                        {minImg === maxImg ? `${minImg}` : `${minImg}–${maxImg}`} {t('common.images')}
-                      </span>
+                      <span>~{totalUnique} {t('common.images')}</span>
                       <span>&middot;</span>
-                      <span>{lens.imageLayout === 'BACKGROUND' ? t('wizard.image_layout_background') : t('wizard.image_layout_side')}</span>
+                      <span>{labels.join(' + ')}</span>
                     </div>
                   );
                 })()}

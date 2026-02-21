@@ -310,8 +310,8 @@ export function NewPresentationWizardPage() {
                 <div className="grid gap-3 sm:grid-cols-2">
                   {lenses.map((lens) => {
                     const slideRange = lens.framework?.idealSlideRange;
-                    const freq = lens.imageFrequency || 5;
-                    const isBackground = lens.imageLayout === 'BACKGROUND';
+                    const freq = lens.sidePanelImageFrequency || 5;
+                    const isBackground = (lens.backgroundImageFrequency > 0 && lens.sidePanelImageFrequency === 0);
                     const minImages = slideRange ? Math.max(1, Math.floor(slideRange.min / freq)) : 0;
                     const maxImages = slideRange ? Math.max(1, Math.floor(slideRange.max / freq)) : 0;
 
@@ -554,8 +554,8 @@ export function NewPresentationWizardPage() {
                 {/* Image generation summary */}
                 {selectedLens && (() => {
                   const slideRange = selectedLens.framework?.idealSlideRange;
-                  const freq = selectedLens.imageFrequency || 4;
-                  const isBackground = selectedLens.imageLayout === 'BACKGROUND';
+                  const freq = selectedLens.sidePanelImageFrequency || 4;
+                  const isBackground = (selectedLens.backgroundImageFrequency > 0 && selectedLens.sidePanelImageFrequency === 0);
                   const noImages = freq === 0;
                   const minSlides = slideRange?.min ?? 8;
                   const maxSlides = slideRange?.max ?? 14;

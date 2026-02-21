@@ -85,7 +85,7 @@ export class ImagesService {
       include: {
         slides: { orderBy: { slideNumber: 'asc' } },
         theme: true,
-        pitchLens: { select: { imageFrequency: true, imageLayout: true } },
+        pitchLens: { select: { backgroundImageFrequency: true, sidePanelImageFrequency: true } },
       },
     });
 
@@ -95,12 +95,13 @@ export class ImagesService {
       );
     }
 
-    // Image frequency: 1 image every N slides. Default 4. 0 = no images.
-    const imageFrequency = presentation.pitchLens?.imageFrequency ?? 4;
+    // Dual image frequencies: background (full-slide 15% opacity) and side panel (right 35%)
+    const bgFreq = presentation.pitchLens?.backgroundImageFrequency ?? 0;
+    const spFreq = presentation.pitchLens?.sidePanelImageFrequency ?? 5;
 
-    if (imageFrequency === 0) {
+    if (bgFreq === 0 && spFreq === 0) {
       this.logger.log(
-        `Image generation disabled for presentation ${presentationId} (imageFrequency=0)`,
+        `Image generation disabled for presentation ${presentationId} (both frequencies=0)`,
       );
       return { jobs: [], totalEligible: 0, skippedForCredits: 0 };
     }
@@ -113,11 +114,25 @@ export class ImagesService {
       textColor: presentation.theme.textColor,
     };
 
-    // Select which slides get images based on frequency + priority
-    const eligibleSlides = this.selectSlidesForImages(
-      presentation.slides,
-      imageFrequency,
-    );
+    // Select slides for each layout independently, then merge
+    const bgSlides = bgFreq > 0
+      ? new Set(this.selectSlidesForImages(presentation.slides, bgFreq).map(s => s.id))
+      : new Set<string>();
+    const spSlides = spFreq > 0
+      ? new Set(this.selectSlidesForImages(presentation.slides, spFreq).map(s => s.id))
+      : new Set<string>();
+
+    // Build per-slide layout map: if selected for both, prefer side panel (more prominent)
+    const slideLayoutMap = new Map<string, 'BACKGROUND' | 'RIGHT'>();
+    for (const slide of presentation.slides) {
+      const inBg = bgSlides.has(slide.id);
+      const inSp = spSlides.has(slide.id);
+      if (inSp) slideLayoutMap.set(slide.id, 'RIGHT');
+      else if (inBg) slideLayoutMap.set(slide.id, 'BACKGROUND');
+    }
+
+    // Get eligible slides (union of both sets)
+    const eligibleSlides = presentation.slides.filter(s => slideLayoutMap.has(s.id));
 
     // Filter out slides that already have images or are Figma-sourced
     const needsImage = eligibleSlides.filter((slide) => {
@@ -157,6 +172,13 @@ export class ImagesService {
     let jobIndex = 0;
 
     for (const slide of slidesToProcess) {
+      // Write per-slide imageLayout to the Slide record
+      const layout = slideLayoutMap.get(slide.id) ?? 'RIGHT';
+      await this.prisma.slide.update({
+        where: { id: slide.id },
+        data: { imageLayout: layout },
+      });
+
       // Use the LLM's imagePromptHint when available (stored as slide.imagePrompt),
       // fall back to building a prompt from slide type/content
       let prompt: { prompt: string; negativePrompt: string };
@@ -195,7 +217,7 @@ export class ImagesService {
     }
 
     this.logger.log(
-      `Queued ${imageJobs.length}/${presentation.slides.length} image jobs for presentation ${presentationId} (frequency: 1 per ${imageFrequency})`,
+      `Queued ${imageJobs.length}/${presentation.slides.length} image jobs for presentation ${presentationId} (bg: 1/${bgFreq}, sp: 1/${spFreq})`,
     );
 
     return { jobs: imageJobs, totalEligible, skippedForCredits };

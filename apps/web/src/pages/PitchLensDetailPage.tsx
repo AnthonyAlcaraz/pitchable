@@ -97,46 +97,58 @@ export function PitchLensDetailPage() {
         </div>
         <div className="grid gap-4 sm:grid-cols-3">
           <div>
-            <p className="text-xs font-medium uppercase text-muted-foreground">{t('pitch_lenses.detail.image_density')}</p>
+            <p className="text-xs font-medium uppercase text-muted-foreground">Background Images</p>
             <p className="mt-1 text-sm font-semibold text-foreground">
-              {currentLens.imageFrequency === 0
+              {currentLens.backgroundImageFrequency === 0
                 ? t('pitch_lenses.detail.image_none')
-                : currentLens.imageFrequency <= 2
+                : currentLens.backgroundImageFrequency <= 2
                   ? t('pitch_lenses.detail.image_many')
-                  : currentLens.imageFrequency <= 3
+                  : currentLens.backgroundImageFrequency <= 3
                     ? t('pitch_lenses.detail.image_some')
                     : t('pitch_lenses.detail.image_few')}
             </p>
             <p className="text-xs text-muted-foreground">
-              {currentLens.imageFrequency === 0
+              {currentLens.backgroundImageFrequency === 0
                 ? t('pitch_lenses.detail.image_freq_none')
-                : t('pitch_lenses.detail.image_freq', { n: currentLens.imageFrequency })}
+                : t('pitch_lenses.detail.image_freq', { n: currentLens.backgroundImageFrequency })}
             </p>
           </div>
           <div>
-            <p className="text-xs font-medium uppercase text-muted-foreground">{t('pitch_lenses.detail.image_layout')}</p>
+            <p className="text-xs font-medium uppercase text-muted-foreground">Side Panel Images</p>
             <p className="mt-1 text-sm font-semibold text-foreground">
-              {currentLens.imageLayout === 'BACKGROUND'
-                ? t('wizard.image_layout_background')
-                : t('wizard.image_layout_side')}
+              {currentLens.sidePanelImageFrequency === 0
+                ? t('pitch_lenses.detail.image_none')
+                : currentLens.sidePanelImageFrequency <= 2
+                  ? t('pitch_lenses.detail.image_many')
+                  : currentLens.sidePanelImageFrequency <= 3
+                    ? t('pitch_lenses.detail.image_some')
+                    : t('pitch_lenses.detail.image_few')}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {currentLens.sidePanelImageFrequency === 0
+                ? t('pitch_lenses.detail.image_freq_none')
+                : t('pitch_lenses.detail.image_freq', { n: currentLens.sidePanelImageFrequency })}
             </p>
           </div>
-          {currentLens.imageFrequency > 0 && currentLens.framework?.idealSlideRange && (
+          {(currentLens.backgroundImageFrequency > 0 || currentLens.sidePanelImageFrequency > 0) && currentLens.framework?.idealSlideRange && (
             <div>
               <p className="text-xs font-medium uppercase text-muted-foreground">{t('pitch_lenses.detail.estimated_images')}</p>
               {(() => {
-                const freq = currentLens.imageFrequency;
+                const bgF = currentLens.backgroundImageFrequency;
+                const spF = currentLens.sidePanelImageFrequency;
                 const range = currentLens.framework.idealSlideRange;
-                const minImg = Math.max(1, Math.floor(range.min / freq));
-                const maxImg = Math.max(1, Math.floor(range.max / freq));
+                const bgCount = bgF > 0 ? Math.max(1, Math.floor(range.max / bgF)) : 0;
+                const spCount = spF > 0 ? Math.max(1, Math.floor(range.max / spF)) : 0;
+                // Unique images: some slides may overlap (side panel wins), so estimate unique count
+                const totalUnique = Math.min(range.max, bgCount + spCount);
                 return (
                   <div className="mt-1 flex items-center gap-1.5">
                     <p className="text-sm font-semibold text-foreground">
-                      {minImg === maxImg ? `${minImg}` : `${minImg}–${maxImg}`} {t('common.images')}
+                      ~{totalUnique} {t('common.images')}
                     </p>
                     <Coins className="h-3.5 w-3.5 text-amber-500" />
                     <span className="text-xs text-amber-600 dark:text-amber-400">
-                      {minImg === maxImg ? `${minImg}` : `${minImg}–${maxImg}`} {t('common.credits')}
+                      ~{totalUnique} {t('common.credits')}
                     </span>
                   </div>
                 );

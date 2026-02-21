@@ -472,10 +472,10 @@ export class ChatService {
         `- **Bullets per slide**: ${lens.maxBulletsPerSlide ?? '4 (default)'}`,
         `- **Words per slide**: ${lens.maxWordsPerSlide ?? '50 (default)'}`,
         `- **Table rows**: ${lens.maxTableRows ?? '4 (default)'}`,
-        `- **Image layout**: ${lens.imageLayout ?? 'RIGHT'}`,
-        `- **Image frequency**: 1 per ${lens.imageFrequency} slides`,
+        `- **Background image frequency**: 1 per ${lens.backgroundImageFrequency || 'disabled'} slides`,
+        `- **Side panel image frequency**: 1 per ${lens.sidePanelImageFrequency || 'disabled'} slides`,
         '',
-        'Use `/config bullets 3`, `/config words 50`, `/config rows 3`, `/config images background`, `/config frequency 6` to change.',
+        'Use `/config bullets 3`, `/config words 50`, `/config rows 3`, `/config bg-frequency 5`, `/config sp-frequency 3` to change.',
       ].join('\n');
       yield { type: 'token', content: msg };
       yield { type: 'done', content: '' };
@@ -507,27 +507,28 @@ export class ChatService {
         msg = `Max words per slide set to **${n}**. Will apply on next /regenerate or /rewrite.`;
         break;
       }
-      case 'images': {
-        const layout = value.toUpperCase();
-        if (layout !== 'BACKGROUND' && layout !== 'RIGHT') {
-          msg = 'Invalid value. Use `/config images background` or `/config images right`.';
-          break;
-        }
-        await this.prisma.pitchLens.update({
-          where: { id: lensId },
-          data: { imageLayout: layout as 'BACKGROUND' | 'RIGHT' },
-        });
-        msg = `Image layout set to **${layout.toLowerCase()}**. Will apply on next export.`;
-        break;
-      }
-      case 'frequency': {
+      case 'bg-frequency': {
         const n = parseInt(value, 10);
         if (isNaN(n) || n < 0 || n > 20) {
-          msg = 'Invalid value. Use `/config frequency <0-20>` (0 = no images).';
+          msg = 'Invalid value. Use `/config bg-frequency <0-20>` (0 = disabled).';
           break;
         }
-        await this.prisma.pitchLens.update({ where: { id: lensId }, data: { imageFrequency: n } });
-        msg = `Image frequency set to **1 per ${n} slides**. Will apply on next /regenerate.`;
+        await this.prisma.pitchLens.update({ where: { id: lensId }, data: { backgroundImageFrequency: n } });
+        msg = n === 0
+          ? 'Background images **disabled**. Will apply on next /regenerate.'
+          : `Background image frequency set to **1 per ${n} slides**. Will apply on next /regenerate.`;
+        break;
+      }
+      case 'sp-frequency': {
+        const n = parseInt(value, 10);
+        if (isNaN(n) || n < 0 || n > 20) {
+          msg = 'Invalid value. Use `/config sp-frequency <0-20>` (0 = disabled).';
+          break;
+        }
+        await this.prisma.pitchLens.update({ where: { id: lensId }, data: { sidePanelImageFrequency: n } });
+        msg = n === 0
+          ? 'Side panel images **disabled**. Will apply on next /regenerate.'
+          : `Side panel image frequency set to **1 per ${n} slides**. Will apply on next /regenerate.`;
         break;
       }
       case 'rows': {

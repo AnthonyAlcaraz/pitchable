@@ -16,7 +16,6 @@ import {
   CompanyStage,
   TechnicalLevel,
   StoryFramework,
-  ImageLayout,
 } from '../../../generated/prisma/enums.js';
 
 export class UpdatePitchLensDto {
@@ -68,11 +67,13 @@ export class UpdatePitchLensDto {
   @IsInt()
   @Min(0)
   @Max(20)
-  imageFrequency?: number;
+  backgroundImageFrequency?: number;
 
   @IsOptional()
-  @IsEnum(ImageLayout)
-  imageLayout?: ImageLayout;
+  @IsInt()
+  @Min(0)
+  @Max(20)
+  sidePanelImageFrequency?: number;
 
   @IsOptional()
   @IsInt()

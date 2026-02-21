@@ -101,6 +101,7 @@ model Slide {
   imageLocalPath String?
   imagePrompt    String?
   imageSource    ImageSource @default(AI_GENERATED)
+  imageLayout    String?
   figmaFileKey   String?
   figmaNodeId    String?
   figmaNodeName  String?
@@ -347,8 +348,8 @@ model PitchLens {
   isPublic            Boolean        @default(false)
   createdAt           DateTime       @default(now())
   updatedAt           DateTime       @updatedAt
-  imageFrequency      Int            @default(5)
-  imageLayout         ImageLayout    @default(BACKGROUND)
+  backgroundImageFrequency  Int      @default(0)
+  sidePanelImageFrequency   Int      @default(5)
   maxBulletsPerSlide  Int?
   maxWordsPerSlide    Int?
   maxTableRows        Int?
@@ -653,10 +654,6 @@ enum StoryFramework {
   FOUNDER_INSIGHT
 }
 
-enum ImageLayout {
-  BACKGROUND
-  RIGHT
-}
 
 enum ImageSource {
   AI_GENERATED

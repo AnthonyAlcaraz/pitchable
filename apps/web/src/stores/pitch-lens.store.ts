@@ -22,8 +22,8 @@ export interface PitchLensListItem {
   selectedFramework: string;
   isDefault: boolean;
   presentationCount: number;
-  imageFrequency: number;
-  imageLayout: string;
+  backgroundImageFrequency: number;
+  sidePanelImageFrequency: number;
   framework?: FrameworkSummary;
   createdAt: string;
   updatedAt: string;
@@ -68,8 +68,8 @@ export interface CreatePitchLensInput {
   figmaFileKey?: string;
   figmaAccessToken?: string;
   figmaTemplateId?: string;
-  imageFrequency?: number;
-  imageLayout?: string;
+  backgroundImageFrequency?: number;
+  sidePanelImageFrequency?: number;
 }
 
 interface PitchLensState {

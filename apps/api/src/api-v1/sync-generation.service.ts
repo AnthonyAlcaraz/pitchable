@@ -146,7 +146,7 @@ export class SyncGenerationService {
 
       let pitchLensContext: string | undefined;
       let syncDensityOverrides: { maxBullets?: number; maxWords?: number; maxTableRows?: number } | undefined;
-      let syncImageLayoutInstruction: string | undefined;
+      let syncImageLayoutInstruction: string | undefined = undefined;
       let frameworkSlideStructure: string[] | undefined;
       if (pitchLens) {
         const framework = getFrameworkConfig(pitchLens.selectedFramework);
@@ -161,9 +161,7 @@ export class SyncGenerationService {
           maxWords: pitchLens.maxWordsPerSlide ?? undefined,
           maxTableRows: pitchLens.maxTableRows ?? undefined,
         };
-        if (pitchLens.imageLayout === 'BACKGROUND') {
-          syncImageLayoutInstruction = 'Place images as full-slide backgrounds at 15% opacity. Do not use side-panel images.';
-        }
+        // Image layout is now per-slide (written by images.service during batch queue)
       }
 
       // 6. RAG retrieval + theme fetch in parallel
@@ -267,18 +265,20 @@ export class SyncGenerationService {
       // 11. Generate slides sequentially (Opus needs priorSlides for coherence)
       const priorSlides: Array<{ title: string; body: string }> = [];
 
-      // PitchLens imageFrequency overrides theme default when set
+      // Combined effective frequency from both background + side panel frequencies
       let syncImgFreq: string | undefined;
-      if (pitchLens?.imageFrequency && pitchLens.imageFrequency > 0) {
-        const freq = pitchLens.imageFrequency;
-        if (freq === 1) {
+      const syncBgF = pitchLens?.backgroundImageFrequency ?? 0;
+      const syncSpF = pitchLens?.sidePanelImageFrequency ?? 0;
+      const syncCombinedFreq = syncBgF > 0 && syncSpF > 0 ? Math.min(syncBgF, syncSpF) : (syncBgF || syncSpF);
+      if (syncCombinedFreq > 0) {
+        if (syncCombinedFreq === 1) {
           syncImgFreq = 'MANDATORY: Generate a non-empty imagePromptHint for EVERY slide. Every single slide MUST have an image. Never set imagePromptHint to empty string.';
-        } else if (freq <= 2) {
-          syncImgFreq = `MANDATORY: Generate a non-empty imagePromptHint for at least every other slide. At minimum 50% of slides MUST have a non-empty imagePromptHint. Do NOT set all to empty string — the client explicitly requested frequent images.`;
-        } else if (freq <= 4) {
-          syncImgFreq = `Generate imagePromptHint for ~1 in ${freq} slides. Prefer data visualizations, product screenshots, and hero images.`;
+        } else if (syncCombinedFreq <= 2) {
+          syncImgFreq = `MANDATORY: Generate a non-empty imagePromptHint for at least every other slide. At minimum 50% of slides MUST have a non-empty imagePromptHint. Do NOT set all to empty string \u2014 the client explicitly requested frequent images.`;
+        } else if (syncCombinedFreq <= 4) {
+          syncImgFreq = `Generate imagePromptHint for ~1 in ${syncCombinedFreq} slides. Prefer data visualizations, product screenshots, and hero images.`;
         } else {
-          syncImgFreq = `Generate imagePromptHint for ~1 in ${freq} slides. Set to empty string "" for the rest.`;
+          syncImgFreq = `Generate imagePromptHint for ~1 in ${syncCombinedFreq} slides. Set to empty string "" for the rest.`;
         }
       } else {
         syncImgFreq = theme ? getImageFrequencyForTheme(theme.name) : undefined;

@@ -448,23 +448,24 @@ export class GenerationService {
       maxWords: presWithLens.pitchLens.maxWordsPerSlide ?? undefined,
       maxTableRows: presWithLens.pitchLens.maxTableRows ?? undefined,
     } : undefined;
-    const imageLayoutInstruction = presWithLens?.pitchLens?.imageLayout === 'BACKGROUND'
-      ? 'Place images as full-slide backgrounds at 15% opacity. Do not use side-panel images.'
-      : undefined;
+    // Image layout is now per-slide (written by images.service during batch queue)
+    const imageLayoutInstruction = undefined;
 
     // 5. Build slide system prompt with user feedback injection
-    // PitchLens imageFrequency overrides theme default when set
+    // Combined effective frequency from both background + side panel frequencies
     let imageFreqInstruction: string | undefined;
-    if (presWithLens?.pitchLens?.imageFrequency && presWithLens.pitchLens.imageFrequency > 0) {
-      const freq = presWithLens.pitchLens.imageFrequency;
-      if (freq === 1) {
+    const bgF = presWithLens?.pitchLens?.backgroundImageFrequency ?? 0;
+    const spF = presWithLens?.pitchLens?.sidePanelImageFrequency ?? 0;
+    const combinedFreq = bgF > 0 && spF > 0 ? Math.min(bgF, spF) : (bgF || spF);
+    if (combinedFreq > 0) {
+      if (combinedFreq === 1) {
         imageFreqInstruction = 'MANDATORY: Generate a non-empty imagePromptHint for EVERY slide. Every single slide MUST have an image. Never set imagePromptHint to empty string.';
-      } else if (freq <= 2) {
-        imageFreqInstruction = `MANDATORY: Generate a non-empty imagePromptHint for at least every other slide. At minimum 50% of slides MUST have a non-empty imagePromptHint. Do NOT set all to empty string — the client explicitly requested frequent images.`;
-      } else if (freq <= 4) {
-        imageFreqInstruction = `Generate imagePromptHint for ~1 in ${freq} slides. Prefer data visualizations, product screenshots, and hero images.`;
+      } else if (combinedFreq <= 2) {
+        imageFreqInstruction = `MANDATORY: Generate a non-empty imagePromptHint for at least every other slide. At minimum 50% of slides MUST have a non-empty imagePromptHint. Do NOT set all to empty string \u2014 the client explicitly requested frequent images.`;
+      } else if (combinedFreq <= 4) {
+        imageFreqInstruction = `Generate imagePromptHint for ~1 in ${combinedFreq} slides. Prefer data visualizations, product screenshots, and hero images.`;
       } else {
-        imageFreqInstruction = `Generate imagePromptHint for ~1 in ${freq} slides. Set to empty string "" for the rest.`;
+        imageFreqInstruction = `Generate imagePromptHint for ~1 in ${combinedFreq} slides. Set to empty string "" for the rest.`;
       }
     } else {
       imageFreqInstruction = theme ? getImageFrequencyForTheme(theme.name) : undefined;
@@ -1116,9 +1117,8 @@ export class GenerationService {
       maxBullets: presentation.pitchLens.maxBulletsPerSlide ?? undefined,
       maxWords: presentation.pitchLens.maxWordsPerSlide ?? undefined,
     } : undefined;
-    const rewriteImageLayout = presentation.pitchLens?.imageLayout === 'BACKGROUND'
-      ? 'Place images as full-slide backgrounds at 15% opacity. Do not use side-panel images.'
-      : undefined;
+    // Image layout is now per-slide (written by images.service during batch queue)
+    const rewriteImageLayout = undefined;
 
     const themeName = presentation.theme?.displayName ?? 'Pitchable Dark';
     const rewriteThemeColors = presentation.theme?.colorPalette

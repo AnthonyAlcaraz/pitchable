@@ -285,7 +285,6 @@ export class ExportsService {
       }
 
       // Fetch PitchLens context for auto-selection
-      let imageLayout: string | undefined;
       let figmaTemplateId: string | null = null;
       let audienceType: string | null = null;
       let pitchGoal: string | null = null;
@@ -296,7 +295,6 @@ export class ExportsService {
         const lens = await this.prisma.pitchLens.findUnique({
           where: { id: presentation.pitchLensId },
           select: {
-            imageLayout: true,
             figmaTemplateId: true,
             audienceType: true,
             pitchGoal: true,
@@ -304,7 +302,6 @@ export class ExportsService {
             deckArchetype: true,
           },
         });
-        imageLayout = lens?.imageLayout ?? undefined;
         figmaTemplateId = lens?.figmaTemplateId ?? null;
         audienceType = lens?.audienceType ?? null;
         pitchGoal = lens?.pitchGoal ?? null;
@@ -366,7 +363,6 @@ export class ExportsService {
             presentation,
             slides,
             theme,
-            imageLayout,
             layoutProfile,
             rendererOverrides,
             figmaBackgrounds,
@@ -401,7 +397,6 @@ export class ExportsService {
             presentation,
             slides,
             theme,
-            imageLayout,
             layoutProfile,
             rendererOverrides,
             figmaBackgrounds,
@@ -462,7 +457,7 @@ export class ExportsService {
       );
 
       // Generate and persist per-slide preview images (best-effort, non-blocking)
-      this.generateSlidePreviewImages(presentation, slides, theme, imageLayout, layoutProfile, rendererOverrides, figmaBackgrounds)
+      this.generateSlidePreviewImages(presentation, slides, theme, layoutProfile, rendererOverrides, figmaBackgrounds)
         .catch((err: unknown) => {
           const msg = err instanceof Error ? err.message : String(err);
           this.logger.warn(`Preview generation failed for ${presentation.id}: ${msg}`);
@@ -530,7 +525,6 @@ export class ExportsService {
     }
 
     // Fetch PitchLens context
-    let imageLayout: string | undefined;
     let figmaTemplateId: string | null = null;
     let audienceType: string | null = null;
     let pitchGoal: string | null = null;
@@ -541,7 +535,6 @@ export class ExportsService {
       const lens = await this.prisma.pitchLens.findUnique({
         where: { id: presentation.pitchLensId },
         select: {
-          imageLayout: true,
           figmaTemplateId: true,
           audienceType: true,
           pitchGoal: true,
@@ -549,7 +542,6 @@ export class ExportsService {
           deckArchetype: true,
         },
       });
-      imageLayout = lens?.imageLayout ?? undefined;
       figmaTemplateId = lens?.figmaTemplateId ?? null;
       audienceType = lens?.audienceType ?? null;
       pitchGoal = lens?.pitchGoal ?? null;
@@ -598,7 +590,7 @@ export class ExportsService {
         }
 
         const pptxPath = join(pptxDir, `${safeFilename(presentation.title)}.pptx`);
-        const pptxMd = this.marpExporter.generateMarpMarkdown(presentation, slides, theme, imageLayout, layoutProfile, rendererOverrides, figmaBackgrounds);
+        const pptxMd = this.marpExporter.generateMarpMarkdown(presentation, slides, theme, layoutProfile, rendererOverrides, figmaBackgrounds);
         await this.marpExporter.exportToPptx(pptxMd, pptxPath);
         buffer = await readFile(pptxPath);
         contentType = 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
@@ -622,7 +614,7 @@ export class ExportsService {
         }
 
         const outputPath = join(jobDir, `${safeFilename(presentation.title)}.pdf`);
-        const markdown = this.marpExporter.generateMarpMarkdown(presentation, slides, theme, imageLayout, layoutProfile, rendererOverrides, figmaBackgrounds);
+        const markdown = this.marpExporter.generateMarpMarkdown(presentation, slides, theme, layoutProfile, rendererOverrides, figmaBackgrounds);
         await this.marpExporter.exportToPdf(markdown, outputPath);
         buffer = await readFile(outputPath);
         contentType = 'application/pdf';
@@ -1071,7 +1063,6 @@ export class ExportsService {
     presentation: PresentationModel,
     slides: SlideModel[],
     theme: ThemeModel | null,
-    imageLayout?: string,
     layoutProfile?: LayoutProfile,
     rendererOverrides?: Map<number, string>,
     figmaBackgrounds?: Map<number, string>,
@@ -1082,7 +1073,6 @@ export class ExportsService {
       presentation,
       slides,
       theme,
-      imageLayout,
       layoutProfile,
       rendererOverrides,
       figmaBackgrounds,

@@ -174,7 +174,6 @@ export class MarpExporterService {
     presentation: PresentationModel,
     slides: SlideModel[],
     theme: ThemeModel,
-    imageLayout?: string,
     layoutProfile: LayoutProfile = 'startup',
     rendererOverrides?: Map<number, string>,
     figmaBackgrounds?: Map<number, string>,
@@ -489,13 +488,13 @@ export class MarpExporterService {
     for (const slide of sortedSlides) {
       const rendererOverride = rendererOverrides?.get(slide.slideNumber);
       const figmaBg = figmaBackgrounds?.get(slide.slideNumber);
-      sections.push(this.buildSlideMarkdown(slide, bg, imageLayout, safePrimary, profile, palette, rendererOverride, figmaBg));
+      sections.push(this.buildSlideMarkdown(slide, bg, safePrimary, profile, palette, rendererOverride, figmaBg));
     }
 
     return sections.join('\n\n---\n\n');
   }
 
-  private buildSlideMarkdown(slide: SlideModel, bgColor?: string, imageLayout?: string, primaryColor?: string, profile?: LayoutProfileConfig, palette?: ColorPalette, rendererOverride?: string, figmaBackground?: string): string {
+  private buildSlideMarkdown(slide: SlideModel, bgColor?: string, primaryColor?: string, profile?: LayoutProfileConfig, palette?: ColorPalette, rendererOverride?: string, figmaBackground?: string): string {
     const lines: string[] = [];
     const type = slide.slideType;
     const bgVariant = getSlideBackground(type, slide.slideNumber, bgColor);
@@ -602,28 +601,29 @@ export class MarpExporterService {
       return lines.join('\n');
     }
 
-    // Image placement — varies by slide type and imageLayout setting
+    // Image placement — varies by slide type and per-slide imageLayout
     if (slide.imageUrl) {
+      const slideLayout = (slide as Record<string, unknown>).imageLayout as string | null;
       if (type === 'VISUAL_HUMOR') {
         // Full-screen background at high visibility — image IS the slide
         lines.push(`![bg brightness:0.7](${slide.imageUrl})`);
       } else if (type === 'TITLE' || type === 'CTA') {
         // Always background for hero slides regardless of setting
         lines.push(`![bg opacity:0.15](${slide.imageUrl})`);
-      } else if (type === 'QUOTE' && imageLayout !== 'BACKGROUND') {
+      } else if (type === 'QUOTE' && slideLayout !== 'BACKGROUND') {
         // Blurred background for cinematic testimonial feel
         lines.push(`![bg blur:12px brightness:0.3](${slide.imageUrl})`);
-      } else if (type === 'SOLUTION' && imageLayout !== 'BACKGROUND') {
+      } else if (type === 'SOLUTION' && slideLayout !== 'BACKGROUND') {
         // Left-side image to mirror PROBLEM's right-side
         lines.push(`![bg left:40%](${slide.imageUrl})`);
-      } else if (type === 'ARCHITECTURE' && imageLayout !== 'BACKGROUND') {
+      } else if (type === 'ARCHITECTURE' && slideLayout !== 'BACKGROUND') {
         // Contain (not cover) to preserve diagram integrity
         lines.push(`![bg right:40% contain](${slide.imageUrl})`);
       } else if (type === 'PRODUCT_SHOWCASE') {
         // Right-side product mockup — larger (45%) and contained to show full screenshot
         lines.push(`![bg right:45% contain](${slide.imageUrl})`);
-      } else if (imageLayout === 'BACKGROUND') {
-        // User chose background layout for all slides
+      } else if (slideLayout === 'BACKGROUND') {
+        // Per-slide background layout
         lines.push(`![bg opacity:0.15](${slide.imageUrl})`);
       } else {
         // Default: right-side image (35% width)

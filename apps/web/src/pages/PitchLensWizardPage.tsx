@@ -88,8 +88,8 @@ export function PitchLensWizardPage() {
     figmaFileKey: '',
     figmaAccessToken: '',
     figmaTemplateId: undefined as string | undefined,
-    imageFrequency: 5,
-    imageLayout: 'BACKGROUND',
+    backgroundImageFrequency: 0,
+    sidePanelImageFrequency: 5,
   });
 
   // Load existing lens for editing
@@ -118,8 +118,8 @@ export function PitchLensWizardPage() {
         showOutlineSlide: (currentLens as unknown as Record<string, unknown>).showOutlineSlide as boolean ?? false,
         figmaFileKey: (currentLens as unknown as Record<string, unknown>).figmaFileKey as string ?? '',
         figmaAccessToken: (currentLens as unknown as Record<string, unknown>).figmaAccessToken as string ? '********' : '',
-        imageFrequency: (currentLens as unknown as Record<string, unknown>).imageFrequency as number ?? 5,
-        imageLayout: (currentLens as unknown as Record<string, unknown>).imageLayout as string ?? 'BACKGROUND',
+        backgroundImageFrequency: (currentLens as unknown as Record<string, unknown>).backgroundImageFrequency as number ?? 0,
+        sidePanelImageFrequency: (currentLens as unknown as Record<string, unknown>).sidePanelImageFrequency as number ?? 5,
       });
     }
   }, [editId, currentLens]);
@@ -486,7 +486,7 @@ export function PitchLensWizardPage() {
               </div>
 
               <div className="mb-4">
-                <label className="mb-1.5 block text-xs text-muted-foreground">Image density</label>
+                <label className="mb-1.5 block text-xs text-muted-foreground">Background images (full-slide, 15% opacity)</label>
                 <div className="flex gap-2">
                   {[
                     { value: 0, label: 'None' },
@@ -496,10 +496,10 @@ export function PitchLensWizardPage() {
                   ].map((opt) => (
                     <button
                       key={opt.value}
-                      onClick={() => setForm({ ...form, imageFrequency: opt.value })}
+                      onClick={() => setForm({ ...form, backgroundImageFrequency: opt.value })}
                       className={cn(
                         'flex-1 rounded-lg border-2 px-3 py-2 text-sm font-medium transition-colors',
-                        form.imageFrequency === opt.value
+                        form.backgroundImageFrequency === opt.value
                           ? 'border-primary bg-primary/5 text-primary'
                           : 'border-border text-muted-foreground hover:border-primary/30',
                       )}
@@ -511,24 +511,25 @@ export function PitchLensWizardPage() {
               </div>
 
               <div className="mb-4">
-                <label className="mb-1.5 block text-xs text-muted-foreground">Image layout</label>
+                <label className="mb-1.5 block text-xs text-muted-foreground">Side panel images (right side, 35% width)</label>
                 <div className="flex gap-2">
                   {[
-                    { value: 'BACKGROUND', label: 'Background', desc: 'Full-slide, 15% opacity' },
-                    { value: 'RIGHT', label: 'Side panel', desc: 'Right side, 35% width' },
+                    { value: 0, label: 'None' },
+                    { value: 5, label: 'Few (~2)' },
+                    { value: 3, label: 'Some (~4)' },
+                    { value: 2, label: 'Many (~6)' },
                   ].map((opt) => (
                     <button
                       key={opt.value}
-                      onClick={() => setForm({ ...form, imageLayout: opt.value })}
+                      onClick={() => setForm({ ...form, sidePanelImageFrequency: opt.value })}
                       className={cn(
-                        'flex-1 rounded-lg border-2 px-3 py-2 text-left transition-colors',
-                        form.imageLayout === opt.value
-                          ? 'border-primary bg-primary/5'
-                          : 'border-border hover:border-primary/30',
+                        'flex-1 rounded-lg border-2 px-3 py-2 text-sm font-medium transition-colors',
+                        form.sidePanelImageFrequency === opt.value
+                          ? 'border-primary bg-primary/5 text-primary'
+                          : 'border-border text-muted-foreground hover:border-primary/30',
                       )}
                     >
-                      <p className="text-sm font-medium">{opt.label}</p>
-                      <p className="text-xs text-muted-foreground">{opt.desc}</p>
+                      {opt.label}
                     </button>
                   ))}
                 </div>
@@ -641,15 +642,17 @@ export function PitchLensWizardPage() {
             </div>
 
             <div className="border-t border-border pt-3">
-              <p className="text-xs text-muted-foreground">Image density</p>
+              <p className="text-xs text-muted-foreground">Background images</p>
               <p className="text-sm font-medium text-foreground">
-                {form.imageFrequency === 0 ? 'None' : form.imageFrequency === 5 ? 'Few (~2 per deck)' : form.imageFrequency === 3 ? 'Some (~4 per deck)' : form.imageFrequency === 2 ? 'Many (~6 per deck)' : `Custom (1 per ${form.imageFrequency} slides)`}
+                {form.backgroundImageFrequency === 0 ? 'None' : form.backgroundImageFrequency === 5 ? 'Few (~2 per deck)' : form.backgroundImageFrequency === 3 ? 'Some (~4 per deck)' : form.backgroundImageFrequency === 2 ? 'Many (~6 per deck)' : `Custom (1 per ${form.backgroundImageFrequency} slides)`}
               </p>
             </div>
 
             <div className="border-t border-border pt-3">
-              <p className="text-xs text-muted-foreground">Image layout</p>
-              <p className="text-sm font-medium text-foreground">{form.imageLayout === 'BACKGROUND' ? 'Background (full-slide)' : 'Side panel (right)'}</p>
+              <p className="text-xs text-muted-foreground">Side panel images</p>
+              <p className="text-sm font-medium text-foreground">
+                {form.sidePanelImageFrequency === 0 ? 'None' : form.sidePanelImageFrequency === 5 ? 'Few (~2 per deck)' : form.sidePanelImageFrequency === 3 ? 'Some (~4 per deck)' : form.sidePanelImageFrequency === 2 ? 'Many (~6 per deck)' : `Custom (1 per ${form.sidePanelImageFrequency} slides)`}
+              </p>
             </div>
 
             {(form.figmaFileKey || form.figmaAccessToken) && (
