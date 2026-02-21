@@ -43,7 +43,10 @@ export function ChatMessage({
 
   // Extract typed metadata to avoid `unknown` leaking into JSX (React 19 strict)
   const outlineSlides = messageType === 'outline' && Array.isArray(metadata?.slides)
-    ? (metadata.slides as Array<{ slideNumber: number; title: string; bulletPoints: string[]; slideType: string }>)
+    ? (metadata.slides as Array<{ slideNumber: number; title: string; bulletPoints: string[]; slideType: string; sources?: string[] }>)
+    : [];
+  const outlineSources = messageType === 'outline' && Array.isArray(metadata?.sources)
+    ? (metadata.sources as Array<{ documentTitle: string; documentId: string }>)
     : [];
   const slideCards = Array.isArray(metadata?.slideCards)
     ? (metadata.slideCards as InlineSlideCardType[])
@@ -84,7 +87,18 @@ export function ChatMessage({
                 title={slide.title}
                 body={slide.bulletPoints?.map((b: string) => `- ${b}`).join('\n') ?? ''}
                 slideType={slide.slideType}
+                sources={slide.sources}
               />
+            ))}
+          </div>
+        )}
+
+        {/* Deck-level KB sources summary */}
+        {outlineSources.length > 0 && (
+          <div className="mt-2 rounded-md bg-muted/30 px-3 py-2">
+            <p className="text-[10px] font-medium text-muted-foreground mb-1">Knowledge Base Sources</p>
+            {outlineSources.map((s) => (
+              <p key={s.documentId} className="text-[9px] text-muted-foreground/70">{s.documentTitle}</p>
             ))}
           </div>
         )}

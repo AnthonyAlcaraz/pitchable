@@ -219,8 +219,9 @@ export class FalkorDbService implements OnModuleDestroy {
          WHERE a.name IN $names
          RETURN DISTINCT
            a.name AS source, b.name AS target,
-           r.description AS description,
+           r.description AS description, r.weight AS weight,
            b.id AS bId, b.name AS bName, b.type AS bType, b.description AS bDesc
+         ORDER BY r.weight DESC
          LIMIT 50`,
         { params: { names: entityNames } },
       );

@@ -4,6 +4,7 @@ interface SlidePreviewCardProps {
   body: string;
   slideType: string;
   className?: string;
+  sources?: string[];
 }
 
 export function SlidePreviewCard({
@@ -12,6 +13,7 @@ export function SlidePreviewCard({
   body,
   slideType,
   className = '',
+  sources,
 }: SlidePreviewCardProps) {
   // Parse bullet points from body
   const lines = body.split('\n').filter((l) => l.trim().length > 0);
@@ -61,6 +63,15 @@ export function SlidePreviewCard({
             </p>
           )}
         </div>
+
+        {/* Source attribution */}
+        {sources && sources.length > 0 && (
+          <div className="mt-auto pt-1 border-t border-border/30">
+            <p className="text-[8px] text-muted-foreground/50 truncate">
+              {sources.length === 1 ? `Source: ${sources[0]}` : `${sources.length} sources`}
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );

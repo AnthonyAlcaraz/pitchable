@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { LlmService, LlmModel } from './llm.service.js';
 import { ContextBuilderService } from './context-builder.service.js';
+import type { KbSource } from './context-builder.service.js';
 import { ConstraintsService } from '../constraints/constraints.service.js';
 import { EventsGateway } from '../events/events.gateway.js';
 import { ContentReviewerService } from './content-reviewer.service.js';
@@ -138,9 +139,11 @@ export class GenerationService {
     // 1. RAG retrieval: KB (pgvector) + Omnisearch (vault) enrichment
     yield { type: 'thinking', content: 'Planning your presentation...' };
     yield { type: 'progress', content: 'Retrieving relevant content', metadata: { step: 'rag', status: 'running' } };
-    const kbContext = presWithContext?.briefId
-      ? await this.contextBuilder.retrieveBriefContext(userId, presWithContext.briefId, config.topic, 8)
-      : await this.contextBuilder.retrieveEnrichedContext(userId, config.topic, 5, 5);
+    const kbResult = presWithContext?.briefId
+      ? await this.contextBuilder.retrieveBriefContextWithSources(userId, presWithContext.briefId, config.topic, 8)
+      : await this.contextBuilder.retrieveEnrichedContextWithSources(userId, config.topic, 5, 5);
+    const kbContext = kbResult.contextString;
+    const kbSources: KbSource[] = kbResult.sources;
     yield { type: 'progress', content: 'Retrieving relevant content', metadata: { step: 'rag', status: 'complete' } };
 
     // 1b. Build archetype context (if set on Pitch Lens)
@@ -179,6 +182,9 @@ export class GenerationService {
       return;
     }
 
+    // 2b. Attach deck-level sources to outline
+    outline.sources = kbSources.map((s) => ({ documentTitle: s.documentTitle, documentId: s.documentId }));
+
     // 3. Store pending outline + charge credit
     this.pendingOutlines.set(presentationId, { outline, config });
     await this.credits.deductCredits(userId, OUTLINE_GENERATION_COST, CreditReason.OUTLINE_GENERATION, presentationId);
@@ -195,7 +201,14 @@ export class GenerationService {
       for (const bullet of slide.bulletPoints) {
         yield { type: 'token', content: `- ${bullet}\n` };
       }
+      if (slide.sources?.length) {
+        yield { type: 'token', content: `  _Sources: ${slide.sources.join(', ')}_\n` };
+      }
       yield { type: 'token', content: '\n' };
+    }
+
+    if (kbSources.length > 0) {
+      yield { type: 'token', content: `**Knowledge Base Sources:**\n${kbSources.map((s) => `- ${s.documentTitle}`).join('\n')}\n\n` };
     }
 
     yield {
@@ -219,7 +232,7 @@ export class GenerationService {
     yield {
       type: 'action',
       content: '',
-      metadata: { action: 'outline_ready', slideCount: outline.slides.length },
+      metadata: { action: 'outline_ready', slideCount: outline.slides.length, sources: kbSources },
     };
 
     yield { type: 'done', content: '' };
@@ -475,7 +488,7 @@ export class GenerationService {
     );
 
     // Pre-fetch all per-slide KB contexts in parallel (zero risk to narrative coherence)
-    const dataHeavyTypes = ['DATA_METRICS', 'CONTENT', 'PROBLEM', 'SOLUTION', 'COMPARISON'];
+    const dataHeavyTypes = ['DATA_METRICS', 'CONTENT', 'PROBLEM', 'SOLUTION', 'COMPARISON', 'ARCHITECTURE', 'PROCESS'];
     const slideKbContexts = await Promise.all(
       outline.slides.map((slide) =>
         dataHeavyTypes.includes(slide.slideType)

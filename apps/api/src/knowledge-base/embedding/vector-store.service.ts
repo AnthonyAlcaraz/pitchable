@@ -18,6 +18,11 @@ export class VectorStoreService {
 
   constructor(private readonly prisma: PrismaService) {}
 
+  /** Returns true when pgvector is configured and embedding storage is functional. */
+  isAvailable(): boolean {
+    return false; // pgvector currently stubbed — enable when pgvector extension is configured
+  }
+
   async updateChunkEmbeddings(
     _documentId: string,
     _chunkEmbeddings: { chunkId: string; embedding: number[] }[],

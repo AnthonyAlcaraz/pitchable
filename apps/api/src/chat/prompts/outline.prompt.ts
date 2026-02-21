@@ -6,11 +6,13 @@ export interface OutlineSlide {
   bulletPoints: string[];
   slideType: SlideType;
   sectionLabel?: string;
+  sources?: string[];  // document titles that informed this slide's content
 }
 
 export interface GeneratedOutline {
   title: string;
   slides: OutlineSlide[];
+  sources?: Array<{ documentTitle: string; documentId: string }>;  // deck-level KB sources
 }
 
 export function buildOutlineSystemPrompt(
@@ -125,10 +127,17 @@ Respond with valid JSON matching this schema:
       "title": "Slide Title",
       "bulletPoints": ["Point 1", "Point 2", "Point 3"],
       "slideType": "TITLE",
-      "sectionLabel": "INTRODUCTION"
+      "sectionLabel": "INTRODUCTION",
+      "sources": ["Document Title A"]
     }
   ]
 }
+
+SOURCES ATTRIBUTION:
+- Each slide's "sources" field is an array of document titles from the knowledge base that informed that slide's content.
+- If a slide uses facts, data, or claims from a KB document, include that document's title in the sources array.
+- If a slide does not use any KB content (e.g., TITLE, CTA), set sources to an empty array [].
+- Use the exact document titles shown in the "(source: ...)" annotations in the knowledge base context above.
 
 Only output JSON. No markdown fences, no explanation.`;
 }

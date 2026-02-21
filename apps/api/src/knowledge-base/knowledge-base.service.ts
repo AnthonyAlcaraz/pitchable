@@ -199,6 +199,11 @@ export class KnowledgeBaseService {
     return { message: 'Document deleted' };
   }
 
+  /** Returns true when ZeroEntropy is the primary retrieval backend (has built-in reranking). */
+  isZeroEntropyPrimary(): boolean {
+    return this.zeRetrieval.isAvailable();
+  }
+
   async search(
     userId: string,
     query: string,

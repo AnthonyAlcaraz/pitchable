@@ -10,6 +10,17 @@ import { buildPitchLensInjection } from '../pitch-lens/prompts/pitch-lens-inject
 import { getFrameworkConfig } from '../pitch-lens/frameworks/story-frameworks.config.js';
 import type { LlmMessage } from './llm.service.js';
 
+export interface KbSource {
+  documentId: string;
+  documentTitle: string;
+  relevance: number;
+}
+
+export interface KbContextResult {
+  contextString: string;
+  sources: KbSource[];
+}
+
 @Injectable()
 export class ContextBuilderService {
   private readonly logger = new Logger(ContextBuilderService.name);
@@ -96,23 +107,70 @@ export class ContextBuilderService {
     query: string,
     limit = 10,
   ): Promise<string> {
-    try {
-      // Fetch more candidates than needed so reranker can select the best
-      const fetchLimit = this.reranker.isEnabled() ? Math.min(limit * 3, 30) : limit;
-      const results = await this.kbService.search(userId, query, fetchLimit, 0.2);
-      if (results.length === 0) return '';
+    const result = await this.retrieveKbContextWithSources(userId, query, limit);
+    return result.contextString;
+  }
 
-      // Rerank using ZeroEntropy's semantic reranker (zerank-2)
-      const ranked = await this.reranker.rerank(query, results, limit, 0.1);
+  async retrieveKbContextWithSources(
+    userId: string,
+    query: string,
+    limit = 10,
+  ): Promise<KbContextResult> {
+    try {
+      // ZeroEntropy's topSnippets already uses zerank-2 internally.
+      // Skip the 2nd rerank pass when ZE is the sole source (~200-500ms saved).
+      const zeIsPrimary = this.kbService.isZeroEntropyPrimary();
+      const fetchLimit = !zeIsPrimary && this.reranker.isEnabled() ? Math.min(limit * 3, 30) : limit;
+      const results = await this.kbService.search(userId, query, fetchLimit, 0.2);
+      if (results.length === 0) return { contextString: '', sources: [] };
+
+      const ranked = zeIsPrimary
+        ? results.slice(0, limit)
+        : await this.reranker.rerank(query, results, limit, 0.1);
+
+      // Collect unique sources from ranked results
+      const sourceMap = new Map<string, KbSource>();
+      for (const r of ranked) {
+        if (!sourceMap.has(r.documentId)) {
+          sourceMap.set(r.documentId, {
+            documentId: r.documentId,
+            documentTitle: r.documentTitle,
+            relevance: r.similarity,
+          });
+        }
+      }
 
       const parts = ['\nRelevant knowledge base content:'];
       for (const r of ranked) {
         parts.push(`---\n${r.content}\n(source: ${r.documentTitle}, relevance: ${r.similarity.toFixed(2)})`);
       }
-      return parts.join('\n');
+
+      // Augment with FalkorDB knowledge graph entities (user's global KB graph)
+      if (this.falkordb.isEnabled()) {
+        try {
+          const graphName = FalkorDbService.kbGraphName(userId);
+          const graphResult = await this.falkordb.query(graphName, query);
+          if (graphResult.entities.length > 0) {
+            parts.push('\nRelevant entities from knowledge graph:');
+            for (const e of graphResult.entities.slice(0, 10)) {
+              parts.push(`- ${e.name} (${e.type}): ${e.description}`);
+            }
+            if (graphResult.relationships.length > 0) {
+              parts.push('\nEntity relationships:');
+              for (const rel of graphResult.relationships.slice(0, 10)) {
+                parts.push(`- ${rel.source} → ${rel.target}: ${rel.description}`);
+              }
+            }
+          }
+        } catch (graphErr) {
+          this.logger.warn(`FalkorDB KB graph query failed (non-blocking): ${graphErr}`);
+        }
+      }
+
+      return { contextString: parts.join('\n'), sources: [...sourceMap.values()] };
     } catch (err) {
       this.logger.warn(`KB retrieval failed: ${err}`);
-      return '';
+      return { contextString: '', sources: [] };
     }
   }
 
@@ -162,6 +220,67 @@ export class ContextBuilderService {
       this.logger.warn(`Brief context retrieval failed, falling back to global KB: ${err}`);
       return this.retrieveKbContext(userId, query, limit);
     }
+  }
+
+  async retrieveBriefContextWithSources(
+    userId: string,
+    briefId: string,
+    query: string,
+    limit = 10,
+  ): Promise<KbContextResult> {
+    try {
+      const brief = await this.prisma.pitchBrief.findUnique({
+        where: { id: briefId },
+        select: { graphName: true },
+      });
+
+      const kbResult = await this.retrieveKbContextWithSources(userId, query, limit);
+      const parts = kbResult.contextString ? [kbResult.contextString] : [];
+
+      // Add entity graph context if FalkorDB is available
+      if (brief?.graphName && this.falkordb.isEnabled()) {
+        try {
+          const graphResult = await this.falkordb.query(brief.graphName, query);
+          if (graphResult.entities.length > 0) {
+            const entityParts = ['\nRelevant entities from knowledge graph:'];
+            for (const e of graphResult.entities.slice(0, 10)) {
+              entityParts.push(`- ${e.name} (${e.type}): ${e.description}`);
+            }
+            if (graphResult.relationships.length > 0) {
+              entityParts.push('\nEntity relationships:');
+              for (const r of graphResult.relationships.slice(0, 10)) {
+                entityParts.push(`- ${r.source} → ${r.target}: ${r.description}`);
+              }
+            }
+            parts.push(entityParts.join('\n'));
+          }
+        } catch (graphErr) {
+          this.logger.warn(`FalkorDB brief query failed (non-blocking): ${graphErr}`);
+        }
+      }
+
+      return { contextString: parts.filter(Boolean).join('\n'), sources: kbResult.sources };
+    } catch (err) {
+      this.logger.warn(`Brief context retrieval failed, falling back to global KB: ${err}`);
+      return this.retrieveKbContextWithSources(userId, query, limit);
+    }
+  }
+
+  async retrieveEnrichedContextWithSources(
+    userId: string,
+    query: string,
+    kbLimit = 5,
+    omnisearchLimit = 5,
+  ): Promise<KbContextResult> {
+    const [kbResult, vaultContext] = await Promise.all([
+      this.retrieveKbContextWithSources(userId, query, kbLimit),
+      this.retrieveOmnisearchContext(query, omnisearchLimit),
+    ]);
+
+    const parts: string[] = [];
+    if (kbResult.contextString) parts.push(kbResult.contextString);
+    if (vaultContext) parts.push(vaultContext);
+    return { contextString: parts.join('\n'), sources: kbResult.sources };
   }
 
   /**

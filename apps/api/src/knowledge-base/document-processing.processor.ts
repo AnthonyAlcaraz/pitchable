@@ -218,7 +218,7 @@ export class DocumentProcessingProcessor extends WorkerHost {
       }
 
       // 7. Generate OpenAI embeddings for pgvector (fallback retrieval, non-fatal)
-      if (this.embeddingService.isAvailable()) {
+      if (this.embeddingService.isAvailable() && this.vectorStore.isAvailable()) {
         try {
           const texts = newChunks.map((c) => c.content);
           const embeddings = await this.embeddingService.batchEmbed(texts);
@@ -236,7 +236,7 @@ export class DocumentProcessingProcessor extends WorkerHost {
           );
         }
       } else {
-        this.logger.log(`Document ${documentId}: skipping embeddings (no OPENAI_API_KEY)`);
+        this.logger.log(`Document ${documentId}: skipping embeddings (vector store stubbed)`);
       }
 
       // 8. Update status to READY

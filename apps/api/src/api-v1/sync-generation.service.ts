@@ -229,7 +229,7 @@ export class SyncGenerationService {
 
       // 10. Pre-fetch per-slide KB contexts in parallel
       const tSlideKb = Date.now();
-      const dataHeavyTypes = ['DATA_METRICS', 'CONTENT', 'PROBLEM', 'SOLUTION', 'COMPARISON'];
+      const dataHeavyTypes = ['DATA_METRICS', 'CONTENT', 'PROBLEM', 'SOLUTION', 'COMPARISON', 'ARCHITECTURE', 'PROCESS'];
       const slideKbContexts = await Promise.all(
         outline.slides.map((slide) =>
           dataHeavyTypes.includes(slide.slideType)
