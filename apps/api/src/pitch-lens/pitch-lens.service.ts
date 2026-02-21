@@ -42,36 +42,41 @@ export class PitchLensService {
       });
     }
 
-    const lens = await this.prisma.pitchLens.create({
-      data: {
-        userId,
-        name: dto.name,
-        description: dto.description,
-        audienceType: dto.audienceType,
-        pitchGoal: dto.pitchGoal,
-        industry: dto.industry,
-        companyStage: dto.companyStage,
-        toneStyle: dto.toneStyle,
-        technicalLevel: dto.technicalLevel,
-        selectedFramework: dto.selectedFramework,
-        customGuidance: dto.customGuidance,
-        backgroundImageFrequency: dto.backgroundImageFrequency,
-        sidePanelImageFrequency: dto.sidePanelImageFrequency,
-        maxBulletsPerSlide: dto.maxBulletsPerSlide,
-        maxWordsPerSlide: dto.maxWordsPerSlide,
-        maxTableRows: dto.maxTableRows,
-        deckArchetype: dto.deckArchetype,
-        showSectionLabels: dto.showSectionLabels ?? false,
-        showOutlineSlide: dto.showOutlineSlide ?? false,
-        isDefault: dto.isDefault ?? false,
-        figmaTemplateId: dto.figmaTemplateId,
-      },
-    });
+    try {
+      const lens = await this.prisma.pitchLens.create({
+        data: {
+          userId,
+          name: dto.name,
+          description: dto.description,
+          audienceType: dto.audienceType,
+          pitchGoal: dto.pitchGoal,
+          industry: dto.industry,
+          companyStage: dto.companyStage,
+          toneStyle: dto.toneStyle,
+          technicalLevel: dto.technicalLevel,
+          selectedFramework: dto.selectedFramework,
+          customGuidance: dto.customGuidance,
+          backgroundImageFrequency: dto.backgroundImageFrequency,
+          sidePanelImageFrequency: dto.sidePanelImageFrequency,
+          maxBulletsPerSlide: dto.maxBulletsPerSlide,
+          maxWordsPerSlide: dto.maxWordsPerSlide,
+          maxTableRows: dto.maxTableRows,
+          deckArchetype: dto.deckArchetype,
+          showSectionLabels: dto.showSectionLabels ?? false,
+          showOutlineSlide: dto.showOutlineSlide ?? false,
+          isDefault: dto.isDefault ?? false,
+          figmaTemplateId: dto.figmaTemplateId,
+        },
+      });
 
-    return {
-      ...lens,
-      framework: getFrameworkConfig(lens.selectedFramework),
-    };
+      return {
+        ...lens,
+        framework: getFrameworkConfig(lens.selectedFramework),
+      };
+    } catch (error) {
+      this.logger.error(`PitchLens create failed: ${error instanceof Error ? error.message : String(error)}`);
+      throw error;
+    }
   }
 
   async findAll(userId: string) {

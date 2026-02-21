@@ -18,6 +18,7 @@ import {
   type RequestUser,
 } from '../auth/decorators/current-user.decorator.js';
 import { PitchLensService } from './pitch-lens.service.js';
+import { PrismaService } from '../prisma/prisma.service.js';
 import { CreatePitchLensDto } from './dto/create-pitch-lens.dto.js';
 import { UpdatePitchLensDto } from './dto/update-pitch-lens.dto.js';
 import { RecommendFrameworksDto } from './dto/recommend-frameworks.dto.js';
@@ -27,7 +28,20 @@ import { RecommendThemesDto } from './dto/recommend-themes.dto.js';
 export class PitchLensController {
   constructor(
     private readonly pitchLensService: PitchLensService,
+    private readonly prisma: PrismaService,
   ) {}
+
+  // TEMPORARY: diagnostic endpoint to check DB schema
+  @Get('debug/columns')
+  async debugColumns() {
+    const cols = await this.prisma.$queryRawUnsafe<Array<{ column_name: string; data_type: string }>>(
+      `SELECT column_name, data_type FROM information_schema.columns WHERE table_name = 'PitchLens' ORDER BY ordinal_position`,
+    );
+    const tables = await this.prisma.$queryRawUnsafe<Array<{ table_name: string }>>(
+      `SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_name IN ('FigmaTemplate', 'FigmaTemplateMapping', 'BriefLens', 'DraftSlide', 'SlideSource') ORDER BY table_name`,
+    );
+    return { pitchLensColumns: cols, missingTables: tables };
+  }
 
   // ── Marketplace Endpoints (browse is public) ──
 
