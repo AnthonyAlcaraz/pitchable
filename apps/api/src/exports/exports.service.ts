@@ -191,6 +191,43 @@ export class ExportsService {
       );
     }
 
+    // -- Idempotency: check for existing active job --
+    const existingActive = await this.prisma.exportJob.findFirst({
+      where: {
+        presentationId,
+        format,
+        status: { in: [JobStatus.QUEUED, JobStatus.PROCESSING] },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    if (existingActive) {
+      this.logger.log(`Returning existing ${format} export job ${existingActive.id} (status: ${existingActive.status})`);
+      // Staleness check: if PROCESSING > 10min, create new
+      const ageMs = Date.now() - existingActive.createdAt.getTime();
+      if (existingActive.status === 'PROCESSING' && ageMs > 600_000) {
+        this.logger.warn(`Stale export job ${existingActive.id} (${Math.round(ageMs / 1000)}s old), creating new`);
+      } else {
+        return existingActive;
+      }
+    }
+
+    // -- Double-click protection: check recently completed --
+    const recentCompleted = await this.prisma.exportJob.findFirst({
+      where: {
+        presentationId,
+        format,
+        status: JobStatus.COMPLETED,
+        completedAt: { gte: new Date(Date.now() - 60_000) },
+      },
+      orderBy: { completedAt: 'desc' },
+    });
+
+    if (recentCompleted) {
+      this.logger.log(`Returning recently completed ${format} export job ${recentCompleted.id}`);
+      return recentCompleted;
+    }
+
     return this.prisma.exportJob.create({
       data: {
         presentationId,

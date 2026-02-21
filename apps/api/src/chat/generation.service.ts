@@ -41,6 +41,7 @@ import {
 import type { DeckArchetype } from '../../generated/prisma/enums.js';
 import { DENSITY_LIMITS, type SlideContent } from '../constraints/density-validator.js';
 import { TtlMap } from '../common/ttl-map.js';
+import { computeSlideHash } from '../common/content-hash.js';
 import type { ChatStreamEvent } from './chat.service.js';
 import { isValidOutline, isValidSlideContent } from './validators.js';
 import { truncateToLimits, passesDensityCheck } from '../constraints/density-truncator.js';
@@ -636,6 +637,7 @@ export class GenerationService {
           slideType: effectiveSlideType as SlideType,
           imagePrompt: validated.imagePromptHint,
           sectionLabel: outlineSlide.sectionLabel ?? null,
+          contentHash: computeSlideHash(validated.title, validated.body, validated.speakerNotes ?? null, effectiveSlideType, null),
         },
       });
 
@@ -772,6 +774,7 @@ export class GenerationService {
                 slideType: outlineSlide.slideType as SlideType,
                 imagePrompt: validated.imagePromptHint,
                 sectionLabel: outlineSlide.sectionLabel ?? null,
+                contentHash: computeSlideHash(splitData.title, splitData.body, validated.speakerNotes ?? null, outlineSlide.slideType, null),
               },
             });
 
