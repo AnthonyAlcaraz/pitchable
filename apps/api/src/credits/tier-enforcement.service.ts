@@ -35,6 +35,8 @@ export interface TierStatus {
   maxCustomGuidanceLength: number;
   maxDocumentSizeMb: number;
   maxDocumentsPerBrief: number | null;
+  totalIngestionMb: number;
+  maxTotalIngestionMb: number | null;
 }
 
 @Injectable()
@@ -237,6 +239,25 @@ export class TierEnforcementService {
       }
     }
 
+    // Check total ingestion size across all user documents
+    if (limits.maxTotalIngestionMb !== null) {
+      const agg = await this.prisma.document.aggregate({
+        where: { userId },
+        _sum: { fileSize: true },
+      });
+      const currentTotalBytes = agg._sum.fileSize ?? 0;
+      const newTotalMb = (currentTotalBytes + fileSizeBytes) / (1024 * 1024);
+      if (newTotalMb > limits.maxTotalIngestionMb) {
+        const usedMb = (currentTotalBytes / (1024 * 1024)).toFixed(1);
+        const fileMb = (fileSizeBytes / (1024 * 1024)).toFixed(1);
+        return {
+          allowed: false,
+          reason: `Adding this file (${fileMb} MB) would exceed the ${limits.maxTotalIngestionMb} MB storage limit on the ${tier} plan. Currently using ${usedMb} MB. Upgrade for more storage.`,
+          creditCost: 0,
+        };
+      }
+    }
+
     // Check credits (flat 1 credit per document)
     if ((user?.creditBalance ?? 0) < DOCUMENT_INGESTION_COST) {
       return {
@@ -295,6 +316,8 @@ export class TierEnforcementService {
         maxCustomGuidanceLength: freeLimits.maxCustomGuidanceLength,
         maxDocumentSizeMb: freeLimits.maxDocumentSizeMb,
         maxDocumentsPerBrief: freeLimits.maxDocumentsPerBrief,
+        totalIngestionMb: 0,
+        maxTotalIngestionMb: freeLimits.maxTotalIngestionMb,
       };
     }
 
@@ -307,11 +330,15 @@ export class TierEnforcementService {
     const decksLimit = limits.maxDecksPerMonth;
     const decksRemaining = decksLimit !== null ? Math.max(0, decksLimit - decksUsed) : null;
 
-    const [creditsReserved, briefsUsed, lensesUsed] = await Promise.all([
+    const [creditsReserved, briefsUsed, lensesUsed, ingestionAgg] = await Promise.all([
       this.reservations.getReservedAmount(userId),
       this.prisma.pitchBrief.count({ where: { userId } }),
       this.prisma.pitchLens.count({ where: { userId } }),
+      this.prisma.document.aggregate({ where: { userId }, _sum: { fileSize: true } }),
     ]);
+
+    const totalIngestionBytes = ingestionAgg._sum.fileSize ?? 0;
+    const totalIngestionMb = Math.round((totalIngestionBytes / (1024 * 1024)) * 10) / 10;
 
     return {
       tier: user.tier,
@@ -329,6 +356,8 @@ export class TierEnforcementService {
       maxCustomGuidanceLength: limits.maxCustomGuidanceLength,
       maxDocumentSizeMb: limits.maxDocumentSizeMb,
       maxDocumentsPerBrief: limits.maxDocumentsPerBrief,
+      totalIngestionMb,
+      maxTotalIngestionMb: limits.maxTotalIngestionMb,
     };
   }
 

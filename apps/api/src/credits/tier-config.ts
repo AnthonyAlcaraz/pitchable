@@ -7,6 +7,7 @@ export interface TierLimits {
   maxCustomGuidanceLength: number; // max chars for lens customGuidance field
   maxDocumentSizeMb: number; // max file size per document in MB
   maxDocumentsPerBrief: number | null; // null = unlimited
+  maxTotalIngestionMb: number | null; // null = unlimited, total storage across all briefs
 }
 
 /**
@@ -110,6 +111,7 @@ export const TIER_LIMITS: Record<string, TierLimits> = {
     maxCustomGuidanceLength: 200,
     maxDocumentSizeMb: 5,
     maxDocumentsPerBrief: 3,
+    maxTotalIngestionMb: 10, // 10 MB total across all docs
   },
   STARTER: {
     maxDecksPerMonth: 10,
@@ -120,6 +122,7 @@ export const TIER_LIMITS: Record<string, TierLimits> = {
     maxCustomGuidanceLength: 500,
     maxDocumentSizeMb: 10,
     maxDocumentsPerBrief: null, // unlimited
+    maxTotalIngestionMb: null, // unlimited
   },
   PRO: {
     maxDecksPerMonth: null,
@@ -130,6 +133,7 @@ export const TIER_LIMITS: Record<string, TierLimits> = {
     maxCustomGuidanceLength: 1000,
     maxDocumentSizeMb: 20,
     maxDocumentsPerBrief: null, // unlimited
+    maxTotalIngestionMb: null, // unlimited
   },
   ENTERPRISE: {
     maxDecksPerMonth: null,
@@ -140,5 +144,6 @@ export const TIER_LIMITS: Record<string, TierLimits> = {
     maxCustomGuidanceLength: 2000,
     maxDocumentSizeMb: 20,
     maxDocumentsPerBrief: null, // unlimited
+    maxTotalIngestionMb: null, // unlimited
   },
 };

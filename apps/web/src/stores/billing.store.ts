@@ -32,6 +32,8 @@ export interface TierStatus {
   maxCustomGuidanceLength: number;
   maxDocumentSizeMb: number;
   maxDocumentsPerBrief: number | null;
+  totalIngestionMb: number;
+  maxTotalIngestionMb: number | null;
 }
 
 interface BillingState {

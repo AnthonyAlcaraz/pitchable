@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { usePitchBriefStore } from '@/stores/pitch-brief.store';
 import { useKbStore } from '@/stores/kb.store';
+import { useBillingStore } from '@/stores/billing.store';
 import { useDocumentProgress } from '@/hooks/useDocumentProgress';
 import { ArrowLeft, ArrowRight, BookOpen, Upload, Check, FileText, X, Loader2, Globe } from 'lucide-react';
 
@@ -56,6 +57,20 @@ export function PitchBriefWizardPage() {
   const [crawlMaxPages, setCrawlMaxPages] = useState(20);
   const [crawlMaxDepth, setCrawlMaxDepth] = useState(2);
   const [uploadProgress, setUploadProgress] = useState<{ current: number; total: number } | null>(null);
+  const [sizeWarning, setSizeWarning] = useState<string | null>(null);
+
+  const tierStatus = useBillingStore((s) => s.tierStatus);
+  const loadTierStatus = useBillingStore((s) => s.loadTierStatus);
+
+  // Load tier status on mount for storage limit info
+  useEffect(() => { void loadTierStatus(); }, [loadTierStatus]);
+
+  // Compute storage usage: server-side + pending files
+  const serverUsedMb = tierStatus?.totalIngestionMb ?? 0;
+  const maxTotalMb = tierStatus?.maxTotalIngestionMb ?? null;
+  const pendingFilesMb = pendingFiles.reduce((sum, f) => sum + f.size, 0) / (1024 * 1024);
+  const totalUsedMb = Math.round((serverUsedMb + pendingFilesMb) * 10) / 10;
+  const storagePercent = maxTotalMb ? Math.min(100, Math.round((totalUsedMb / maxTotalMb) * 100)) : 0;
 
   // Track elapsed time during processing
   const processingStartRef = useRef<number | null>(null);
@@ -201,8 +216,19 @@ export function PitchBriefWizardPage() {
 
   const handleFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
+    if (maxTotalMb !== null) {
+      const currentBytes = pendingFiles.reduce((s, f) => s + f.size, 0);
+      const newBytes = files.reduce((s, f) => s + f.size, 0);
+      const projectedMb = serverUsedMb + (currentBytes + newBytes) / (1024 * 1024);
+      if (projectedMb > maxTotalMb) {
+        const fileMb = (newBytes / (1024 * 1024)).toFixed(1);
+        setSizeWarning(t('pitch_briefs.wizard.storage_overflow', { fileMb, limit: maxTotalMb }));
+        return;
+      }
+    }
+    setSizeWarning(null);
     setPendingFiles((prev) => [...prev, ...files]);
-  }, []);
+  }, [maxTotalMb, serverUsedMb, pendingFiles, t]);
 
   const handleDrag = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -220,11 +246,23 @@ export function PitchBriefWizardPage() {
     setDragActive(false);
 
     const files = Array.from(e.dataTransfer.files);
+    if (maxTotalMb !== null) {
+      const currentBytes = pendingFiles.reduce((s, f) => s + f.size, 0);
+      const newBytes = files.reduce((s, f) => s + f.size, 0);
+      const projectedMb = serverUsedMb + (currentBytes + newBytes) / (1024 * 1024);
+      if (projectedMb > maxTotalMb) {
+        const fileMb = (newBytes / (1024 * 1024)).toFixed(1);
+        setSizeWarning(t('pitch_briefs.wizard.storage_overflow', { fileMb, limit: maxTotalMb }));
+        return;
+      }
+    }
+    setSizeWarning(null);
     setPendingFiles((prev) => [...prev, ...files]);
-  }, []);
+  }, [maxTotalMb, serverUsedMb, pendingFiles, t]);
 
   const removeFile = useCallback((index: number) => {
     setPendingFiles((prev) => prev.filter((_, i) => i !== index));
+    setSizeWarning(null);
   }, []);
 
   const removeText = useCallback((index: number) => {
@@ -515,9 +553,39 @@ export function PitchBriefWizardPage() {
                     <p className="text-muted-foreground mb-4">
                       {t('pitch_briefs.wizard.add_documents_desc')}
                     </p>
-                    <p className="text-xs text-amber-400/80 mb-6">
+                    <p className="text-xs text-amber-400/80 mb-4">
                       {t('pitch_briefs.wizard.doc_credit_note')}
                     </p>
+
+                    {/* Storage usage bar */}
+                    {maxTotalMb !== null && (
+                      <div className="mb-6">
+                        <div className="flex items-center justify-between text-xs mb-1">
+                          <span className="text-muted-foreground">{t('pitch_briefs.wizard.storage_label')}</span>
+                          <span className={storagePercent >= 90 ? 'text-red-400 font-medium' : storagePercent >= 70 ? 'text-amber-400' : 'text-muted-foreground'}>
+                            {t('pitch_briefs.wizard.storage_usage', { used: totalUsedMb.toFixed(1), limit: maxTotalMb })}
+                          </span>
+                        </div>
+                        <div className="h-2 w-full rounded-full bg-border overflow-hidden">
+                          <div
+                            className={`h-full rounded-full transition-all ${storagePercent >= 90 ? 'bg-red-500' : storagePercent >= 70 ? 'bg-amber-500' : 'bg-primary'}`}
+                            style={{ width: `${storagePercent}%` }}
+                          />
+                        </div>
+                      </div>
+                    )}
+                    {maxTotalMb === null && serverUsedMb > 0 && (
+                      <p className="text-xs text-muted-foreground mb-6">
+                        {t('pitch_briefs.wizard.storage_unlimited', { used: totalUsedMb.toFixed(1) })}
+                      </p>
+                    )}
+
+                    {/* Size overflow warning */}
+                    {sizeWarning && (
+                      <div className="mb-4 rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-400">
+                        {sizeWarning}
+                      </div>
+                    )}
                   </div>
 
                   <div>
@@ -657,6 +725,9 @@ export function PitchBriefWizardPage() {
                             <div className="flex items-center gap-3">
                               <FileText className="w-4 h-4 text-muted-foreground" />
                               <span className="text-sm text-foreground">{file.name}</span>
+                              <span className="text-xs text-muted-foreground">
+                                {(file.size / (1024 * 1024)).toFixed(1)} MB
+                              </span>
                             </div>
                             <button
                               onClick={() => removeFile(index)}
