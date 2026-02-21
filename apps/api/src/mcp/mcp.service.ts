@@ -285,7 +285,7 @@ export class McpService implements OnModuleDestroy {
       'check_credits',
       {
         title: 'Check Credits',
-        description: 'Check your current credit balance. Presentation generation costs 3 credits, image generation costs 1 credit each.',
+        description: 'Check your current credit balance. Presentation generation costs 2 credits, image generation costs 1 credit each.',
         inputSchema: z.object({}),
       },
       async () => {

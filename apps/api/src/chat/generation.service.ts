@@ -913,11 +913,17 @@ export class GenerationService {
       && this.tierEnforcement.canGenerateImages(userTier);
     if (shouldGenerateImages) {
       try {
-        const imageJobs = await this.imagesService.queueBatchGeneration(presentationId, userId);
+        const { jobs: imageJobs, totalEligible, skippedForCredits } = await this.imagesService.queueBatchGeneration(presentationId, userId);
         if (imageJobs.length > 0) {
+          let imageMsg = `\nGenerating **${imageJobs.length} images** in the background (${imageJobs.length} credit${imageJobs.length !== 1 ? 's' : ''})... Your slides will update as images complete.`;
+          if (skippedForCredits > 0) {
+            imageMsg += `\n\n> **${skippedForCredits} of ${totalEligible} images skipped** due to insufficient credits. [Purchase credits](/billing) to generate all images.`;
+          }
+          yield { type: 'token', content: imageMsg + '\n' };
+        } else if (skippedForCredits > 0) {
           yield {
             type: 'token',
-            content: `\nGenerating **${imageJobs.length} images** in the background... Your slides will update as images complete.\n`,
+            content: `\n> **Image generation skipped**: insufficient credits for ${totalEligible} image${totalEligible !== 1 ? 's' : ''} (${totalEligible} credit${totalEligible !== 1 ? 's' : ''} needed). [Purchase credits](/billing) to add images.\n`,
           };
         }
       } catch (imgErr) {
@@ -1134,11 +1140,17 @@ export class GenerationService {
     // Queue batch image generation if configured
     if (this.nanoBanana.isConfigured) {
       try {
-        const imageJobs = await this.imagesService.queueBatchGeneration(presentationId, userId);
+        const { jobs: imageJobs, totalEligible, skippedForCredits } = await this.imagesService.queueBatchGeneration(presentationId, userId);
         if (imageJobs.length > 0) {
+          let rewriteMsg = `\n**Rewrite complete!** All ${presentation.slides.length} slides updated. Generating **${imageJobs.length} images** in the background (${imageJobs.length} credit${imageJobs.length !== 1 ? 's' : ''})...`;
+          if (skippedForCredits > 0) {
+            rewriteMsg += `\n\n> **${skippedForCredits} of ${totalEligible} images skipped** due to insufficient credits. [Purchase credits](/billing) to generate all images.`;
+          }
+          yield { type: 'token', content: rewriteMsg + '\n' };
+        } else if (skippedForCredits > 0) {
           yield {
             type: 'token',
-            content: `\n**Rewrite complete!** All ${presentation.slides.length} slides updated. Generating **${imageJobs.length} images** in the background...\n`,
+            content: `\n**Rewrite complete!** All ${presentation.slides.length} slides updated.\n\n> **Image generation skipped**: insufficient credits for ${totalEligible} image${totalEligible !== 1 ? 's' : ''} (${totalEligible} credit${totalEligible !== 1 ? 's' : ''} needed). [Purchase credits](/billing) to add images.\n`,
           };
         } else {
           yield {

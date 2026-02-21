@@ -14,6 +14,8 @@ import {
 import { JobStatus, ImageSource } from '../../generated/prisma/enums.js';
 import type { ImageJobModel } from '../../generated/prisma/models.js';
 import type { ImageGenerationJobData } from './image-generation.processor.js';
+import { CreditsService } from '../credits/credits.service.js';
+import { IMAGE_GENERATION_COST } from '../credits/tier-config.js';
 
 // ── Service ─────────────────────────────────────────────────
 
@@ -24,6 +26,7 @@ export class ImagesService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly promptBuilder: ImagePromptBuilderService,
+    private readonly credits: CreditsService,
     @InjectQueue('image-generation')
     private readonly imageQueue: Queue<ImageGenerationJobData>,
   ) {}
@@ -70,7 +73,7 @@ export class ImagesService {
   async queueBatchGeneration(
     presentationId: string,
     userId: string,
-  ): Promise<ImageJobModel[]> {
+  ): Promise<{ jobs: ImageJobModel[]; totalEligible: number; skippedForCredits: number }> {
     // Get presentation with slides, theme, and pitch lens
     const presentation = await this.prisma.presentation.findUnique({
       where: { id: presentationId },
@@ -94,7 +97,7 @@ export class ImagesService {
       this.logger.log(
         `Image generation disabled for presentation ${presentationId} (imageFrequency=0)`,
       );
-      return [];
+      return { jobs: [], totalEligible: 0, skippedForCredits: 0 };
     }
 
     const themeColors: ThemeColors = {
@@ -111,31 +114,44 @@ export class ImagesService {
       imageFrequency,
     );
 
+    // Filter out slides that already have images or are Figma-sourced
+    const needsImage = eligibleSlides.filter((slide) => {
+      if (
+        (slide as Record<string, unknown>).imageSource === ImageSource.FIGMA &&
+        slide.imageUrl
+      ) {
+        return false;
+      }
+      return !slide.imageUrl;
+    });
+
+    const totalEligible = needsImage.length;
+
+    // Credit pre-check: cap batch to what the user can afford
+    const balance = await this.credits.getBalance(userId);
+    const affordableCount = Math.floor(balance / IMAGE_GENERATION_COST);
+    const skippedForCredits = Math.max(0, totalEligible - affordableCount);
+    const slidesToProcess = needsImage.slice(0, affordableCount);
+
+    if (skippedForCredits > 0) {
+      this.logger.warn(
+        `Presentation ${presentationId}: user has ${balance} credits, can afford ${affordableCount}/${totalEligible} images (skipping ${skippedForCredits})`,
+      );
+    }
+
+    if (slidesToProcess.length === 0) {
+      this.logger.log(
+        `No images queued for presentation ${presentationId} (eligible: ${totalEligible}, affordable: ${affordableCount})`,
+      );
+      return { jobs: [], totalEligible, skippedForCredits };
+    }
+
     const imageJobs: ImageJobModel[] = [];
     // Stagger jobs by 12s each to avoid Replicate API rate limits (6 req/min)
     const STAGGER_MS = 12_000;
     let jobIndex = 0;
 
-    for (const slide of eligibleSlides) {
-      // Skip slides with Figma-sourced images (managed externally)
-      if (
-        (slide as Record<string, unknown>).imageSource === ImageSource.FIGMA &&
-        slide.imageUrl
-      ) {
-        this.logger.log(
-          `Skipping slide ${slide.id} (Figma-sourced image)`,
-        );
-        continue;
-      }
-
-      // Skip slides that already have an image
-      if (slide.imageUrl) {
-        this.logger.log(
-          `Skipping slide ${slide.id} (already has image)`,
-        );
-        continue;
-      }
-
+    for (const slide of slidesToProcess) {
       // Use the LLM's imagePromptHint when available (stored as slide.imagePrompt),
       // fall back to building a prompt from slide type/content
       let prompt: { prompt: string; negativePrompt: string };
@@ -177,7 +193,7 @@ export class ImagesService {
       `Queued ${imageJobs.length}/${presentation.slides.length} image jobs for presentation ${presentationId} (frequency: 1 per ${imageFrequency})`,
     );
 
-    return imageJobs;
+    return { jobs: imageJobs, totalEligible, skippedForCredits };
   }
 
   /**

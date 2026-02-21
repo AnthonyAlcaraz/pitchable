@@ -504,6 +504,12 @@ ${slideKbContext}`;
       if (this.nanoBanana.isConfigured && this.tierEnforcement.canGenerateImages(syncTier)) {
         this.imagesService
           .queueBatchGeneration(presentation.id, userId)
+          .then(({ jobs, skippedForCredits }) => {
+            if (skippedForCredits > 0) {
+              this.logger.warn(`API generation: ${skippedForCredits} images skipped for insufficient credits`);
+            }
+            this.logger.log(`API generation: queued ${jobs.length} image jobs`);
+          })
           .catch((err) =>
             this.logger.warn(
               `Auto image generation failed: ${err instanceof Error ? err.message : 'unknown'}`,
