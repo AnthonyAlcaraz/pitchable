@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react';
-import { Check, RefreshCw, Send } from 'lucide-react';
+import { Check, RefreshCw, Send, Coins } from 'lucide-react';
+import { useAuthStore } from '../../stores/auth.store.js';
 
 interface OutlineApproveBarProps {
   onApprove: () => void;
@@ -7,10 +8,14 @@ interface OutlineApproveBarProps {
   disabled?: boolean;
 }
 
+const DECK_GENERATION_COST = 2;
+
 export function OutlineApproveBar({ onApprove, onRetry, disabled }: OutlineApproveBarProps) {
   const [mode, setMode] = useState<'buttons' | 'feedback'>('buttons');
   const [feedback, setFeedback] = useState('');
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const creditBalance = useAuthStore((s) => s.user?.creditBalance ?? 0);
+  const hasEnoughCredits = creditBalance >= DECK_GENERATION_COST;
 
   const handleRetryClick = () => {
     setMode('feedback');
@@ -64,16 +69,36 @@ export function OutlineApproveBar({ onApprove, onRetry, disabled }: OutlineAppro
 
   return (
     <div className="border-t border-border bg-card p-3">
-      <p className="mb-2 text-xs font-medium text-muted-foreground">Review the outline above</p>
+      {/* Credit cost info */}
+      <div className="mb-2.5 flex items-center justify-between">
+        <p className="text-xs font-medium text-muted-foreground">Review the outline above</p>
+        <div className="flex items-center gap-1.5">
+          <Coins className="h-3.5 w-3.5 text-amber-500" />
+          <span className="text-xs text-muted-foreground">
+            Cost: <strong className="text-foreground">{DECK_GENERATION_COST}</strong> credits
+          </span>
+          <span className="text-xs text-muted-foreground/60">
+            ({creditBalance} available)
+          </span>
+        </div>
+      </div>
+
+      {!hasEnoughCredits && (
+        <div className="mb-2.5 rounded-md bg-red-500/10 px-3 py-2 text-xs text-red-400">
+          Not enough credits. You need {DECK_GENERATION_COST} credits but have {creditBalance}.
+          <a href="/billing" className="ml-1 underline hover:text-red-300">Purchase credits</a>
+        </div>
+      )}
+
       <div className="flex gap-2">
         <button
           type="button"
           onClick={onApprove}
-          disabled={disabled}
+          disabled={disabled || !hasEnoughCredits}
           className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-green-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-green-700 disabled:opacity-50"
         >
           <Check className="h-4 w-4" />
-          Approve & Generate
+          Approve & Generate ({DECK_GENERATION_COST} credits)
         </button>
         <button
           type="button"

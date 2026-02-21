@@ -72,6 +72,18 @@ export class AuthService {
       data: { ip, userId: user.id },
     });
 
+    // Record signup credits as a transaction for audit trail
+    if (FREE_SIGNUP_CREDITS > 0) {
+      await this.prisma.creditTransaction.create({
+        data: {
+          userId: user.id,
+          amount: FREE_SIGNUP_CREDITS,
+          reason: 'ADMIN_GRANT',
+          balanceAfter: FREE_SIGNUP_CREDITS,
+        },
+      });
+    }
+
     const userDto = this.toUserDto(user);
     const tokens = await this.generateTokens(userDto.id, userDto.email, userDto.role);
     await this.updateRefreshTokenHash(userDto.id, tokens.refreshToken);

@@ -3,6 +3,7 @@ import { api } from '../lib/api.js';
 import { streamSse } from '../lib/sse.js';
 import { usePresentationStore } from './presentation.store.js';
 import { useWorkflowStore } from './workflow.store.js';
+import { useAuthStore } from './auth.store.js';
 
 export interface ChatMessage {
   id: string;
@@ -297,6 +298,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
               },
             });
             useWorkflowStore.getState().setPhase('editing');
+            // Refresh credit balance after deck generation consumed credits
+            useAuthStore.getState().refreshCreditBalance();
           }
         } else if (event.type === 'thinking') {
           set({ thinkingText: event.content });

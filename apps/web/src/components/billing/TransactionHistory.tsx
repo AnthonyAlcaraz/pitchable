@@ -22,6 +22,12 @@ export function TransactionHistory({ transactions }: TransactionHistoryProps) {
     SUBSCRIPTION_RENEWAL: t('billing.transaction_history.reason_SUBSCRIPTION_RENEWAL'),
     ADMIN_ADJUSTMENT: t('billing.transaction_history.reason_ADMIN_ADJUSTMENT'),
     REFUND: t('billing.transaction_history.reason_REFUND'),
+    ENTITY_EXTRACTION: 'Document Processing',
+    API_GENERATION: 'API Deck Generation',
+    MONTHLY_ALLOWANCE: 'Monthly Allowance',
+    DECK_EXPORT: 'Deck Export',
+    ADMIN_GRANT: 'Admin Grant',
+    SIGNUP_BONUS: 'Signup Bonus',
   };
 
   if (transactions.length === 0) {

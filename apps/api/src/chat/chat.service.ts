@@ -749,7 +749,7 @@ export class ChatService {
           { role: 'system', content: 'Generate 3 specific presentation topic suggestions based on the context. Each should have a concise title (max 8 words) and a one-sentence description. Return JSON: { "suggestions": [{ "title": "...", "description": "..." }] }' },
           { role: 'user', content: context },
         ],
-        LlmModel.HAIKU,
+        LlmModel.SONNET,
       );
       return (suggestions.suggestions ?? []).map((s) => ({ ...s, source: lensId ? 'pitchlens' : 'brief' }));
     } catch {

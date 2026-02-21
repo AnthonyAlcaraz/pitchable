@@ -82,7 +82,7 @@ export class McpService implements OnModuleDestroy {
       'generate_presentation',
       {
         title: 'Generate Presentation',
-        description: 'Generate a complete narrative slide deck from a topic. Uses RAG context from your Pitch Briefs and applies your Pitch Lens storytelling framework. Costs 3 credits.',
+        description: 'Generate a complete narrative slide deck from a topic. Uses RAG context from your Pitch Briefs and applies your Pitch Lens storytelling framework. Costs 2 credits.',
         inputSchema: z.object({
           topic: z.string().describe('The topic or prompt for the presentation'),
           presentationType: z.enum(['STANDARD', 'VC_PITCH', 'TECHNICAL', 'EXECUTIVE']).optional().describe('Type of presentation'),
@@ -292,7 +292,7 @@ export class McpService implements OnModuleDestroy {
         try {
           const balance = await this.creditsService.getBalance(userId);
           return {
-            content: [{ type: 'text' as const, text: JSON.stringify({ balance, costs: { deckGeneration: 3, imageGeneration: 1, export: 0 } }, null, 2) }],
+            content: [{ type: 'text' as const, text: JSON.stringify({ balance, costs: { deckGeneration: 2, imageGeneration: 1, entityExtraction: 1, export: 0 } }, null, 2) }],
           };
         } catch (err) {
           const msg = err instanceof Error ? err.message : 'Failed to check credits';

@@ -200,6 +200,11 @@ export class DocumentProcessingProcessor extends WorkerHost {
             this.logger.warn(
               `Document ${documentId}: skipping entity extraction (insufficient credits, need ${ENTITY_EXTRACTION_COST})`,
             );
+            // Surface the warning on the document so the user can see it
+            await this.prisma.document.update({
+              where: { id: documentId },
+              data: { errorMessage: `Knowledge graph indexing skipped: insufficient credits (need ${ENTITY_EXTRACTION_COST}). Purchase credits and re-upload to enable.` },
+            });
           } else {
             const extraction = await this.entityExtractor.extractFromChunks(storedChunks);
             if (extraction.entities.length > 0) {
