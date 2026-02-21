@@ -23,6 +23,10 @@ export class PrismaService
       `ALTER TYPE "CreditReason" ADD VALUE IF NOT EXISTS 'OUTLINE_GENERATION'`,
       `ALTER TYPE "CreditReason" ADD VALUE IF NOT EXISTS 'SLIDE_MODIFICATION'`,
       `ALTER TYPE "CreditReason" ADD VALUE IF NOT EXISTS 'CHAT_MESSAGE'`,
+      `ALTER TABLE "Document" ADD COLUMN IF NOT EXISTS "contentHash" TEXT`,
+      `ALTER TABLE "DocumentChunk" ADD COLUMN IF NOT EXISTS "contentHash" TEXT`,
+      `CREATE INDEX IF NOT EXISTS "Document_userId_contentHash_idx" ON "Document" ("userId", "contentHash")`,
+      `CREATE INDEX IF NOT EXISTS "DocumentChunk_contentHash_idx" ON "DocumentChunk" ("contentHash")`,
     ];
 
     for (const sql of migrations) {
