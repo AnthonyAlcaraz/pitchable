@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react';
-import { Image, Check } from 'lucide-react';
+import { Image, Check, Coins } from 'lucide-react';
 import { CountdownBar } from './CountdownBar.js';
+import { useAuthStore } from '../../stores/auth.store.js';
 import type { PendingImageSelection } from '../../stores/chat.store.js';
 
 interface ImageSelectorProps {
@@ -11,6 +12,7 @@ interface ImageSelectorProps {
 
 export function ImageSelector({ selection, presentationId, onSelect }: ImageSelectorProps) {
   const [selected, setSelected] = useState<string | null>(null);
+  const creditBalance = useAuthStore((s) => s.user?.creditBalance ?? 0);
 
   const handleSelect = useCallback(
     (candidateId: string) => {
@@ -30,9 +32,15 @@ export function ImageSelector({ selection, presentationId, onSelect }: ImageSele
 
   return (
     <div className="mx-4 my-2 rounded-lg border border-border bg-card overflow-hidden">
-      <div className="flex items-center gap-2 border-b border-border bg-muted/30 px-3 py-2">
-        <Image className="h-4 w-4 text-primary" />
-        <span className="text-xs font-medium text-foreground">Choose an image for your slide</span>
+      <div className="flex items-center justify-between border-b border-border bg-muted/30 px-3 py-2">
+        <div className="flex items-center gap-2">
+          <Image className="h-4 w-4 text-primary" />
+          <span className="text-xs font-medium text-foreground">Choose an image for your slide</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <Coins className="h-3 w-3 text-amber-500" />
+          <span className="text-[10px] text-muted-foreground">1 credit/image &middot; {creditBalance} available</span>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-2 p-3 sm:grid-cols-3">

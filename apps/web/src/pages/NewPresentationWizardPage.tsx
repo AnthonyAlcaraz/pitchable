@@ -12,9 +12,11 @@ import {
   MessageSquare,
 } from 'lucide-react';
 import { PeachLogo } from '@/components/icons/PeachLogo';
+import { CreditBadge } from '@/components/shared/CreditBadge';
 import { cn } from '@/lib/utils';
 import { usePitchBriefStore } from '@/stores/pitch-brief.store';
 import { usePitchLensStore } from '@/stores/pitch-lens.store';
+import { useAuthStore } from '@/stores/auth.store';
 import { api } from '@/lib/api';
 
 // ── Types ────────────────────────────────────────────────────
@@ -66,6 +68,7 @@ export function NewPresentationWizardPage() {
 
   const { briefs, isLoading: briefsLoading, loadBriefs } = usePitchBriefStore();
   const { lenses, isLoading: lensesLoading, loadLenses } = usePitchLensStore();
+  const creditBalance = useAuthStore((s) => s.user?.creditBalance ?? 0);
 
   const [step, setStep] = useState<Step>('brief');
   const [briefId, setBriefId] = useState<string | null>(null);
@@ -532,6 +535,14 @@ export function NewPresentationWizardPage() {
                   >
                     {t('common.edit')}
                   </button>
+                </div>
+
+                {/* Credit balance info */}
+                <div className="flex items-center justify-center gap-2 rounded-lg border border-amber-500/20 bg-amber-500/5 p-3">
+                  <CreditBadge size="md" />
+                  <span className="text-xs text-muted-foreground">
+                    {t('wizard.credit_info')}
+                  </span>
                 </div>
               </div>
 

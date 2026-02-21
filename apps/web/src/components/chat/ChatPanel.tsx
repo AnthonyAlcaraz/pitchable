@@ -2,6 +2,7 @@ import { useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { MessageSquare } from 'lucide-react';
 import { PeachLogo } from '../icons/PeachLogo.js';
+import { CreditBadge } from '../shared/CreditBadge.js';
 import { useChatStore } from '../../stores/chat.store.js';
 import { useWorkflowStore } from '../../stores/workflow.store.js';
 import { ChatHistory } from './ChatHistory.js';
@@ -135,6 +136,9 @@ export function ChatPanel({ presentationId, briefId, lensId }: ChatPanelProps) {
         {isLoading && (
           <span className="text-xs text-muted-foreground">{t('chat.panel.loading')}</span>
         )}
+        <div className="ml-auto">
+          <CreditBadge size="sm" />
+        </div>
       </div>
 
       {error && (

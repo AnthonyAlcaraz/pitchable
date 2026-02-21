@@ -906,7 +906,8 @@
     "summary_lens": "Profil de Pitch",
     "summary_topic": "Sujet",
     "topic_empty": "Vous décrirez votre sujet dans l'espace de travail",
-    "launch": "Lancer l'espace de travail"
+    "launch": "Lancer l'espace de travail",
+    "credit_info": "La génération d'un deck coûte 2 crédits. Les images coûtent 1 crédit chacune."
   },
   "forms": {
     "email": "E-mail",

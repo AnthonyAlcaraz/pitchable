@@ -110,9 +110,10 @@ export function SlideHeader({
                       onExport(fmt.key);
                       setShowMenu(false);
                     }}
-                    className="flex w-full items-center px-3 py-1.5 text-left text-sm text-popover-foreground transition-colors hover:bg-accent"
+                    className="flex w-full items-center justify-between px-3 py-1.5 text-left text-sm text-popover-foreground transition-colors hover:bg-accent"
                   >
                     {fmt.label}
+                    <span className="ml-2 rounded bg-green-500/10 px-1.5 py-0.5 text-[9px] font-medium text-green-600 dark:text-green-400">Free</span>
                   </button>
                 ))}
               </div>
