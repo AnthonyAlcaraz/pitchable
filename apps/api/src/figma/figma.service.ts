@@ -12,7 +12,9 @@ const FIGMA_API = 'https://api.figma.com/v1';
 // Simple rate limiter: Figma allows ~30 requests/minute
 let lastRequestTime = 0;
 const MIN_REQUEST_GAP_MS = 2500; // ~24 req/min max (conservative)
-const MAX_RETRIES = 3;
+const MAX_RETRIES = 2;
+const MAX_RETRY_WAIT_MS = 10_000;
+const FETCH_TIMEOUT_MS = 15_000;
 
 async function rateLimitedFetch(
   url: string,
@@ -26,11 +28,18 @@ async function rateLimitedFetch(
     }
     lastRequestTime = Date.now();
 
-    const res = await fetch(url, options);
+    const res = await fetch(url, {
+      ...options,
+      signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+    });
 
     if (res.status === 429 && attempt < MAX_RETRIES) {
       const retryAfter = parseInt(res.headers.get('retry-after') ?? '', 10);
-      const waitMs = retryAfter > 0 ? retryAfter * 1000 : 5000 * (attempt + 1);
+      const waitMs = Math.min(
+        retryAfter > 0 ? retryAfter * 1000 : 5000 * (attempt + 1),
+        MAX_RETRY_WAIT_MS,
+      );
+      console.log(`Figma 429 — retry ${attempt + 1}/${MAX_RETRIES} after ${waitMs}ms`);
       await new Promise((r) => setTimeout(r, waitMs));
       continue;
     }
@@ -274,7 +283,9 @@ export class FigmaService {
     }
 
     // Download from Figma CDN (temporary URL)
-    const imgRes = await fetch(cdnUrl);
+    const imgRes = await fetch(cdnUrl, {
+      signal: AbortSignal.timeout(30_000),
+    });
     if (!imgRes.ok) {
       throw new Error(
         `Failed to download Figma image (${imgRes.status})`,
