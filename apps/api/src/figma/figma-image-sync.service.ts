@@ -47,18 +47,13 @@ export class FigmaImageSyncService {
       2,
     );
 
-    // 3. Upload to S3
+    // 3. Upload to R2/S3
     const extension = mimeType.includes('svg') ? 'svg' : 'png';
     const s3Key = `images/figma/${slideId}.${extension}`;
     await this.s3.upload(s3Key, buffer, mimeType);
+    const imageUrl = this.s3.getPublicUrl(s3Key);
 
-    // Build the direct S3 URL (same pattern as image-generation.processor.ts)
-    const bucket = 'pitchable-documents';
-    const s3Endpoint =
-      process.env['S3_ENDPOINT'] || 'http://localhost:9000';
-    const imageUrl = `${s3Endpoint}/${bucket}/${s3Key}`;
-
-    this.logger.log(`Figma image uploaded to S3: ${imageUrl}`);
+    this.logger.log(`Figma image uploaded to R2: ${imageUrl}`);
 
     // 4. Fetch node name for reference
     let nodeName: string | undefined;

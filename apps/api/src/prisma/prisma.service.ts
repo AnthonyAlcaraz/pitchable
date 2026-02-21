@@ -123,6 +123,40 @@ export class PrismaService
       `CREATE UNIQUE INDEX IF NOT EXISTS "SlideSource_slideId_chunkId_key" ON "SlideSource" ("slideId", "chunkId")`,
       `CREATE INDEX IF NOT EXISTS "SlideSource_slideId_idx" ON "SlideSource" ("slideId")`,
       `CREATE INDEX IF NOT EXISTS "SlideSource_chunkId_idx" ON "SlideSource" ("chunkId")`,
+      // FigmaIntegration table (user-level Figma PAT)
+      `CREATE TABLE IF NOT EXISTS "FigmaIntegration" (
+        "id" UUID NOT NULL DEFAULT gen_random_uuid(),
+        "userId" UUID NOT NULL UNIQUE,
+        "accessToken" TEXT NOT NULL,
+        "figmaUserId" TEXT,
+        "figmaUserName" TEXT,
+        "isValid" BOOLEAN NOT NULL DEFAULT true,
+        "lastValidatedAt" TIMESTAMPTZ,
+        "createdAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        CONSTRAINT "FigmaIntegration_pkey" PRIMARY KEY ("id"),
+        CONSTRAINT "FigmaIntegration_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE
+      )`,
+      `CREATE UNIQUE INDEX IF NOT EXISTS "FigmaIntegration_userId_key" ON "FigmaIntegration" ("userId")`,
+      // FigmaWebhook table (Figma FILE_UPDATE webhooks)
+      `CREATE TABLE IF NOT EXISTS "FigmaWebhook" (
+        "id" UUID NOT NULL DEFAULT gen_random_uuid(),
+        "userId" UUID NOT NULL,
+        "fileKey" TEXT NOT NULL,
+        "webhookId" TEXT NOT NULL UNIQUE,
+        "passcode" TEXT NOT NULL,
+        "isActive" BOOLEAN NOT NULL DEFAULT true,
+        "lastEventAt" TIMESTAMPTZ,
+        "createdAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        CONSTRAINT "FigmaWebhook_pkey" PRIMARY KEY ("id"),
+        CONSTRAINT "FigmaWebhook_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE
+      )`,
+      `CREATE UNIQUE INDEX IF NOT EXISTS "FigmaWebhook_webhookId_key" ON "FigmaWebhook" ("webhookId")`,
+      `CREATE INDEX IF NOT EXISTS "FigmaWebhook_fileKey_idx" ON "FigmaWebhook" ("fileKey")`,
+      `CREATE INDEX IF NOT EXISTS "FigmaWebhook_userId_idx" ON "FigmaWebhook" ("userId")`,
+      // PitchLens Figma columns
+      `ALTER TABLE "PitchLens" ADD COLUMN IF NOT EXISTS "figmaFileKey" TEXT`,
+      `ALTER TABLE "PitchLens" ADD COLUMN IF NOT EXISTS "figmaAccessToken" TEXT`,
     ];
 
     for (const sql of migrations) {

@@ -124,6 +124,13 @@ export class S3Service implements OnModuleInit {
     );
   }
 
+  /**
+   * Build a public URL for a stored object (works with R2/MinIO path-style).
+   */
+  getPublicUrl(key: string): string {
+    return `${this.endpoint}/${this.bucket}/${key}`;
+  }
+
   async delete(key: string): Promise<void> {
     await this.requireS3().send(
       new DeleteObjectCommand({ Bucket: this.bucket, Key: key }),

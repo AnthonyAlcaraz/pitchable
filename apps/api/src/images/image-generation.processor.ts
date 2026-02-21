@@ -1,7 +1,6 @@
 import type { BaseJobData } from '../common/base-job-data.js';
 import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { Job } from 'bullmq';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { NanoBananaService } from './nano-banana.service.js';
@@ -39,8 +38,6 @@ export interface ImageGenerationJobData extends BaseJobData {
 @Processor('image-generation', { concurrency: 3 } as Record<string, unknown>)
 export class ImageGenerationProcessor extends WorkerHost {
   private readonly logger = new Logger(ImageGenerationProcessor.name);
-  private readonly s3Endpoint: string;
-
   constructor(
     private readonly prisma: PrismaService,
     private readonly nanoBanana: NanoBananaService,
@@ -50,10 +47,8 @@ export class ImageGenerationProcessor extends WorkerHost {
     private readonly credits: CreditsService,
     private readonly events: EventsGateway,
     private readonly interactionGate: InteractionGateService,
-    configService: ConfigService,
   ) {
     super();
-    this.s3Endpoint = configService.get<string>('S3_ENDPOINT', 'http://localhost:9000')!;
   }
 
   async process(job: Job<ImageGenerationJobData>): Promise<void> {
@@ -247,8 +242,7 @@ export class ImageGenerationProcessor extends WorkerHost {
           const key = `images/slides/${slideId}-${candidate.id}.${ext}`;
           const buffer = Buffer.from(candidate.base64, 'base64');
           await this.s3.upload(key, buffer, candidate.mimeType);
-          const bucket = 'pitchable-documents';
-          const url = `${this.s3Endpoint}/${bucket}/${key}`;
+          const url = this.s3.getPublicUrl(key);
           uploadedCandidates.push({
             id: candidate.id,
             imageUrl: url,
@@ -415,7 +409,7 @@ export class ImageGenerationProcessor extends WorkerHost {
   }
 
   /**
-   * Upload base64 image to S3/MinIO and return a direct URL.
+   * Upload base64 image to R2/S3 and return a direct URL.
    */
   private async uploadToS3(slideId: string, base64: string, mimeType: string): Promise<string> {
     const extension = mimeType.includes('png') ? 'png' : 'jpg';
@@ -423,10 +417,7 @@ export class ImageGenerationProcessor extends WorkerHost {
     const buffer = Buffer.from(base64, 'base64');
 
     await this.s3.upload(key, buffer, mimeType);
-
-    // Return direct MinIO/S3 URL (publicly accessible in local dev)
-    const bucket = 'pitchable-documents';
-    return `${this.s3Endpoint}/${bucket}/${key}`;
+    return this.s3.getPublicUrl(key);
   }
 
   /**
