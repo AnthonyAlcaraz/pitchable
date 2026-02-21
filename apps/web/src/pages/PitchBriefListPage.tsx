@@ -111,9 +111,9 @@ export function PitchBriefListPage() {
                 </button>
               </div>
 
-              {brief.description && (
+              {(brief.aiSummary || brief.description) && (
                 <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
-                  {brief.description}
+                  {brief.aiSummary ?? brief.description}
                 </p>
               )}
 

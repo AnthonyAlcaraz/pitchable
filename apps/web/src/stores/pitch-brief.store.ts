@@ -7,6 +7,7 @@ export interface PitchBriefListItem {
   id: string;
   name: string;
   description: string | null;
+  aiSummary: string | null;
   edgequakeWorkspaceId: string | null;
   documentCount: number;
   entityCount: number;

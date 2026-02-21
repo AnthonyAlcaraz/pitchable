@@ -381,6 +381,7 @@ model PitchBrief {
   userId               String         @db.Uuid
   name                 String
   description          String?
+  aiSummary            String?
   graphName            String?        @map("edgequakeWorkspaceId")
   documentCount        Int            @default(0)
   entityCount          Int            @default(0)

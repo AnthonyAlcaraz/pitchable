@@ -16,6 +16,7 @@ import { FalkorDbService } from './falkordb/falkordb.service.js';
 import { EntityExtractorService } from './falkordb/entity-extractor.service.js';
 import { ZeroEntropyRetrievalService } from './zeroentropy/zeroentropy-retrieval.service.js';
 import { CreditsService } from '../credits/credits.service.js';
+import { LlmService, LlmModel } from '../chat/llm.service.js';
 import { EventsGateway } from '../events/events.gateway.js';
 import type { DocumentProgressEvent } from '../events/events.gateway.js';
 import { chunkByHeadings } from './chunking/heading-chunker.js';
@@ -46,6 +47,7 @@ export class DocumentProcessingProcessor extends WorkerHost {
     private readonly zeRetrieval: ZeroEntropyRetrievalService,
     private readonly events: EventsGateway,
     private readonly credits: CreditsService,
+    private readonly llm: LlmService,
   ) {
     super();
   }
@@ -408,6 +410,66 @@ export class DocumentProcessingProcessor extends WorkerHost {
     this.logger.log(
       `Brief ${briefId}: all ${allDocs.length} documents terminal, status=${newStatus}`,
     );
+
+    // Generate AI summary when brief becomes READY
+    if (newStatus === BriefStatus.READY) {
+      this.generateBriefSummary(briefId).catch((err) => {
+        this.logger.warn(`Brief ${briefId}: AI summary generation failed (non-blocking): ${err instanceof Error ? err.message : String(err)}`);
+      });
+    }
+  }
+
+  /**
+   * Generate a short AI summary of the brief's ingested content using Sonnet.
+   * Reads the first chunks across all documents, asks for a 2-3 sentence overview.
+   */
+  private async generateBriefSummary(briefId: string): Promise<void> {
+    const brief = await this.prisma.pitchBrief.findUnique({
+      where: { id: briefId },
+      select: { name: true, documents: { select: { title: true }, where: { status: DocumentStatus.READY } } },
+    });
+    if (!brief) return;
+
+    // Gather first chunks from the brief's documents (up to ~4000 chars)
+    const chunks = await this.prisma.documentChunk.findMany({
+      where: {
+        document: { briefId },
+      },
+      orderBy: { chunkIndex: 'asc' },
+      select: { content: true },
+      take: 15,
+    });
+
+    if (chunks.length === 0) return;
+
+    let contentSample = chunks.map((c) => c.content).join('\n\n');
+    if (contentSample.length > 4000) {
+      contentSample = contentSample.slice(0, 4000) + '...';
+    }
+
+    const docTitles = brief.documents.map((d) => d.title).join(', ');
+
+    const summary = await this.llm.complete(
+      [
+        {
+          role: 'system',
+          content: 'You summarize document collections for a presentation tool. Write a concise 2-3 sentence overview of what this content covers. Be specific about topics, data, and key themes. No filler words. No markdown.',
+        },
+        {
+          role: 'user',
+          content: `Brief name: "${brief.name}"\nDocuments: ${docTitles}\n\nContent sample:\n${contentSample}`,
+        },
+      ],
+      LlmModel.SONNET,
+    );
+
+    if (summary) {
+      await this.prisma.pitchBrief.update({
+        where: { id: briefId },
+        data: { aiSummary: summary.trim() },
+      });
+      this.logger.log(`Brief ${briefId}: AI summary generated (${summary.trim().length} chars)`);
+    }
   }
 
   private async parseByMimeType(buffer: Buffer, mimeType: string): Promise<ParseResult> {

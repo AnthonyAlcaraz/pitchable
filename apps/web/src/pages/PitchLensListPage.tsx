@@ -8,6 +8,10 @@ function formatEnum(value: string): string {
   return value.toLowerCase().replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
+function lensOneLiner(lens: { audienceType: string; pitchGoal: string; toneStyle: string; industry: string; selectedFramework: string }): string {
+  return `${formatEnum(lens.toneStyle)} ${formatEnum(lens.pitchGoal).toLowerCase()} for ${formatEnum(lens.audienceType).toLowerCase()} in ${lens.industry}, using ${formatEnum(lens.selectedFramework)}`;
+}
+
 export function PitchLensListPage() {
   const { t } = useTranslation();
   const { lenses, isLoading, loadLenses, deleteLens } = usePitchLensStore();
@@ -81,11 +85,9 @@ export function PitchLensListPage() {
                 </div>
               </div>
 
-              {lens.description && (
-                <p className="mb-3 line-clamp-2 text-sm text-muted-foreground">
-                  {lens.description}
-                </p>
-              )}
+              <p className="mb-3 line-clamp-2 text-xs text-muted-foreground">
+                {lens.description || lensOneLiner(lens)}
+              </p>
 
               <div className="mb-3 flex flex-wrap gap-1.5">
                 <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">

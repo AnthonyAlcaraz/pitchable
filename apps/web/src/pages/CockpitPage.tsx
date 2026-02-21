@@ -35,6 +35,10 @@ function formatEnum(value: string): string {
   return value.toLowerCase().replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
+function lensOneLiner(lens: { audienceType: string; pitchGoal: string; toneStyle: string; industry: string; selectedFramework: string }): string {
+  return `${formatEnum(lens.toneStyle)} ${formatEnum(lens.pitchGoal).toLowerCase()} for ${formatEnum(lens.audienceType).toLowerCase()} in ${lens.industry}, using ${formatEnum(lens.selectedFramework)}`;
+}
+
 export function CockpitPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -350,9 +354,9 @@ export function CockpitPage() {
                     {formatEnum(brief.status)}
                   </span>
                 </div>
-                {brief.description && (
+                {(brief.aiSummary || brief.description) && (
                   <p className="mb-3 line-clamp-2 text-sm text-muted-foreground">
-                    {brief.description}
+                    {brief.aiSummary ?? brief.description}
                   </p>
                 )}
                 <div className="flex items-center gap-3 text-xs text-muted-foreground">
@@ -413,10 +417,13 @@ export function CockpitPage() {
                 onClick={() => navigate(`/pitch-lens/${lens.id}`)}
                 className="cursor-pointer rounded-lg border border-border bg-card p-5 transition-colors hover:border-primary/50"
               >
-                <div className="mb-3 flex items-center gap-2">
+                <div className="mb-2 flex items-center gap-2">
                   <Focus className="h-5 w-5 text-primary" />
                   <h3 className="font-semibold text-foreground">{lens.name}</h3>
                 </div>
+                <p className="mb-3 line-clamp-2 text-xs text-muted-foreground">
+                  {lens.description || lensOneLiner(lens)}
+                </p>
                 <div className="mb-3 flex flex-wrap gap-1.5">
                   <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
                     {formatEnum(lens.audienceType)}
