@@ -82,6 +82,47 @@ export class PrismaService
       `ALTER TABLE "PitchLens" ADD COLUMN IF NOT EXISTS "rating" DOUBLE PRECISION NOT NULL DEFAULT 0`,
       `ALTER TABLE "PitchLens" ADD COLUMN IF NOT EXISTS "ratingCount" INTEGER NOT NULL DEFAULT 0`,
       `ALTER TABLE "PitchLens" ADD COLUMN IF NOT EXISTS "clonedFromId" UUID`,
+      // Slide missing columns
+      `ALTER TABLE "Slide" ADD COLUMN IF NOT EXISTS "contentHash" TEXT`,
+      `ALTER TABLE "Slide" ADD COLUMN IF NOT EXISTS "sectionLabel" TEXT`,
+      `ALTER TABLE "Slide" ADD COLUMN IF NOT EXISTS "figmaFileKey" TEXT`,
+      `ALTER TABLE "Slide" ADD COLUMN IF NOT EXISTS "figmaNodeId" TEXT`,
+      `ALTER TABLE "Slide" ADD COLUMN IF NOT EXISTS "figmaNodeName" TEXT`,
+      `ALTER TABLE "Slide" ADD COLUMN IF NOT EXISTS "figmaLastSyncAt" TIMESTAMPTZ`,
+      `ALTER TABLE "Slide" ADD COLUMN IF NOT EXISTS "figmaSyncVersion" INTEGER NOT NULL DEFAULT 0`,
+      `DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'ImageSource') THEN CREATE TYPE "ImageSource" AS ENUM ('AI_GENERATED', 'FIGMA', 'UPLOADED', 'STOCK'); END IF; END $$`,
+      `ALTER TABLE "Slide" ADD COLUMN IF NOT EXISTS "imageSource" "ImageSource" NOT NULL DEFAULT 'AI_GENERATED'`,
+      // DraftSlide table
+      `CREATE TABLE IF NOT EXISTS "DraftSlide" (
+        "id" UUID NOT NULL DEFAULT gen_random_uuid(),
+        "presentationId" UUID NOT NULL,
+        "slideNumber" INTEGER NOT NULL,
+        "title" TEXT NOT NULL,
+        "body" TEXT NOT NULL,
+        "speakerNotes" TEXT,
+        "slideType" "SlideType" NOT NULL,
+        "imagePrompt" TEXT,
+        "sectionLabel" TEXT,
+        "contentHash" TEXT,
+        "createdAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        CONSTRAINT "DraftSlide_pkey" PRIMARY KEY ("id"),
+        CONSTRAINT "DraftSlide_presentationId_fkey" FOREIGN KEY ("presentationId") REFERENCES "Presentation"("id") ON DELETE CASCADE
+      )`,
+      `CREATE INDEX IF NOT EXISTS "DraftSlide_presentationId_idx" ON "DraftSlide" ("presentationId")`,
+      // SlideSource table
+      `CREATE TABLE IF NOT EXISTS "SlideSource" (
+        "id" UUID NOT NULL DEFAULT gen_random_uuid(),
+        "slideId" UUID NOT NULL,
+        "chunkId" UUID NOT NULL,
+        "relevance" DOUBLE PRECISION NOT NULL DEFAULT 0,
+        "createdAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        CONSTRAINT "SlideSource_pkey" PRIMARY KEY ("id"),
+        CONSTRAINT "SlideSource_slideId_fkey" FOREIGN KEY ("slideId") REFERENCES "Slide"("id") ON DELETE CASCADE,
+        CONSTRAINT "SlideSource_chunkId_fkey" FOREIGN KEY ("chunkId") REFERENCES "DocumentChunk"("id") ON DELETE CASCADE
+      )`,
+      `CREATE UNIQUE INDEX IF NOT EXISTS "SlideSource_slideId_chunkId_key" ON "SlideSource" ("slideId", "chunkId")`,
+      `CREATE INDEX IF NOT EXISTS "SlideSource_slideId_idx" ON "SlideSource" ("slideId")`,
+      `CREATE INDEX IF NOT EXISTS "SlideSource_chunkId_idx" ON "SlideSource" ("chunkId")`,
     ];
 
     for (const sql of migrations) {
