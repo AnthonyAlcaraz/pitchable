@@ -59,6 +59,18 @@ export class ImageGenerationProcessor extends WorkerHost {
         data: { status: JobStatus.PROCESSING },
       });
 
+      // Early progress: starting (also stores presentationId for later progress events)
+      const earlySlide = await this.prisma.slide.findUnique({ where: { id: slideId }, select: { presentationId: true } });
+      const progressPresId = earlySlide?.presentationId ?? '';
+      if (progressPresId) {
+        this.events.emitGenerationProgress({
+          presentationId: progressPresId,
+          step: `image-${slideId}`,
+          progress: 0.1,
+          message: 'Starting image generation...',
+        });
+      }
+
       // 2. Load slide context for critic evaluation
       const slideData = await this.prisma.slide.findUnique({
         where: { id: slideId },
@@ -86,6 +98,16 @@ export class ImageGenerationProcessor extends WorkerHost {
       }> = [];
 
       for (let round = 1; round <= maxRounds; round++) {
+        // Progress: generating round N
+        if (progressPresId) {
+          this.events.emitGenerationProgress({
+            presentationId: progressPresId,
+            step: `image-${slideId}`,
+            progress: 0.2 + (round - 1) * 0.2,
+            message: `Generating image (round ${round}/${maxRounds})...`,
+          });
+        }
+
         // Generate image via Replicate Imagen 3 (NanoBanana)
         const { base64, mimeType } = await this.nanoBanana.generateImage(
           currentPrompt,
@@ -107,6 +129,16 @@ export class ImageGenerationProcessor extends WorkerHost {
           `C:${evaluation.scores.conciseness} A:${evaluation.scores.aesthetics}] ` +
           `${evaluation.accepted ? 'ACCEPTED' : 'REJECTED'}`,
         );
+
+        // Progress: evaluation score
+        if (progressPresId) {
+          this.events.emitGenerationProgress({
+            presentationId: progressPresId,
+            step: `image-${slideId}`,
+            progress: 0.3 + (round - 1) * 0.2,
+            message: `Scored ${evaluation.averageScore.toFixed(1)}/10 (round ${round})`,
+          });
+        }
 
         // Collect candidate
         const candidateId = `candidate-${slideId}-${round}`;
@@ -151,6 +183,16 @@ export class ImageGenerationProcessor extends WorkerHost {
         );
       }
 
+      // Progress: uploading
+      if (progressPresId) {
+        this.events.emitGenerationProgress({
+          presentationId: progressPresId,
+          step: `image-${slideId}`,
+          progress: 0.75,
+          message: 'Uploading candidates...',
+        });
+      }
+
       // 4. Upload all candidates to S3 and offer user selection
       const uploadedCandidates: Array<{ id: string; imageUrl: string; score: number; prompt: string }> = [];
 
@@ -188,6 +230,16 @@ export class ImageGenerationProcessor extends WorkerHost {
           select: { presentationId: true },
         });
         const presId = slideRecord?.presentationId ?? '';
+
+        // Progress: waiting for selection
+        if (progressPresId) {
+          this.events.emitGenerationProgress({
+            presentationId: progressPresId,
+            step: `image-${slideId}`,
+            progress: 0.85,
+            message: 'Waiting for selection...',
+          });
+        }
 
         this.events.emitImageSelectionRequest({
           presentationId: presId,
@@ -230,6 +282,16 @@ export class ImageGenerationProcessor extends WorkerHost {
       }
 
       const imageUrl = selectedImageUrl;
+
+      // Progress: complete
+      if (progressPresId) {
+        this.events.emitGenerationProgress({
+          presentationId: progressPresId,
+          step: `image-${slideId}`,
+          progress: 1,
+          message: 'Image ready',
+        });
+      }
 
       // 5. Update ImageJob with results + critic metrics
       await this.prisma.imageJob.update({
@@ -275,6 +337,19 @@ export class ImageGenerationProcessor extends WorkerHost {
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
+
+      // Progress: error
+      try {
+        const errSlide = await this.prisma.slide.findUnique({ where: { id: slideId }, select: { presentationId: true } });
+        if (errSlide?.presentationId) {
+          this.events.emitGenerationProgress({
+            presentationId: errSlide.presentationId,
+            step: `image-${slideId}`,
+            progress: -1,
+            message: errorMessage,
+          });
+        }
+      } catch { /* ignore progress emission failure */ }
 
       this.logger.error(
         `Image job ${imageJobId} failed: ${errorMessage}`,
