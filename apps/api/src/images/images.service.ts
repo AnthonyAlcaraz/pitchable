@@ -150,7 +150,7 @@ export class ImagesService {
 
     const imageJobs: ImageJobModel[] = [];
     // Stagger jobs by 12s each to avoid Replicate API rate limits (6 req/min)
-    const STAGGER_MS = 12_000;
+    const STAGGER_MS = 8_000;
     let jobIndex = 0;
 
     for (const slide of slidesToProcess) {

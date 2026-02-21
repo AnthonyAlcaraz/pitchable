@@ -13,6 +13,17 @@ import { EventsGateway } from '../events/events.gateway.js';
 import { InteractionGateService } from '../chat/interaction-gate.service.js';
 import { JobStatus, CreditReason } from '../../generated/prisma/enums.js';
 
+/** Generate an SVG placeholder when image generation fails. */
+function createPlaceholderSvg(title: string): { base64: string; mimeType: string } {
+  const sanitized = title.replace(/[<>&"']/g, '').slice(0, 60);
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <rect width="1024" height="1024" fill="#1c1c1c"/>
+  <text x="512" y="480" text-anchor="middle" fill="#666" font-family="sans-serif" font-size="24">Image generating...</text>
+  <text x="512" y="520" text-anchor="middle" fill="#444" font-family="sans-serif" font-size="16">${sanitized}</text>
+</svg>`;
+  return { base64: Buffer.from(svg).toString('base64'), mimeType: 'image/svg+xml' };
+}
+
 // ── Job Data Interface ──────────────────────────────────────
 
 export interface ImageGenerationJobData {
@@ -25,7 +36,7 @@ export interface ImageGenerationJobData {
 
 // ── Processor ───────────────────────────────────────────────
 
-@Processor('image-generation', { concurrency: 1 } as Record<string, unknown>)
+@Processor('image-generation', { concurrency: 3 } as Record<string, unknown>)
 export class ImageGenerationProcessor extends WorkerHost {
   private readonly logger = new Logger(ImageGenerationProcessor.name);
   private readonly s3Endpoint: string;
@@ -109,10 +120,44 @@ export class ImageGenerationProcessor extends WorkerHost {
         }
 
         // Generate image via Replicate Imagen 3 (NanoBanana)
-        const { base64, mimeType } = await this.nanoBanana.generateImage(
-          currentPrompt,
-          negativePrompt,
-        );
+        let base64: string;
+        let mimeType: string;
+        try {
+          ({ base64, mimeType } = await this.nanoBanana.generateImage(
+            currentPrompt,
+            negativePrompt,
+          ));
+        } catch (genErr) {
+          this.logger.warn(
+            `NanoBanana generation failed (round ${round}): ${genErr instanceof Error ? genErr.message : 'unknown'}`,
+          );
+          // Fallback: create placeholder SVG and mark as PENDING_RETRY
+          const placeholder = createPlaceholderSvg(slideData?.title ?? 'Slide');
+          const placeholderUrl = await this.uploadToS3(slideId, placeholder.base64, placeholder.mimeType);
+          await this.prisma.slide.update({
+            where: { id: slideId },
+            data: { imageUrl: placeholderUrl },
+          });
+          await this.prisma.imageJob.update({
+            where: { id: imageJobId },
+            data: {
+              status: JobStatus.PENDING_RETRY,
+              imgurUrl: placeholderUrl,
+              errorMessage: genErr instanceof Error ? genErr.message : 'Generation failed',
+              completedAt: new Date(),
+            },
+          });
+          const errSlide = await this.prisma.slide.findUnique({ where: { id: slideId }, select: { presentationId: true } });
+          if (errSlide?.presentationId) {
+            this.events.emitImageGenerated({
+              presentationId: errSlide.presentationId,
+              slideId,
+              imageUrl: placeholderUrl,
+            });
+            await this.checkAllImagesComplete(errSlide.presentationId);
+          }
+          return; // Exit process() — don't block deck completion
+        }
 
         // Evaluate with PaperBanana Critic
         const evaluation = await this.critic.evaluate(

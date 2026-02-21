@@ -1,6 +1,7 @@
 import { Injectable, BadRequestException, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { LlmService, LlmModel } from '../chat/llm.service.js';
+import { getModelForSlideType } from '../chat/model-router.js';
 import { ContextBuilderService } from '../chat/context-builder.service.js';
 import { ConstraintsService } from '../constraints/constraints.service.js';
 import { ContentReviewerService } from '../chat/content-reviewer.service.js';
@@ -336,9 +337,10 @@ ${slideKbContext}`;
             { role: 'system', content: slideSystemPrompt },
             { role: 'user', content: slideUserPrompt },
           ],
-          LlmModel.SONNET,
+          getModelForSlideType(outlineSlide.slideType),
           isValidSlideContent,
           2,
+          { cacheSystemPrompt: true },
         );
         const tSlideGen = Date.now() - tSlide;
         this.logger.log(`[TIMING] Slide ${i + 1}/${outline.slides.length} generation (Opus): ${(tSlideGen / 1000).toFixed(1)}s — "${outlineSlide.title.slice(0, 40)}"`);

@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { LlmService, LlmModel } from './llm.service.js';
+import { getModelForSlideType } from './model-router.js';
 import { ContextBuilderService } from './context-builder.service.js';
 import type { KbSource } from './context-builder.service.js';
 import { ConstraintsService } from '../constraints/constraints.service.js';
@@ -1236,9 +1237,10 @@ export class GenerationService {
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt },
         ],
-        LlmModel.SONNET,
+        getModelForSlideType(outlineSlide.slideType),
         isValidSlideContent,
         2,
+        { cacheSystemPrompt: true },
       );
     } catch {
       // Fallback: use outline data directly
