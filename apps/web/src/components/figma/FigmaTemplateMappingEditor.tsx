@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useFigmaTemplateStore } from '@/stores/figma-template.store';
-import type { FigmaTemplateMapping, AutoMapResult } from '@/stores/figma-template.store';
+import type { FigmaTemplateMapping } from '@/stores/figma-template.store';
 import { api } from '@/lib/api';
 
 const SLIDE_TYPES = [
