@@ -81,16 +81,25 @@ export function PitchBriefDetailPage() {
   const briefLenses = currentBrief?.briefLenses ?? [];
 
   // Compute aggregate document progress
+  // Check both API status AND live WebSocket progress to avoid timing gaps
   const readyCount = docs.filter((d) => d.status === 'READY').length;
-  const processingDocs = docs.filter((d) => ['UPLOADED', 'PARSING', 'EMBEDDING', 'PROCESSING'].includes(d.status));
+  const processingStatuses = new Set(['UPLOADED', 'PARSING', 'EMBEDDING', 'PROCESSING']);
+  const processingDocs = docs.filter(
+    (d) => processingStatuses.has(d.status) || (documentProgress[d.id] && documentProgress[d.id].progress > 0 && documentProgress[d.id].progress < 100),
+  );
   const hasProcessingDocs = processingDocs.length > 0;
   const aggregateProgress = docs.length > 0
     ? Math.round(
         docs.reduce((sum, d) => {
-          if (d.status === 'READY') return sum + 100;
-          if (d.status === 'ERROR') return sum + 0;
+          if (d.status === 'READY' && !documentProgress[d.id]) return sum + 100;
+          if (d.status === 'ERROR' && !documentProgress[d.id]) return sum + 0;
           const prog = documentProgress[d.id];
-          return sum + (prog ? prog.progress : 0);
+          if (prog) return sum + Math.max(0, Math.min(100, prog.progress));
+          // Status is processing but no WebSocket event yet — estimate
+          if (d.status === 'PARSING') return sum + 15;
+          if (d.status === 'EMBEDDING') return sum + 60;
+          if (d.status === 'PROCESSING') return sum + 40;
+          return sum + 5;
         }, 0) / docs.length,
       )
     : 0;
@@ -298,31 +307,55 @@ export function PitchBriefDetailPage() {
               {docs.map((doc) => (
                 <div
                   key={doc.id}
-                  className="flex items-center justify-between p-4 bg-background border border-border rounded-lg"
+                  className="bg-background border border-border rounded-lg overflow-hidden"
                 >
-                  <div className="flex-1">
-                    <h4 className="font-medium text-foreground mb-1">{doc.title}</h4>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs px-2 py-1 rounded-full bg-primary/10 text-primary">
-                        {doc.sourceType}
-                      </span>
-                      <span className={`text-xs px-2 py-1 rounded-full ${STATUS_COLORS[doc.status] ?? 'bg-gray-500/10 text-gray-400'}`}>
-                        {doc.status}
-                      </span>
-                      {doc.chunkCount > 0 && (
-                        <span className="text-xs text-muted-foreground">
-                          {t('common.chunks_count', { count: doc.chunkCount })}
+                  <div className="flex items-center justify-between p-4">
+                    <div className="flex-1">
+                      <h4 className="font-medium text-foreground mb-1">{doc.title}</h4>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs px-2 py-1 rounded-full bg-primary/10 text-primary">
+                          {doc.sourceType}
                         </span>
-                      )}
+                        <span className={`text-xs px-2 py-1 rounded-full ${STATUS_COLORS[doc.status] ?? 'bg-gray-500/10 text-gray-400'}`}>
+                          {doc.status}
+                        </span>
+                        {doc.chunkCount > 0 && (
+                          <span className="text-xs text-muted-foreground">
+                            {t('common.chunks_count', { count: doc.chunkCount })}
+                          </span>
+                        )}
+                      </div>
                     </div>
+                    <button
+                      onClick={() => handleDeleteDoc(doc.id)}
+                      className="p-2 hover:bg-destructive/10 rounded-lg transition-colors"
+                      title={deletingDocId === doc.id ? t('pitch_briefs.list.confirm_delete') : t('common.delete')}
+                    >
+                      <Trash2 className={`w-4 h-4 ${deletingDocId === doc.id ? 'text-destructive' : 'text-muted-foreground'}`} />
+                    </button>
                   </div>
-                  <button
-                    onClick={() => handleDeleteDoc(doc.id)}
-                    className="p-2 hover:bg-destructive/10 rounded-lg transition-colors"
-                    title={deletingDocId === doc.id ? t('pitch_briefs.list.confirm_delete') : t('common.delete')}
-                  >
-                    <Trash2 className={`w-4 h-4 ${deletingDocId === doc.id ? 'text-destructive' : 'text-muted-foreground'}`} />
-                  </button>
+                  {/* Per-document inline progress bar */}
+                  {documentProgress[doc.id] && documentProgress[doc.id].progress > 0 && documentProgress[doc.id].progress < 100 && (
+                    <div className="px-4 pb-3">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs text-muted-foreground truncate">
+                          {documentProgress[doc.id].message}
+                        </span>
+                        <span className="text-xs font-mono tabular-nums ml-2" style={{ color: '#E88D67' }}>
+                          {documentProgress[doc.id].progress}%
+                        </span>
+                      </div>
+                      <div className="h-1.5 overflow-hidden rounded-full" style={{ backgroundColor: '#FFF0E6' }}>
+                        <div
+                          className="h-full rounded-full transition-all duration-500 ease-out"
+                          style={{
+                            width: `${documentProgress[doc.id].progress}%`,
+                            background: 'linear-gradient(90deg, #FFAB76, #FF9F6B, #E88D67)',
+                          }}
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
