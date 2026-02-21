@@ -26,6 +26,7 @@ const ApiKeysPage = lazy(() => import('@/pages/ApiKeysPage'));
 const DocsPage = lazy(() => import('@/pages/DocsPage'));
 const AnalyticsPage = lazy(() => import('@/pages/AnalyticsPage'));
 const OnboardingPage = lazy(() => import('@/pages/OnboardingPage'));
+const NewPresentationWizardPage = lazy(() => import('@/pages/NewPresentationWizardPage'));
 
 function PageFallback() {
   return (
@@ -81,6 +82,16 @@ function App() {
             element={
               <ProtectedRoute>
                 <OnboardingPage />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Protected new presentation wizard (full-width, no sidebar) */}
+          <Route
+            path="/presentations/new"
+            element={
+              <ProtectedRoute>
+                <NewPresentationWizardPage />
               </ProtectedRoute>
             }
           />

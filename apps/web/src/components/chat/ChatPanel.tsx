@@ -76,11 +76,23 @@ export function ChatPanel({ presentationId, briefId, lensId }: ChatPanelProps) {
     return () => { cancelled = true; };
   }, [phase, lensId, briefId, subjectSuggestions.length, setSubjectSuggestions]);
 
-  const handleSend = (content: string) => {
+  const handleSend = useCallback((content: string) => {
     if (!presentationId) return;
     const isNew = presentationId === 'new';
     sendMessage(presentationId, content, isNew ? { briefId, lensId } : undefined);
-  };
+  }, [presentationId, briefId, lensId, sendMessage]);
+
+  // Listen for auto-send-topic from wizard
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent<{ topic: string }>).detail;
+      if (detail?.topic) {
+        handleSend(detail.topic);
+      }
+    };
+    window.addEventListener('auto-send-topic', handler);
+    return () => window.removeEventListener('auto-send-topic', handler);
+  }, [handleSend]);
 
   const handleAcceptSlide = useCallback(
     (slideId: string) => {

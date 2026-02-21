@@ -36,7 +36,7 @@ export function PresentationGrid({
           {t('dashboard.no_presentations_desc')}
         </p>
         <Link
-          to="/workspace/new"
+          to="/presentations/new"
           className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90"
         >
           <Plus className="h-4 w-4" />
@@ -50,7 +50,7 @@ export function PresentationGrid({
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
       {/* New presentation card */}
       <Link
-        to="/workspace/new"
+        to="/presentations/new"
         className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-border p-8 transition-colors hover:border-primary/50 hover:bg-primary/5"
       >
         <Plus className="mb-2 h-8 w-8 text-muted-foreground" />

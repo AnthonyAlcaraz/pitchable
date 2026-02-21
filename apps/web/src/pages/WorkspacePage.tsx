@@ -13,6 +13,7 @@ export function WorkspacePage() {
   const [searchParams] = useSearchParams();
   const briefId = searchParams.get('briefId');
   const lensId = searchParams.get('lensId');
+  const topic = searchParams.get('topic');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -23,6 +24,16 @@ export function WorkspacePage() {
     window.addEventListener('presentation-created', handler);
     return () => window.removeEventListener('presentation-created', handler);
   }, [navigate]);
+
+  // Auto-send topic from wizard
+  useEffect(() => {
+    if (topic && id === 'new') {
+      const timer = setTimeout(() => {
+        window.dispatchEvent(new CustomEvent('auto-send-topic', { detail: { topic } }));
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [topic, id]);
 
   return (
     <div className="flex h-screen flex-col">

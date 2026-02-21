@@ -12,6 +12,7 @@ import {
   ArrowRight,
   ChevronDown,
   GitFork,
+  Sparkles,
 } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth.store';
 import { usePresentationsStore } from '@/stores/presentations.store';
@@ -104,97 +105,124 @@ export function CockpitPage() {
         </p>
       </div>
 
-      {/* Composer Bar */}
-      <div className="mb-8 rounded-lg border border-border bg-card p-6">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
-          <div className="flex-1">
-            <label className="mb-2 block text-sm font-medium text-foreground">
-              {t('cockpit.pitch_brief_label')}
-            </label>
-            <div className="relative">
-              <select
-                value={selectedBriefId}
-                onChange={(e) => setSelectedBriefId(e.target.value)}
-                className="w-full appearance-none rounded-lg border border-border bg-background px-4 py-2.5 pr-10 text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-              >
-                <option value="">{t('common.no_brief')}</option>
-                {briefs.map((brief) => (
-                  <option key={brief.id} value={brief.id}>
-                    {brief.name}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+      {/* Hero CTA */}
+      <div className="mb-8 rounded-lg border border-border bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 p-8">
+        <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-4">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+              <Sparkles className="h-6 w-6 text-primary" />
+            </div>
+            <div>
+              <h2 className="text-lg font-semibold text-foreground">{t('cockpit.hero_title')}</h2>
+              <p className="text-sm text-muted-foreground">{t('cockpit.hero_subtitle')}</p>
             </div>
           </div>
-
-          <div className="flex-1">
-            <label className="mb-2 block text-sm font-medium text-foreground">
-              {t('cockpit.pitch_lens_label')}
-            </label>
-            <div className="relative">
-              <select
-                value={selectedLensId}
-                onChange={(e) => setSelectedLensId(e.target.value)}
-                className="w-full appearance-none rounded-lg border border-border bg-background px-4 py-2.5 pr-10 text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-              >
-                <option value="">{t('common.no_lens')}</option>
-                {lenses.map((lens) => (
-                  <option key={lens.id} value={lens.id}>
-                    {lens.name}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            </div>
-          </div>
-
-          <div className="flex-1">
-            <label className="mb-2 block text-sm font-medium text-foreground">
-              {t('cockpit.starting_from_label')}
-            </label>
-            <div className="relative">
-              <select
-                value={selectedSourceId}
-                onChange={(e) => setSelectedSourceId(e.target.value)}
-                className="w-full appearance-none rounded-lg border border-border bg-background px-4 py-2.5 pr-10 text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-              >
-                <option value="">{t('common.blank')}</option>
-                {completedPresentations.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.title} ({t('common.slides_count', { count: p.slideCount })})
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            </div>
-          </div>
-
           <button
-            onClick={handleGenerate}
-            disabled={!selectedLensId}
-            className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-6 py-2.5 font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
+            onClick={() => navigate('/presentations/new')}
+            className="flex items-center gap-2 rounded-lg bg-primary px-6 py-3 font-medium text-primary-foreground transition-colors hover:bg-primary/90"
           >
-            {selectedSourceId ? (
-              <>
-                {t('common.fork')}
-                <GitFork className="h-4 w-4" />
-              </>
-            ) : (
-              <>
-                {t('common.generate')}
-                <ArrowRight className="h-4 w-4" />
-              </>
-            )}
+            {t('cockpit.hero_cta')}
+            <ArrowRight className="h-4 w-4" />
           </button>
         </div>
-        {!selectedLensId && (
-          <p className="mt-3 text-xs text-amber-500">
-            {t('cockpit.select_lens_warning')}
-            {lenses.length === 0 && t('cockpit.create_lens_first')}
-          </p>
-        )}
       </div>
+
+      {/* Quick Generate (advanced, collapsible) */}
+      <details className="mb-8">
+        <summary className="cursor-pointer text-sm text-muted-foreground hover:text-foreground">
+          {t('cockpit.quick_generate_label')}
+        </summary>
+        <div className="mt-3 rounded-lg border border-border bg-card p-6">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
+            <div className="flex-1">
+              <label className="mb-2 block text-sm font-medium text-foreground">
+                {t('cockpit.pitch_brief_label')}
+              </label>
+              <div className="relative">
+                <select
+                  value={selectedBriefId}
+                  onChange={(e) => setSelectedBriefId(e.target.value)}
+                  className="w-full appearance-none rounded-lg border border-border bg-background px-4 py-2.5 pr-10 text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                >
+                  <option value="">{t('common.no_brief')}</option>
+                  {briefs.map((brief) => (
+                    <option key={brief.id} value={brief.id}>
+                      {brief.name}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              </div>
+            </div>
+
+            <div className="flex-1">
+              <label className="mb-2 block text-sm font-medium text-foreground">
+                {t('cockpit.pitch_lens_label')}
+              </label>
+              <div className="relative">
+                <select
+                  value={selectedLensId}
+                  onChange={(e) => setSelectedLensId(e.target.value)}
+                  className="w-full appearance-none rounded-lg border border-border bg-background px-4 py-2.5 pr-10 text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                >
+                  <option value="">{t('common.no_lens')}</option>
+                  {lenses.map((lens) => (
+                    <option key={lens.id} value={lens.id}>
+                      {lens.name}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              </div>
+            </div>
+
+            <div className="flex-1">
+              <label className="mb-2 block text-sm font-medium text-foreground">
+                {t('cockpit.starting_from_label')}
+              </label>
+              <div className="relative">
+                <select
+                  value={selectedSourceId}
+                  onChange={(e) => setSelectedSourceId(e.target.value)}
+                  className="w-full appearance-none rounded-lg border border-border bg-background px-4 py-2.5 pr-10 text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                >
+                  <option value="">{t('common.blank')}</option>
+                  {completedPresentations.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.title} ({t('common.slides_count', { count: p.slideCount })})
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              </div>
+            </div>
+
+            <button
+              onClick={handleGenerate}
+              disabled={!selectedLensId}
+              className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-6 py-2.5 font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
+            >
+              {selectedSourceId ? (
+                <>
+                  {t('common.fork')}
+                  <GitFork className="h-4 w-4" />
+                </>
+              ) : (
+                <>
+                  {t('common.generate')}
+                  <ArrowRight className="h-4 w-4" />
+                </>
+              )}
+            </button>
+          </div>
+          {!selectedLensId && (
+            <p className="mt-3 text-xs text-amber-500">
+              {t('cockpit.select_lens_warning')}
+              {lenses.length === 0 && t('cockpit.create_lens_first')}
+            </p>
+          )}
+        </div>
+      </details>
 
       {/* Stats Row */}
       <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
