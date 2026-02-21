@@ -11,8 +11,8 @@ const FIGMA_API = 'https://api.figma.com/v1';
 
 // Simple rate limiter: Figma allows ~30 requests/minute
 let lastRequestTime = 0;
-const MIN_REQUEST_GAP_MS = 2500; // ~24 req/min max (conservative)
-const MAX_RETRIES = 2;
+const MIN_REQUEST_GAP_MS = 3000; // ~20 req/min max (safe margin)
+const MAX_RETRIES = 1;
 const MAX_RETRY_WAIT_MS = 10_000;
 const FETCH_TIMEOUT_MS = 15_000;
 
@@ -55,7 +55,30 @@ async function rateLimitedFetch(
 export class FigmaService {
   private readonly logger = new Logger(FigmaService.name);
 
+  // In-memory frame cache (10-minute TTL) — avoids redundant Figma API calls
+  private readonly frameCache = new Map<
+    string,
+    { frames: FigmaFrameInfo[]; expiresAt: number }
+  >();
+  private static readonly FRAME_CACHE_TTL_MS = 10 * 60 * 1000;
+
   constructor(private readonly prisma: PrismaService) {}
+
+  private frameCacheKey(token: string, fileKey: string): string {
+    return token.slice(-8) + ':' + fileKey;
+  }
+
+  invalidateFrameCache(fileKey?: string): void {
+    if (!fileKey) {
+      this.frameCache.clear();
+      return;
+    }
+    for (const key of this.frameCache.keys()) {
+      if (key.endsWith(':' + fileKey)) {
+        this.frameCache.delete(key);
+      }
+    }
+  }
 
   // ── Token Management ────────────────────────────────────────
 
@@ -170,6 +193,14 @@ export class FigmaService {
   }
 
   async getFrames(token: string, fileKey: string): Promise<FigmaFrameInfo[]> {
+    // Check cache first
+    const cacheKey = this.frameCacheKey(token, fileKey);
+    const cached = this.frameCache.get(cacheKey);
+    if (cached && cached.expiresAt > Date.now()) {
+      this.logger.debug(`Frame cache hit for file ${fileKey}`);
+      return cached.frames;
+    }
+
     const file = await this.fetchFile(token, fileKey);
     const frames: FigmaFrameInfo[] = [];
 
@@ -216,6 +247,13 @@ export class FigmaService {
     this.logger.log(
       `Found ${frames.length} frames in Figma file ${fileKey}`,
     );
+
+    // Store in cache
+    this.frameCache.set(cacheKey, {
+      frames,
+      expiresAt: Date.now() + FigmaService.FRAME_CACHE_TTL_MS,
+    });
+
     return frames;
   }
 

@@ -106,6 +106,7 @@ export class FigmaController {
       dto.fileKey,
       dto.nodeId,
       lensId,
+      dto.nodeName,
     );
     return { imageUrl };
   }

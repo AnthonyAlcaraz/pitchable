@@ -124,19 +124,21 @@ export class FigmaTemplateService {
   ) {
     const template = await this.ensureOwnership(templateId, userId);
 
-    // Fetch node name and thumbnail via Figma API
-    let figmaNodeName: string | undefined;
-    let thumbnailUrl: string | undefined;
-    const token = await this.figmaService.resolveToken(userId);
+    // Use DTO-provided name/thumbnail to avoid an API call (frontend FigmaFramePicker sends these)
+    let figmaNodeName: string | undefined = dto.figmaNodeName;
+    let thumbnailUrl: string | undefined = dto.thumbnailUrl;
 
-    if (token) {
-      try {
-        const frames = await this.figmaService.getFrames(token, template.figmaFileKey);
-        const frame = frames.find((f) => f.nodeId === dto.figmaNodeId);
-        figmaNodeName = frame?.name;
-        thumbnailUrl = frame?.thumbnailUrl;
-      } catch {
-        // Non-critical
+    if (!figmaNodeName) {
+      const token = await this.figmaService.resolveToken(userId);
+      if (token) {
+        try {
+          const frames = await this.figmaService.getFrames(token, template.figmaFileKey);
+          const frame = frames.find((f) => f.nodeId === dto.figmaNodeId);
+          figmaNodeName = frame?.name;
+          thumbnailUrl = thumbnailUrl ?? frame?.thumbnailUrl;
+        } catch {
+          // Non-critical
+        }
       }
     }
 

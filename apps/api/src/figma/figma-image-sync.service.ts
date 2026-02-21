@@ -26,6 +26,7 @@ export class FigmaImageSyncService {
     fileKey: string,
     nodeId: string,
     lensId?: string | null,
+    nodeName?: string,
   ): Promise<string> {
     // 1. Resolve token (PitchLens → user-level fallback)
     const token = await this.figma.resolveToken(userId, lensId);
@@ -73,6 +74,9 @@ export class FigmaImageSyncService {
       figmaFileKey: fileKey,
       figmaNodeId: nodeId,
     };
+    if (nodeName) {
+      updateData.figmaNodeName = nodeName;
+    }
     if (imageUrl) {
       updateData.imageUrl = imageUrl;
     }

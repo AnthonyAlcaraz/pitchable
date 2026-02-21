@@ -1,4 +1,4 @@
-import { IsString, MaxLength } from 'class-validator';
+import { IsString, IsOptional, MaxLength } from 'class-validator';
 
 export class AssignFigmaFrameDto {
   @IsString()
@@ -8,4 +8,14 @@ export class AssignFigmaFrameDto {
   @IsString()
   @MaxLength(50)
   nodeId: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  nodeName?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(2000)
+  thumbnailUrl?: string;
 }
