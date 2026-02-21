@@ -138,6 +138,7 @@ export function ChatMessage({
           <GenerationCompleteCard
             data={genComplete}
             onExport={onExport}
+            onSlideClick={onSlideClick}
           />
         ) : null}
       </div>
