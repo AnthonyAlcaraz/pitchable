@@ -20,11 +20,9 @@ import { usePresentationsStore } from '@/stores/presentations.store';
 import { usePitchBriefStore } from '@/stores/pitch-brief.store';
 import { usePitchLensStore } from '@/stores/pitch-lens.store';
 import { useBillingStore } from '@/stores/billing.store';
-import type { TierStatus } from '@/stores/billing.store';
 import { PresentationGrid } from '@/components/dashboard/PresentationGrid';
 import { ForkDialog } from '@/components/dashboard/ForkDialog';
 import type { PresentationListItem } from '@/stores/presentations.store';
-import { api } from '@/lib/api';
 
 const STATUS_COLORS: Record<string, string> = {
   EMPTY: 'bg-gray-500/10 text-gray-400',
