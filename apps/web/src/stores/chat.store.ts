@@ -177,7 +177,6 @@ export const useChatStore = create<ChatState>((set, get) => ({
   pendingImageSelections: [],
   generationComplete: null,
   receivedOutlineReady: false,
-      outlineReviewState: null,
   outlineReviewState: null,
 
   loadHistory: async (presentationId: string) => {
