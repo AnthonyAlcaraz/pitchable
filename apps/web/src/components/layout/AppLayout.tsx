@@ -126,6 +126,13 @@ export function AppLayout() {
               </div>
             </div>
           )}
+          {collapsed && user && (
+            <div className="mb-2 flex justify-center px-1 py-1" title={`${user.creditBalance} ${t('common.credits')}`}>
+              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-orange-500/10 text-xs font-bold text-orange-400">
+                {user.creditBalance}
+              </div>
+            </div>
+          )}
 
           <LanguageSwitcher />
 

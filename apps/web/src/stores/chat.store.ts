@@ -450,6 +450,10 @@ export const useChatStore = create<ChatState>((set, get) => ({
         contextId,
         selection,
       });
+      // Refresh credit balance after image selection (costs 1 credit)
+      if (interactionType === 'image_selection') {
+        void useAuthStore.getState().refreshCreditBalance();
+      }
     } catch (err) {
       console.error('Failed to respond to interaction:', err);
     }

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   Gauge,
@@ -232,7 +232,7 @@ export function CockpitPage() {
 
       {/* Stats Row */}
       <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <div className="rounded-lg border border-border bg-card p-5">
+        <Link to="/billing" className="block rounded-lg border border-border bg-card p-5 transition-colors hover:border-primary/30">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-md bg-primary/10">
               <CreditCard className="h-5 w-5 text-primary" />
@@ -242,9 +242,10 @@ export function CockpitPage() {
               <p className="text-xl font-semibold text-foreground">
                 {user?.creditBalance ?? 0}
               </p>
+              <p className="text-xs text-muted-foreground">{t('cockpit.credit_balance_link')}</p>
             </div>
           </div>
-        </div>
+        </Link>
 
         <div className="rounded-lg border border-border bg-card p-5">
           <div className="flex items-center gap-3">

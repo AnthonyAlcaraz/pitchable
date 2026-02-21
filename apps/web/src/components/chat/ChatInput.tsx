@@ -1,8 +1,9 @@
 import { useState, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Send } from 'lucide-react';
+import { Send, AlertCircle } from 'lucide-react';
 import { SlashCommandMenu } from './SlashCommandMenu.js';
 import { useWorkflowStore } from '../../stores/workflow.store.js';
+import { useAuthStore } from '../../stores/auth.store.js';
 
 interface ChatInputProps {
   onSend: (message: string) => void;
@@ -11,6 +12,7 @@ interface ChatInputProps {
 
 export function ChatInput({ onSend, disabled }: ChatInputProps) {
   const phase = useWorkflowStore((s) => s.phase);
+  const creditBalance = useAuthStore((s) => s.user?.creditBalance ?? null);
   const { t } = useTranslation();
   const [value, setValue] = useState('');
   const [showCommands, setShowCommands] = useState(false);
@@ -92,9 +94,17 @@ export function ChatInput({ onSend, disabled }: ChatInputProps) {
           <Send className="h-4 w-4" />
         </button>
       </div>
-      <p className="mt-1 text-xs text-muted-foreground">
-        {t('chat.input.hint')}
-      </p>
+      <div className="mt-1 flex items-center justify-between">
+        <p className="text-xs text-muted-foreground">
+          {t('chat.input.hint')}
+        </p>
+        {creditBalance === 0 && (
+          <p className="flex items-center gap-1 text-xs text-amber-400">
+            <AlertCircle className="h-3 w-3" />
+            {t('chat.input.low_credits')}
+          </p>
+        )}
+      </div>
     </div>
   );
 }

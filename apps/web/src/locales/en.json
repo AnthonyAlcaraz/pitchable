@@ -249,7 +249,9 @@
       "step_2_desc": "Choose audience, goal, tone, and storytelling framework",
       "step_3_label": "Generate your deck",
       "step_3_desc": "Describe your topic and watch slides appear in real-time",
-      "get_started": "Get Started"
+      "get_started": "Get Started",
+      "credits_title": "10 free credits included",
+      "credits_desc": "Outline (1) + Deck (2) + 3 images (3) + doc upload (1) + knowledge extraction (1) = 8 credits. Enough for a full illustrated deck with 2 credits to spare."
     },
     "brief": {
       "step_label": "Step 1 of 3",
@@ -444,6 +446,7 @@
     "hero_cta": "Start New Presentation",
     "quick_generate_label": "Quick generate (advanced)",
     "credit_balance": "Credit Balance",
+    "credit_balance_link": "Manage credits",
     "presentations": "Presentations",
     "pitch_briefs": "Pitch Briefs",
     "recent_presentations": "Recent Presentations",
@@ -484,7 +487,8 @@
   "chat": {
     "input": {
       "placeholder": "Describe your presentation or type / for commands...",
-      "hint": "Enter to send, Shift+Enter for newline"
+      "hint": "Enter to send, Shift+Enter for newline",
+      "low_credits": "Low on credits"
     },
     "panel": {
       "title": "Chat",
@@ -575,6 +579,7 @@
       "description_placeholder": "Describe the purpose and context of this pitch brief",
       "add_documents_title": "Add Documents",
       "add_documents_desc": "Upload files, add text, or provide URLs to build your pitch brief context.",
+      "doc_credit_note": "Each document costs 1 credit to upload + 1 credit for knowledge extraction.",
       "upload_files_title": "Upload Files",
       "drag_drop_text": "Drag and drop files here",
       "browse_files": "Browse Files",
@@ -824,10 +829,18 @@
     "credits_table": {
       "operation": "Operation",
       "cost": "Cost",
-      "presentation_generation": "Presentation generation",
+      "presentation_generation": "Presentation generation (outline + deck)",
       "presentation_generation_cost": "3 credits",
       "image_generation": "Image generation (per image)",
       "image_generation_cost": "1 credit",
+      "document_ingestion": "Document upload (per document)",
+      "document_ingestion_cost": "1 credit",
+      "entity_extraction": "Knowledge extraction (per document)",
+      "entity_extraction_cost": "1 credit",
+      "chat_message": "Chat message (after 10 free per deck)",
+      "chat_message_cost": "1 credit",
+      "website_crawl": "Website crawl (per 5 pages)",
+      "website_crawl_cost": "1 credit",
       "export": "Export (PPTX, PDF, HTML)",
       "export_cost": "Free",
       "list_get_fork": "List / Get / Fork",

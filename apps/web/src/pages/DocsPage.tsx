@@ -169,6 +169,10 @@ curl -H "Authorization: Bearer pk_your_key_here" \\
               <tbody className="divide-y divide-border">
                 <tr><td className="px-4 py-2">{t('docs.credits_table.presentation_generation')}</td><td className="px-4 py-2 text-right font-mono">{t('docs.credits_table.presentation_generation_cost')}</td></tr>
                 <tr><td className="px-4 py-2">{t('docs.credits_table.image_generation')}</td><td className="px-4 py-2 text-right font-mono">{t('docs.credits_table.image_generation_cost')}</td></tr>
+                <tr><td className="px-4 py-2">{t('docs.credits_table.document_ingestion')}</td><td className="px-4 py-2 text-right font-mono">{t('docs.credits_table.document_ingestion_cost')}</td></tr>
+                <tr><td className="px-4 py-2">{t('docs.credits_table.entity_extraction')}</td><td className="px-4 py-2 text-right font-mono">{t('docs.credits_table.entity_extraction_cost')}</td></tr>
+                <tr><td className="px-4 py-2">{t('docs.credits_table.chat_message')}</td><td className="px-4 py-2 text-right font-mono">{t('docs.credits_table.chat_message_cost')}</td></tr>
+                <tr><td className="px-4 py-2">{t('docs.credits_table.website_crawl')}</td><td className="px-4 py-2 text-right font-mono">{t('docs.credits_table.website_crawl_cost')}</td></tr>
                 <tr><td className="px-4 py-2">{t('docs.credits_table.export')}</td><td className="px-4 py-2 text-right font-mono">{t('docs.credits_table.export_cost')}</td></tr>
                 <tr><td className="px-4 py-2">{t('docs.credits_table.list_get_fork')}</td><td className="px-4 py-2 text-right font-mono">{t('docs.credits_table.list_get_fork_cost')}</td></tr>
               </tbody>

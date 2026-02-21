@@ -512,8 +512,11 @@ export function PitchBriefWizardPage() {
                 <>
                   <div>
                     <h2 className="text-xl font-semibold text-foreground mb-4">{t('pitch_briefs.wizard.add_documents_title')}</h2>
-                    <p className="text-muted-foreground mb-6">
+                    <p className="text-muted-foreground mb-4">
                       {t('pitch_briefs.wizard.add_documents_desc')}
+                    </p>
+                    <p className="text-xs text-amber-400/80 mb-6">
+                      {t('pitch_briefs.wizard.doc_credit_note')}
                     </p>
                   </div>
 

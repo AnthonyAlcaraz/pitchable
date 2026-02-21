@@ -379,6 +379,11 @@ export function OnboardingPage() {
                 ))}
               </div>
 
+              <div className="mx-auto max-w-md rounded-lg border border-amber-500/20 bg-amber-500/5 p-4 text-left">
+                <p className="text-sm font-medium text-amber-400">{t('onboarding.welcome.credits_title')}</p>
+                <p className="mt-1 text-xs text-muted-foreground">{t('onboarding.welcome.credits_desc')}</p>
+              </div>
+
               <button
                 onClick={() => goToPhase('brief')}
                 className="inline-flex items-center gap-2 rounded-lg bg-primary px-8 py-3 font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
