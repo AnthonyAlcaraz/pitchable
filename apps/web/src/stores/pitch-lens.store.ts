@@ -22,6 +22,8 @@ export interface PitchLensListItem {
   selectedFramework: string;
   isDefault: boolean;
   presentationCount: number;
+  imageFrequency: number;
+  imageLayout: string;
   framework?: FrameworkSummary;
   createdAt: string;
   updatedAt: string;

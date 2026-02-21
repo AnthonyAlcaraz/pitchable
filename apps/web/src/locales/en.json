@@ -907,7 +907,13 @@
     "summary_topic": "Topic",
     "topic_empty": "You'll describe your topic in the workspace",
     "launch": "Launch Workspace",
-    "credit_info": "Generating a deck costs 2 credits. Images cost 1 credit each."
+    "credit_info": "Generating a deck costs 2 credits. Images cost 1 credit each.",
+    "image_count_exact": "{{count}} images",
+    "image_count_range": "{{min}}–{{max}} images",
+    "image_layout_background": "Full-slide backgrounds",
+    "image_layout_side": "Side panel (right)",
+    "image_credits_exact": "{{count}} credit for images",
+    "image_credits_range": "{{min}}–{{max}} credits for images"
   },
   "forms": {
     "email": "Email",

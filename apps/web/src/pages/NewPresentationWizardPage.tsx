@@ -10,6 +10,8 @@ import {
   Sparkles,
   Plus,
   MessageSquare,
+  Image,
+  Coins,
 } from 'lucide-react';
 import { PeachLogo } from '@/components/icons/PeachLogo';
 import { CreditBadge } from '@/components/shared/CreditBadge';
@@ -306,31 +308,63 @@ export function NewPresentationWizardPage() {
                 </div>
               ) : (
                 <div className="grid gap-3 sm:grid-cols-2">
-                  {lenses.map((lens) => (
-                    <button
-                      key={lens.id}
-                      onClick={() => setLensId(lens.id)}
-                      className={cn(
-                        'rounded-lg border-2 p-4 text-left transition-colors',
-                        lensId === lens.id
-                          ? 'border-primary bg-primary/5'
-                          : 'border-border hover:border-primary/30',
-                      )}
-                    >
-                      <div className="flex items-center gap-2">
-                        <Focus className="h-4 w-4 text-primary" />
-                        <p className="font-medium text-foreground">{lens.name}</p>
-                      </div>
-                      <div className="mt-2 flex flex-wrap gap-1.5">
-                        <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
-                          {formatEnum(lens.audienceType)}
-                        </span>
-                        <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
-                          {formatEnum(lens.pitchGoal)}
-                        </span>
-                      </div>
-                    </button>
-                  ))}
+                  {lenses.map((lens) => {
+                    const slideRange = lens.framework?.idealSlideRange;
+                    const freq = lens.imageFrequency || 5;
+                    const isBackground = lens.imageLayout === 'BACKGROUND';
+                    const minImages = slideRange ? Math.max(1, Math.floor(slideRange.min / freq)) : 0;
+                    const maxImages = slideRange ? Math.max(1, Math.floor(slideRange.max / freq)) : 0;
+
+                    return (
+                      <button
+                        key={lens.id}
+                        onClick={() => setLensId(lens.id)}
+                        className={cn(
+                          'rounded-lg border-2 p-4 text-left transition-colors',
+                          lensId === lens.id
+                            ? 'border-primary bg-primary/5'
+                            : 'border-border hover:border-primary/30',
+                        )}
+                      >
+                        <div className="flex items-center gap-2">
+                          <Focus className="h-4 w-4 text-primary" />
+                          <p className="font-medium text-foreground">{lens.name}</p>
+                        </div>
+                        <div className="mt-2 flex flex-wrap gap-1.5">
+                          <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+                            {formatEnum(lens.audienceType)}
+                          </span>
+                          <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+                            {formatEnum(lens.pitchGoal)}
+                          </span>
+                        </div>
+
+                        {/* Image generation info */}
+                        <div className="mt-3 flex items-start gap-2 rounded-md bg-muted/50 p-2">
+                          <Image className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                          <div className="text-[11px] leading-relaxed text-muted-foreground">
+                            <span className="font-medium text-foreground">
+                              {minImages === maxImages
+                                ? t('wizard.image_count_exact', { count: minImages })
+                                : t('wizard.image_count_range', { min: minImages, max: maxImages })}
+                            </span>
+                            {' · '}
+                            {isBackground
+                              ? t('wizard.image_layout_background')
+                              : t('wizard.image_layout_side')}
+                            <div className="mt-0.5 flex items-center gap-1">
+                              <Coins className="h-3 w-3 text-amber-500" />
+                              <span>
+                                {minImages === maxImages
+                                  ? t('wizard.image_credits_exact', { count: minImages })
+                                  : t('wizard.image_credits_range', { min: minImages, max: maxImages })}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })}
                 </div>
               )}
 

@@ -907,7 +907,13 @@
     "summary_topic": "Sujet",
     "topic_empty": "Vous décrirez votre sujet dans l'espace de travail",
     "launch": "Lancer l'espace de travail",
-    "credit_info": "La génération d'un deck coûte 2 crédits. Les images coûtent 1 crédit chacune."
+    "credit_info": "La génération d'un deck coûte 2 crédits. Les images coûtent 1 crédit chacune.",
+    "image_count_exact": "{{count}} images",
+    "image_count_range": "{{min}}–{{max}} images",
+    "image_layout_background": "Arrière-plans pleine diapositive",
+    "image_layout_side": "Panneau latéral (droite)",
+    "image_credits_exact": "{{count}} crédit pour les images",
+    "image_credits_range": "{{min}}–{{max}} crédits pour les images"
   },
   "forms": {
     "email": "E-mail",
