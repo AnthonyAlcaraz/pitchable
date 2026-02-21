@@ -54,6 +54,13 @@ export interface GenerationProgressEvent {
   message: string;
 }
 
+export interface DocumentProgressEvent {
+  documentId: string;
+  step: string;
+  progress: number; // 0-100, or -1 for error
+  message: string;
+}
+
 /** Max WebSocket connections per user (prevents resource exhaustion). */
 const MAX_CONNECTIONS_PER_USER = 10;
 
@@ -260,5 +267,13 @@ export class EventsGateway
     this.server
       .to(`presentation:${event.presentationId}`)
       .emit('image:selectionRequest', event);
+  }
+
+  emitDocumentProgress(userId: string, event: DocumentProgressEvent): void {
+    const connIds = this.userConnections.get(userId);
+    if (!connIds || connIds.size === 0) return;
+    for (const socketId of connIds) {
+      this.server.to(socketId).emit('document:progress', event);
+    }
   }
 }

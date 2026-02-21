@@ -36,6 +36,13 @@ export interface GenerationProgressEvent {
   message: string;
 }
 
+export interface DocumentProgressEvent {
+  documentId: string;
+  step: string;
+  progress: number;
+  message: string;
+}
+
 let socket: Socket | null = null;
 
 function getToken(): string | null {

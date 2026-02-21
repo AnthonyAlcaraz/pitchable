@@ -41,6 +41,10 @@ interface KbState {
   search: (query: string) => Promise<void>;
   clearSearch: () => void;
   clearError: () => void;
+
+  documentProgress: Record<string, { progress: number; step: string; message: string }>;
+  setDocumentProgress: (documentId: string, progress: number, step: string, message: string) => void;
+  clearDocumentProgress: (documentId: string) => void;
 }
 
 const API_BASE = '/knowledge-base';
@@ -52,6 +56,7 @@ export const useKbStore = create<KbState>()((set, get) => ({
   isUploading: false,
   isSearching: false,
   error: null,
+  documentProgress: {},
 
   fetchDocuments: async () => {
     set({ isLoading: true, error: null });
@@ -140,4 +145,18 @@ export const useKbStore = create<KbState>()((set, get) => ({
 
   clearSearch: () => set({ searchResults: [] }),
   clearError: () => set({ error: null }),
+
+  setDocumentProgress: (documentId, progress, step, message) =>
+    set((state) => ({
+      documentProgress: {
+        ...state.documentProgress,
+        [documentId]: { progress, step, message },
+      },
+    })),
+
+  clearDocumentProgress: (documentId) =>
+    set((state) => {
+      const { [documentId]: _, ...rest } = state.documentProgress;
+      return { documentProgress: rest };
+    }),
 }));

@@ -16,6 +16,8 @@ import { FalkorDbService } from './falkordb/falkordb.service.js';
 import { EntityExtractorService } from './falkordb/entity-extractor.service.js';
 import { ZeroEntropyRetrievalService } from './zeroentropy/zeroentropy-retrieval.service.js';
 import { CreditsService } from '../credits/credits.service.js';
+import { EventsGateway } from '../events/events.gateway.js';
+import type { DocumentProgressEvent } from '../events/events.gateway.js';
 import { chunkByHeadings } from './chunking/heading-chunker.js';
 import { contentHash } from './utils/content-hash.js';
 import { BriefStatus, CreditReason, DocumentStatus } from '../../generated/prisma/enums.js';
@@ -42,9 +44,14 @@ export class DocumentProcessingProcessor extends WorkerHost {
     private readonly falkordb: FalkorDbService,
     private readonly entityExtractor: EntityExtractorService,
     private readonly zeRetrieval: ZeroEntropyRetrievalService,
+    private readonly events: EventsGateway,
     private readonly credits: CreditsService,
   ) {
     super();
+  }
+
+  private emitProgress(userId: string, documentId: string, step: string, progress: number, message: string): void {
+    this.events.emitDocumentProgress(userId, { documentId, step, progress, message });
   }
 
   async process(job: Job<DocumentProcessingJobData>): Promise<void> {
@@ -57,6 +64,8 @@ export class DocumentProcessingProcessor extends WorkerHost {
         where: { id: documentId },
         data: { status: DocumentStatus.PARSING },
       });
+
+      this.emitProgress(userId, documentId, 'parsing', 10, 'Parsing document...');
 
       // 2. Extract text based on source type
       let extractedText: string;
@@ -98,6 +107,8 @@ export class DocumentProcessingProcessor extends WorkerHost {
         data: { contentHash: docHash },
       });
 
+      this.emitProgress(userId, documentId, 'hashing', 20, 'Computing content hash...');
+
       // Warn if an identical document already exists for this user
       const duplicateDoc = await this.prisma.document.findFirst({
         where: {
@@ -121,6 +132,8 @@ export class DocumentProcessingProcessor extends WorkerHost {
         overlapSize: 200,
       });
 
+      this.emitProgress(userId, documentId, 'chunking', 35, 'Splitting into chunks...');
+
       this.logger.log(`Document ${documentId}: extracted ${extractedText.length} chars, ${chunks.length} chunks`);
 
       // 4. Store chunks in DB (without embeddings)
@@ -140,6 +153,8 @@ export class DocumentProcessingProcessor extends WorkerHost {
         ),
       );
 
+      this.emitProgress(userId, documentId, 'storing_chunks', 45, 'Storing chunks...');
+
       // 5. Update status to EMBEDDING
       await this.prisma.document.update({
         where: { id: documentId },
@@ -148,6 +163,8 @@ export class DocumentProcessingProcessor extends WorkerHost {
           chunkCount: chunks.length,
         },
       });
+
+      this.emitProgress(userId, documentId, 'deduplicating', 55, 'Checking for duplicates...');
 
       // Fetch stored chunks for indexing and embedding
       const storedChunks = await this.prisma.documentChunk.findMany({
@@ -200,6 +217,8 @@ export class DocumentProcessingProcessor extends WorkerHost {
         }
       }
 
+      this.emitProgress(userId, documentId, 'indexing', 70, 'Indexing for retrieval...');
+
       // 6. Index into ZeroEntropy (primary retrieval, non-fatal)
       if (this.zeRetrieval.isAvailable()) {
         try {
@@ -216,6 +235,8 @@ export class DocumentProcessingProcessor extends WorkerHost {
           );
         }
       }
+
+      this.emitProgress(userId, documentId, 'embedding', 85, 'Generating embeddings...');
 
       // 7. Generate OpenAI embeddings for pgvector (fallback retrieval, non-fatal)
       if (this.embeddingService.isAvailable() && this.vectorStore.isAvailable()) {
@@ -247,6 +268,8 @@ export class DocumentProcessingProcessor extends WorkerHost {
           processedAt: new Date(),
         },
       });
+
+      this.emitProgress(userId, documentId, 'ready', 100, 'Complete');
 
       this.logger.log(`Document ${documentId}: ${chunks.length} chunks processed, status=READY`);
 
@@ -337,6 +360,8 @@ export class DocumentProcessingProcessor extends WorkerHost {
       } catch {
         this.logger.error(`Failed to update error status for document ${documentId}`);
       }
+
+      this.emitProgress(userId, documentId, 'error', -1, errorMessage);
 
       // Update brief status even on error (brief may transition if all docs are now terminal)
       try {

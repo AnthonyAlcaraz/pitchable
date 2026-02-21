@@ -3,6 +3,7 @@ import { BullModule } from '@nestjs/bullmq';
 import { ConfigModule } from '@nestjs/config';
 import { PrismaModule } from '../prisma/prisma.module.js';
 import { CreditsModule } from '../credits/credits.module.js';
+import { EventsModule } from '../events/events.module.js';
 import { KnowledgeBaseController } from './knowledge-base.controller.js';
 import { KnowledgeBaseService } from './knowledge-base.service.js';
 import { S3Service } from './storage/s3.service.js';
@@ -28,6 +29,7 @@ import { RerankerService } from './reranker.service.js';
     PrismaModule,
     ConfigModule,
     CreditsModule,
+    EventsModule,
     BullModule.registerQueue({ name: 'document-processing' }),
   ],
   controllers: [KnowledgeBaseController],

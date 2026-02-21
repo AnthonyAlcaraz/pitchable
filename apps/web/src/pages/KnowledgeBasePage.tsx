@@ -5,6 +5,7 @@ import { useKbStore } from '@/stores/kb.store';
 import { FileUploadZone } from '@/components/knowledge-base/FileUploadZone';
 import { DocumentList } from '@/components/knowledge-base/DocumentList';
 import { TextUrlInput } from '@/components/knowledge-base/TextUrlInput';
+import { useDocumentProgress } from '@/hooks/useDocumentProgress';
 
 export function KnowledgeBasePage() {
   const { t } = useTranslation();
@@ -25,6 +26,8 @@ export function KnowledgeBasePage() {
     clearError,
   } = useKbStore();
 
+  useDocumentProgress();
+
   const [searchQuery, setSearchQuery] = useState('');
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -40,7 +43,7 @@ export function KnowledgeBasePage() {
     if (hasProcessing) {
       pollRef.current = setInterval(() => {
         void fetchDocuments();
-      }, 3000);
+      }, 10000);
     }
 
     return () => {
