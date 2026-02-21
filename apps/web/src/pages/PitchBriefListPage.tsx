@@ -18,7 +18,7 @@ export function PitchBriefListPage() {
   const { briefs, isLoading, loadBriefs, deleteBrief, createBrief } = usePitchBriefStore();
   const { tierStatus, loadTierStatus } = useBillingStore();
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const atLimit = tierStatus ? tierStatus.briefsUsed >= tierStatus.briefsLimit : false;
+  const atLimit = tierStatus && tierStatus.briefsLimit !== null ? tierStatus.briefsUsed >= tierStatus.briefsLimit : false;
 
   useEffect(() => {
     loadBriefs();
@@ -66,7 +66,7 @@ export function PitchBriefListPage() {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          {tierStatus && (
+          {tierStatus && tierStatus.briefsLimit !== null && (
             <span className="text-xs text-muted-foreground">
               {tierStatus.briefsUsed}/{tierStatus.briefsLimit}
             </span>

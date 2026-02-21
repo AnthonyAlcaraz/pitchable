@@ -563,6 +563,7 @@ enum CreditReason {
   SLIDE_MODIFICATION
   CHAT_MESSAGE
   WEBSITE_CRAWL
+  DOCUMENT_INGESTION
 }
 
 enum ExportFormat {

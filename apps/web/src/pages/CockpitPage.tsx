@@ -60,7 +60,7 @@ export function CockpitPage() {
   const [selectedSourceId, setSelectedSourceId] = useState('');
   const [forkTarget, setForkTarget] = useState<PresentationListItem | null>(null);
 
-  const briefsAtLimit = tierStatus ? tierStatus.briefsUsed >= tierStatus.briefsLimit : false;
+  const briefsAtLimit = tierStatus && tierStatus.briefsLimit !== null ? tierStatus.briefsUsed >= tierStatus.briefsLimit : false;
   const lensesAtLimit = tierStatus ? tierStatus.lensesUsed >= tierStatus.lensesLimit : false;
 
   useEffect(() => {
@@ -313,7 +313,7 @@ export function CockpitPage() {
         <div className="mb-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <h2 className="text-lg font-semibold text-foreground">{t('cockpit.pitch_briefs')}</h2>
-            {tierStatus && (
+            {tierStatus && tierStatus.briefsLimit !== null && (
               <span className="text-xs text-muted-foreground">
                 {tierStatus.briefsUsed}/{tierStatus.briefsLimit}
               </span>
@@ -323,7 +323,7 @@ export function CockpitPage() {
             onClick={() => navigate('/pitch-briefs/new')}
             disabled={briefsAtLimit}
             className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
-            title={briefsAtLimit ? `Limit reached (${tierStatus?.briefsLimit}). Upgrade your plan.` : ''}
+            title={briefsAtLimit ? `Limit reached (${tierStatus?.briefsLimit ?? 'N/A'}). Upgrade your plan.` : ''}
           >
             <Plus className="h-4 w-4" />
             {t('cockpit.new_brief')}

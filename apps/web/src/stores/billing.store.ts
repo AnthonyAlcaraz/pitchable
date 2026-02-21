@@ -26,10 +26,12 @@ export interface TierStatus {
   creditsPerMonth: number;
   creditsReserved: number;
   briefsUsed: number;
-  briefsLimit: number;
+  briefsLimit: number | null;
   lensesUsed: number;
   lensesLimit: number;
   maxCustomGuidanceLength: number;
+  maxDocumentSizeMb: number;
+  maxDocumentsPerBrief: number | null;
 }
 
 interface BillingState {

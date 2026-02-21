@@ -29,10 +29,12 @@ export interface TierStatus {
   creditsReserved: number;
   maxSlidesPerDeck: number | null;
   briefsUsed: number;
-  briefsLimit: number;
+  briefsLimit: number | null;
   lensesUsed: number;
   lensesLimit: number;
   maxCustomGuidanceLength: number;
+  maxDocumentSizeMb: number;
+  maxDocumentsPerBrief: number | null;
 }
 
 @Injectable()
@@ -153,6 +155,7 @@ export class TierEnforcementService {
 
   /**
    * Check if user can create a new Pitch Brief.
+   * Returns limit = -1 when unlimited (null in config).
    */
   async canCreateBrief(userId: string): Promise<ResourceLimitResult> {
     const user = await this.prisma.user.findUnique({
@@ -163,7 +166,7 @@ export class TierEnforcementService {
     const limits = TIER_LIMITS[tier] ?? TIER_LIMITS['FREE'];
     const used = await this.prisma.pitchBrief.count({ where: { userId } });
 
-    if (used >= limits.maxBriefs) {
+    if (limits.maxBriefs !== null && used >= limits.maxBriefs) {
       return {
         allowed: false,
         reason: `You've reached the limit of ${limits.maxBriefs} brief${limits.maxBriefs === 1 ? '' : 's'} on the ${tier} plan. Upgrade for more.`,
@@ -171,7 +174,7 @@ export class TierEnforcementService {
         limit: limits.maxBriefs,
       };
     }
-    return { allowed: true, used, limit: limits.maxBriefs };
+    return { allowed: true, used, limit: limits.maxBriefs ?? -1 };
   }
 
   /**
@@ -195,6 +198,64 @@ export class TierEnforcementService {
       };
     }
     return { allowed: true, used, limit: limits.maxLenses };
+  }
+
+  /**
+   * Check if user can upload a document to a brief (file size + doc count + credits).
+   */
+  async canUploadDocument(
+    userId: string,
+    briefId: string,
+    fileSizeBytes: number,
+  ): Promise<{ allowed: boolean; reason?: string; creditCost: number }> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { tier: true, creditBalance: true },
+    });
+    const tier = user?.tier ?? 'FREE';
+    const limits = TIER_LIMITS[tier] ?? TIER_LIMITS['FREE'];
+
+    // Check file size
+    const fileSizeMb = fileSizeBytes / (1024 * 1024);
+    if (fileSizeMb > limits.maxDocumentSizeMb) {
+      return {
+        allowed: false,
+        reason: `File exceeds the ${limits.maxDocumentSizeMb} MB limit on the ${tier} plan. Upgrade for larger files.`,
+        creditCost: 0,
+      };
+    }
+
+    // Check document count per brief
+    if (limits.maxDocumentsPerBrief !== null) {
+      const docCount = await this.prisma.document.count({ where: { briefId } });
+      if (docCount >= limits.maxDocumentsPerBrief) {
+        return {
+          allowed: false,
+          reason: `This brief already has ${limits.maxDocumentsPerBrief} document${limits.maxDocumentsPerBrief === 1 ? '' : 's'} (${tier} plan limit). Upgrade for more.`,
+          creditCost: 0,
+        };
+      }
+    }
+
+    // Check credits
+    const { documentIngestionCost } = await import('./tier-config.js');
+    const creditCost = documentIngestionCost(fileSizeBytes);
+    if ((user?.creditBalance ?? 0) < creditCost) {
+      return {
+        allowed: false,
+        reason: `Document ingestion costs ${creditCost} credit${creditCost === 1 ? '' : 's'} (based on file size). You have ${user?.creditBalance ?? 0}. Top up or upgrade.`,
+        creditCost,
+      };
+    }
+
+    return { allowed: true, creditCost };
+  }
+
+  /**
+   * Get max document file size in MB for a tier.
+   */
+  getMaxDocumentSizeMb(tier: string): number {
+    return TIER_LIMITS[tier]?.maxDocumentSizeMb ?? TIER_LIMITS['FREE'].maxDocumentSizeMb;
   }
 
   /**
@@ -234,6 +295,8 @@ export class TierEnforcementService {
         lensesUsed: 0,
         lensesLimit: freeLimits.maxLenses,
         maxCustomGuidanceLength: freeLimits.maxCustomGuidanceLength,
+        maxDocumentSizeMb: freeLimits.maxDocumentSizeMb,
+        maxDocumentsPerBrief: freeLimits.maxDocumentsPerBrief,
       };
     }
 
@@ -266,6 +329,8 @@ export class TierEnforcementService {
       lensesUsed,
       lensesLimit: limits.maxLenses,
       maxCustomGuidanceLength: limits.maxCustomGuidanceLength,
+      maxDocumentSizeMb: limits.maxDocumentSizeMb,
+      maxDocumentsPerBrief: limits.maxDocumentsPerBrief,
     };
   }
 

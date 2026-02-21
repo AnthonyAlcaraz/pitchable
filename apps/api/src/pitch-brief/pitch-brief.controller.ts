@@ -103,10 +103,10 @@ export class PitchBriefController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body('title') title?: string,
   ) {
-    // Create document via KB service (handles S3 upload + queuing)
+    // Create document via KB service (handles S3 upload + queuing + credit charge)
     let document;
     try {
-      document = await this.kbService.uploadFile(user.userId, file, title);
+      document = await this.kbService.uploadFile(user.userId, file, title, id);
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Upload failed';
       throw new UnprocessableEntityException(msg);

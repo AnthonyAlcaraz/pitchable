@@ -1,5 +1,5 @@
 import type { BaseJobData } from '../common/base-job-data.js';
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { PrismaService } from '../prisma/prisma.service.js';
@@ -10,7 +10,10 @@ import type { SearchResult } from './embedding/vector-store.service.js';
 import { FalkorDbService } from './falkordb/falkordb.service.js';
 import { FirecrawlService } from './parsers/firecrawl.service.js';
 import { ZeroEntropyRetrievalService } from './zeroentropy/zeroentropy-retrieval.service.js';
-import { DocumentSourceType, DocumentStatus } from '../../generated/prisma/enums.js';
+import { TierEnforcementService } from '../credits/tier-enforcement.service.js';
+import { CreditsService } from '../credits/credits.service.js';
+import { documentIngestionCost } from '../credits/tier-config.js';
+import { DocumentSourceType, DocumentStatus, CreditReason } from '../../generated/prisma/enums.js';
 import { randomUUID } from 'node:crypto';
 
 export interface DocumentProcessingJobData extends BaseJobData {
@@ -37,6 +40,8 @@ export class KnowledgeBaseService {
     private readonly falkordb: FalkorDbService,
     private readonly zeRetrieval: ZeroEntropyRetrievalService,
     private readonly firecrawl: FirecrawlService,
+    private readonly tierEnforcement: TierEnforcementService,
+    private readonly creditsService: CreditsService,
     @InjectQueue('website-crawl') private readonly crawlQueue: Queue,
   ) {}
 
@@ -44,7 +49,25 @@ export class KnowledgeBaseService {
     userId: string,
     file: Express.Multer.File,
     customTitle?: string,
+    briefId?: string,
   ) {
+    // Enforce tier limits (file size, doc count per brief, credits)
+    if (briefId) {
+      const check = await this.tierEnforcement.canUploadDocument(userId, briefId, file.size);
+      if (!check.allowed) {
+        throw new BadRequestException(check.reason);
+      }
+    }
+
+    // Calculate and charge ingestion credits
+    const creditCost = documentIngestionCost(file.size);
+    const hasCredits = await this.creditsService.hasEnoughCredits(userId, creditCost);
+    if (!hasCredits) {
+      throw new BadRequestException(
+        `Document ingestion costs ${creditCost} credit${creditCost === 1 ? '' : 's'}. You don't have enough credits.`,
+      );
+    }
+
     let s3Key: string | undefined;
 
     if (this.s3.isAvailable()) {
@@ -67,6 +90,14 @@ export class KnowledgeBaseService {
       },
     });
 
+    // Deduct credits after successful upload
+    await this.creditsService.deductCredits(
+      userId,
+      creditCost,
+      CreditReason.DOCUMENT_INGESTION,
+      document.id,
+    );
+
     await this.docQueue.add('process-document', {
       documentId: document.id,
       userId,
@@ -78,7 +109,7 @@ export class KnowledgeBaseService {
       ...(!s3Key ? { fileBase64: file.buffer.toString('base64') } : {}),
     } satisfies DocumentProcessingJobData);
 
-    this.logger.log(`Document ${document.id} uploaded and queued for processing`);
+    this.logger.log(`Document ${document.id} uploaded and queued (charged ${creditCost} credits)`);
     return document;
   }
 

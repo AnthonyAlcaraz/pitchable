@@ -2,9 +2,11 @@ export interface TierLimits {
   maxDecksPerMonth: number | null; // null = unlimited
   maxSlidesPerDeck: number | null; // null = unlimited, FREE = 4 sample slides
   creditsPerMonth: number; // total monthly credit allocation (shared: decks + images)
-  maxBriefs: number; // total briefs per user (not monthly)
+  maxBriefs: number | null; // null = unlimited, FREE = 1
   maxLenses: number; // total lenses per user (not monthly)
   maxCustomGuidanceLength: number; // max chars for lens customGuidance field
+  maxDocumentSizeMb: number; // max file size per document in MB
+  maxDocumentsPerBrief: number | null; // null = unlimited
 }
 
 /**
@@ -59,6 +61,16 @@ export const IMAGE_GENERATION_COST = 1;
 /** Credits deducted per document entity extraction (Sonnet 4.6 LLM cost). */
 export const ENTITY_EXTRACTION_COST = 1;
 
+/**
+ * Credits deducted per document ingestion based on file size.
+ * 1 credit per 2 MB, minimum 1 credit.
+ * Examples: 500KB = 1, 3MB = 2, 10MB = 5, 20MB = 10
+ */
+export function documentIngestionCost(fileSizeBytes: number): number {
+  const mb = fileSizeBytes / (1024 * 1024);
+  return Math.max(1, Math.ceil(mb / 2));
+}
+
 /** Free chat messages allowed per presentation before charging. */
 export const FREE_CHAT_MESSAGES_PER_PRESENTATION = 10;
 
@@ -97,29 +109,37 @@ export const TIER_LIMITS: Record<string, TierLimits> = {
     maxBriefs: 1,
     maxLenses: 1,
     maxCustomGuidanceLength: 200,
+    maxDocumentSizeMb: 5,
+    maxDocumentsPerBrief: 3,
   },
   STARTER: {
     maxDecksPerMonth: 10,
     maxSlidesPerDeck: 15,
     creditsPerMonth: 40,
-    maxBriefs: 5,
-    maxLenses: 5,
+    maxBriefs: null, // unlimited
+    maxLenses: 10,
     maxCustomGuidanceLength: 500,
+    maxDocumentSizeMb: 10,
+    maxDocumentsPerBrief: null, // unlimited
   },
   PRO: {
     maxDecksPerMonth: null,
     maxSlidesPerDeck: null,
     creditsPerMonth: 100,
-    maxBriefs: 20,
-    maxLenses: 20,
+    maxBriefs: null, // unlimited
+    maxLenses: 30,
     maxCustomGuidanceLength: 1000,
+    maxDocumentSizeMb: 20,
+    maxDocumentsPerBrief: null, // unlimited
   },
   ENTERPRISE: {
     maxDecksPerMonth: null,
     maxSlidesPerDeck: null,
     creditsPerMonth: 300,
-    maxBriefs: 100,
+    maxBriefs: null, // unlimited
     maxLenses: 100,
     maxCustomGuidanceLength: 2000,
+    maxDocumentSizeMb: 20,
+    maxDocumentsPerBrief: null, // unlimited
   },
 };

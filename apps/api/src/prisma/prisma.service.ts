@@ -161,6 +161,7 @@ export class PrismaService
       `ALTER TABLE "PitchLens" ADD COLUMN IF NOT EXISTS "figmaAccessToken" TEXT`,
       // PitchBrief AI summary
       `ALTER TABLE "PitchBrief" ADD COLUMN IF NOT EXISTS "aiSummary" TEXT`,
+      `ALTER TYPE "CreditReason" ADD VALUE IF NOT EXISTS 'DOCUMENT_INGESTION'`,
     ];
 
     for (const sql of migrations) {
