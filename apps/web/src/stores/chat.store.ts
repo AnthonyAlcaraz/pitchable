@@ -131,7 +131,7 @@ interface ChatState {
   pendingLayoutSelections: PendingLayoutSelection[];
   pendingImageSelections: PendingImageSelection[];
   generationComplete: GenerationCompleteData | null;
-  receivedOutlineReady: boolean;
+  skipLocalMessage: boolean;
   outlineReviewState: OutlineReviewState | null;
 
   loadHistory: (presentationId: string) => Promise<void>;
@@ -176,7 +176,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
   pendingLayoutSelections: [],
   pendingImageSelections: [],
   generationComplete: null,
-  receivedOutlineReady: false,
+  skipLocalMessage: false,
   outlineReviewState: null,
 
   loadHistory: async (presentationId: string) => {
@@ -229,7 +229,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
       generationComplete: null,
       pendingThemeSelection: null,
       pendingLayoutSelections: [],
-      receivedOutlineReady: false,
+      skipLocalMessage: false,
       outlineReviewState: null,
     }));
 
@@ -267,6 +267,9 @@ export const useChatStore = create<ChatState>((set, get) => ({
             }
           } else if (metadata?.action === 'presentation_created') {
             // Backend created the presentation — update the URL to use the real ID
+            // loadHistory() will be triggered by the URL change, loading the DB message,
+            // so skip creating a duplicate local message after the stream ends.
+            set({ skipLocalMessage: true });
             const newId = metadata.presentationId as string;
             if (newId) {
               window.dispatchEvent(new CustomEvent('presentation-created', { detail: { id: newId } }));
@@ -284,7 +287,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
             if (outlineTitle) {
               usePresentationStore.getState().setTitle(outlineTitle);
             }
-            set({ receivedOutlineReady: true });
+            set({ skipLocalMessage: true });
             // Populate outline review state from metadata
             const outlineData = metadata?.outline as OutlineReviewState['outlineData'];
             if (outlineData) {
@@ -405,7 +408,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
       // Add assistant message (persist inline slide cards in metadata)
       const currentSlideCards = get().inlineSlideCards;
       const currentCompletion = get().generationComplete;
-      if (fullContent && !get().receivedOutlineReady) {
+      if (fullContent && !get().skipLocalMessage) {
         const assistantMsg: ChatMessage = {
           id: crypto.randomUUID(),
           role: 'assistant',
@@ -425,7 +428,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
           agentSteps: [],
         }));
       }
-      if (get().receivedOutlineReady || !fullContent) {
+      if (get().skipLocalMessage || !fullContent) {
         set({ isStreaming: false, streamingContent: '', thinkingText: null, agentSteps: [] });
       }
     } catch (err) {
