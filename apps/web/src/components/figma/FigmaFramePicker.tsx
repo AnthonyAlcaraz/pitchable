@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { X, Loader2, Search, Image as ImageIcon, ExternalLink } from 'lucide-react';
+import { X, Loader2, Search, Image as ImageIcon, ExternalLink, AlertTriangle } from 'lucide-react';
 import { api } from '@/lib/api';
 import { cn } from '@/lib/utils';
 
@@ -10,6 +10,16 @@ interface FigmaFrame {
   height: number;
   pageName: string;
   thumbnailUrl?: string;
+}
+
+interface FramesResponse {
+  frames: FigmaFrame[];
+  planTier?: string;
+  dailyApiReads?: number;
+  planWarning?: string;
+  isRateLimited?: boolean;
+  retryAfterSeconds?: number;
+  error?: string;
 }
 
 interface FigmaFramePickerProps {
@@ -36,13 +46,12 @@ export function FigmaFramePicker({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+  const [planWarning, setPlanWarning] = useState<string | null>(null);
+  const [isRateLimited, setIsRateLimited] = useState(false);
 
   const extractFileKey = useCallback((input: string): string | null => {
-    // Handle full Figma URLs: https://www.figma.com/file/ABC123/...
-    // or https://www.figma.com/design/ABC123/...
     const urlMatch = input.match(/figma\.com\/(?:file|design)\/([a-zA-Z0-9]+)/);
     if (urlMatch) return urlMatch[1];
-    // If it looks like a raw key (alphanumeric, 22+ chars)
     if (/^[a-zA-Z0-9]{10,}$/.test(input.trim())) return input.trim();
     return null;
   }, []);
@@ -59,12 +68,30 @@ export function FigmaFramePicker({
     setFrames([]);
     setFilteredFrames([]);
     setSelectedNodeId(null);
+    setPlanWarning(null);
+    setIsRateLimited(false);
 
     try {
       const lensParam = lensId ? `?lensId=${lensId}` : '';
-      const data = await api.get<FigmaFrame[]>(`/figma/files/${key}${lensParam}`);
-      setFrames(data);
-      setFilteredFrames(data);
+      const data = await api.get<FramesResponse>(`/figma/files/${key}${lensParam}`);
+
+      // Handle rate limited response
+      if (data.isRateLimited) {
+        setIsRateLimited(true);
+        setError('Figma API rate limit exceeded. Try again later.');
+        setPlanWarning(data.planWarning ?? null);
+        return;
+      }
+
+      // Handle error response (no token)
+      if (data.error) {
+        setError(data.error);
+        return;
+      }
+
+      setFrames(data.frames);
+      setFilteredFrames(data.frames);
+      setPlanWarning(data.planWarning ?? null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load frames');
     } finally {
@@ -143,6 +170,16 @@ export function FigmaFramePicker({
           {error && <p className="mt-1.5 text-xs text-red-600">{error}</p>}
         </div>
 
+        {/* Plan warning */}
+        {planWarning && (
+          <div className="flex items-start gap-2 border-b border-amber-200 bg-amber-50 px-5 py-2 dark:border-amber-800 dark:bg-amber-900/20">
+            <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-600" />
+            <p className="text-xs text-amber-700 dark:text-amber-400">
+              {planWarning}
+            </p>
+          </div>
+        )}
+
         {/* Search (only when frames loaded) */}
         {frames.length > 0 && (
           <div className="border-b border-border px-5 py-2">
@@ -167,6 +204,13 @@ export function FigmaFramePicker({
               <span className="ml-2 text-sm text-muted-foreground">
                 Loading frames...
               </span>
+            </div>
+          ) : isRateLimited ? (
+            <div className="py-12 text-center">
+              <AlertTriangle className="mx-auto h-8 w-8 text-amber-500" />
+              <p className="mt-2 text-sm text-muted-foreground">
+                Figma API rate limit exceeded. Try again later.
+              </p>
             </div>
           ) : filteredFrames.length > 0 ? (
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">

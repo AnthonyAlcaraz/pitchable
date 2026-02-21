@@ -39,6 +39,23 @@ export interface CreateFigmaTemplateInput {
 export interface MapFrameInput {
   slideType: string;
   figmaNodeId: string;
+  figmaNodeName?: string;
+  thumbnailUrl?: string;
+}
+
+export interface AutoMapResult {
+  mapped: number;
+  mappings: Array<{
+    slideType: string;
+    nodeId: string;
+    nodeName: string;
+    confidence?: number;
+    source: 'keyword' | 'ai';
+    reasoning?: string;
+  }>;
+  rateLimitWarning?: string;
+  figmaPlanTier?: string;
+  isRateLimited?: boolean;
 }
 
 interface FigmaTemplateState {
@@ -46,6 +63,7 @@ interface FigmaTemplateState {
   currentTemplate: FigmaTemplateDetail | null;
   isLoading: boolean;
   error: string | null;
+  lastAutoMapResult: AutoMapResult | null;
 
   loadTemplates: () => Promise<void>;
   loadTemplate: (id: string) => Promise<void>;
@@ -53,9 +71,11 @@ interface FigmaTemplateState {
   deleteTemplate: (id: string) => Promise<void>;
   mapFrame: (templateId: string, input: MapFrameInput) => Promise<void>;
   unmapFrame: (templateId: string, slideType: string) => Promise<void>;
-  autoMap: (templateId: string) => Promise<{ mapped: number }>;
+  autoMap: (templateId: string) => Promise<AutoMapResult>;
+  autoMapAi: (templateId: string) => Promise<AutoMapResult>;
   refreshThumbnails: (templateId: string) => Promise<void>;
   clearError: () => void;
+  clearAutoMapResult: () => void;
 }
 
 export const useFigmaTemplateStore = create<FigmaTemplateState>((set, get) => ({
@@ -63,6 +83,7 @@ export const useFigmaTemplateStore = create<FigmaTemplateState>((set, get) => ({
   currentTemplate: null,
   isLoading: false,
   error: null,
+  lastAutoMapResult: null,
 
   async loadTemplates() {
     set({ isLoading: true, error: null });
@@ -119,19 +140,30 @@ export const useFigmaTemplateStore = create<FigmaTemplateState>((set, get) => ({
         currentTemplate: {
           ...currentTemplate,
           mappings: currentTemplate.mappings.filter((m) => m.slideType !== slideType),
-          mappingCount: currentTemplate.mappingCount - 1,
+          mappingCount: Math.max(0, currentTemplate.mappingCount - 1),
         },
       });
     }
   },
 
   async autoMap(templateId: string) {
-    const result = await api.post<{ mapped: number }>(`/figma/templates/${templateId}/auto-map`);
+    const result = await api.post<AutoMapResult>(`/figma/templates/${templateId}/auto-map`);
     // Refresh current template
     const { currentTemplate } = get();
     if (currentTemplate?.id === templateId) {
       const updated = await api.get<FigmaTemplateDetail>(`/figma/templates/${templateId}`);
-      set({ currentTemplate: updated });
+      set({ currentTemplate: updated, lastAutoMapResult: result });
+    }
+    return result;
+  },
+
+  async autoMapAi(templateId: string) {
+    const result = await api.post<AutoMapResult>(`/figma/templates/${templateId}/auto-map-ai`);
+    // Refresh current template
+    const { currentTemplate } = get();
+    if (currentTemplate?.id === templateId) {
+      const updated = await api.get<FigmaTemplateDetail>(`/figma/templates/${templateId}`);
+      set({ currentTemplate: updated, lastAutoMapResult: result });
     }
     return result;
   },
@@ -148,6 +180,10 @@ export const useFigmaTemplateStore = create<FigmaTemplateState>((set, get) => ({
 
   clearError() {
     set({ error: null });
+  },
+
+  clearAutoMapResult() {
+    set({ lastAutoMapResult: null });
   },
 }));
 

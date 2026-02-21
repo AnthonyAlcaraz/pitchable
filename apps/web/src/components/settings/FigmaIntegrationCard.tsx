@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Figma, Check, X, Loader2, ExternalLink } from 'lucide-react';
+import { Figma, Check, X, Loader2, ExternalLink, AlertTriangle } from 'lucide-react';
 import { api } from '@/lib/api';
 import { cn } from '@/lib/utils';
 
@@ -10,6 +10,11 @@ interface FigmaStatus {
   isValid?: boolean;
   lastValidatedAt?: string;
   connectedAt?: string;
+  planTier?: string;
+  dailyApiReads?: number;
+  planWarning?: string;
+  isRateLimited?: boolean;
+  retryAfterSeconds?: number;
 }
 
 export function FigmaIntegrationCard() {
@@ -109,6 +114,22 @@ export function FigmaIntegrationCard() {
               {status.figmaUserName ?? status.figmaUserId ?? '-'}
             </span>
           </div>
+          {status.planTier && (
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">Plan</span>
+              <span className="text-sm font-medium text-foreground">
+                {status.planTier}
+              </span>
+            </div>
+          )}
+          {status.dailyApiReads != null && (
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">Daily API Reads</span>
+              <span className="text-sm font-medium text-foreground">
+                ~{status.dailyApiReads}
+              </span>
+            </div>
+          )}
           {status.connectedAt && (
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Connected</span>
@@ -117,6 +138,33 @@ export function FigmaIntegrationCard() {
               </span>
             </div>
           )}
+
+          {/* Plan warning */}
+          {status.planWarning && (
+            <div className="flex gap-2 rounded-md border border-amber-200 bg-amber-50 p-2.5 dark:border-amber-800 dark:bg-amber-900/20">
+              <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-600" />
+              <p className="text-xs text-amber-700 dark:text-amber-400">
+                {status.planWarning}
+              </p>
+            </div>
+          )}
+
+          {/* Rate limited warning */}
+          {status.isRateLimited && (
+            <div className="flex gap-2 rounded-md border border-red-200 bg-red-50 p-2.5 dark:border-red-800 dark:bg-red-900/20">
+              <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-red-600" />
+              <p className="text-xs text-red-700 dark:text-red-400">
+                Figma API rate limit exceeded.
+                {status.retryAfterSeconds != null && status.retryAfterSeconds > 0 && (
+                  <> Reset in ~{status.retryAfterSeconds > 3600
+                    ? `${Math.ceil(status.retryAfterSeconds / 3600)} hours`
+                    : `${Math.ceil(status.retryAfterSeconds / 60)} minutes`
+                  }.</>
+                )}
+              </p>
+            </div>
+          )}
+
           <button
             onClick={handleDisconnect}
             disabled={isDisconnecting}
@@ -161,7 +209,7 @@ export function FigmaIntegrationCard() {
                 >
                   Figma Settings <ExternalLink className="inline h-3 w-3" />
                 </a>
-                {' '}— free accounts work.
+                {' '}&mdash; free accounts work.
               </p>
               {error && (
                 <p className="text-xs text-red-600">{error}</p>
