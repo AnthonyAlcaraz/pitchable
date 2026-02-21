@@ -82,7 +82,7 @@ export class ImagesService {
       include: {
         slides: { orderBy: { slideNumber: 'asc' } },
         theme: true,
-        pitchLens: { select: { imageFrequency: true } },
+        pitchLens: { select: { imageFrequency: true, imageLayout: true } },
       },
     });
 

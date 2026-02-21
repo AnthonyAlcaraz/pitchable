@@ -85,7 +85,7 @@ export class ChatController {
         if (!pitchLensId) {
           const defaultLens = await this.prisma.pitchLens.findFirst({
             where: { userId: user.userId },
-            orderBy: { createdAt: 'desc' },
+            orderBy: [{ isDefault: 'desc' }, { createdAt: 'desc' }],
             select: { id: true },
           });
           pitchLensId = defaultLens?.id ?? null;
