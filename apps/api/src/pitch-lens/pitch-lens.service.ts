@@ -3,6 +3,7 @@ import {
   Logger,
   NotFoundException,
   ForbiddenException,
+  BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { ThemesService } from '../themes/themes.service.js';
@@ -281,5 +282,158 @@ export class PitchLensService {
       ...presentation.pitchLens,
       framework: getFrameworkConfig(presentation.pitchLens.selectedFramework),
     };
+  }
+
+  // ── Marketplace ─────────────────────────────────────────────
+
+  /**
+   * Browse public lenses. No auth required.
+   */
+  async browsePublic(options?: {
+    sortBy?: 'popular' | 'rated' | 'recent';
+    industry?: string;
+    audienceType?: string;
+    limit?: number;
+    offset?: number;
+  }) {
+    const {
+      sortBy = 'popular',
+      industry,
+      audienceType,
+      limit = 20,
+      offset = 0,
+    } = options ?? {};
+
+    const where: Record<string, unknown> = { isPublic: true };
+    if (industry) where.industry = industry;
+    if (audienceType) where.audienceType = audienceType;
+
+    const orderBy =
+      sortBy === 'rated'
+        ? { rating: 'desc' as const }
+        : sortBy === 'recent'
+          ? { createdAt: 'desc' as const }
+          : { useCount: 'desc' as const };
+
+    const [lenses, total] = await Promise.all([
+      this.prisma.pitchLens.findMany({
+        where,
+        orderBy,
+        take: limit,
+        skip: offset,
+        select: {
+          id: true,
+          name: true,
+          description: true,
+          audienceType: true,
+          pitchGoal: true,
+          industry: true,
+          selectedFramework: true,
+          toneStyle: true,
+          isPublic: true,
+          useCount: true,
+          rating: true,
+          ratingCount: true,
+          createdAt: true,
+        },
+      }),
+      this.prisma.pitchLens.count({ where }),
+    ]);
+
+    return { lenses, total, limit, offset };
+  }
+
+  /**
+   * Clone a public lens for the authenticated user.
+   */
+  async cloneLens(lensId: string, userId: string) {
+    const source = await this.prisma.pitchLens.findUnique({
+      where: { id: lensId },
+    });
+
+    if (!source) throw new NotFoundException(`Lens ${lensId} not found`);
+    if (!source.isPublic && source.userId !== userId) {
+      throw new ForbiddenException('Cannot clone a private lens');
+    }
+
+    // Increment use count on source
+    await this.prisma.pitchLens.update({
+      where: { id: lensId },
+      data: { useCount: { increment: 1 } },
+    });
+
+    // Create clone
+    const clone = await this.prisma.pitchLens.create({
+      data: {
+        userId,
+        name: `${source.name} (Copy)`,
+        description: source.description,
+        audienceType: source.audienceType,
+        pitchGoal: source.pitchGoal,
+        industry: source.industry,
+        companyStage: source.companyStage,
+        toneStyle: source.toneStyle,
+        technicalLevel: source.technicalLevel,
+        selectedFramework: source.selectedFramework,
+        maxBulletsPerSlide: source.maxBulletsPerSlide,
+        maxWordsPerSlide: source.maxWordsPerSlide,
+        maxTableRows: source.maxTableRows,
+        imageFrequency: source.imageFrequency,
+        imageLayout: source.imageLayout,
+        isPublic: false,
+        clonedFromId: lensId,
+      },
+    });
+
+    return clone;
+  }
+
+  /**
+   * Rate a public lens.
+   */
+  async rateLens(lensId: string, userId: string, score: number) {
+    if (score < 1 || score > 5) {
+      throw new BadRequestException('Rating must be between 1 and 5');
+    }
+
+    const lens = await this.prisma.pitchLens.findUnique({
+      where: { id: lensId },
+    });
+
+    if (!lens) throw new NotFoundException(`Lens ${lensId} not found`);
+    if (!lens.isPublic)
+      throw new ForbiddenException('Cannot rate a private lens');
+    if (lens.userId === userId)
+      throw new ForbiddenException('Cannot rate your own lens');
+
+    // Rolling average
+    const newCount = lens.ratingCount + 1;
+    const newRating = (lens.rating * lens.ratingCount + score) / newCount;
+
+    return this.prisma.pitchLens.update({
+      where: { id: lensId },
+      data: {
+        rating: newRating,
+        ratingCount: newCount,
+      },
+    });
+  }
+
+  /**
+   * Publish a lens to the marketplace (make public).
+   */
+  async publishLens(lensId: string, userId: string) {
+    const lens = await this.prisma.pitchLens.findUnique({
+      where: { id: lensId },
+    });
+
+    if (!lens) throw new NotFoundException(`Lens ${lensId} not found`);
+    if (lens.userId !== userId)
+      throw new ForbiddenException('Not your lens');
+
+    return this.prisma.pitchLens.update({
+      where: { id: lensId },
+      data: { isPublic: true },
+    });
   }
 }
