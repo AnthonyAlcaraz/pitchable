@@ -43,6 +43,7 @@ import { DENSITY_LIMITS, type SlideContent } from '../constraints/density-valida
 import { TtlMap } from '../common/ttl-map.js';
 import type { ChatStreamEvent } from './chat.service.js';
 import { isValidOutline, isValidSlideContent } from './validators.js';
+import { truncateToLimits, passesDensityCheck } from '../constraints/density-truncator.js';
 import type { GeneratedSlideContent } from './validators.js';
 
 // ── Interfaces ──────────────────────────────────────────────
@@ -607,6 +608,20 @@ export class GenerationService {
         outline.slides.length,
       );
 
+      // Programmatic density truncation (runs before content reviewer)
+      const truncLimits = {
+        maxBullets: densityOverrides?.maxBullets ?? 4,
+        maxWords: densityOverrides?.maxWords ?? 50,
+        maxTableRows: densityOverrides?.maxTableRows ?? 4,
+      };
+      const truncResult = truncateToLimits(slideContent.body, truncLimits);
+      if (truncResult.wasTruncated) {
+        slideContent.body = truncResult.body;
+        if (truncResult.overflow) {
+          slideContent.speakerNotes = (slideContent.speakerNotes || '') + '\n' + truncResult.overflow;
+        }
+      }
+
       // Validate density and auto-fix
       const validated = this.validateSlideContent(slideContent, slideForGeneration, themeColors);
 
@@ -663,7 +678,10 @@ export class GenerationService {
 
       // Run content reviewer (pipelined: await previous review, fire this one async)
       // VISUAL_HUMOR slides are intentionally minimal — skip density review
-      const skipReview = outlineSlide.slideType === 'VISUAL_HUMOR' || outlineSlide.slideType === 'SECTION_DIVIDER';
+      const skipReviewType = outlineSlide.slideType === 'VISUAL_HUMOR' || outlineSlide.slideType === 'SECTION_DIVIDER';
+      // Skip LLM content reviewer when programmatic validation passes (saves ~$0.15-0.30/deck)
+      const skipReviewDensity = !skipReviewType && passesDensityCheck(validated.body, truncLimits);
+      const skipReview = skipReviewType || skipReviewDensity;
       let reviewPassed = true;
       if (skipReview) {
         this.logger.debug(`Skipping content review for VISUAL_HUMOR slide ${actualSlideNumber}`);

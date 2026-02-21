@@ -13,6 +13,13 @@ export interface LlmStreamChunk {
   done: boolean;
 }
 
+/** Content block with optional cache control for Anthropic prompt caching. */
+export interface SystemBlock {
+  type: 'text';
+  text: string;
+  cache_control?: { type: 'ephemeral' };
+}
+
 /** Optional schema validator function. Returns null if valid, error message if invalid. */
 export type JsonValidator<T> = (data: unknown) => data is T;
 
@@ -132,22 +139,32 @@ export class LlmService {
     model?: string,
     validator?: JsonValidator<T>,
     maxRetries = 1,
+    options?: { cacheSystemPrompt?: boolean },
   ): Promise<T> {
     let lastError: Error | null = null;
     // Build a mutable copy of non-system messages for retry nudges
     let { system, messages: nonSystem } = this.separateSystemMessages(messages);
 
     // Append JSON instruction to system prompt
-    const jsonSystem = system
-      ? system + '\n\nIMPORTANT: You MUST respond with valid JSON only. No markdown fences, no explanation, no text before or after the JSON. Output ONLY a single JSON object.'
+    const jsonInstruction = '\n\nIMPORTANT: You MUST respond with valid JSON only. No markdown fences, no explanation, no text before or after the JSON. Output ONLY a single JSON object.';
+    const jsonSystemString = system
+      ? system + jsonInstruction
       : 'You MUST respond with valid JSON only. No markdown fences, no explanation, no text before or after the JSON. Output ONLY a single JSON object.';
+
+    // Build system param: use content blocks with cache_control when caching is enabled
+    const systemParam: string | SystemBlock[] = options?.cacheSystemPrompt && system
+      ? [
+          { type: 'text' as const, text: system, cache_control: { type: 'ephemeral' as const } },
+          { type: 'text' as const, text: jsonInstruction },
+        ]
+      : jsonSystemString;
 
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
       try {
         const result = await this.anthropic.messages.create({
           model: model ?? this.defaultModel,
           max_tokens: 4096,
-          system: jsonSystem,
+          system: systemParam,
           messages: nonSystem,
         });
 

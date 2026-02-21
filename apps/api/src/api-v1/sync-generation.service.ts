@@ -39,6 +39,7 @@ import type { DeckArchetype } from '../../generated/prisma/enums.js';
 import { isValidOutline, isValidSlideContent } from '../chat/validators.js';
 import type { GeneratedSlideContent } from '../chat/validators.js';
 import { validateSlideContent, suggestSplit, DENSITY_LIMITS } from '../constraints/density-validator.js';
+import { truncateToLimits, passesDensityCheck } from '../constraints/density-truncator.js';
 import type { DensityLimits } from '../constraints/density-validator.js';
 
 export interface SyncGenerationInput {
@@ -345,6 +346,20 @@ ${slideKbContext}`;
         const tSlideGen = Date.now() - tSlide;
         this.logger.log(`[TIMING] Slide ${i + 1}/${outline.slides.length} generation (Opus): ${(tSlideGen / 1000).toFixed(1)}s — "${outlineSlide.title.slice(0, 40)}"`);
 
+        // Programmatic density truncation
+        const truncLimits = {
+          maxBullets: syncDensityOverrides?.maxBullets ?? 4,
+          maxWords: syncDensityOverrides?.maxWords ?? 50,
+          maxTableRows: syncDensityOverrides?.maxTableRows ?? 4,
+        };
+        const truncResult = truncateToLimits(slideContent.body, truncLimits);
+        if (truncResult.wasTruncated) {
+          slideContent.body = truncResult.body;
+          if (truncResult.overflow) {
+            slideContent.speakerNotes = (slideContent.speakerNotes || '') + '\n' + truncResult.overflow;
+          }
+        }
+
         // Build custom density limits from PitchLens overrides
         const customLimits: DensityLimits = {
           ...DENSITY_LIMITS,
@@ -353,8 +368,10 @@ ${slideKbContext}`;
           ...(syncDensityOverrides?.maxTableRows && { maxTableRows: syncDensityOverrides.maxTableRows }),
         };
 
-        // Skip content review for intentionally minimal slides
-        const skipSyncReview = outlineSlide.slideType === 'VISUAL_HUMOR' || outlineSlide.slideType === 'SECTION_DIVIDER';
+        // Skip content review for intentionally minimal slides or when density passes programmatically
+        const skipSyncReviewType = outlineSlide.slideType === 'VISUAL_HUMOR' || outlineSlide.slideType === 'SECTION_DIVIDER';
+        const skipSyncReviewDensity = !skipSyncReviewType && passesDensityCheck(slideContent.body, truncLimits);
+        const skipSyncReview = skipSyncReviewType || skipSyncReviewDensity;
 
         // Run content review (Haiku — lightweight density/quality check)
         const tReview = Date.now();
