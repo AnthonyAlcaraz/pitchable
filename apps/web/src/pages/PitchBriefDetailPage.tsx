@@ -5,6 +5,8 @@ import { usePitchBriefStore } from '@/stores/pitch-brief.store';
 import type { SearchResult } from '@/stores/pitch-brief.store';
 import { usePitchLensStore } from '@/stores/pitch-lens.store';
 import { ArrowLeft, BookOpen, Plus, Trash2, Upload, FileText, Link2, Unlink, Search, Network } from 'lucide-react';
+import { useDocumentProgress } from '@/hooks/useDocumentProgress';
+import { useKbStore } from '@/stores/kb.store';
 
 const STATUS_COLORS: Record<string, string> = {
   EMPTY: 'bg-gray-500/10 text-gray-400',
@@ -71,8 +73,27 @@ export function PitchBriefDetailPage() {
   const [searchResults, setSearchResults] = useState<SearchResult | null>(null);
   const [deletingDocId, setDeletingDocId] = useState<string | null>(null);
 
+  // Activate real-time document progress WebSocket listener
+  useDocumentProgress();
+  const documentProgress = useKbStore((s) => s.documentProgress);
+
   const docs = currentBrief?.documents ?? [];
   const briefLenses = currentBrief?.briefLenses ?? [];
+
+  // Compute aggregate document progress
+  const readyCount = docs.filter((d) => d.status === 'READY').length;
+  const processingDocs = docs.filter((d) => ['UPLOADED', 'PARSING', 'EMBEDDING', 'PROCESSING'].includes(d.status));
+  const hasProcessingDocs = processingDocs.length > 0;
+  const aggregateProgress = docs.length > 0
+    ? Math.round(
+        docs.reduce((sum, d) => {
+          if (d.status === 'READY') return sum + 100;
+          if (d.status === 'ERROR') return sum + 0;
+          const prog = documentProgress[d.id];
+          return sum + (prog ? prog.progress : 0);
+        }, 0) / docs.length,
+      )
+    : 0;
 
   useEffect(() => {
     if (id) {
@@ -243,6 +264,34 @@ export function PitchBriefDetailPage() {
                 className="hidden"
               />
             </div>
+
+            {/* Aggregate Document Progress */}
+            {hasProcessingDocs && docs.length > 0 && (
+              <div className="mb-6 p-4 bg-background border border-border rounded-lg">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium" style={{ color: '#E88D67' }}>
+                    {readyCount}/{docs.length} documents ready
+                  </span>
+                  <span className="text-xs font-mono font-semibold tabular-nums" style={{ color: '#E88D67' }}>
+                    {aggregateProgress}%
+                  </span>
+                </div>
+                <div className="h-2 overflow-hidden rounded-full" style={{ backgroundColor: '#FFF0E6' }}>
+                  <div
+                    className="h-full rounded-full transition-all duration-700 ease-out"
+                    style={{
+                      width: `${aggregateProgress}%`,
+                      background: 'linear-gradient(90deg, #FFAB76, #FF9F6B, #E88D67)',
+                    }}
+                  />
+                </div>
+                {processingDocs.length > 0 && (
+                  <p className="mt-2 text-xs text-muted-foreground truncate">
+                    {documentProgress[processingDocs[0].id]?.message || `Processing ${processingDocs[0].title}...`}
+                  </p>
+                )}
+              </div>
+            )}
 
             {/* Document List */}
             <div className="space-y-3 mb-6">
