@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { usePitchLensStore } from '@/stores/pitch-lens.store';
-import { ArrowLeft, Plus, Pencil, Star, FileText, Focus } from 'lucide-react';
+import { ArrowLeft, Plus, Pencil, Star, FileText, Focus, Image, Coins } from 'lucide-react';
 
 function formatEnum(value: string): string {
   return value.toLowerCase().replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
@@ -87,6 +87,63 @@ export function PitchLensDetailPage() {
             <p className="mt-1 text-sm font-semibold text-foreground">{item.value}</p>
           </div>
         ))}
+      </div>
+
+      {/* Image Settings */}
+      <div className="mb-8 rounded-lg border border-border bg-card p-5">
+        <div className="mb-3 flex items-center gap-2">
+          <Image className="h-5 w-5 text-primary" />
+          <h2 className="text-lg font-semibold text-foreground">{t('pitch_lenses.detail.image_settings')}</h2>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-3">
+          <div>
+            <p className="text-xs font-medium uppercase text-muted-foreground">{t('pitch_lenses.detail.image_density')}</p>
+            <p className="mt-1 text-sm font-semibold text-foreground">
+              {currentLens.imageFrequency === 0
+                ? t('pitch_lenses.detail.image_none')
+                : currentLens.imageFrequency <= 2
+                  ? t('pitch_lenses.detail.image_many')
+                  : currentLens.imageFrequency <= 3
+                    ? t('pitch_lenses.detail.image_some')
+                    : t('pitch_lenses.detail.image_few')}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {currentLens.imageFrequency === 0
+                ? t('pitch_lenses.detail.image_freq_none')
+                : t('pitch_lenses.detail.image_freq', { n: currentLens.imageFrequency })}
+            </p>
+          </div>
+          <div>
+            <p className="text-xs font-medium uppercase text-muted-foreground">{t('pitch_lenses.detail.image_layout')}</p>
+            <p className="mt-1 text-sm font-semibold text-foreground">
+              {currentLens.imageLayout === 'BACKGROUND'
+                ? t('wizard.image_layout_background')
+                : t('wizard.image_layout_side')}
+            </p>
+          </div>
+          {currentLens.imageFrequency > 0 && currentLens.framework?.idealSlideRange && (
+            <div>
+              <p className="text-xs font-medium uppercase text-muted-foreground">{t('pitch_lenses.detail.estimated_images')}</p>
+              {(() => {
+                const freq = currentLens.imageFrequency;
+                const range = currentLens.framework.idealSlideRange;
+                const minImg = Math.max(1, Math.floor(range.min / freq));
+                const maxImg = Math.max(1, Math.floor(range.max / freq));
+                return (
+                  <div className="mt-1 flex items-center gap-1.5">
+                    <p className="text-sm font-semibold text-foreground">
+                      {minImg === maxImg ? `${minImg}` : `${minImg}–${maxImg}`} {t('common.images')}
+                    </p>
+                    <Coins className="h-3.5 w-3.5 text-amber-500" />
+                    <span className="text-xs text-amber-600 dark:text-amber-400">
+                      {minImg === maxImg ? `${minImg}` : `${minImg}–${maxImg}`} {t('common.credits')}
+                    </span>
+                  </div>
+                );
+              })()}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Framework */}

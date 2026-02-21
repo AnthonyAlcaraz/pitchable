@@ -13,6 +13,7 @@ import {
   ChevronDown,
   GitFork,
   Sparkles,
+  Image,
 } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth.store';
 import { usePresentationsStore } from '@/stores/presentations.store';
@@ -424,6 +425,22 @@ export function CockpitPage() {
                     {formatEnum(lens.pitchGoal)}
                   </span>
                 </div>
+                {lens.imageFrequency > 0 && lens.framework?.idealSlideRange && (() => {
+                  const freq = lens.imageFrequency;
+                  const range = lens.framework.idealSlideRange;
+                  const minImg = Math.max(1, Math.floor(range.min / freq));
+                  const maxImg = Math.max(1, Math.floor(range.max / freq));
+                  return (
+                    <div className="mb-2 flex items-center gap-1.5 text-xs text-muted-foreground">
+                      <Image className="h-3 w-3 shrink-0" />
+                      <span>
+                        {minImg === maxImg ? `${minImg}` : `${minImg}–${maxImg}`} {t('common.images')}
+                      </span>
+                      <span>&middot;</span>
+                      <span>{lens.imageLayout === 'BACKGROUND' ? t('wizard.image_layout_background') : t('wizard.image_layout_side')}</span>
+                    </div>
+                  );
+                })()}
                 <p className="text-xs text-muted-foreground">
                   {lens.presentationCount === 1
                     ? t('common.presentation_count', { count: lens.presentationCount })

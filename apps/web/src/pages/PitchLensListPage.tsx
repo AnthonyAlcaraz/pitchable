@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { usePitchLensStore } from '@/stores/pitch-lens.store';
-import { Plus, Focus, Star, Trash2 } from 'lucide-react';
+import { Plus, Focus, Star, Trash2, Image, Coins } from 'lucide-react';
 
 function formatEnum(value: string): string {
   return value.toLowerCase().replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
@@ -100,6 +100,29 @@ export function PitchLensListPage() {
                   </span>
                 )}
               </div>
+
+              {/* Image generation info */}
+              {lens.imageFrequency > 0 && lens.framework?.idealSlideRange && (() => {
+                const freq = lens.imageFrequency;
+                const range = lens.framework.idealSlideRange;
+                const minImg = Math.max(1, Math.floor(range.min / freq));
+                const maxImg = Math.max(1, Math.floor(range.max / freq));
+                const isBackground = lens.imageLayout === 'BACKGROUND';
+                return (
+                  <div className="mb-3 flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <Image className="h-3 w-3 shrink-0" />
+                    <span>
+                      {minImg === maxImg ? `${minImg}` : `${minImg}–${maxImg}`} {t('common.images')}
+                    </span>
+                    <span>&middot;</span>
+                    <span>{isBackground ? t('wizard.image_layout_background') : t('wizard.image_layout_side')}</span>
+                    <Coins className="ml-auto h-3 w-3 text-amber-500" />
+                    <span className="text-amber-600 dark:text-amber-400">
+                      {minImg === maxImg ? minImg : `${minImg}–${maxImg}`}
+                    </span>
+                  </div>
+                );
+              })()}
 
               <div className="flex items-center justify-between text-xs text-muted-foreground">
                 <span>{lens.presentationCount} {lens.presentationCount !== 1 ? t('common.presentations') : t('common.presentation')}</span>
