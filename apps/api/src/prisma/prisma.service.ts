@@ -74,8 +74,14 @@ export class PrismaService
       `CREATE UNIQUE INDEX IF NOT EXISTS "BriefLens_briefId_lensId_key" ON "BriefLens" ("briefId", "lensId")`,
       `CREATE INDEX IF NOT EXISTS "BriefLens_briefId_idx" ON "BriefLens" ("briefId")`,
       `CREATE INDEX IF NOT EXISTS "BriefLens_lensId_idx" ON "BriefLens" ("lensId")`,
-      // PitchLens missing column
+      // PitchLens missing columns
       `ALTER TABLE "PitchLens" ADD COLUMN IF NOT EXISTS "figmaTemplateId" UUID`,
+      `ALTER TABLE "PitchLens" ADD COLUMN IF NOT EXISTS "backgroundImageFrequency" INTEGER NOT NULL DEFAULT 0`,
+      `ALTER TABLE "PitchLens" ADD COLUMN IF NOT EXISTS "sidePanelImageFrequency" INTEGER NOT NULL DEFAULT 5`,
+      `ALTER TABLE "PitchLens" ADD COLUMN IF NOT EXISTS "useCount" INTEGER NOT NULL DEFAULT 0`,
+      `ALTER TABLE "PitchLens" ADD COLUMN IF NOT EXISTS "rating" DOUBLE PRECISION NOT NULL DEFAULT 0`,
+      `ALTER TABLE "PitchLens" ADD COLUMN IF NOT EXISTS "ratingCount" INTEGER NOT NULL DEFAULT 0`,
+      `ALTER TABLE "PitchLens" ADD COLUMN IF NOT EXISTS "clonedFromId" UUID`,
     ];
 
     for (const sql of migrations) {
