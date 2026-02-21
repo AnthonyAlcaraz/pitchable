@@ -530,7 +530,9 @@
       "no_briefs_desc": "Create your first pitch brief to start building AI-powered knowledge collections",
       "enter_name_prompt": "Enter brief name:",
       "enter_description_prompt": "Enter brief description (optional):",
-      "confirm_delete": "Click again to confirm"
+      "confirm_delete": "Click again to confirm",
+      "limit_banner": "Free plan includes 1 brief. Upgrade to create more.",
+      "limit_banner_cta": "View plans"
     },
     "detail": {
       "back_to_briefs": "Back to Briefs",
@@ -612,7 +614,9 @@
       "no_lenses_title": "No Pitch Lenses yet",
       "no_lenses_desc": "A Pitch Lens captures your audience, goals, and storytelling strategy. All presentations created under a lens inherit its guidance.",
       "create_first_lens": "Create your first Lens",
-      "confirm_delete": "Delete this Pitch Lens?"
+      "confirm_delete": "Delete this Pitch Lens?",
+      "limit_banner": "Free plan includes 1 lens. Upgrade to create more.",
+      "limit_banner_cta": "View plans"
     },
     "detail": {
       "back_to_lenses": "Back to Pitch Lenses",

@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { usePitchLensStore } from '@/stores/pitch-lens.store';
 import { useBillingStore } from '@/stores/billing.store';
@@ -57,6 +57,18 @@ export function PitchLensListPage() {
           )}
         </div>
       </div>
+
+      {atLimit && (
+        <div className="mb-6 flex items-center justify-between rounded-lg border border-amber-500/20 bg-amber-500/5 px-4 py-3">
+          <div className="flex items-center gap-2">
+            <Lock className="h-4 w-4 text-amber-400" />
+            <p className="text-sm text-amber-400">{t('pitch_lenses.list.limit_banner')}</p>
+          </div>
+          <Link to="/billing" className="text-sm font-medium text-primary hover:underline">
+            {t('pitch_lenses.list.limit_banner_cta')}
+          </Link>
+        </div>
+      )}
 
       {isLoading ? (
         <div className="flex justify-center py-16">
