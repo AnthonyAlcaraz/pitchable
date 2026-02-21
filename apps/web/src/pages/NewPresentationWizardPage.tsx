@@ -16,7 +16,6 @@ import { CreditBadge } from '@/components/shared/CreditBadge';
 import { cn } from '@/lib/utils';
 import { usePitchBriefStore } from '@/stores/pitch-brief.store';
 import { usePitchLensStore } from '@/stores/pitch-lens.store';
-import { useAuthStore } from '@/stores/auth.store';
 import { api } from '@/lib/api';
 
 // ── Types ────────────────────────────────────────────────────
@@ -68,8 +67,6 @@ export function NewPresentationWizardPage() {
 
   const { briefs, isLoading: briefsLoading, loadBriefs } = usePitchBriefStore();
   const { lenses, isLoading: lensesLoading, loadLenses } = usePitchLensStore();
-  const creditBalance = useAuthStore((s) => s.user?.creditBalance ?? 0);
-
   const [step, setStep] = useState<Step>('brief');
   const [briefId, setBriefId] = useState<string | null>(null);
   const [lensId, setLensId] = useState<string | null>(null);
