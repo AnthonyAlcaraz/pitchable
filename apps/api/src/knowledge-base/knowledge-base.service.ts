@@ -7,6 +7,7 @@ import { EmbeddingService } from './embedding/embedding.service.js';
 import { VectorStoreService } from './embedding/vector-store.service.js';
 import type { SearchResult } from './embedding/vector-store.service.js';
 import { FalkorDbService } from './falkordb/falkordb.service.js';
+import { FirecrawlService } from './parsers/firecrawl.service.js';
 import { ZeroEntropyRetrievalService } from './zeroentropy/zeroentropy-retrieval.service.js';
 import { DocumentSourceType, DocumentStatus } from '../../generated/prisma/enums.js';
 import { randomUUID } from 'node:crypto';
@@ -35,6 +36,8 @@ export class KnowledgeBaseService {
     private readonly vectorStore: VectorStoreService,
     private readonly falkordb: FalkorDbService,
     private readonly zeRetrieval: ZeroEntropyRetrievalService,
+    private readonly firecrawl: FirecrawlService,
+    @InjectQueue('website-crawl') private readonly crawlQueue: Queue,
   ) {}
 
   async uploadFile(
@@ -293,5 +296,37 @@ export class KnowledgeBaseService {
     }
 
     return { indexed, failed };
+  }
+/** Check if Firecrawl website crawling is available. */
+  isFirecrawlAvailable(): boolean {
+    return this.firecrawl.isAvailable();
+  }
+
+  /**
+   * Queue a full website crawl via Firecrawl.
+   * Each crawled page becomes a separate Document linked to the brief.
+   * Returns the BullMQ job ID for tracking.
+   */
+  async crawlWebsite(
+    userId: string,
+    briefId: string,
+    url: string,
+    maxPages = 20,
+    maxDepth = 2,
+  ): Promise<{ jobId: string; estimatedCredits: number }> {
+    const job = await this.crawlQueue.add('crawl-website', {
+      userId,
+      briefId,
+      url,
+      maxPages,
+      maxDepth,
+    });
+
+    const estimatedCredits = Math.ceil(maxPages / 5);
+    this.logger.log(
+      `Website crawl queued: jobId=${job.id}, url=${url}, briefId=${briefId}, maxPages=${maxPages}`,
+    );
+
+    return { jobId: job.id!, estimatedCredits };
   }
 }

@@ -65,7 +65,7 @@ function getToken(): string | null {
 }
 
 export function getSocket(): Socket {
-  if (socket?.connected) return socket;
+  if (socket && !socket.disconnected) return socket;
 
   const token = getToken();
   if (!token) {

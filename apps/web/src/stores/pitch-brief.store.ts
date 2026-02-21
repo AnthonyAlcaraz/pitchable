@@ -107,6 +107,7 @@ interface PitchBriefState {
   addTextDocument: (briefId: string, content: string, title?: string) => Promise<void>;
   addUrlDocument: (briefId: string, url: string, title?: string) => Promise<void>;
   removeDocument: (briefId: string, docId: string) => Promise<void>;
+  crawlWebsite: (briefId: string, url: string, maxPages?: number, maxDepth?: number) => Promise<{ jobId: string; estimatedCredits: number }>;
 
   loadGraph: (briefId: string, opts?: { startNode?: string; depth?: number; maxNodes?: number }) => Promise<void>;
   loadGraphStats: (briefId: string) => Promise<void>;
@@ -203,6 +204,14 @@ export const usePitchBriefStore = create<PitchBriefState>((set, get) => ({
         },
       };
     });
+  },
+
+  async crawlWebsite(briefId, url, maxPages = 20, maxDepth = 2) {
+    const result = await api.post<{ jobId: string; estimatedCredits: number }>(
+      `/pitch-briefs/${briefId}/documents/crawl`,
+      { url, maxPages, maxDepth },
+    );
+    return result;
   },
 
   // ─── Graph ────────────────────────────────────────────────

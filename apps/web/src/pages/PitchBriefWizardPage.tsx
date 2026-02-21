@@ -2,7 +2,9 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { usePitchBriefStore } from '@/stores/pitch-brief.store';
-import { ArrowLeft, ArrowRight, BookOpen, Upload, Check, FileText, X } from 'lucide-react';
+import { useKbStore } from '@/stores/kb.store';
+import { useDocumentProgress } from '@/hooks/useDocumentProgress';
+import { ArrowLeft, ArrowRight, BookOpen, Upload, Check, FileText, X, Loader2, Globe } from 'lucide-react';
 
 export function PitchBriefWizardPage() {
   const { t } = useTranslation();
@@ -16,7 +18,13 @@ export function PitchBriefWizardPage() {
     { number: 3, label: t('pitch_briefs.wizard.step_3') },
   ];
 
-  const { briefs, createBrief, updateBrief, loadBriefs, uploadDocument, addTextDocument, addUrlDocument } = usePitchBriefStore();
+  const { briefs, createBrief, updateBrief, loadBriefs, uploadDocument, addTextDocument, addUrlDocument, crawlWebsite } = usePitchBriefStore();
+  const currentBrief = usePitchBriefStore((s) => s.currentBrief);
+  const loadBrief = usePitchBriefStore((s) => s.loadBrief);
+  const documentProgress = useKbStore((s) => s.documentProgress);
+
+  // Establish WebSocket listener for document:progress events
+  useDocumentProgress();
 
   const [step, setStep] = useState(1);
   const [name, setName] = useState('');
@@ -24,13 +32,17 @@ export function PitchBriefWizardPage() {
   const [briefId, setBriefId] = useState<string | null>(id || null);
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [pendingTexts, setPendingTexts] = useState<Array<{ title: string; content: string }>>([]);
-  const [pendingUrls, setPendingUrls] = useState<Array<{ title: string; url: string }>>([]);
+  const [pendingUrls, setPendingUrls] = useState<Array<{ title: string; url: string; crawl?: boolean; maxPages?: number; maxDepth?: number }>>([]);
   const [textInput, setTextInput] = useState('');
   const [textTitle, setTextTitle] = useState('');
   const [urlInput, setUrlInput] = useState('');
   const [urlTitle, setUrlTitle] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [dragActive, setDragActive] = useState(false);
+  const [isUploaded, setIsUploaded] = useState(false);
+  const [urlCrawlMode, setUrlCrawlMode] = useState(false);
+  const [crawlMaxPages, setCrawlMaxPages] = useState(20);
+  const [crawlMaxDepth, setCrawlMaxDepth] = useState(2);
 
   useEffect(() => {
     if (isEditMode && id) {
@@ -47,6 +59,30 @@ export function PitchBriefWizardPage() {
       }
     }
   }, [isEditMode, id, briefs]);
+
+  // Poll brief every 5s during processing (fallback for missed WebSocket events)
+  useEffect(() => {
+    if (!isUploaded || !briefId) return;
+
+    const poll = setInterval(() => { loadBrief(briefId); }, 5000);
+    return () => clearInterval(poll);
+  }, [isUploaded, briefId, loadBrief]);
+
+  // Auto-advance when all docs reach terminal state
+  useEffect(() => {
+    if (!isUploaded || !currentBrief) return;
+    const docs = currentBrief.documents;
+    if (docs.length === 0) return;
+
+    const allTerminal = docs.every(
+      (d) => d.status === 'READY' || d.status === 'ERROR'
+    );
+
+    if (allTerminal) {
+      const timer = setTimeout(() => setStep(3), 1500);
+      return () => clearTimeout(timer);
+    }
+  }, [isUploaded, currentBrief]);
 
   const handleNext = useCallback(async () => {
     if (step === 1) {
@@ -69,6 +105,8 @@ export function PitchBriefWizardPage() {
       }
     } else if (step === 2) {
       if (!briefId) return;
+      const totalDocs = pendingFiles.length + pendingTexts.length + pendingUrls.length;
+      if (totalDocs === 0) { setStep(3); return; }
 
       setIsSubmitting(true);
       try {
@@ -79,16 +117,22 @@ export function PitchBriefWizardPage() {
           await addTextDocument(briefId, text.content, text.title);
         }
         for (const url of pendingUrls) {
-          await addUrlDocument(briefId, url.url, url.title);
+          if (url.crawl) {
+            await crawlWebsite(briefId, url.url, url.maxPages, url.maxDepth);
+          } else {
+            await addUrlDocument(briefId, url.url, url.title);
+          }
         }
-        setStep(3);
+        // Stay on step 2, show processing progress
+        setIsUploaded(true);
+        await loadBrief(briefId);
       } catch (error) {
         console.error('Failed to upload documents:', error);
       } finally {
         setIsSubmitting(false);
       }
     }
-  }, [step, name, description, briefId, isEditMode, pendingFiles, pendingTexts, pendingUrls, createBrief, updateBrief, uploadDocument, addTextDocument, addUrlDocument, navigate]);
+  }, [step, name, description, briefId, isEditMode, pendingFiles, pendingTexts, pendingUrls, createBrief, updateBrief, uploadDocument, addTextDocument, addUrlDocument, crawlWebsite, navigate, loadBrief]);
 
   const handleSkip = useCallback(() => {
     if (step === 2) {
@@ -147,10 +191,15 @@ export function PitchBriefWizardPage() {
 
   const addUrl = useCallback(() => {
     if (!urlInput.trim() || !urlTitle.trim()) return;
-    setPendingUrls((prev) => [...prev, { title: urlTitle, url: urlInput }]);
+    setPendingUrls((prev) => [...prev, {
+      title: urlTitle,
+      url: urlInput,
+      ...(urlCrawlMode ? { crawl: true, maxPages: crawlMaxPages, maxDepth: crawlMaxDepth } : {}),
+    }]);
     setUrlInput('');
     setUrlTitle('');
-  }, [urlInput, urlTitle]);
+    setUrlCrawlMode(false);
+  }, [urlInput, urlTitle, urlCrawlMode, crawlMaxPages, crawlMaxDepth]);
 
   const handleCreateAnother = useCallback(() => {
     setStep(1);
@@ -160,9 +209,15 @@ export function PitchBriefWizardPage() {
     setPendingFiles([]);
     setPendingTexts([]);
     setPendingUrls([]);
+    setIsUploaded(false);
   }, []);
 
   const totalDocuments = pendingFiles.length + pendingTexts.length + pendingUrls.length;
+
+  // Compute processing state for step 2 footer
+  const isProcessing = isUploaded && currentBrief && currentBrief.documents.some(
+    (d) => d.status !== 'READY' && d.status !== 'ERROR'
+  );
 
   return (
     <div className="min-h-screen bg-background">
@@ -272,179 +327,307 @@ export function PitchBriefWizardPage() {
 
           {step === 2 && (
             <div className="space-y-6">
-              <div>
-                <h2 className="text-xl font-semibold text-foreground mb-4">{t('pitch_briefs.wizard.add_documents_title')}</h2>
-                <p className="text-muted-foreground mb-6">
-                  {t('pitch_briefs.wizard.add_documents_desc')}
-                </p>
-              </div>
+              {/* Processing progress view */}
+              {isUploaded && currentBrief ? (
+                <div className="space-y-4">
+                  <h2 className="text-xl font-semibold text-foreground">
+                    {isProcessing ? 'Processing documents...' : 'Documents ready'}
+                  </h2>
 
-              <div>
-                <h3 className="text-sm font-medium text-foreground mb-3">{t('pitch_briefs.wizard.upload_files_title')}</h3>
-                <div
-                  onDragEnter={handleDrag}
-                  onDragLeave={handleDrag}
-                  onDragOver={handleDrag}
-                  onDrop={handleDrop}
-                  className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
-                    dragActive
-                      ? 'border-primary bg-primary/5'
-                      : 'border-border hover:border-primary/50'
-                  }`}
-                >
-                  <Upload className="w-8 h-8 text-muted-foreground mx-auto mb-3" />
-                  <p className="text-foreground mb-2">{t('pitch_briefs.wizard.drag_drop_text')}</p>
-                  <p className="text-sm text-muted-foreground mb-4">{t('common.or')}</p>
-                  <label className="inline-block px-4 py-2 bg-primary text-primary-foreground rounded-lg cursor-pointer hover:bg-primary/90 transition-colors">
-                    {t('pitch_briefs.wizard.browse_files')}
-                    <input
-                      type="file"
-                      multiple
-                      onChange={handleFileChange}
-                      className="hidden"
-                    />
-                  </label>
-                </div>
-              </div>
-
-              <div>
-                <h3 className="text-sm font-medium text-foreground mb-3">{t('pitch_briefs.wizard.add_text_title')}</h3>
-                <div className="space-y-3">
-                  <input
-                    type="text"
-                    value={textTitle}
-                    onChange={(e) => setTextTitle(e.target.value)}
-                    placeholder={t('pitch_briefs.wizard.document_title_placeholder')}
-                    className="w-full px-4 py-2 bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                  />
-                  <textarea
-                    value={textInput}
-                    onChange={(e) => setTextInput(e.target.value)}
-                    rows={4}
-                    placeholder={t('pitch_briefs.wizard.paste_text_placeholder')}
-                    className="w-full px-4 py-2 bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary resize-none"
-                  />
-                  <button
-                    onClick={addText}
-                    disabled={!textInput.trim() || !textTitle.trim()}
-                    className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                  >
-                    {t('pitch_briefs.wizard.add_text_button')}
-                  </button>
-                </div>
-              </div>
-
-              <div>
-                <h3 className="text-sm font-medium text-foreground mb-3">{t('pitch_briefs.wizard.add_url_title')}</h3>
-                <div className="space-y-3">
-                  <input
-                    type="text"
-                    value={urlTitle}
-                    onChange={(e) => setUrlTitle(e.target.value)}
-                    placeholder={t('pitch_briefs.wizard.document_title_placeholder')}
-                    className="w-full px-4 py-2 bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                  />
-                  <input
-                    type="url"
-                    value={urlInput}
-                    onChange={(e) => setUrlInput(e.target.value)}
-                    placeholder={t('pitch_briefs.wizard.url_placeholder')}
-                    className="w-full px-4 py-2 bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                  />
-                  <button
-                    onClick={addUrl}
-                    disabled={!urlInput.trim() || !urlTitle.trim()}
-                    className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                  >
-                    {t('pitch_briefs.wizard.add_url_button')}
-                  </button>
-                </div>
-              </div>
-
-              {totalDocuments > 0 && (
-                <div>
-                  <h3 className="text-sm font-medium text-foreground mb-3">
-                    {t('pitch_briefs.wizard.added_documents', { count: totalDocuments })}
-                  </h3>
-                  <div className="space-y-2">
-                    {pendingFiles.map((file, index) => (
-                      <div
-                        key={`file-${index}`}
-                        className="flex items-center justify-between p-3 bg-background border border-border rounded-lg"
-                      >
-                        <div className="flex items-center gap-3">
-                          <FileText className="w-4 h-4 text-muted-foreground" />
-                          <span className="text-sm text-foreground">{file.name}</span>
+                  {/* Aggregate progress bar */}
+                  {(() => {
+                    const docs = currentBrief.documents;
+                    const readyCount = docs.filter(d => d.status === 'READY').length;
+                    const errorCount = docs.filter(d => d.status === 'ERROR').length;
+                    const totalCount = docs.length;
+                    const doneCount = readyCount + errorCount;
+                    const pct = totalCount > 0 ? Math.round((doneCount / totalCount) * 100) : 0;
+                    return (
+                      <>
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-muted-foreground">
+                            {doneCount}/{totalCount} documents ready
+                          </span>
+                          <span className="font-mono tabular-nums" style={{ color: '#E88D67' }}>
+                            {pct}%
+                          </span>
                         </div>
-                        <button
-                          onClick={() => removeFile(index)}
-                          className="text-muted-foreground hover:text-foreground transition-colors"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
-                      </div>
-                    ))}
-                    {pendingTexts.map((text, index) => (
-                      <div
-                        key={`text-${index}`}
-                        className="flex items-center justify-between p-3 bg-background border border-border rounded-lg"
-                      >
-                        <div className="flex items-center gap-3">
-                          <FileText className="w-4 h-4 text-muted-foreground" />
-                          <span className="text-sm text-foreground">{text.title}</span>
+                        <div className="h-2 overflow-hidden rounded-full" style={{ backgroundColor: '#FFF0E6' }}>
+                          <div
+                            className="h-full rounded-full transition-all duration-700 ease-out"
+                            style={{ width: `${pct}%`, background: 'linear-gradient(90deg, #FFAB76, #FF9F6B, #E88D67)' }}
+                          />
                         </div>
-                        <button
-                          onClick={() => removeText(index)}
-                          className="text-muted-foreground hover:text-foreground transition-colors"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
-                      </div>
-                    ))}
-                    {pendingUrls.map((url, index) => (
-                      <div
-                        key={`url-${index}`}
-                        className="flex items-center justify-between p-3 bg-background border border-border rounded-lg"
-                      >
-                        <div className="flex items-center gap-3">
-                          <FileText className="w-4 h-4 text-muted-foreground" />
-                          <span className="text-sm text-foreground">{url.title}</span>
+                      </>
+                    );
+                  })()}
+
+                  {/* Per-document rows */}
+                  {currentBrief.documents.map((doc) => {
+                    const progress = documentProgress[doc.id];
+                    const isTerminal = doc.status === 'READY' || doc.status === 'ERROR';
+                    return (
+                      <div key={doc.id} className="p-3 bg-background border border-border rounded-lg">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-sm text-foreground truncate">{doc.title}</span>
+                          <span className={`text-xs ${doc.status === 'ERROR' ? 'text-red-500' : 'text-muted-foreground'}`}>
+                            {isTerminal ? doc.status : progress?.message || 'Queued...'}
+                          </span>
                         </div>
-                        <button
-                          onClick={() => removeUrl(index)}
-                          className="text-muted-foreground hover:text-foreground transition-colors"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
+                        {!isTerminal && (
+                          <div className="h-1.5 overflow-hidden rounded-full" style={{ backgroundColor: '#FFF0E6' }}>
+                            <div
+                              className="h-full rounded-full transition-all duration-500 ease-out"
+                              style={{
+                                width: `${progress?.progress || 5}%`,
+                                background: 'linear-gradient(90deg, #FFAB76, #FF9F6B, #E88D67)',
+                              }}
+                            />
+                          </div>
+                        )}
                       </div>
-                    ))}
+                    );
+                  })}
+                </div>
+              ) : (
+                /* Document input sections (pre-upload) */
+                <>
+                  <div>
+                    <h2 className="text-xl font-semibold text-foreground mb-4">{t('pitch_briefs.wizard.add_documents_title')}</h2>
+                    <p className="text-muted-foreground mb-6">
+                      {t('pitch_briefs.wizard.add_documents_desc')}
+                    </p>
                   </div>
-                </div>
+
+                  <div>
+                    <h3 className="text-sm font-medium text-foreground mb-3">{t('pitch_briefs.wizard.upload_files_title')}</h3>
+                    <div
+                      onDragEnter={handleDrag}
+                      onDragLeave={handleDrag}
+                      onDragOver={handleDrag}
+                      onDrop={handleDrop}
+                      className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
+                        dragActive
+                          ? 'border-primary bg-primary/5'
+                          : 'border-border hover:border-primary/50'
+                      }`}
+                    >
+                      <Upload className="w-8 h-8 text-muted-foreground mx-auto mb-3" />
+                      <p className="text-foreground mb-2">{t('pitch_briefs.wizard.drag_drop_text')}</p>
+                      <p className="text-sm text-muted-foreground mb-4">{t('common.or')}</p>
+                      <label className="inline-block px-4 py-2 bg-primary text-primary-foreground rounded-lg cursor-pointer hover:bg-primary/90 transition-colors">
+                        {t('pitch_briefs.wizard.browse_files')}
+                        <input
+                          type="file"
+                          multiple
+                          onChange={handleFileChange}
+                          className="hidden"
+                        />
+                      </label>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h3 className="text-sm font-medium text-foreground mb-3">{t('pitch_briefs.wizard.add_text_title')}</h3>
+                    <div className="space-y-3">
+                      <input
+                        type="text"
+                        value={textTitle}
+                        onChange={(e) => setTextTitle(e.target.value)}
+                        placeholder={t('pitch_briefs.wizard.document_title_placeholder')}
+                        className="w-full px-4 py-2 bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                      />
+                      <textarea
+                        value={textInput}
+                        onChange={(e) => setTextInput(e.target.value)}
+                        rows={4}
+                        placeholder={t('pitch_briefs.wizard.paste_text_placeholder')}
+                        className="w-full px-4 py-2 bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary resize-none"
+                      />
+                      <button
+                        onClick={addText}
+                        disabled={!textInput.trim() || !textTitle.trim()}
+                        className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      >
+                        {t('pitch_briefs.wizard.add_text_button')}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h3 className="text-sm font-medium text-foreground mb-3">{t('pitch_briefs.wizard.add_url_title')}</h3>
+                    <div className="space-y-3">
+                      <input
+                        type="text"
+                        value={urlTitle}
+                        onChange={(e) => setUrlTitle(e.target.value)}
+                        placeholder={t('pitch_briefs.wizard.document_title_placeholder')}
+                        className="w-full px-4 py-2 bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                      />
+                      <input
+                        type="url"
+                        value={urlInput}
+                        onChange={(e) => setUrlInput(e.target.value)}
+                        placeholder={t('pitch_briefs.wizard.url_placeholder')}
+                        className="w-full px-4 py-2 bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                      />
+                      <div className="flex items-center gap-3">
+                        <label className="flex items-center gap-2 text-sm text-foreground cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={urlCrawlMode}
+                            onChange={(e) => setUrlCrawlMode(e.target.checked)}
+                            className="rounded border-border"
+                          />
+                          <Globe className="w-4 h-4 text-muted-foreground" />
+                          Crawl entire website
+                        </label>
+                        <span className="text-xs text-muted-foreground">
+                          {urlCrawlMode ? '1 credit per 5 pages' : 'Free'}
+                        </span>
+                      </div>
+                      {urlCrawlMode && (
+                        <div className="flex gap-4 pl-6">
+                          <label className="flex items-center gap-2 text-sm text-muted-foreground">
+                            Max pages
+                            <input
+                              type="number"
+                              min={1}
+                              max={100}
+                              value={crawlMaxPages}
+                              onChange={(e) => setCrawlMaxPages(Number(e.target.value))}
+                              className="w-20 px-2 py-1 bg-background border border-border rounded text-foreground text-sm"
+                            />
+                          </label>
+                          <label className="flex items-center gap-2 text-sm text-muted-foreground">
+                            Max depth
+                            <input
+                              type="number"
+                              min={1}
+                              max={5}
+                              value={crawlMaxDepth}
+                              onChange={(e) => setCrawlMaxDepth(Number(e.target.value))}
+                              className="w-20 px-2 py-1 bg-background border border-border rounded text-foreground text-sm"
+                            />
+                          </label>
+                        </div>
+                      )}
+                      <button
+                        onClick={addUrl}
+                        disabled={!urlInput.trim() || !urlTitle.trim()}
+                        className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      >
+                        {urlCrawlMode ? 'Add website crawl' : t('pitch_briefs.wizard.add_url_button')}
+                      </button>
+                    </div>
+                  </div>
+
+                  {totalDocuments > 0 && (
+                    <div>
+                      <h3 className="text-sm font-medium text-foreground mb-3">
+                        {t('pitch_briefs.wizard.added_documents', { count: totalDocuments })}
+                      </h3>
+                      <div className="space-y-2">
+                        {pendingFiles.map((file, index) => (
+                          <div
+                            key={`file-${index}`}
+                            className="flex items-center justify-between p-3 bg-background border border-border rounded-lg"
+                          >
+                            <div className="flex items-center gap-3">
+                              <FileText className="w-4 h-4 text-muted-foreground" />
+                              <span className="text-sm text-foreground">{file.name}</span>
+                            </div>
+                            <button
+                              onClick={() => removeFile(index)}
+                              className="text-muted-foreground hover:text-foreground transition-colors"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          </div>
+                        ))}
+                        {pendingTexts.map((text, index) => (
+                          <div
+                            key={`text-${index}`}
+                            className="flex items-center justify-between p-3 bg-background border border-border rounded-lg"
+                          >
+                            <div className="flex items-center gap-3">
+                              <FileText className="w-4 h-4 text-muted-foreground" />
+                              <span className="text-sm text-foreground">{text.title}</span>
+                            </div>
+                            <button
+                              onClick={() => removeText(index)}
+                              className="text-muted-foreground hover:text-foreground transition-colors"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          </div>
+                        ))}
+                        {pendingUrls.map((url, index) => (
+                          <div
+                            key={`url-${index}`}
+                            className="flex items-center justify-between p-3 bg-background border border-border rounded-lg"
+                          >
+                            <div className="flex items-center gap-3">
+                              {url.crawl ? <Globe className="w-4 h-4 text-muted-foreground" /> : <FileText className="w-4 h-4 text-muted-foreground" />}
+                              <span className="text-sm text-foreground">{url.title}</span>
+                              {url.crawl && (
+                                <span className="text-xs px-1.5 py-0.5 rounded" style={{ backgroundColor: '#FFF0E6', color: '#E88D67' }}>
+                                  Crawl
+                                </span>
+                              )}
+                            </div>
+                            <button
+                              onClick={() => removeUrl(index)}
+                              className="text-muted-foreground hover:text-foreground transition-colors"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
 
+              {/* Footer buttons */}
               <div className="flex justify-between gap-3 pt-4">
-                <button
-                  onClick={handleBack}
-                  className="flex items-center gap-2 px-6 py-2 bg-background border border-border text-foreground rounded-lg hover:bg-muted transition-colors"
-                >
-                  <ArrowLeft className="w-4 h-4" />
-                  {t('common.back')}
-                </button>
-                <div className="flex gap-3">
+                {!isUploaded && (
                   <button
-                    onClick={handleSkip}
-                    disabled={isSubmitting}
-                    className="px-6 py-2 bg-background border border-border text-foreground rounded-lg hover:bg-muted transition-colors"
+                    onClick={handleBack}
+                    className="flex items-center gap-2 px-6 py-2 bg-background border border-border text-foreground rounded-lg hover:bg-muted transition-colors"
                   >
-                    {t('common.skip')}
+                    <ArrowLeft className="w-4 h-4" />
+                    {t('common.back')}
                   </button>
+                )}
+                {isUploaded && <div />}
+                <div className="flex gap-3">
+                  {!isUploaded && (
+                    <button
+                      onClick={handleSkip}
+                      disabled={isSubmitting}
+                      className="px-6 py-2 bg-background border border-border text-foreground rounded-lg hover:bg-muted transition-colors"
+                    >
+                      {t('common.skip')}
+                    </button>
+                  )}
                   <button
-                    onClick={handleNext}
-                    disabled={isSubmitting}
+                    onClick={isProcessing ? undefined : handleNext}
+                    disabled={isSubmitting || !!isProcessing}
                     className="flex items-center gap-2 px-6 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
-                    {t('common.next')}
-                    <ArrowRight className="w-4 h-4" />
+                    {isProcessing ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Processing...
+                      </>
+                    ) : (
+                      <>
+                        {t('common.next')}
+                        <ArrowRight className="w-4 h-4" />
+                      </>
+                    )}
                   </button>
                 </div>
               </div>

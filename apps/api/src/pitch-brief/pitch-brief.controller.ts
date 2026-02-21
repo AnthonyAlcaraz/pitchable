@@ -150,6 +150,31 @@ export class PitchBriefController {
     return document;
   }
 
+  @Post(':id/documents/crawl')
+  @HttpCode(HttpStatus.ACCEPTED)
+  async crawlWebsite(
+    @CurrentUser() user: RequestUser,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body('url') url: string,
+    @Body('maxPages') maxPages?: number,
+    @Body('maxDepth') maxDepth?: number,
+  ) {
+    // Verify brief ownership
+    await this.briefService.findOne(user.userId, id);
+
+    if (!this.kbService.isFirecrawlAvailable()) {
+      throw new UnprocessableEntityException('Website crawling is not available. FIRECRAWL_API_KEY not configured.');
+    }
+
+    return this.kbService.crawlWebsite(
+      user.userId,
+      id,
+      url,
+      maxPages ?? 20,
+      maxDepth ?? 2,
+    );
+  }
+
   @Delete(':id/documents/:docId')
   @HttpCode(HttpStatus.OK)
   async removeDocument(

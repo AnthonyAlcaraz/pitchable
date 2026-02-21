@@ -8,11 +8,14 @@ import { KnowledgeBaseController } from './knowledge-base.controller.js';
 import { KnowledgeBaseService } from './knowledge-base.service.js';
 import { S3Service } from './storage/s3.service.js';
 import { DocumentProcessingProcessor } from './document-processing.processor.js';
+import { WebsiteCrawlProcessor } from './website-crawl.processor.js';
 import { PdfParser } from './parsers/pdf.parser.js';
 import { DocxParser } from './parsers/docx.parser.js';
 import { MarkdownParser } from './parsers/markdown.parser.js';
 import { TextParser } from './parsers/text.parser.js';
 import { UrlParser } from './parsers/url.parser.js';
+import { JinaReaderService } from './parsers/jina.service.js';
+import { FirecrawlService } from './parsers/firecrawl.service.js';
 import { SpreadsheetParser } from './parsers/spreadsheet.parser.js';
 import { PptxParser } from './parsers/pptx.parser.js';
 import { EmbeddingService } from './embedding/embedding.service.js';
@@ -31,17 +34,21 @@ import { RerankerService } from './reranker.service.js';
     CreditsModule,
     EventsModule,
     BullModule.registerQueue({ name: 'document-processing' }),
+    BullModule.registerQueue({ name: 'website-crawl' }),
   ],
   controllers: [KnowledgeBaseController],
   providers: [
     KnowledgeBaseService,
     S3Service,
     DocumentProcessingProcessor,
+    WebsiteCrawlProcessor,
     PdfParser,
     DocxParser,
     MarkdownParser,
     TextParser,
     UrlParser,
+    JinaReaderService,
+    FirecrawlService,
     SpreadsheetParser,
     PptxParser,
     EmbeddingService,

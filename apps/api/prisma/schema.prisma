@@ -513,6 +513,7 @@ enum CreditReason {
   OUTLINE_GENERATION
   SLIDE_MODIFICATION
   CHAT_MESSAGE
+  WEBSITE_CRAWL
 }
 
 enum ExportFormat {
