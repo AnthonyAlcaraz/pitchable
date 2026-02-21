@@ -61,6 +61,14 @@ export interface DocumentProgressEvent {
   message: string;
 }
 
+export interface ExportProgressEvent {
+  presentationId: string;
+  jobId: string;
+  step: string;
+  progress: number; // 0-100, or -1 for error
+  message: string;
+}
+
 /** Max WebSocket connections per user (prevents resource exhaustion). */
 const MAX_CONNECTIONS_PER_USER = 10;
 
@@ -267,6 +275,12 @@ export class EventsGateway
     this.server
       .to(`presentation:${event.presentationId}`)
       .emit('image:selectionRequest', event);
+  }
+
+  emitExportProgress(presentationId: string, event: ExportProgressEvent): void {
+    this.server
+      .to(`presentation:${presentationId}`)
+      .emit('export:progress', event);
   }
 
   emitDocumentProgress(userId: string, event: DocumentProgressEvent): void {

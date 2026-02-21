@@ -123,6 +123,7 @@ interface ChatState {
   respondToInteraction: (presentationId: string, interactionType: string, contextId: string, selection: unknown) => Promise<void>;
   addImageSelection: (selection: PendingImageSelection) => void;
   removeImageSelection: (contextId: string) => void;
+  addOrUpdateAgentStep: (id: string, content: string, status: AgentStep['status'], extra?: Partial<AgentStep>) => void;
   clearMessages: () => void;
   clearError: () => void;
 }
@@ -464,6 +465,27 @@ export const useChatStore = create<ChatState>((set, get) => ({
     set((state) => ({
       pendingImageSelections: state.pendingImageSelections.filter((s) => s.contextId !== contextId),
     }));
+  },
+
+  addOrUpdateAgentStep: (id: string, content: string, status: AgentStep['status'], extra?: Partial<AgentStep>) => {
+    set((state) => {
+      const existing = state.agentSteps.find((s) => s.id === id);
+      if (existing) {
+        return {
+          agentSteps: state.agentSteps.map((s) =>
+            s.id === id
+              ? { ...s, content, status, ...extra, completedAt: status === 'complete' ? Date.now() : s.completedAt }
+              : s,
+          ),
+        };
+      }
+      return {
+        agentSteps: [
+          ...state.agentSteps,
+          { id, content, status, startedAt: Date.now(), ...extra },
+        ],
+      };
+    });
   },
 
   clearMessages: () => set({

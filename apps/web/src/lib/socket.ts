@@ -43,6 +43,14 @@ export interface DocumentProgressEvent {
   message: string;
 }
 
+export interface ExportProgressEvent {
+  presentationId: string;
+  jobId: string;
+  step: string;
+  progress: number;
+  message: string;
+}
+
 let socket: Socket | null = null;
 
 function getToken(): string | null {

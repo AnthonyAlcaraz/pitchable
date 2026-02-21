@@ -117,6 +117,11 @@ export class ExportsService {
     private readonly events: EventsGateway,
   ) {}
 
+
+  /** Emit export progress to the presentation room via WebSocket. */
+  private emitProgress(presentationId: string, jobId: string, step: string, progress: number, message: string): void {
+    this.events.emitExportProgress(presentationId, { presentationId, jobId, step, progress, message });
+  }
   /**
    * Wait for any pending image generation jobs to complete before exporting.
    * Polls every 3s, up to 3 minutes. If images are still pending after timeout,
@@ -209,6 +214,8 @@ export class ExportsService {
       data: { status: JobStatus.PROCESSING },
     });
 
+    this.emitProgress(job.presentationId, jobId, 'waiting_images', 10, 'Waiting for images...');
+
     try {
       const presentation = await this.prisma.presentation.findUnique({
         where: { id: job.presentationId },
@@ -222,6 +229,8 @@ export class ExportsService {
 
       // Wait for pending image generation jobs before exporting
       await this.waitForPendingImages(job.presentationId);
+
+      this.emitProgress(job.presentationId, jobId, 'loading', 25, 'Loading presentation data...');
 
       const slides = await this.prisma.slide.findMany({
         where: { presentationId: job.presentationId },
@@ -291,8 +300,12 @@ export class ExportsService {
       // AI renderer chooser: analyze content and suggest template upgrades
       const rendererOverrides = await this.rendererChooser.chooseRenderers(slides);
 
+      this.emitProgress(job.presentationId, jobId, 'preparing', 40, 'Preparing export...');
+
       // Fetch Figma backgrounds if template is linked
       let figmaBackgrounds: Map<number, string> | undefined;
+
+      this.emitProgress(job.presentationId, jobId, 'rendering', 55, `Rendering ${job.format.toLowerCase()}...`);
 
       switch (job.format) {
         case ExportFormat.PPTX: {
@@ -420,6 +433,8 @@ export class ExportsService {
     } catch (error: unknown) {
       const message =
         error instanceof Error ? error.message : 'Unknown export error';
+
+      this.emitProgress(job.presentationId, jobId, 'error', -1, message);
 
       await this.prisma.exportJob.update({
         where: { id: jobId },

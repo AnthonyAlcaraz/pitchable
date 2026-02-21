@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { getSocket, joinPresentation, leavePresentation } from '../lib/socket.js';
+import type { ExportProgressEvent, GenerationProgressEvent } from '../lib/socket.js';
 import { usePresentationStore } from '../stores/presentation.store.js';
 import { useChatStore } from '../stores/chat.store.js';
 import type { SlideData } from '../stores/presentation.store.js';
@@ -48,6 +49,7 @@ export function useSlideUpdates(presentationId: string | undefined) {
   const setCurrentSlide = usePresentationStore((s) => s.setCurrentSlide);
   const setTheme = usePresentationStore((s) => s.setTheme);
   const addImageSelection = useChatStore((s) => s.addImageSelection);
+  const addOrUpdateAgentStep = useChatStore((s) => s.addOrUpdateAgentStep);
 
   useEffect(() => {
     if (!presentationId || presentationId === 'new') return;
@@ -88,6 +90,30 @@ export function useSlideUpdates(presentationId: string | undefined) {
       });
     };
 
+    const handleExportProgress = (event: ExportProgressEvent) => {
+      const stepId = `export_${event.step}`;
+      const status = event.progress === 100 ? 'complete' : event.progress === -1 ? 'error' : 'running';
+      addOrUpdateAgentStep(stepId, event.message, status);
+
+      // Auto-clear after terminal state
+      if (event.progress === 100 || event.progress === -1) {
+        setTimeout(() => {
+          useChatStore.getState().addOrUpdateAgentStep(stepId, event.message, status === 'error' ? 'error' : 'complete');
+        }, 2000);
+      }
+    };
+
+    const handleGenerationProgress = (event: GenerationProgressEvent) => {
+      // Only handle image generation progress (step starts with "image-")
+      if (!event.step.startsWith('image-')) return;
+      const stepId = `image_gen`;
+      const status = event.progress === 1 ? 'complete' : 'running';
+      const pct = Math.round(event.progress * 100);
+      addOrUpdateAgentStep(stepId, event.message, status, { current: pct, total: 100 });
+    };
+
+    socket.on('export:progress', handleExportProgress);
+    socket.on('generation:progress', handleGenerationProgress);
     socket.on('slide:added', handleSlideAdded);
     socket.on('slide:updated', handleSlideUpdated);
     socket.on('slide:removed', handleSlideRemoved);
@@ -96,6 +122,8 @@ export function useSlideUpdates(presentationId: string | undefined) {
     socket.on('image:selectionRequest', handleImageSelectionRequest);
 
     return () => {
+      socket.off('export:progress', handleExportProgress);
+      socket.off('generation:progress', handleGenerationProgress);
       socket.off('slide:added', handleSlideAdded);
       socket.off('slide:updated', handleSlideUpdated);
       socket.off('slide:removed', handleSlideRemoved);
@@ -104,5 +132,5 @@ export function useSlideUpdates(presentationId: string | undefined) {
       socket.off('image:selectionRequest', handleImageSelectionRequest);
       leavePresentation(presentationId);
     };
-  }, [presentationId, addSlide, updateSlide, removeSlide, reorderSlides, setCurrentSlide, setTheme, addImageSelection]);
+  }, [presentationId, addSlide, updateSlide, removeSlide, reorderSlides, setCurrentSlide, setTheme, addImageSelection, addOrUpdateAgentStep]);
 }

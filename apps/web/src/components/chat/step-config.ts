@@ -1,6 +1,6 @@
 import {
   Search, Brain, Palette, FileSliders, Eye, Save,
-  Trash2, ArrowUpDown, Layers, Sparkles, ShieldCheck, type LucideIcon,
+  Trash2, ArrowUpDown, Layers, Sparkles, ShieldCheck, Download, ImageIcon, type LucideIcon,
 } from 'lucide-react';
 
 export interface StepConfig {
@@ -26,6 +26,17 @@ const STEP_MAP: Record<string, StepConfig> = {
   llm_stream:   { icon: Sparkles,    phase: 'generate', accentColor: 'text-amber-400' },
   generate_slide: { icon: FileSliders, phase: 'generate', accentColor: 'text-primary' },
   quality_review: { icon: ShieldCheck, phase: 'finalize', accentColor: 'text-teal-400' },
+
+  // Export phase
+  export_waiting_images: { icon: Download, phase: 'prepare', accentColor: 'text-orange-400' },
+  export_loading:        { icon: Download, phase: 'prepare', accentColor: 'text-orange-400' },
+  export_preparing:      { icon: Download, phase: 'prepare', accentColor: 'text-orange-400' },
+  export_rendering:      { icon: Download, phase: 'generate', accentColor: 'text-orange-400' },
+  export_uploading:      { icon: Download, phase: 'finalize', accentColor: 'text-orange-400' },
+  export_complete:       { icon: Download, phase: 'finalize', accentColor: 'text-emerald-400' },
+
+  // Image generation phase
+  image_gen:             { icon: ImageIcon, phase: 'finalize', accentColor: 'text-orange-400' },
 
   // Finalize phase
   save:         { icon: Save,        phase: 'finalize', accentColor: 'text-emerald-400' },
