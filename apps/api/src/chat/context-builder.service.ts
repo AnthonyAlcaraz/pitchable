@@ -13,6 +13,7 @@ import type { LlmMessage } from './llm.service.js';
 export interface KbSource {
   documentId: string;
   documentTitle: string;
+  chunkId: string;
   relevance: number;
 }
 
@@ -128,13 +129,14 @@ export class ContextBuilderService {
         ? results.slice(0, limit)
         : await this.reranker.rerank(query, results, limit, 0.1);
 
-      // Collect unique sources from ranked results
+      // Collect per-chunk sources from ranked results (deduplicated by chunkId)
       const sourceMap = new Map<string, KbSource>();
       for (const r of ranked) {
-        if (!sourceMap.has(r.documentId)) {
-          sourceMap.set(r.documentId, {
+        if (!sourceMap.has(r.id)) {
+          sourceMap.set(r.id, {
             documentId: r.documentId,
             documentTitle: r.documentTitle,
+            chunkId: r.id,
             relevance: r.similarity,
           });
         }
@@ -367,6 +369,55 @@ export class ContextBuilderService {
     });
 
     return deduped.join('\n');
+  }
+
+  /**
+   * Retrieve per-slide KB context with chunk-level sources.
+   * Returns both the context string and the KbSource[] for SlideSource linking.
+   */
+  async retrieveSlideContextWithSources(
+    userId: string,
+    slideTitle: string,
+    bulletPoints: string[],
+    kbLimit = 3,
+    omnisearchLimit = 3,
+  ): Promise<KbContextResult> {
+    const queries = [
+      slideTitle,
+      ...bulletPoints.filter((b) => b.length > 10).slice(0, 2),
+    ];
+
+    const allContextParts: string[] = [];
+    const allSources = new Map<string, KbSource>();
+
+    for (const query of queries) {
+      const [kbResult, vault] = await Promise.all([
+        this.retrieveKbContextWithSources(userId, query, kbLimit),
+        this.retrieveOmnisearchContext(query, omnisearchLimit),
+      ]);
+      if (kbResult.contextString) allContextParts.push(kbResult.contextString);
+      if (vault) allContextParts.push(vault);
+
+      for (const src of kbResult.sources) {
+        if (!allSources.has(src.chunkId)) {
+          allSources.set(src.chunkId, src);
+        }
+      }
+    }
+
+    // Deduplicate context by checking for content overlap
+    const seen = new Set<string>();
+    const deduped = allContextParts.filter((r) => {
+      const key = r.slice(0, 100);
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+
+    return {
+      contextString: deduped.join('\n'),
+      sources: [...allSources.values()],
+    };
   }
 
   /**

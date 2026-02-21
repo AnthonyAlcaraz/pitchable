@@ -3,7 +3,7 @@ import { PrismaService } from '../prisma/prisma.service.js';
 import { LlmService, LlmModel } from './llm.service.js';
 import { getModelForSlideType } from './model-router.js';
 import { ContextBuilderService } from './context-builder.service.js';
-import type { KbSource } from './context-builder.service.js';
+import type { KbSource, KbContextResult } from './context-builder.service.js';
 import { ConstraintsService } from '../constraints/constraints.service.js';
 import { EventsGateway } from '../events/events.gateway.js';
 import { ContentReviewerService } from './content-reviewer.service.js';
@@ -492,11 +492,12 @@ export class GenerationService {
 
     // Pre-fetch all per-slide KB contexts in parallel (zero risk to narrative coherence)
     const dataHeavyTypes = ['DATA_METRICS', 'CONTENT', 'PROBLEM', 'SOLUTION', 'COMPARISON', 'ARCHITECTURE', 'PROCESS'];
-    const slideKbContexts = await Promise.all(
+    const emptyKbResult: KbContextResult = { contextString: '', sources: [] };
+    const slideKbResults = await Promise.all(
       outline.slides.map((slide) =>
         dataHeavyTypes.includes(slide.slideType)
-          ? this.contextBuilder.retrieveSlideContext(userId, slide.title, slide.bulletPoints, 2, 2)
-          : Promise.resolve('')
+          ? this.contextBuilder.retrieveSlideContextWithSources(userId, slide.title, slide.bulletPoints, 2, 2)
+          : Promise.resolve(emptyKbResult)
       ),
     );
 
@@ -598,8 +599,10 @@ export class GenerationService {
       // Override outlineSlide type for generation
       const slideForGeneration = { ...outlineSlide, slideType: effectiveSlideType as SlideType };
 
-      // Use pre-fetched per-slide KB context
-      const slideKbContext = slideKbContexts[slideIndex];
+      // Use pre-fetched per-slide KB context + sources
+      const slideKbResult = slideKbResults[slideIndex];
+      const slideKbContext = slideKbResult.contextString;
+      const slideKbSources = slideKbResult.sources;
 
       const slideContent = await this.generateSlideContent(
         slideSystemPrompt,
@@ -640,6 +643,20 @@ export class GenerationService {
           contentHash: computeSlideHash(validated.title, validated.body, validated.speakerNotes ?? null, effectiveSlideType, null),
         },
       });
+
+      // Link slide to KB chunk sources (content lineage)
+      if (slideKbSources.length > 0) {
+        await this.prisma.slideSource.createMany({
+          data: slideKbSources
+            .filter((s) => s.chunkId)
+            .map((s) => ({
+              slideId: slide.id,
+              chunkId: s.chunkId,
+              relevance: s.relevance,
+            })),
+          skipDuplicates: true,
+        });
+      }
 
       // Emit slide update via WebSocket
       this.events.emitSlideAdded({
