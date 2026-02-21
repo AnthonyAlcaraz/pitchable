@@ -3,7 +3,6 @@ import {
   Post,
   Get,
   Req,
-  Res,
   Headers,
   Body,
   UseGuards,
@@ -12,7 +11,6 @@ import {
   Logger,
   HttpCode,
 } from '@nestjs/common';
-import type { Response } from 'express';
 import { SkipThrottle } from '@nestjs/throttler';
 import { StripeService } from './stripe.service.js';
 import { BillingService } from './billing.service.js';
@@ -138,13 +136,10 @@ export class BillingController {
   @UseGuards(JwtAuthGuard)
   async getSubscription(
     @CurrentUserModule.CurrentUser() user: CurrentUserModule.RequestUser,
-    @Res({ passthrough: true }) res: Response,
+    
   ) {
     const sub = await this.billing.getSubscription(user.userId);
-    if (!sub) {
-      res.status(204);
-      return;
-    }
+    if (!sub) { return null; }
     return sub;
   }
 
