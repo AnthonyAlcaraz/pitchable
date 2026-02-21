@@ -15,7 +15,9 @@ import { isValidModifiedSlideContent } from './validators.js';
 import type { ModifiedSlideContent } from './validators.js';
 import { isValidSlideContent } from './validators.js';
 import type { GeneratedSlideContent } from './validators.js';
-import { SlideType } from '../../generated/prisma/enums.js';
+import { SlideType, CreditReason } from '../../generated/prisma/enums.js';
+import { CreditsService } from '../credits/credits.service.js';
+import { SLIDE_MODIFICATION_COST } from '../credits/tier-config.js';
 
 @Injectable()
 export class SlideModifierService {
@@ -29,6 +31,7 @@ export class SlideModifierService {
     private readonly events: EventsGateway,
     private readonly imagesService: ImagesService,
     private readonly nanoBanana: NanoBananaService,
+    private readonly credits: CreditsService,
   ) {}
 
   /**
@@ -107,6 +110,12 @@ export class SlideModifierService {
     slideNumber: number,
     instruction: string,
   ): Promise<{ success: boolean; message: string }> {
+    // Credit pre-check
+    const hasCredits = await this.credits.hasEnoughCredits(userId, SLIDE_MODIFICATION_COST);
+    if (!hasCredits) {
+      return { success: false, message: `Not enough credits. Slide modification costs ${SLIDE_MODIFICATION_COST} credit.` };
+    }
+
     const slide = await this.prisma.slide.findFirst({
       where: { presentationId, slideNumber },
     });
@@ -189,6 +198,9 @@ export class SlideModifierService {
       // Queue image regeneration if configured
       await this.queueImageForSlide(userId, slide.id, updated.title, updated.body, slide.slideType, presentationId);
 
+      // Charge credit for successful modification
+      await this.credits.deductCredits(userId, SLIDE_MODIFICATION_COST, CreditReason.SLIDE_MODIFICATION, slide.id);
+
       return {
         success: true,
         message: `Updated slide ${slideNumber}: "${updated.title}"`,
@@ -207,6 +219,12 @@ export class SlideModifierService {
     instruction: string,
     slideType: SlideType = SlideType.CONTENT,
   ): Promise<{ success: boolean; message: string }> {
+    // Credit pre-check
+    const hasCredits = await this.credits.hasEnoughCredits(userId, SLIDE_MODIFICATION_COST);
+    if (!hasCredits) {
+      return { success: false, message: `Not enough credits. Adding a slide costs ${SLIDE_MODIFICATION_COST} credit.` };
+    }
+
     const newNumber = afterSlideNumber + 1;
 
     // Fetch presentation context
@@ -312,6 +330,9 @@ The new slide should fit naturally in the deck's narrative flow.`;
 
       // Queue image generation for new slide
       await this.queueImageForSlide(userId, slide.id, slide.title, slide.body, slideType, presentationId);
+
+      // Charge credit for successful slide addition
+      await this.credits.deductCredits(userId, SLIDE_MODIFICATION_COST, CreditReason.SLIDE_MODIFICATION, slide.id);
 
       return { success: true, message: `Added slide ${newNumber}: "${generated.title}"` };
     } catch (err) {

@@ -10,7 +10,7 @@ import { ValidationGateService } from './validation-gate.service.js';
 import { TierEnforcementService } from '../credits/tier-enforcement.service.js';
 import { CreditsService } from '../credits/credits.service.js';
 import { CreditReservationService } from '../credits/credit-reservation.service.js';
-import { DECK_GENERATION_COST } from '../credits/tier-config.js';
+import { DECK_GENERATION_COST, OUTLINE_GENERATION_COST } from '../credits/tier-config.js';
 import { ImagesService } from '../images/images.service.js';
 import { NanoBananaService } from '../images/nano-banana.service.js';
 import { QualityAgentsService } from './quality-agents.service.js';
@@ -97,6 +97,14 @@ export class GenerationService {
     presentationId: string,
     config: GenerationConfig,
   ): AsyncGenerator<ChatStreamEvent> {
+    // Credit pre-check: outline generation costs credits
+    const hasOutlineCredits = await this.credits.hasEnoughCredits(userId, OUTLINE_GENERATION_COST);
+    if (!hasOutlineCredits) {
+      const bal = await this.credits.getBalance(userId).catch(() => 0);
+      yield { type: 'error', content: `Not enough credits. Outline generation costs ${OUTLINE_GENERATION_COST} credit. You have ${bal}. Upgrade your plan or purchase credits.` };
+      return;
+    }
+
     const presType = config.presentationType || 'STANDARD';
     const range = {
       min: config.minSlides ?? DEFAULT_SLIDE_RANGES[presType]?.min ?? 8,
@@ -171,8 +179,10 @@ export class GenerationService {
       return;
     }
 
-    // 3. Store pending outline
+    // 3. Store pending outline + charge credit
     this.pendingOutlines.set(presentationId, { outline, config });
+    await this.credits.deductCredits(userId, OUTLINE_GENERATION_COST, CreditReason.OUTLINE_GENERATION, presentationId);
+    this.logger.log(`Outline generated for ${presentationId}, charged ${OUTLINE_GENERATION_COST} credit`);
 
     // 4. Stream outline as readable markdown
     yield { type: 'token', content: `## ${outline.title}\n\n` };

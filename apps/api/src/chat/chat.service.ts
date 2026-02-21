@@ -8,8 +8,10 @@ import { SlideModifierService } from './slide-modifier.service.js';
 import { ValidationGateService } from './validation-gate.service.js';
 import { ExportsService } from '../exports/exports.service.js';
 import { EmailService } from '../email/email.service.js';
-import { ExportFormat } from '../../generated/prisma/enums.js';
+import { ExportFormat, CreditReason } from '../../generated/prisma/enums.js';
 import type { GenerationConfig } from './generation.service.js';
+import { CreditsService } from '../credits/credits.service.js';
+import { FREE_CHAT_MESSAGES_PER_PRESENTATION, CHAT_MESSAGE_COST } from '../credits/tier-config.js';
 import {
   parseSlashCommand,
   getAvailableCommands,
@@ -39,6 +41,7 @@ export class ChatService {
     private readonly validationGate: ValidationGateService,
     private readonly exportsService: ExportsService,
     private readonly emailService: EmailService,
+    private readonly credits: CreditsService,
   ) {}
 
   async *handleMessage(
@@ -243,6 +246,22 @@ export class ChatService {
     presentationId: string,
     content: string,
   ): AsyncGenerator<ChatStreamEvent> {
+    // Check chat message credits after free allowance
+    const userMsgCount = await this.prisma.chatMessage.count({
+      where: { presentationId, role: 'user' },
+    });
+    if (userMsgCount > FREE_CHAT_MESSAGES_PER_PRESENTATION) {
+      const hasCredits = await this.credits.hasEnoughCredits(userId, CHAT_MESSAGE_COST);
+      if (!hasCredits) {
+        const bal = await this.credits.getBalance(userId).catch(() => 0);
+        const msg = `You've used your ${FREE_CHAT_MESSAGES_PER_PRESENTATION} free messages. Each additional message costs ${CHAT_MESSAGE_COST} credit. You have ${bal} credits remaining.`;
+        yield { type: 'token', content: msg };
+        yield { type: 'done', content: '' };
+        await this.persistAssistantMessage(presentationId, msg);
+        return;
+      }
+    }
+
     yield { type: 'thinking', content: 'Thinking...' };
 
     yield { type: 'progress', content: 'Building context', metadata: { step: 'context', status: 'running' } };
@@ -284,6 +303,11 @@ export class ChatService {
 
     if (fullResponse) {
       await this.persistAssistantMessage(presentationId, fullResponse);
+
+      // Deduct credit if past free allowance
+      if (userMsgCount > FREE_CHAT_MESSAGES_PER_PRESENTATION) {
+        await this.credits.deductCredits(userId, CHAT_MESSAGE_COST, CreditReason.CHAT_MESSAGE, presentationId);
+      }
     }
   }
 

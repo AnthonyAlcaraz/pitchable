@@ -15,7 +15,8 @@ export interface TierLimits {
  *
  * Credit value: 1 credit = $0.25 user-facing
  * Free signup gift: 5 credits = $1.25 value
- *   → Enough for 2 sample decks (4 slides each, no images)
+ *   → Enough for 2 sample decks (outline 1 + execute 1 = 2 credits each, no images)
+ *   → Plus 1 credit leftover for a slide edit or extra outline
  *
  * Pricing (optimized for 60%+ margin):
  *   FREE       — 5 credits on signup (one-time), 2 decks max, 4 slides max, no images
@@ -32,19 +33,34 @@ export interface TierLimits {
  *   PRO:     $49 revenue - $18 cost   = $31 profit (63%)
  *
  * Credit deductions:
- *   Deck generation: 2 credits (covers LLM cost for outline + slides + review)
+ *   Outline generation: 1 credit (covers LLM outline + RAG retrieval)
+ *   Deck execution: 1 credit (covers slide generation + review + quality agents)
+ *   Slide modification: 1 credit (single slide rewrite/add via LLM)
  *   Image generation: 1 credit per image (covers Nano Banana Pro cost)
+ *   Chat message (free-form): 1 credit per 5 messages (rate-limited bucket)
  *   Export: free
  */
 
-/** Credits deducted per deck generation (covers LLM costs). */
-export const DECK_GENERATION_COST = 2;
+/** Credits deducted per outline generation (covers LLM + RAG costs). */
+export const OUTLINE_GENERATION_COST = 1;
+
+/** Credits deducted per deck execution after outline approval. */
+export const DECK_GENERATION_COST = 1;
+
+/** Credits deducted per single-slide modification or addition. */
+export const SLIDE_MODIFICATION_COST = 1;
 
 /** Credits deducted per image generation. */
 export const IMAGE_GENERATION_COST = 1;
 
 /** Credits deducted per document entity extraction (Sonnet 4.6 LLM cost). */
 export const ENTITY_EXTRACTION_COST = 1;
+
+/** Free chat messages allowed per presentation before charging. */
+export const FREE_CHAT_MESSAGES_PER_PRESENTATION = 10;
+
+/** Credits deducted per chat message after free allowance. */
+export const CHAT_MESSAGE_COST = 1;
 
 /** Credits granted to new free-tier users on signup. */
 export const FREE_SIGNUP_CREDITS = 5;
