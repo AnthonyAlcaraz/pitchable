@@ -1,8 +1,9 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { PeachLogo } from '@/components/icons/PeachLogo';
-import { Download, ChevronDown } from 'lucide-react';
+import { Download, ChevronDown, FileText, Loader2 } from 'lucide-react';
 import { usePresentationStore } from '@/stores/presentation.store';
 import { useChatStore } from '@/stores/chat.store';
+import { useWorkflowStore } from '@/stores/workflow.store';
 import { useSlideUpdates } from '@/hooks/useSlideUpdates';
 import { ThumbnailSidebar } from './ThumbnailSidebar';
 import { SlideHeader } from './SlideHeader';
@@ -138,18 +139,43 @@ export function PreviewPanel({ presentationId }: PreviewPanelProps) {
     );
   }
 
-  // No slides yet
+  // No slides yet — show phase-aware guidance
+  const phase = useWorkflowStore((s) => s.phase);
+
   if (slides.length === 0) {
+    const phaseContent = {
+      subject_selection: {
+        icon: <PeachLogo className="h-10 w-10 opacity-50" />,
+        title: 'Choose Your Topic',
+        subtitle: 'Select a suggested topic or type your own in the chat panel',
+      },
+      outline_review: {
+        icon: <FileText className="h-10 w-10 text-orange-400/70" />,
+        title: 'Review Your Outline',
+        subtitle: 'Approve the outline in the chat panel to start generating slides',
+      },
+      generating: {
+        icon: <Loader2 className="h-10 w-10 animate-spin text-orange-400" />,
+        title: 'Building Your Deck',
+        subtitle: 'Slides are being generated — watch progress in the chat panel',
+      },
+      editing: {
+        icon: <PeachLogo className="h-10 w-10 opacity-50" />,
+        title: presentation?.title ?? 'Untitled Presentation',
+        subtitle: 'No slides yet. Ask the AI to generate an outline to get started.',
+      },
+    }[phase];
+
     return (
       <div className="flex h-full flex-col items-center justify-center p-8">
         <div className="mb-4 rounded-2xl border border-border/50 bg-card/50 p-4">
-          <PeachLogo className="h-10 w-10 opacity-50" />
+          {phaseContent.icon}
         </div>
         <p className="mb-2 text-center text-sm font-medium text-foreground">
-          {presentation?.title ?? 'Untitled Presentation'}
+          {phaseContent.title}
         </p>
         <p className="text-center text-sm text-muted-foreground">
-          No slides yet. Ask the AI to generate an outline to get started.
+          {phaseContent.subtitle}
         </p>
       </div>
     );
