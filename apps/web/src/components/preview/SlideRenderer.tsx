@@ -51,7 +51,7 @@ export function SlideRenderer({ slide, theme, className, scale = 1, onClick }: S
       }}
       onClick={onClick}
     >
-      <div className="flex h-full flex-col p-[6%]">
+      <div className={cn('flex h-full flex-col p-[6%]', (isTitle || isCTA) && 'items-center justify-center')}>
         {/* Slide type badge */}
         <div className="mb-2 flex items-center gap-2">
           <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[0.5em] font-medium text-primary">
@@ -67,7 +67,7 @@ export function SlideRenderer({ slide, theme, className, scale = 1, onClick }: S
           className={cn(
             'font-heading font-bold leading-tight text-foreground',
             isTitle ? 'mb-auto text-[1.8em]' : 'mb-3 text-[1.2em]',
-            isCTA && 'text-center',
+            (isTitle || isCTA) && 'text-center',
             isQuote && 'italic',
           )}
         >
@@ -89,7 +89,7 @@ export function SlideRenderer({ slide, theme, className, scale = 1, onClick }: S
 
         {/* Title slide subtitle */}
         {isTitle && slide.body && (
-          <MarkdownBody className="text-[0.9em] text-muted-foreground">{slide.body}</MarkdownBody>
+          <MarkdownBody className="text-center text-[0.9em] text-muted-foreground">{slide.body}</MarkdownBody>
         )}
       </div>
 
