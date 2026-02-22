@@ -117,6 +117,7 @@ UNIVERSAL FORMATTING RULES:
 - Image placement: ${imageLayoutInstruction ?? 'Place images as full-slide backgrounds at 15% opacity.'}
 - LESS IS MORE: If you can say it in fewer words, do it. Slides are visual aids, not documents.
 - NEVER output placeholder text in brackets like [example], [data needed], [principle needed]. If you lack specific data, write a generic but complete statement instead.
+- NEVER use markdown formatting (bold **text**, italic *text*) in slide titles. Titles must be plain text only.
 
 PHILLIPS' VISUAL HIERARCHY (enforce strictly):
 - Max 6 visual objects per slide (title + table = 2; title + 4 bullets = 5). Count every element.
@@ -438,7 +439,7 @@ Remember:
 
 function buildFigmaContextBlock(ctx: FigmaTemplateContext): string {
   const frameLines = ctx.frameMapping.map((frame) => {
-    const darkLight = frame.isDarkFrame ? 'DARK background — use white/light text' : 'LIGHT background — use dark text';
+    const darkLight = frame.isDarkFrame ? 'DARK background ï¿½ use white/light text' : 'LIGHT background ï¿½ use dark text';
     let densityRule = '';
     if (frame.contentHint === 'short_punchy') {
       densityRule = 'Write impactful fragments, max 30 words. The visual carries the message.';
@@ -447,7 +448,7 @@ function buildFigmaContextBlock(ctx: FigmaTemplateContext): string {
     } else {
       densityRule = 'Normal density rules apply.';
     }
-    return `- ${frame.slideType}: "${frame.frameName}" — ${darkLight}. ${densityRule}`;
+    return `- ${frame.slideType}: "${frame.frameName}" ï¿½ ${darkLight}. ${densityRule}`;
   }).join('\n');
 
   return `FIGMA TEMPLATE CONTEXT (your text will overlay these designs):

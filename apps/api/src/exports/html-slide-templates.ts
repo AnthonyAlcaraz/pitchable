@@ -72,27 +72,33 @@ export function buildHtmlSlideContent(
   slide: SlideInput,
   palette: ColorPalette,
 ): string {
-  switch (slide.slideType) {
+  // Strip markdown bold/italic from title and body at entry point
+  const cleaned: SlideInput = {
+    ...slide,
+    title: stripMarkdown(slide.title),
+    body: stripMarkdown(slide.body),
+  };
+  switch (cleaned.slideType) {
     case 'MARKET_SIZING':
-      return buildMarketSizing(slide, palette);
+      return buildMarketSizing(cleaned, palette);
     case 'TIMELINE':
-      return buildTimeline(slide, palette);
+      return buildTimeline(cleaned, palette);
     case 'METRICS_HIGHLIGHT':
-      return buildMetricsHighlight(slide, palette);
+      return buildMetricsHighlight(cleaned, palette);
     case 'COMPARISON':
-      return buildComparison(slide, palette);
+      return buildComparison(cleaned, palette);
     case 'TEAM':
-      return buildTeam(slide, palette);
+      return buildTeam(cleaned, palette);
     case 'FEATURE_GRID':
-      return buildFeatureGrid(slide, palette);
+      return buildFeatureGrid(cleaned, palette);
     case 'PROCESS':
-      return buildProcess(slide, palette);
+      return buildProcess(cleaned, palette);
     case 'PROBLEM':
-      return buildProblem(slide, palette);
+      return buildProblem(cleaned, palette);
     case 'SOLUTION':
-      return buildSolution(slide, palette);
+      return buildSolution(cleaned, palette);
     case 'CTA':
-      return buildCta(slide, palette);
+      return buildCta(cleaned, palette);
     default:
       return '';
   }
