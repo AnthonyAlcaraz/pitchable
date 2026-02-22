@@ -325,7 +325,7 @@ export function SlideReviewFlow({
 
         {/* Main slide view */}
         <div ref={mainRef} className="flex-1 overflow-y-auto bg-muted/20 p-6">
-          <div className="mx-auto w-full max-w-5xl space-y-4">
+          <div className="mx-auto w-full max-w-3xl space-y-4">
             {/* Current slide preview */}
             <div>
               <div className="mb-1.5 flex items-center justify-between">

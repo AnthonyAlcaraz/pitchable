@@ -94,7 +94,7 @@ export function EditableSlide({ slide, presentationId, theme, className, lensId 
       )}
       style={{ aspectRatio: `${SLIDE_ASPECT_RATIO}`, ...themeToStyleVars(theme) }}
     >
-      <div className="flex h-full flex-col p-[6%]">
+      <div className={cn('flex h-full flex-col p-[6%]', (isTitle || isCTA) && 'items-center justify-center')}>
         {/* Slide type badge */}
         <div className="mb-2 flex items-center gap-2">
           <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[0.5em] font-medium text-primary">
@@ -112,7 +112,7 @@ export function EditableSlide({ slide, presentationId, theme, className, lensId 
           className={cn(
             'font-heading font-bold leading-tight text-foreground',
             isTitle ? 'mb-auto text-[1.8em]' : 'mb-3 text-[1.2em]',
-            isCTA && 'text-center',
+            (isTitle || isCTA) && 'text-center',
             isQuote && 'italic',
           )}
           placeholder="Slide title..."
@@ -138,7 +138,7 @@ export function EditableSlide({ slide, presentationId, theme, className, lensId 
           <EditableText
             value={slide.body}
             onSave={(v) => handleSaveField('body', v)}
-            className="text-[0.9em] text-muted-foreground"
+            className="text-center text-[0.9em] text-muted-foreground"
             placeholder="Subtitle..."
           />
         )}
