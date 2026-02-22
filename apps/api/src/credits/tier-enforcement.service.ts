@@ -127,10 +127,12 @@ export class TierEnforcementService {
    * Get the max slides per deck for a tier. Returns null for unlimited.
    */
   getMaxSlidesPerDeck(tier: string): number | null {
-    if (!TIER_LIMITS[tier]) {
+    const limits = TIER_LIMITS[tier];
+    if (!limits) {
       this.logger.warn(`Unknown tier "${tier}" — falling back to FREE limits. Check user's tier field in the database.`);
+      return TIER_LIMITS['FREE'].maxSlidesPerDeck;
     }
-    return TIER_LIMITS[tier]?.maxSlidesPerDeck ?? TIER_LIMITS['FREE'].maxSlidesPerDeck;
+    return limits.maxSlidesPerDeck;
   }
 
   /**
