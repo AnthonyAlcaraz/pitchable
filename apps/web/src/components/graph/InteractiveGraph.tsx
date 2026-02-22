@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useMemo, useEffect } from 'react';
+import { useState, useCallback, useRef, useMemo, useEffect, useReducer } from 'react';
 import type { GraphData, GraphNode, GraphEdge } from '@/stores/pitch-brief.store';
 import { usePitchBriefStore } from '@/stores/pitch-brief.store';
 import { useForceSimulation } from './useForceSimulation';
@@ -12,7 +12,7 @@ import {
   type PositionedNode,
   type SimEdge,
 } from './graph-types';
-import { Network, RefreshCw } from 'lucide-react';
+import { Network, RefreshCw, Maximize2, X } from 'lucide-react';
 
 interface InteractiveGraphProps {
   graphData: GraphData;
@@ -28,12 +28,16 @@ const MAX_VIEWBOX_SIZE = 1200;
 export function InteractiveGraph({ graphData, briefId, onRefresh }: InteractiveGraphProps) {
   const loadNeighbors = usePitchBriefStore((s) => s.loadNeighbors);
 
+  // Force re-render counter (used by simulation tick)
+  const [, forceRender] = useReducer((x: number) => x + 1, 0);
+
   // Track which nodes/edges are currently visible
   const [visibleNodeIds, setVisibleNodeIds] = useState<Set<string>>(new Set());
   const [visibleEdges, setVisibleEdges] = useState<GraphEdge[]>([]);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [expandedNodeIds, setExpandedNodeIds] = useState<Set<string>>(new Set());
   const [isExpanding, setIsExpanding] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   // Type filter
   const [activeTypes, setActiveTypes] = useState<Set<string>>(new Set());
@@ -46,9 +50,9 @@ export function InteractiveGraph({ graphData, briefId, onRefresh }: InteractiveG
   // Drag state
   const [draggingNodeId, setDraggingNodeId] = useState<string | null>(null);
 
-  // Rendered positions from simulation
-  const [renderedNodes, setRenderedNodes] = useState<PositionedNode[]>([]);
-  const [renderedEdges, setRenderedEdges] = useState<SimEdge[]>([]);
+  // Mutable refs for simulation data (d3 mutates in place)
+  const simNodesRef = useRef<PositionedNode[]>([]);
+  const simEdgesRef = useRef<SimEdge[]>([]);
 
   // Build the all-nodes map from graphData (source of truth for node data)
   const allNodesMap = useMemo(() => {
@@ -70,17 +74,18 @@ export function InteractiveGraph({ graphData, briefId, onRefresh }: InteractiveG
     // Reset selection
     setSelectedNodeId(null);
     setExpandedNodeIds(new Set());
+    setVisibleEdges([]);
   }, [graphData]);
 
-  // Compute filtered nodes and edges for simulation
-  const { simNodes, simEdges } = useMemo(() => {
-    const filteredNodes: PositionedNode[] = [];
+  // Rebuild simulation arrays when inputs change
+  useEffect(() => {
+    const nodes: PositionedNode[] = [];
     for (const id of visibleNodeIds) {
       const node = allNodesMap.get(id);
       if (!node || !activeTypes.has(node.type)) continue;
-      // Find existing position if available
-      const existing = renderedNodes.find((rn) => rn.id === id);
-      filteredNodes.push({
+      // Preserve existing position if node was already in simulation
+      const existing = simNodesRef.current.find((rn) => rn.id === id);
+      nodes.push({
         ...node,
         x: existing?.x ?? GRAPH_WIDTH / 2 + (Math.random() - 0.5) * 100,
         y: existing?.y ?? GRAPH_HEIGHT / 2 + (Math.random() - 0.5) * 100,
@@ -89,18 +94,16 @@ export function InteractiveGraph({ graphData, briefId, onRefresh }: InteractiveG
       });
     }
 
-    const nodeIdSet = new Set(filteredNodes.map((n) => n.id));
-
-    // Combine graphData edges + dynamically loaded edges
+    const nodeIdSet = new Set(nodes.map((n) => n.id));
     const allEdges = [...graphData.edges, ...visibleEdges];
     const edgeSet = new Set<string>();
-    const filteredEdges: SimEdge[] = [];
+    const edges: SimEdge[] = [];
     for (const e of allEdges) {
       if (!nodeIdSet.has(e.source) || !nodeIdSet.has(e.target)) continue;
       const key = `${e.source}-${e.target}-${e.type}`;
       if (edgeSet.has(key)) continue;
       edgeSet.add(key);
-      filteredEdges.push({
+      edges.push({
         source: e.source,
         target: e.target,
         type: e.type,
@@ -109,20 +112,25 @@ export function InteractiveGraph({ graphData, briefId, onRefresh }: InteractiveG
       });
     }
 
-    return { simNodes: filteredNodes, simEdges: filteredEdges };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [visibleNodeIds, activeTypes, allNodesMap, graphData.edges, visibleEdges]);
+    simNodesRef.current = nodes;
+    simEdgesRef.current = edges;
+    // Trigger re-render so simulation hook sees new count
+    forceRender();
+  }, [visibleNodeIds, activeTypes, allNodesMap, graphData.edges, visibleEdges, forceRender]);
 
-  const handleTick = useCallback((nodes: PositionedNode[], edges: SimEdge[]) => {
-    setRenderedNodes(nodes);
-    setRenderedEdges(edges);
-  }, []);
+  const handleTick = useCallback(() => {
+    forceRender();
+  }, [forceRender]);
 
-  const { reheat, pinNode, unpinNode } = useForceSimulation(simNodes, simEdges, {
+  const { reheat, pinNode, unpinNode } = useForceSimulation(simNodesRef, simEdgesRef, {
     width: GRAPH_WIDTH,
     height: GRAPH_HEIGHT,
     onTick: handleTick,
   });
+
+  // Read current nodes/edges from refs for rendering
+  const renderedNodes = simNodesRef.current;
+  const renderedEdges = simEdgesRef.current;
 
   // Available types from all graph data nodes
   const availableTypes = useMemo(() => {
@@ -155,15 +163,17 @@ export function InteractiveGraph({ graphData, briefId, onRefresh }: InteractiveG
       setIsExpanding(true);
       try {
         const data = await loadNeighbors(briefId, nodeId, 20);
-        // Merge new nodes
+        // Merge new nodes into allNodesMap
+        for (const n of data.neighbors) {
+          if (!allNodesMap.has(n.id)) {
+            allNodesMap.set(n.id, n);
+          }
+        }
+        // Merge new node IDs
         setVisibleNodeIds((prev) => {
           const next = new Set(prev);
           for (const n of data.neighbors) {
             next.add(n.id);
-            // Also add to allNodesMap if not present
-            if (!allNodesMap.has(n.id)) {
-              allNodesMap.set(n.id, n);
-            }
             // Ensure type is active
             setActiveTypes((at) => {
               if (!at.has(n.type)) {
@@ -179,7 +189,8 @@ export function InteractiveGraph({ graphData, briefId, onRefresh }: InteractiveG
         // Merge new edges
         setVisibleEdges((prev) => [...prev, ...data.edges]);
         setExpandedNodeIds((prev) => new Set(prev).add(nodeId));
-        reheat(0.3);
+        // Give React a tick to rebuild arrays, then reheat
+        setTimeout(() => reheat(0.3), 50);
       } catch {
         // Non-critical
       } finally {
@@ -226,7 +237,8 @@ export function InteractiveGraph({ graphData, briefId, onRefresh }: InteractiveG
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
       // Only pan when clicking on background (not on a node)
-      if ((e.target as SVGElement).tagName === 'svg' || (e.target as SVGElement).tagName === 'rect') {
+      const tag = (e.target as SVGElement).tagName;
+      if (tag === 'svg' || tag === 'rect') {
         setIsPanning(true);
         panStartRef.current = { x: e.clientX, y: e.clientY, vx: viewBox.x, vy: viewBox.y };
       }
@@ -292,6 +304,16 @@ export function InteractiveGraph({ graphData, briefId, onRefresh }: InteractiveG
 
   const selectedNode = selectedNodeId ? allNodesMap.get(selectedNodeId) ?? null : null;
 
+  // Close fullscreen on Escape
+  useEffect(() => {
+    if (!isFullscreen) return;
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setIsFullscreen(false);
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [isFullscreen]);
+
   if (graphData.nodes.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-[400px] bg-background rounded-lg border border-border">
@@ -301,18 +323,29 @@ export function InteractiveGraph({ graphData, briefId, onRefresh }: InteractiveG
     );
   }
 
-  return (
-    <div>
+  const graphHeight = isFullscreen ? 'h-[calc(100vh-200px)]' : 'h-[400px]';
+
+  const graphContent = (
+    <div className="relative">
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
         <h2 className="text-xl font-semibold text-foreground">Knowledge Graph</h2>
-        <button
-          onClick={onRefresh}
-          className="px-3 py-1 text-sm bg-background border border-border rounded-lg hover:border-primary/50 transition-colors flex items-center gap-1.5"
-        >
-          <RefreshCw className="w-3.5 h-3.5" />
-          Refresh
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setIsFullscreen(!isFullscreen)}
+            className="px-2 py-1 text-sm bg-background border border-border rounded-lg hover:border-primary/50 transition-colors flex items-center gap-1.5"
+            title={isFullscreen ? 'Exit fullscreen' : 'Expand to fullscreen'}
+          >
+            {isFullscreen ? <X className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
+          </button>
+          <button
+            onClick={onRefresh}
+            className="px-3 py-1 text-sm bg-background border border-border rounded-lg hover:border-primary/50 transition-colors flex items-center gap-1.5"
+          >
+            <RefreshCw className="w-3.5 h-3.5" />
+            Refresh
+          </button>
+        </div>
       </div>
 
       {/* Type filter chips */}
@@ -328,7 +361,7 @@ export function InteractiveGraph({ graphData, briefId, onRefresh }: InteractiveG
       <svg
         ref={svgRef}
         viewBox={`${viewBox.x} ${viewBox.y} ${viewBox.w} ${viewBox.h}`}
-        className="w-full h-[400px] bg-background rounded-lg border border-border select-none"
+        className={`w-full ${graphHeight} bg-background rounded-lg border border-border select-none`}
         style={{ cursor: isPanning ? 'grabbing' : draggingNodeId ? 'grabbing' : 'grab' }}
         onWheel={handleWheel}
         onMouseDown={handleMouseDown}
@@ -356,6 +389,8 @@ export function InteractiveGraph({ graphData, briefId, onRefresh }: InteractiveG
           const tx = typeof target === 'object' ? target.x : 0;
           const ty = typeof target === 'object' ? target.y : 0;
 
+          if (isNaN(sx) || isNaN(sy) || isNaN(tx) || isNaN(ty)) return null;
+
           return (
             <line
               key={`edge-${i}`}
@@ -366,13 +401,13 @@ export function InteractiveGraph({ graphData, briefId, onRefresh }: InteractiveG
               stroke="#444"
               strokeWidth="1"
               opacity={getEdgeOpacity(edge.weight)}
-              onMouseEnter={(e) => {
+              onMouseEnter={(ev) => {
                 const svg = svgRef.current;
                 if (!svg) return;
-                const rect = svg.getBoundingClientRect();
+                const r = svg.getBoundingClientRect();
                 setHoveredEdge({
-                  x: e.clientX - rect.left,
-                  y: e.clientY - rect.top - 20,
+                  x: ev.clientX - r.left,
+                  y: ev.clientY - r.top - 20,
                   label: edge.type + (edge.description ? `: ${edge.description}` : ''),
                 });
               }}
@@ -390,6 +425,8 @@ export function InteractiveGraph({ graphData, briefId, onRefresh }: InteractiveG
           const isExpanded = expandedNodeIds.has(node.id);
           const displayLabel =
             (node.name || '').length > 14 ? node.name.substring(0, 14) + '...' : node.name || '';
+
+          if (isNaN(node.x) || isNaN(node.y)) return null;
 
           return (
             <g
@@ -477,4 +514,24 @@ export function InteractiveGraph({ graphData, briefId, onRefresh }: InteractiveG
       )}
     </div>
   );
+
+  // Fullscreen mode: render as fixed overlay
+  if (isFullscreen) {
+    return (
+      <>
+        {/* Inline placeholder so layout doesn't jump */}
+        <div className="h-[400px] bg-background rounded-lg border border-border flex items-center justify-center">
+          <p className="text-sm text-muted-foreground">Graph expanded to fullscreen</p>
+        </div>
+        {/* Fullscreen overlay */}
+        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-6">
+          <div className="w-full h-full max-w-[1400px] bg-card border border-border rounded-lg p-6 shadow-xl overflow-hidden">
+            {graphContent}
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  return graphContent;
 }

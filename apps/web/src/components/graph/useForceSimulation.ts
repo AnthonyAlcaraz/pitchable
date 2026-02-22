@@ -12,68 +12,64 @@ import type { PositionedNode, SimEdge } from './graph-types';
 interface UseForceSimulationOpts {
   width: number;
   height: number;
-  onTick: (nodes: PositionedNode[], edges: SimEdge[]) => void;
+  onTick: () => void;
 }
 
+/**
+ * Manages a d3-force simulation. Mutates `nodes` in place (d3 convention).
+ * Calls `onTick` on every frame so the caller can trigger a re-render.
+ */
 export function useForceSimulation(
-  nodes: PositionedNode[],
-  edges: SimEdge[],
+  nodesRef: React.MutableRefObject<PositionedNode[]>,
+  edgesRef: React.MutableRefObject<SimEdge[]>,
   opts: UseForceSimulationOpts,
 ) {
   const simRef = useRef<Simulation<PositionedNode, SimEdge> | null>(null);
-  const nodesRef = useRef<PositionedNode[]>(nodes);
-  const edgesRef = useRef<SimEdge[]>(edges);
+  const optsRef = useRef(opts);
+  optsRef.current = opts;
 
-  // Update refs when inputs change
-  nodesRef.current = nodes;
-  edgesRef.current = edges;
+  // Rebuild simulation when node/edge count changes
+  const nodeCount = nodesRef.current.length;
+  const edgeCount = edgesRef.current.length;
 
-  const { width, height, onTick } = opts;
-
-  // Initialize or update simulation
   useEffect(() => {
-    if (nodes.length === 0) {
-      if (simRef.current) {
-        simRef.current.stop();
-        simRef.current = null;
-      }
-      return;
-    }
-
     if (simRef.current) {
-      // Update existing simulation with new nodes/edges
-      simRef.current.nodes(nodes);
-      simRef.current
-        .force(
-          'link',
-          forceLink<PositionedNode, SimEdge>(edges)
-            .id((d) => d.id)
-            .distance(80),
-        );
-      simRef.current.alpha(0.3).restart();
-    } else {
-      // Create new simulation
-      const sim = forceSimulation<PositionedNode, SimEdge>(nodes)
-        .force(
-          'link',
-          forceLink<PositionedNode, SimEdge>(edges)
-            .id((d) => d.id)
-            .distance(80),
-        )
-        .force('charge', forceManyBody().strength(-200))
-        .force('center', forceCenter(width / 2, height / 2))
-        .force('collide', forceCollide<PositionedNode>().radius((d) => (d.connectionCount ?? 1) * 1.5 + 10))
-        .on('tick', () => {
-          onTick([...nodesRef.current], [...edgesRef.current]);
-        });
-
-      simRef.current = sim;
+      simRef.current.stop();
+      simRef.current = null;
     }
+
+    const nodes = nodesRef.current;
+    const edges = edgesRef.current;
+    if (nodes.length === 0) return;
+
+    const { width, height } = optsRef.current;
+
+    const sim = forceSimulation<PositionedNode, SimEdge>(nodes)
+      .force(
+        'link',
+        forceLink<PositionedNode, SimEdge>(edges)
+          .id((d) => d.id)
+          .distance(80),
+      )
+      .force('charge', forceManyBody().strength(-200))
+      .force('center', forceCenter(width / 2, height / 2))
+      .force(
+        'collide',
+        forceCollide<PositionedNode>().radius(
+          (d) => (d.connectionCount ?? 1) * 1.5 + 10,
+        ),
+      )
+      .on('tick', () => {
+        optsRef.current.onTick();
+      });
+
+    simRef.current = sim;
 
     return () => {
-      // Don't stop on re-render, only on unmount
+      sim.stop();
     };
-  }, [nodes, edges, width, height, onTick]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nodeCount, edgeCount]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -87,9 +83,17 @@ export function useForceSimulation(
 
   const reheat = useCallback((alpha = 0.3) => {
     if (simRef.current) {
+      // Re-bind nodes and edges in case arrays were rebuilt
+      simRef.current.nodes(nodesRef.current);
+      simRef.current.force(
+        'link',
+        forceLink<PositionedNode, SimEdge>(edgesRef.current)
+          .id((d) => d.id)
+          .distance(80),
+      );
       simRef.current.alpha(alpha).restart();
     }
-  }, []);
+  }, [nodesRef, edgesRef]);
 
   const pinNode = useCallback((nodeId: string, x: number, y: number) => {
     const node = nodesRef.current.find((n) => n.id === nodeId);
@@ -97,7 +101,7 @@ export function useForceSimulation(
       node.fx = x;
       node.fy = y;
     }
-  }, []);
+  }, [nodesRef]);
 
   const unpinNode = useCallback((nodeId: string) => {
     const node = nodesRef.current.find((n) => n.id === nodeId);
@@ -105,7 +109,7 @@ export function useForceSimulation(
       node.fx = null;
       node.fy = null;
     }
-  }, []);
+  }, [nodesRef]);
 
   return { reheat, pinNode, unpinNode };
 }
