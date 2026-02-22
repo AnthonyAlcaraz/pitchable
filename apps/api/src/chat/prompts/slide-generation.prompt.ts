@@ -116,6 +116,7 @@ UNIVERSAL FORMATTING RULES:
 - Image frequency: ${imageFrequencyInstruction ?? 'Generate imagePromptHint for roughly 1 in 5 slides (~2 images per deck). Set to empty string "" for the rest.'}
 - Image placement: ${imageLayoutInstruction ?? 'Place images as full-slide backgrounds at 15% opacity.'}
 - LESS IS MORE: If you can say it in fewer words, do it. Slides are visual aids, not documents.
+- NEVER output placeholder text in brackets like [example], [data needed], [principle needed]. If you lack specific data, write a generic but complete statement instead.
 
 PHILLIPS' VISUAL HIERARCHY (enforce strictly):
 - Max 6 visual objects per slide (title + table = 2; title + 4 bullets = 5). Count every element.

@@ -560,6 +560,10 @@ export class MarpExporterService {
 
     // AI renderer override: upgrade slide to a visual template when content matches
     if (rendererOverride && FIGMA_GRADE_TYPES.has(rendererOverride) && palette) {
+      if (slide.imageUrl) {
+        lines.push(`![bg right:30% opacity:0.9](${slide.imageUrl})`);
+        lines.push('');
+      }
       lines.push(buildHtmlSlideContent(
         { title: slide.title, body: slide.body || '', slideType: rendererOverride },
         palette,
@@ -575,6 +579,11 @@ export class MarpExporterService {
 
     // Figma-grade HTML+SVG dispatch for complex slide types
     if (FIGMA_GRADE_TYPES.has(type) && palette) {
+      // Add image BEFORE the HTML content for FIGMA_GRADE slides
+      if (slide.imageUrl) {
+        lines.push(`![bg right:30% opacity:0.9](${slide.imageUrl})`);
+        lines.push('');
+      }
       lines.push(buildHtmlSlideContent(
         { title: slide.title, body: slide.body || '', slideType: type },
         palette,
@@ -718,7 +727,9 @@ h3 { margin-top: 10px; font-size: 0.8em; }
     // Body content
     if (slide.body) {
       // Strip any <style scoped> the LLM may have included (we inject our own above)
-      const bodyToRender = slide.body.replace(/<style scoped>[\s\S]*?<\/style>\s*/g, '').trim() || slide.body;
+      const bodyToRender = (slide.body.replace(/<style scoped>[\s\S]*?<\/style>\s*/g, '').trim() || slide.body)
+        .replace(/\[([A-Z][a-z]+ ?(needed|statement|here|example|data|TBD))\]/gi, '')
+        .replace(/\n{3,}/g, '\n\n');
 
       // Types that handle their own layout (scoped CSS grids, lead class, etc.) skip glass-card
       const skipGlassCard = ['TITLE', 'CTA', 'VISUAL_HUMOR', 'TEAM', 'TIMELINE', 'METRICS_HIGHLIGHT', 'FEATURE_GRID', 'PRODUCT_SHOWCASE', 'LOGO_WALL', 'MARKET_SIZING', 'SPLIT_STATEMENT'];
