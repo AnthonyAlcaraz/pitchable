@@ -149,6 +149,7 @@ interface ChatState {
   approveOutlineStep: (step: number) => void;
   editOutlineTitle: (newTitle: string) => void;
   skipToApproveAll: () => void;
+  editOutlineSlide: (presentationId: string, slideIndex: number, feedback: string) => Promise<{ success: boolean; error?: string }>;
 }
 
 function getToken(): string | null {
@@ -595,5 +596,36 @@ export const useChatStore = create<ChatState>((set, get) => ({
         },
       };
     });
+  },
+
+  editOutlineSlide: async (presentationId: string, slideIndex: number, feedback: string) => {
+    try {
+      const res = await api.post<{ success: boolean; slide?: { slideNumber: number; title: string; bulletPoints: string[]; slideType: string; sectionLabel?: string; sources?: string[] }; error?: string }>(
+        `/chat/${presentationId}/edit-outline-slide`,
+        { slideIndex, feedback },
+      );
+      if (res.success && res.slide) {
+        set((state) => {
+          if (!state.outlineReviewState?.outlineData) return state;
+          const slides = [...state.outlineReviewState.outlineData.slides];
+          slides[slideIndex] = res.slide!;
+          return {
+            outlineReviewState: {
+              ...state.outlineReviewState,
+              outlineData: {
+                ...state.outlineReviewState.outlineData,
+                slides,
+              },
+            },
+          };
+        });
+        // Refresh credit balance after edit
+        useAuthStore.getState().refreshCreditBalance();
+        return { success: true };
+      }
+      return { success: false, error: res.error ?? 'Unknown error' };
+    } catch (err) {
+      return { success: false, error: err instanceof Error ? err.message : 'Failed to edit slide' };
+    }
   },
 }));

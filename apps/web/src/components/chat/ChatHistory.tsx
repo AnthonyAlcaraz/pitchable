@@ -60,6 +60,7 @@ export function ChatHistory({
   const approveOutlineStep = useChatStore((s) => s.approveOutlineStep);
   const editOutlineTitle = useChatStore((s) => s.editOutlineTitle);
   const skipToApproveAll = useChatStore((s) => s.skipToApproveAll);
+  const editOutlineSlide = useChatStore((s) => s.editOutlineSlide);
 
   useEffect(() => {
     if (!userScrolled.current) {
@@ -125,6 +126,7 @@ export function ChatHistory({
           onEditTitle={editOutlineTitle}
           onSkipToApproveAll={skipToApproveAll}
           onFinalApprove={() => onSendMessage?.('approve')}
+          onEditSlide={presentationId ? (slideIndex, feedback) => editOutlineSlide(presentationId, slideIndex, feedback) : undefined}
         />
       )}
 

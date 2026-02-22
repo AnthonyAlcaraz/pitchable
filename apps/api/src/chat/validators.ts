@@ -3,7 +3,7 @@
  * Passed to LlmService.completeJson() to trigger structural retry on malformed output.
  */
 
-import type { GeneratedOutline } from './prompts/outline.prompt.js';
+import type { GeneratedOutline, OutlineSlide } from './prompts/outline.prompt.js';
 import type { ReviewResult } from './prompts/content-reviewer.prompt.js';
 
 // ── Outline Validator ─────────────────────────────────────────
@@ -27,6 +27,17 @@ export function isValidOutline(data: unknown): data is GeneratedOutline {
     if (typeof s['slideType'] !== 'string') return false;
   }
 
+  return true;
+}
+
+// ── Single Outline Slide Validator ────────────────────────────
+
+export function isValidOutlineSlide(data: unknown): data is OutlineSlide {
+  if (!data || typeof data !== 'object') return false;
+  const s = data as Record<string, unknown>;
+  if (typeof s['title'] !== 'string' || s['title'].length === 0) return false;
+  if (!Array.isArray(s['bulletPoints'])) return false;
+  if (typeof s['slideType'] !== 'string') return false;
   return true;
 }
 

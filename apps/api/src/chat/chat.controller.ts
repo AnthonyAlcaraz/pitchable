@@ -16,6 +16,7 @@ import { CurrentUser } from '../auth/decorators/current-user.decorator.js';
 import type { RequestUser } from '../auth/decorators/current-user.decorator.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { ChatService } from './chat.service.js';
+import { GenerationService } from './generation.service.js';
 import { InteractionGateService } from './interaction-gate.service.js';
 import { SendMessageDto } from './dto/send-message.dto.js';
 import {
@@ -42,6 +43,7 @@ export class ChatController {
 
   constructor(
     private readonly chatService: ChatService,
+    private readonly generation: GenerationService,
     private readonly prisma: PrismaService,
     private readonly interactionGate: InteractionGateService,
   ) {}
@@ -236,5 +238,20 @@ export class ChatController {
       body.selection,
     );
     return { accepted };
+  }
+
+  @Post(':presentationId/edit-outline-slide')
+  @UseGuards(PresentationOwnerGuard)
+  async editOutlineSlide(
+    @CurrentUser() user: RequestUser,
+    @Param('presentationId') presentationId: string,
+    @Body() body: { slideIndex: number; feedback: string },
+  ) {
+    return this.generation.regenerateOutlineSlide(
+      user.userId,
+      presentationId,
+      body.slideIndex,
+      body.feedback,
+    );
   }
 }

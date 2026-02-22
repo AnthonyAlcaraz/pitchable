@@ -101,6 +101,7 @@ PitchLens (DB) → generation.service.ts → buildSlideGenerationSystemPrompt()
 ## Test Credentials
 
 - **User:** overflow-test@test.com / OverTest1234
+- **Pro User:** pro-test@pitchable.ai / ProTest1234 (PRO tier, 500 credits)
 - **API Key:** `pk_2b0ea28428e50a20789cfe73bc9aa04864bf1aef33f30632157471476b5d5751`
 - **McKinsey theme ID:** `d4cf8da3-2654-4e5c-85f7-f09292d1b2a0`
 - **Server:** localhost:3000

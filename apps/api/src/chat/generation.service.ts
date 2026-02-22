@@ -12,7 +12,7 @@ import { ValidationGateService } from './validation-gate.service.js';
 import { TierEnforcementService } from '../credits/tier-enforcement.service.js';
 import { CreditsService } from '../credits/credits.service.js';
 import { CreditReservationService } from '../credits/credit-reservation.service.js';
-import { DECK_GENERATION_COST, OUTLINE_GENERATION_COST } from '../credits/tier-config.js';
+import { DECK_GENERATION_COST, OUTLINE_GENERATION_COST, OUTLINE_SLIDE_EDIT_COST } from '../credits/tier-config.js';
 import { ImagesService } from '../images/images.service.js';
 import { NanoBananaService } from '../images/nano-banana.service.js';
 import { QualityAgentsService } from './quality-agents.service.js';
@@ -44,7 +44,7 @@ import { DENSITY_LIMITS, type SlideContent } from '../constraints/density-valida
 import { TtlMap } from '../common/ttl-map.js';
 import { computeSlideHash } from '../common/content-hash.js';
 import type { ChatStreamEvent } from './chat.service.js';
-import { isValidOutline, isValidSlideContent } from './validators.js';
+import { isValidOutline, isValidOutlineSlide, isValidSlideContent } from './validators.js';
 import { truncateToLimits, passesDensityCheck } from '../constraints/density-truncator.js';
 import type { GeneratedSlideContent } from './validators.js';
 import { FigmaImageSyncService, type FigmaBatchItem } from '../figma/figma-image-sync.service.js';
@@ -303,6 +303,99 @@ export class GenerationService {
   }
 
   /**
+   * Regenerate a single slide in the pending outline based on user feedback.
+   * Returns the updated slide or an error message.
+   */
+  async regenerateOutlineSlide(
+    userId: string,
+    presentationId: string,
+    slideIndex: number,
+    feedback: string,
+  ): Promise<{ success: boolean; slide?: OutlineSlide; error?: string }> {
+    const pending = this.pendingOutlines.get(presentationId);
+    if (!pending) {
+      return { success: false, error: 'No pending outline found.' };
+    }
+
+    const { outline, config } = pending;
+    if (slideIndex < 0 || slideIndex >= outline.slides.length) {
+      return { success: false, error: `Slide index ${slideIndex} is out of range.` };
+    }
+
+    // Check credits
+    const hasCredits = await this.credits.hasEnoughCredits(userId, OUTLINE_SLIDE_EDIT_COST);
+    if (!hasCredits) {
+      const bal = await this.credits.getBalance(userId).catch(() => 0);
+      return { success: false, error: `Not enough credits. Editing an outline slide costs ${OUTLINE_SLIDE_EDIT_COST} credit. You have ${bal}.` };
+    }
+
+    const currentSlide = outline.slides[slideIndex];
+    const otherSlides = outline.slides
+      .filter((_, i) => i !== slideIndex)
+      .map((s) => `Slide ${s.slideNumber} (${s.slideType}): ${s.title}`)
+      .join('\n');
+
+    const prompt = `You are Pitchable, an AI presentation architect. Regenerate ONE slide in an existing outline based on user feedback.
+
+CURRENT SLIDE:
+- Slide Number: ${currentSlide.slideNumber}
+- Type: ${currentSlide.slideType}
+- Title: ${currentSlide.title}
+- Bullet Points: ${JSON.stringify(currentSlide.bulletPoints)}
+${currentSlide.sectionLabel ? `- Section: ${currentSlide.sectionLabel}` : ''}
+
+OTHER SLIDES IN DECK (for context â€” avoid duplicating their content):
+${otherSlides}
+
+USER FEEDBACK:
+${feedback}
+
+RULES:
+- Keep the same slideNumber
+- You MAY change the slideType if the feedback implies a different format
+- Title MUST be a complete sentence with subject, verb, object (not a topic label)
+- 3-5 bullet points, each max 8 words, specific claims with data when possible
+- Include a sectionLabel (1-3 word ALL-CAPS tag)
+- Do NOT repeat content from other slides
+
+OUTPUT: Valid JSON matching this schema (no markdown fences):
+{
+  "slideNumber": ${currentSlide.slideNumber},
+  "title": "...",
+  "bulletPoints": ["...", "..."],
+  "slideType": "...",
+  "sectionLabel": "...",
+  "sources": []
+}`;
+
+    try {
+      const updatedSlide = await this.llm.completeJson<OutlineSlide>(
+        [{ role: 'user', content: prompt }],
+        LlmModel.SONNET,
+        isValidOutlineSlide,
+        1,
+      );
+
+      // Preserve slide number from original
+      updatedSlide.slideNumber = currentSlide.slideNumber;
+
+      // Update the pending outline in place
+      outline.slides[slideIndex] = updatedSlide;
+      this.pendingOutlines.set(presentationId, { outline, config });
+
+      // Deduct credit
+      await this.credits.deductCredits(userId, OUTLINE_SLIDE_EDIT_COST, CreditReason.SLIDE_MODIFICATION, presentationId);
+      this.logger.log(`Outline slide ${slideIndex + 1} regenerated for ${presentationId}, charged ${OUTLINE_SLIDE_EDIT_COST} credit`);
+
+      return { success: true, slide: updatedSlide };
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Unknown error';
+      this.logger.error(`Failed to regenerate outline slide: ${msg}`);
+      return { success: false, error: `Failed to regenerate slide: ${msg}` };
+    }
+  }
+
+  /**
    * Execute the approved outline: create the presentation and generate
    * slides one-by-one with streaming progress.
    */
@@ -514,7 +607,7 @@ export class GenerationService {
               })),
           };
         }
-      } catch { /* non-critical — generation proceeds without Figma context */ }
+      } catch { /* non-critical ï¿½ generation proceeds without Figma context */ }
     }
 
     const slideSystemPrompt = buildSlideGenerationSystemPrompt(

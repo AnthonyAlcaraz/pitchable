@@ -39,6 +39,7 @@ export interface TierLimits {
  *   Image generation: 1 credit per image
  *   Document ingestion: 1 credit per document (flat)
  *   Entity extraction: 1 credit per document (FalkorDB)
+ *   Outline slide edit: 1 credit per slide
  *   Chat message: 1 credit (after 10 free per presentation)
  *   Website crawl: 1 credit per 5 pages
  *   Figma AI mapping: 1 credit per template
@@ -63,6 +64,9 @@ export const DECK_GENERATION_COST = 2;
 
 /** Credits deducted per single-slide modification or addition. */
 export const SLIDE_MODIFICATION_COST = 1;
+
+/** Credits deducted per outline slide edit (regenerate a single slide in the outline). */
+export const OUTLINE_SLIDE_EDIT_COST = 1;
 
 /** Credits deducted per image generation. */
 export const IMAGE_GENERATION_COST = 1;

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Check, ChevronRight, Edit3, SkipForward } from 'lucide-react';
+import { Check, ChevronRight, Edit3, SkipForward, Loader2, Coins } from 'lucide-react';
 import type { OutlineReviewState } from '../../stores/chat.store.js';
 
 interface OutlineReviewFlowProps {
@@ -8,6 +8,7 @@ interface OutlineReviewFlowProps {
   onEditTitle: (newTitle: string) => void;
   onSkipToApproveAll: () => void;
   onFinalApprove: () => void;
+  onEditSlide?: (slideIndex: number, feedback: string) => Promise<{ success: boolean; error?: string }>;
 }
 
 export function OutlineReviewFlow({
@@ -16,9 +17,14 @@ export function OutlineReviewFlow({
   onEditTitle,
   onSkipToApproveAll,
   onFinalApprove,
+  onEditSlide,
 }: OutlineReviewFlowProps) {
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleDraft, setTitleDraft] = useState(state.outlineData?.title ?? '');
+  const [editingSlideIdx, setEditingSlideIdx] = useState<number | null>(null);
+  const [slideFeedback, setSlideFeedback] = useState('');
+  const [slideEditLoading, setSlideEditLoading] = useState(false);
+  const [slideEditError, setSlideEditError] = useState<string | null>(null);
 
   if (!state.outlineData) return null;
 
@@ -32,6 +38,20 @@ export function OutlineReviewFlow({
       onEditTitle(titleDraft.trim());
     }
     setEditingTitle(false);
+  };
+
+  const handleSlideEdit = async (slideIndex: number) => {
+    if (!slideFeedback.trim() || !onEditSlide) return;
+    setSlideEditLoading(true);
+    setSlideEditError(null);
+    const result = await onEditSlide(slideIndex, slideFeedback.trim());
+    setSlideEditLoading(false);
+    if (result.success) {
+      setEditingSlideIdx(null);
+      setSlideFeedback('');
+    } else {
+      setSlideEditError(result.error ?? 'Failed to edit slide');
+    }
   };
 
   return (
@@ -129,6 +149,7 @@ export function OutlineReviewFlow({
         const isApproved = approvedSteps.includes(stepNum);
         const isCurrent = currentStep === stepNum;
         const isVisible = approvedSteps.includes(stepNum - 1) || isApproved || isCurrent;
+        const isEditing = editingSlideIdx === idx;
 
         if (!isVisible) return null;
 
@@ -180,7 +201,59 @@ export function OutlineReviewFlow({
               </div>
             </div>
 
-            {isCurrent && !isApproved && (
+            {/* Slide edit form */}
+            {isEditing && (
+              <div className="mt-2 space-y-2" style={{ animation: 'fadeSlideIn 0.2s ease-out' }}>
+                <div className="flex items-center gap-1.5 text-[10px] text-yellow-400">
+                  <Coins className="h-3 w-3" />
+                  Editing costs 1 credit
+                </div>
+                <textarea
+                  value={slideFeedback}
+                  onChange={(e) => setSlideFeedback(e.target.value)}
+                  placeholder="Describe what you'd like to change..."
+                  className="w-full rounded border border-orange-500/30 bg-background px-3 py-2 text-xs text-foreground outline-none focus:border-orange-500 resize-none"
+                  rows={2}
+                  autoFocus
+                  disabled={slideEditLoading}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      void handleSlideEdit(idx);
+                    }
+                    if (e.key === 'Escape') {
+                      setEditingSlideIdx(null);
+                      setSlideFeedback('');
+                      setSlideEditError(null);
+                    }
+                  }}
+                />
+                {slideEditError && (
+                  <p className="text-[10px] text-red-400">{slideEditError}</p>
+                )}
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => void handleSlideEdit(idx)}
+                    disabled={slideEditLoading || !slideFeedback.trim()}
+                    className="flex items-center gap-1.5 rounded bg-orange-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-orange-600 disabled:opacity-50 transition-colors"
+                  >
+                    {slideEditLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Edit3 className="h-3 w-3" />}
+                    {slideEditLoading ? 'Regenerating...' : 'Regenerate'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setEditingSlideIdx(null); setSlideFeedback(''); setSlideEditError(null); }}
+                    disabled={slideEditLoading}
+                    className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {isCurrent && !isApproved && !isEditing && (
               <div className="mt-2 flex gap-2">
                 <button
                   type="button"
@@ -190,6 +263,16 @@ export function OutlineReviewFlow({
                   <Check className="h-3 w-3" />
                   Approve
                 </button>
+                {onEditSlide && (
+                  <button
+                    type="button"
+                    onClick={() => { setEditingSlideIdx(idx); setSlideFeedback(''); setSlideEditError(null); }}
+                    className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted transition-colors"
+                  >
+                    <Edit3 className="h-3 w-3" />
+                    Suggest change
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={onSkipToApproveAll}
