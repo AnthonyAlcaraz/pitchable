@@ -23,6 +23,7 @@ import { EmbeddingService } from './embedding/embedding.service.js';
 import { VectorStoreService } from './embedding/vector-store.service.js';
 import { FalkorDbService } from './falkordb/falkordb.service.js';
 import { EntityExtractorService } from './falkordb/entity-extractor.service.js';
+import { CrossDocLinkerService } from './falkordb/cross-doc-linker.service.js';
 import { ZeroEntropyRetrievalService } from './zeroentropy/zeroentropy-retrieval.service.js';
 import { OmnisearchService } from './omnisearch.service.js';
 import { RerankerService } from './reranker.service.js';
@@ -58,12 +59,13 @@ import { ChunkScoringService } from './chunk-scoring.service.js';
     VectorStoreService,
     FalkorDbService,
     EntityExtractorService,
+    CrossDocLinkerService,
     ZeroEntropyRetrievalService,
     OmnisearchService,
     RerankerService,
     StalenessService,
     ChunkScoringService,
   ],
-  exports: [KnowledgeBaseService, S3Service, EmbeddingService, VectorStoreService, FalkorDbService, EntityExtractorService, ZeroEntropyRetrievalService, OmnisearchService, RerankerService, StalenessService, ChunkScoringService],
+  exports: [KnowledgeBaseService, S3Service, EmbeddingService, VectorStoreService, FalkorDbService, EntityExtractorService, CrossDocLinkerService, ZeroEntropyRetrievalService, OmnisearchService, RerankerService, StalenessService, ChunkScoringService],
 })
 export class KnowledgeBaseModule {}

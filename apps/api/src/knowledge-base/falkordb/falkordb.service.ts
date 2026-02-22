@@ -69,6 +69,16 @@ export class FalkorDbService implements OnModuleDestroy {
     return db.selectGraph(graphName);
   }
 
+  /** Run arbitrary Cypher query (for internal services like cross-doc linker) */
+  async runCypher(
+    graphName: string,
+    cypher: string,
+  ): Promise<{ data: Record<string, unknown>[] }> {
+    const graph = await this.getGraph(graphName);
+    const result = await graph.query(cypher);
+    return { data: (result.data ?? []) as Record<string, unknown>[] };
+  }
+
   async healthCheck(): Promise<boolean> {
     try {
       const db = await this.getDb();
@@ -591,6 +601,36 @@ export class FalkorDbService implements OnModuleDestroy {
       description: String(row['description'] ?? ''),
       documentId: row['documentId'] ? String(row['documentId']) : undefined,
     }));
+  }
+
+  /**
+   * Compute importance score for all entities: 60% connection count + 40% document count.
+   * Stores as e.importance property. Returns count of updated entities.
+   */
+  async computeImportance(graphName: string): Promise<number> {
+    try {
+      const result = await this.runCypher(
+        graphName,
+        `MATCH (e:Entity)
+         OPTIONAL MATCH (e)-[r]-()
+         WITH e, count(DISTINCT r) AS connections
+         OPTIONAL MATCH (e)-[:EXTRACTED_FROM]->(d:Document)
+         WITH e, connections, count(DISTINCT d) AS docs
+         SET e.importance = toFloat(connections) * 0.6 + toFloat(docs) * 0.4
+         RETURN count(e) AS updated`,
+      );
+      const row = (result.data ?? [])[0] as Record<string, unknown> | undefined;
+      const updated = Number(row?.['updated'] ?? 0);
+      if (updated > 0) {
+        this.logger.log(`Computed importance for ${updated} entities in "${graphName}"`);
+      }
+      return updated;
+    } catch (error) {
+      this.logger.warn(
+        `Importance computation failed for "${graphName}": ${error instanceof Error ? error.message : String(error)}`,
+      );
+      return 0;
+    }
   }
 
   /** Graph naming convention */

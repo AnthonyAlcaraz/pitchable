@@ -14,6 +14,7 @@ import { EmbeddingService } from './embedding/embedding.service.js';
 import { VectorStoreService } from './embedding/vector-store.service.js';
 import { FalkorDbService } from './falkordb/falkordb.service.js';
 import { EntityExtractorService } from './falkordb/entity-extractor.service.js';
+import { CrossDocLinkerService } from './falkordb/cross-doc-linker.service.js';
 import { ZeroEntropyRetrievalService } from './zeroentropy/zeroentropy-retrieval.service.js';
 import { CreditsService } from '../credits/credits.service.js';
 import { LlmService, LlmModel } from '../chat/llm.service.js';
@@ -48,6 +49,7 @@ export class DocumentProcessingProcessor extends WorkerHost {
     private readonly events: EventsGateway,
     private readonly credits: CreditsService,
     private readonly llm: LlmService,
+    private readonly crossDocLinker: CrossDocLinkerService,
   ) {
     super();
   }
@@ -427,11 +429,25 @@ export class DocumentProcessingProcessor extends WorkerHost {
       `Brief ${briefId}: all ${allDocs.length} documents terminal, status=${newStatus}`,
     );
 
-    // Generate AI summary when brief becomes READY
+    // Generate AI summary and cross-doc intelligence when brief becomes READY
     if (newStatus === BriefStatus.READY) {
       this.generateBriefSummary(briefId).catch((err) => {
         this.logger.warn(`Brief ${briefId}: AI summary generation failed (non-blocking): ${err instanceof Error ? err.message : String(err)}`);
       });
+
+      // Cross-document intelligence: link co-occurring entities + compute importance (non-blocking)
+      const brief = await this.prisma.pitchBrief.findUnique({
+        where: { id: briefId },
+        select: { graphName: true },
+      });
+      if (brief?.graphName && this.falkordb.isEnabled()) {
+        this.crossDocLinker.linkAcrossDocuments(brief.graphName).catch((err) => {
+          this.logger.warn(`Brief ${briefId}: cross-doc linking failed (non-blocking): ${err instanceof Error ? err.message : String(err)}`);
+        });
+        this.falkordb.computeImportance(brief.graphName).catch((err) => {
+          this.logger.warn(`Brief ${briefId}: importance scoring failed (non-blocking): ${err instanceof Error ? err.message : String(err)}`);
+        });
+      }
     }
   }
 

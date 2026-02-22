@@ -471,8 +471,9 @@ export function InteractiveGraph({ graphData, briefId, onRefresh }: InteractiveG
               y1={sy}
               x2={tx}
               y2={ty}
-              stroke="#444"
+              stroke={edge.type === 'CO_OCCURS' ? '#666' : '#444'}
               strokeWidth="1"
+              strokeDasharray={edge.type === 'CO_OCCURS' ? '4 3' : undefined}
               opacity={getEdgeOpacity(edge.weight)}
               onMouseEnter={(ev) => {
                 setHoveredEdge({
