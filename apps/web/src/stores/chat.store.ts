@@ -349,7 +349,15 @@ export const useChatStore = create<ChatState>((set, get) => ({
               },
             });
             useWorkflowStore.getState().setPhase('reviewing');
-            usePresentationStore.getState().startReview();
+            // Reload presentation to ensure all slides are available after generation
+            const pid = metadata.presentationId as string;
+            if (pid) {
+              usePresentationStore.getState().loadPresentation(pid).then(() => {
+                usePresentationStore.getState().startReview();
+              });
+            } else {
+              usePresentationStore.getState().startReview();
+            }
             // Refresh credit balance after deck generation consumed credits
             useAuthStore.getState().refreshCreditBalance();
           }
