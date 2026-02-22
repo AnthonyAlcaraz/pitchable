@@ -62,7 +62,7 @@ export function ChatMessage({
           isUser ? 'bg-orange-500/10 text-orange-400' : 'bg-orange-500/10'
         }`}
       >
-        {isUser ? <User className="h-4 w-4" /> : <PeachLogo className="h-5 w-5" />}
+        {isUser ? <User className="h-4 w-4" /> : <PeachLogo className="h-5 w-5 animate-[spin_5s_linear_infinite]" />}
       </div>
       <div className="min-w-0 flex-1">
         <p className="mb-1 text-xs font-medium text-muted-foreground">

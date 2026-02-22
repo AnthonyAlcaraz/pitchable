@@ -11,8 +11,8 @@ interface AgentActivityProps {
   streamingContent: string;
 }
 
-export function AgentActivity({ thinkingText, steps, streamingContent }: AgentActivityProps) {
-  const showThinking = thinkingText && steps.length === 0 && !streamingContent;
+export function AgentActivity({ thinkingText, steps, streamingContent: _streamingContent }: AgentActivityProps) {
+  const showThinking = !!thinkingText;
 
   // Group steps by phase
   const phaseGroups = useMemo(() => {

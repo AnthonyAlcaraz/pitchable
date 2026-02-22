@@ -2,6 +2,7 @@ import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Layers, BookOpen, Focus } from 'lucide-react';
+import { usePresentationStore } from '@/stores/presentation.store';
 import { PeachLogo } from '@/components/icons/PeachLogo';
 import { SplitScreen } from '@/components/layout/SplitScreen';
 import { ChatPanel } from '@/components/chat/ChatPanel';
@@ -15,6 +16,7 @@ export function WorkspacePage() {
   const lensId = searchParams.get('lensId');
   const topic = searchParams.get('topic');
   const navigate = useNavigate();
+  const presentationTitle = usePresentationStore((s) => s.presentation?.title ?? null);
 
   useEffect(() => {
     const handler = (e: Event) => {
@@ -50,7 +52,7 @@ export function WorkspacePage() {
         <div className="flex items-center gap-2">
           <Layers className="h-4 w-4 text-primary" />
           <span className="text-sm font-medium text-foreground">
-            {id === 'new' ? t('workspace.new_presentation') : t('workspace.presentation_label', { id: id ?? '' })}
+            {id === 'new' ? t('workspace.new_presentation') : (presentationTitle || t('workspace.new_presentation'))}
           </span>
         </div>
         {briefId && (
