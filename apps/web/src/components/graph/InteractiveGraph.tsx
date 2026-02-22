@@ -145,11 +145,11 @@ export function InteractiveGraph({ graphData, briefId, onRefresh }: InteractiveG
   const tickCountRef = useRef(0);
   const autoFitDoneRef = useRef(false);
 
-  // Reset auto-fit on rebuild
+  // Reset auto-fit only when graph data changes (not rebuildKey which cycles)
   useEffect(() => {
     tickCountRef.current = 0;
     autoFitDoneRef.current = false;
-  }, [rebuildKey]);
+  }, [graphData]);
 
   const fitViewBox = useCallback(() => {
     const nodes = simNodesRef.current;
