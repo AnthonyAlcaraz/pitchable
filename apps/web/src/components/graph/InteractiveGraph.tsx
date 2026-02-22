@@ -276,15 +276,16 @@ export function InteractiveGraph({ graphData, briefId, onRefresh }: InteractiveG
     const svg = svgRef.current;
     if (!svg) return;
     const handler = (e: WheelEvent) => {
-      e.preventDefault();
+      const vb = viewBoxRef.current;
       const factor = e.deltaY > 0 ? 1.1 : 0.9;
-      setViewBox((prev) => {
-        const newW = Math.max(MIN_VIEWBOX_SIZE, Math.min(MAX_VIEWBOX_SIZE, prev.w * factor));
-        const newH = Math.max(MIN_VIEWBOX_SIZE, Math.min(MAX_VIEWBOX_SIZE, prev.h * factor));
-        const dx = (newW - prev.w) / 2;
-        const dy = (newH - prev.h) / 2;
-        return { x: prev.x - dx, y: prev.y - dy, w: newW, h: newH };
-      });
+      const newW = Math.max(MIN_VIEWBOX_SIZE, Math.min(MAX_VIEWBOX_SIZE, vb.w * factor));
+      const newH = Math.max(MIN_VIEWBOX_SIZE, Math.min(MAX_VIEWBOX_SIZE, vb.h * factor));
+      // Only intercept scroll if zoom actually changes (not clamped at bounds)
+      if (newW === vb.w && newH === vb.h) return;
+      e.preventDefault();
+      const dx = (newW - vb.w) / 2;
+      const dy = (newH - vb.h) / 2;
+      setViewBox({ x: vb.x - dx, y: vb.y - dy, w: newW, h: newH });
     };
     svg.addEventListener('wheel', handler, { passive: false });
     return () => svg.removeEventListener('wheel', handler);
