@@ -91,6 +91,7 @@ const redisConnection = redisUrl
               '/socket.io/{*path}',
               '/figma/{*path}',
               '/email/{*path}',
+              '/slides/{*path}',
             ],
           }),
         ]
