@@ -16,6 +16,7 @@ export {
   validatePalette,
   validateTextContrast,
   FORBIDDEN_PAIRS,
+  sampleImageLuminance,
 } from './color-validator';
 
 export type {
@@ -25,6 +26,7 @@ export type {
   ColorValidationResult,
   ContrastResult,
   SlidePalette,
+  ImageLuminanceResult,
 } from './color-validator';
 
 export {

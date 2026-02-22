@@ -177,6 +177,7 @@ export class MarpExporterService {
     layoutProfile: LayoutProfile = 'startup',
     rendererOverrides?: Map<number, string>,
     figmaBackgrounds?: Map<number, string>,
+    figmaContrastOverrides?: Map<number, { isDark: boolean; textColor: string }>,
   ): string {
     const palette = theme.colorPalette as unknown as ColorPalette;
     const sections: string[] = [];
@@ -488,13 +489,13 @@ export class MarpExporterService {
     for (const slide of sortedSlides) {
       const rendererOverride = rendererOverrides?.get(slide.slideNumber);
       const figmaBg = figmaBackgrounds?.get(slide.slideNumber);
-      sections.push(this.buildSlideMarkdown(slide, bg, safePrimary, profile, palette, rendererOverride, figmaBg));
+      sections.push(this.buildSlideMarkdown(slide, bg, safePrimary, profile, palette, rendererOverride, figmaBg, figmaContrastOverrides?.get(slide.slideNumber)));
     }
 
     return sections.join('\n\n---\n\n');
   }
 
-  private buildSlideMarkdown(slide: SlideModel, bgColor?: string, primaryColor?: string, profile?: LayoutProfileConfig, palette?: ColorPalette, rendererOverride?: string, figmaBackground?: string): string {
+  private buildSlideMarkdown(slide: SlideModel, bgColor?: string, primaryColor?: string, profile?: LayoutProfileConfig, palette?: ColorPalette, rendererOverride?: string, figmaBackground?: string, figmaContrast?: { isDark: boolean; textColor: string }): string {
     const lines: string[] = [];
     const type = slide.slideType;
     const bgVariant = getSlideBackground(type, slide.slideNumber, bgColor);
@@ -549,6 +550,11 @@ export class MarpExporterService {
     // Figma template background: full-bleed behind all content
     if (figmaBackground) {
       lines.push(`![bg](${figmaBackground})`);
+      // Per-slide contrast override: ensure text is readable on Figma background
+      if (figmaContrast) {
+        lines.push(`<!-- _color: ${figmaContrast.textColor} -->`);
+        lines.push('<!-- _backgroundColor: transparent -->');
+      }
       lines.push('');
     }
 

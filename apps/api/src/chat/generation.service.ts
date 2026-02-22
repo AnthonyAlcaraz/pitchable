@@ -26,6 +26,7 @@ import {
   buildSlideGenerationSystemPrompt,
   buildSlideGenerationUserPrompt,
 } from './prompts/slide-generation.prompt.js';
+import type { FigmaTemplateContext } from './prompts/slide-generation.prompt.js';
 import { DEFAULT_SLIDE_RANGES } from './dto/generation-config.dto.js';
 import { getFrameworkConfig } from '../pitch-lens/frameworks/story-frameworks.config.js';
 import { buildPitchLensInjection } from '../pitch-lens/prompts/pitch-lens-injection.prompt.js';
@@ -490,6 +491,32 @@ export class GenerationService {
     } else {
       imageFreqInstruction = theme ? getImageFrequencyForTheme(theme.name) : undefined;
     }
+    // Load Figma template visual metadata for content-aware generation
+    let figmaTemplateContext: FigmaTemplateContext | undefined;
+    if (presWithLens?.pitchLens?.figmaTemplateId) {
+      try {
+        const figmaTemplate = await this.prisma.figmaTemplate.findUnique({
+          where: { id: presWithLens.pitchLens.figmaTemplateId },
+          include: { mappings: true },
+        });
+        if (figmaTemplate?.mappings.some(m => m.layoutHint || m.contentHint)) {
+          figmaTemplateContext = {
+            templateName: figmaTemplate.name,
+            frameMapping: figmaTemplate.mappings
+              .filter(m => m.layoutHint || m.contentHint)
+              .map(m => ({
+                slideType: m.slideType,
+                frameName: m.figmaNodeName ?? m.figmaNodeId,
+                isDarkFrame: m.isDarkFrame ?? false,
+                layoutHint: m.layoutHint ?? '',
+                contentHint: (m.contentHint as 'short_punchy' | 'standard' | 'minimal') ?? 'standard',
+                dominantColors: (m.dominantColors as string[]) ?? [],
+              })),
+          };
+        }
+      } catch { /* non-critical — generation proceeds without Figma context */ }
+    }
+
     const slideSystemPrompt = buildSlideGenerationSystemPrompt(
       config.presentationType,
       themeName,
@@ -500,6 +527,7 @@ export class GenerationService {
       densityOverrides,
       imageLayoutInstruction,
       execArchetypeContext,
+      figmaTemplateContext,
     ) + feedbackBlock;
 
     // Track offset when NEEDS_SPLIT inserts extra slides

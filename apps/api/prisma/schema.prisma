@@ -478,6 +478,13 @@ model FigmaTemplateMapping {
   figmaNodeId   String
   figmaNodeName String?
   thumbnailUrl  String?
+  dominantColors Json?
+  avgLuminance   Float?
+  textRegionLum  Float?
+  isDarkFrame    Boolean?
+  textColorHint  String?
+  layoutHint     String?
+  contentHint    String?
   createdAt     DateTime      @default(now())
   template      FigmaTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
 

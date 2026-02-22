@@ -8,6 +8,18 @@ export interface ThemeColorContext {
   bodyFont?: string;
 }
 
+export interface FigmaTemplateContext {
+  templateName: string;
+  frameMapping: Array<{
+    slideType: string;
+    frameName: string;
+    isDarkFrame: boolean;
+    layoutHint: string;
+    contentHint: 'short_punchy' | 'standard' | 'minimal';
+    dominantColors: string[];
+  }>;
+}
+
 export function buildSlideGenerationSystemPrompt(
   presentationType: string,
   themeName: string,
@@ -18,6 +30,7 @@ export function buildSlideGenerationSystemPrompt(
   densityOverrides?: { maxBullets?: number; maxWords?: number; maxTableRows?: number },
   imageLayoutInstruction?: string,
   archetypeContext?: string,
+  figmaTemplateContext?: FigmaTemplateContext,
 ): string {
   const themeBlock = themeColors
     ? `THEME: ${themeName}
@@ -356,7 +369,7 @@ ${kbBlock}
 ${pitchLensContext ? `PITCH LENS GUIDANCE (follow this for tone, depth, and narrative structure):
 ${pitchLensContext}
 ` : ''}${archetypeContext ? `${archetypeContext}
-` : ''}OUTPUT FORMAT:
+` : ''}${figmaTemplateContext ? buildFigmaContextBlock(figmaTemplateContext) : ''}OUTPUT FORMAT:
 Respond with valid JSON. Follow the formatting guide for the given slide type:
 {
   "title": "Final Slide Title",
@@ -419,4 +432,28 @@ Remember:
 - Set imagePromptHint to "" unless this slide specifically needs a visual
 - This slide must ADVANCE the story â€” connect to the previous slide's conclusion and lead naturally into the next topic
 - STRUCTURE CHECK: Does your body have (1) lead sentence with **bold**, (2) table or bullets, (3) ### takeaway, (4) Sources line? If not, add them.`;
+}
+
+
+function buildFigmaContextBlock(ctx: FigmaTemplateContext): string {
+  const frameLines = ctx.frameMapping.map((frame) => {
+    const darkLight = frame.isDarkFrame ? 'DARK background — use white/light text' : 'LIGHT background — use dark text';
+    let densityRule = '';
+    if (frame.contentHint === 'short_punchy') {
+      densityRule = 'Write impactful fragments, max 30 words. The visual carries the message.';
+    } else if (frame.contentHint === 'minimal') {
+      densityRule = 'Title only (6 words max), no body text.';
+    } else {
+      densityRule = 'Normal density rules apply.';
+    }
+    return `- ${frame.slideType}: "${frame.frameName}" — ${darkLight}. ${densityRule}`;
+  }).join('\n');
+
+  return `FIGMA TEMPLATE CONTEXT (your text will overlay these designs):
+Template: "${ctx.templateName}"
+${frameLines}
+
+IMPORTANT: Adjust content density per frame. "short_punchy" frames need impactful fragments. "minimal" frames need title only.
+
+`;
 }

@@ -14,6 +14,7 @@ import type { MapFrameDto } from './dto/map-frame.dto.js';
 import { CreditsService } from '../credits/credits.service.js';
 import { CreditReason, SlideType } from '../../generated/prisma/enums.js';
 import { FIGMA_AI_MAPPING_COST } from '../credits/tier-config.js';
+import { sampleImageLuminance } from '../constraints/index.js';
 
 
 /** Keyword map for auto-mapping Figma frame names to SlideTypes. */
@@ -296,6 +297,27 @@ export class FigmaTemplateService {
             // Skip if this slideType is already mapped
             if (mappedSlideTypes.has(result.slideType)) continue;
 
+            const frameThumbnail = unmappedFrames.find((f) => f.nodeId === result.nodeId)?.thumbnailUrl;
+
+            // Compute pixel-level luminance from thumbnail if available
+            let avgLuminance: number | undefined;
+            let textRegionLum: number | undefined;
+            let isDarkFrame: boolean | undefined;
+            let computedTextColor: string | undefined;
+            if (frameThumbnail) {
+              try {
+                const res = await fetch(frameThumbnail, { signal: AbortSignal.timeout(10_000) });
+                if (res.ok) {
+                  const buf = Buffer.from(await res.arrayBuffer());
+                  const lum = await sampleImageLuminance(buf);
+                  avgLuminance = lum.averageLuminance;
+                  textRegionLum = lum.textRegionLuminance;
+                  isDarkFrame = lum.isDark;
+                  computedTextColor = lum.recommendedTextColor;
+                }
+              } catch { /* non-critical */ }
+            }
+
             await this.prisma.figmaTemplateMapping.upsert({
               where: {
                 templateId_slideType_figmaNodeId: {
@@ -309,11 +331,25 @@ export class FigmaTemplateService {
                 slideType: result.slideType as SlideType,
                 figmaNodeId: result.nodeId,
                 figmaNodeName: result.name,
-                thumbnailUrl: unmappedFrames.find((f) => f.nodeId === result.nodeId)?.thumbnailUrl,
+                thumbnailUrl: frameThumbnail,
+                dominantColors: result.dominantColors ?? undefined,
+                avgLuminance,
+                textRegionLum,
+                isDarkFrame,
+                textColorHint: result.textColorHint ?? computedTextColor,
+                layoutHint: result.layoutHint,
+                contentHint: result.contentHint,
               },
               update: {
                 figmaNodeName: result.name,
-                thumbnailUrl: unmappedFrames.find((f) => f.nodeId === result.nodeId)?.thumbnailUrl,
+                thumbnailUrl: frameThumbnail,
+                dominantColors: result.dominantColors ?? undefined,
+                avgLuminance,
+                textRegionLum,
+                isDarkFrame,
+                textColorHint: result.textColorHint ?? computedTextColor,
+                layoutHint: result.layoutHint,
+                contentHint: result.contentHint,
               },
             });
 
@@ -479,6 +515,47 @@ export class FigmaTemplateService {
       template: full,
       autoMapResult,
     };
+  }
+
+  /**
+   * Backfill visual metadata (luminance, dark/light, text color) for existing templates.
+   * Pure pixel math — no AI cost. Downloads existing thumbnails and computes luminance.
+   */
+  async backfillVisualMetadata(templateId: string, userId: string) {
+    await this.ensureOwnership(templateId, userId);
+
+    const mappings = await this.prisma.figmaTemplateMapping.findMany({
+      where: { templateId },
+    });
+
+    let updated = 0;
+    for (const mapping of mappings) {
+      if (!mapping.thumbnailUrl) continue;
+
+      try {
+        const res = await fetch(mapping.thumbnailUrl, { signal: AbortSignal.timeout(10_000) });
+        if (!res.ok) continue;
+
+        const buf = Buffer.from(await res.arrayBuffer());
+        const lum = await sampleImageLuminance(buf);
+
+        await this.prisma.figmaTemplateMapping.update({
+          where: { id: mapping.id },
+          data: {
+            avgLuminance: lum.averageLuminance,
+            textRegionLum: lum.textRegionLuminance,
+            isDarkFrame: lum.isDark,
+            textColorHint: lum.recommendedTextColor,
+          },
+        });
+        updated++;
+      } catch {
+        // Non-critical — skip frames with expired/broken thumbnails
+      }
+    }
+
+    this.logger.log(`Backfilled visual metadata for ${updated}/${mappings.length} mappings in template ${templateId}`);
+    return { backfilled: updated, total: mappings.length };
   }
 
   private async ensureOwnership(templateId: string, userId: string) {

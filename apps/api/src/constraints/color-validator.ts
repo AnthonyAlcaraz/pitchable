@@ -338,3 +338,70 @@ export function validateTextContrast(
     required,
   };
 }
+
+// ── Image Luminance Sampling ─────────────────────────────────
+
+export interface ImageLuminanceResult {
+  averageLuminance: number;       // 0-1
+  textRegionLuminance: number;    // 0-1 (inner 70% where text overlays)
+  isDark: boolean;                // textRegionLum < 0.18
+  recommendedTextColor: string;   // '#FFFFFF' or '#1A1A1A'
+}
+
+/**
+ * Sample the luminance of an image buffer to determine optimal text color.
+ * Resizes to 48x27 (16:9 thumbnail), extracts raw RGBA pixels,
+ * computes per-pixel luminance, averages over full image and inner 70% rectangle.
+ */
+export async function sampleImageLuminance(imageBuffer: Buffer): Promise<ImageLuminanceResult> {
+  const sharp = (await import('sharp')).default;
+
+  const THUMB_W = 48;
+  const THUMB_H = 27;
+
+  const { data, info } = await sharp(imageBuffer)
+    .resize(THUMB_W, THUMB_H, { fit: 'fill' })
+    .ensureAlpha()
+    .raw()
+    .toBuffer({ resolveWithObject: true });
+
+  const pixelCount = info.width * info.height;
+  let totalLum = 0;
+  let textRegionLum = 0;
+  let textRegionPixels = 0;
+
+  // Inner 70% rectangle (where text typically overlays)
+  const marginX = Math.floor(info.width * 0.15);
+  const marginY = Math.floor(info.height * 0.15);
+  const innerRight = info.width - marginX;
+  const innerBottom = info.height - marginY;
+
+  const linearize = (channel: number): number => {
+    const srgb = channel / 255;
+    return srgb <= 0.03928 ? srgb / 12.92 : Math.pow((srgb + 0.055) / 1.055, 2.4);
+  };
+
+  for (let y = 0; y < info.height; y++) {
+    for (let x = 0; x < info.width; x++) {
+      const idx = (y * info.width + x) * 4; // RGBA
+      const lum = 0.2126 * linearize(data[idx]) + 0.7152 * linearize(data[idx + 1]) + 0.0722 * linearize(data[idx + 2]);
+      totalLum += lum;
+
+      if (x >= marginX && x < innerRight && y >= marginY && y < innerBottom) {
+        textRegionLum += lum;
+        textRegionPixels++;
+      }
+    }
+  }
+
+  const averageLuminance = totalLum / pixelCount;
+  const textRegionLuminance = textRegionPixels > 0 ? textRegionLum / textRegionPixels : averageLuminance;
+  const isDark = textRegionLuminance < 0.18;
+
+  return {
+    averageLuminance: Math.round(averageLuminance * 1000) / 1000,
+    textRegionLuminance: Math.round(textRegionLuminance * 1000) / 1000,
+    isDark,
+    recommendedTextColor: isDark ? '#FFFFFF' : '#1A1A1A',
+  };
+}

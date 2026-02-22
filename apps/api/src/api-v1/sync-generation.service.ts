@@ -24,6 +24,7 @@ import {
   buildSlideGenerationSystemPrompt,
   buildSlideGenerationUserPrompt,
 } from '../chat/prompts/slide-generation.prompt.js';
+import type { FigmaTemplateContext } from '../chat/prompts/slide-generation.prompt.js';
 import { DEFAULT_SLIDE_RANGES } from '../chat/dto/generation-config.dto.js';
 import { getFrameworkConfig } from '../pitch-lens/frameworks/story-frameworks.config.js';
 import { buildPitchLensInjection } from '../pitch-lens/prompts/pitch-lens-injection.prompt.js';
@@ -284,6 +285,32 @@ export class SyncGenerationService {
         syncImgFreq = theme ? getImageFrequencyForTheme(theme.name) : undefined;
       }
 
+      // Load Figma template visual metadata for content-aware generation
+      let figmaTemplateContext: FigmaTemplateContext | undefined;
+      if (pitchLens && (pitchLens as Record<string, unknown>).figmaTemplateId) {
+        try {
+          const figmaTemplate = await this.prisma.figmaTemplate.findUnique({
+            where: { id: (pitchLens as Record<string, unknown>).figmaTemplateId as string },
+            include: { mappings: true },
+          });
+          if (figmaTemplate?.mappings.some(m => m.layoutHint || m.contentHint)) {
+            figmaTemplateContext = {
+              templateName: figmaTemplate.name,
+              frameMapping: figmaTemplate.mappings
+                .filter(m => m.layoutHint || m.contentHint)
+                .map(m => ({
+                  slideType: m.slideType,
+                  frameName: m.figmaNodeName ?? m.figmaNodeId,
+                  isDarkFrame: m.isDarkFrame ?? false,
+                  layoutHint: m.layoutHint ?? '',
+                  contentHint: (m.contentHint as 'short_punchy' | 'standard' | 'minimal') ?? 'standard',
+                  dominantColors: (m.dominantColors as string[]) ?? [],
+                })),
+            };
+          }
+        } catch { /* non-critical */ }
+      }
+
       const tSlidesLoop = Date.now();
       const slideTimings: number[] = [];
 
@@ -335,6 +362,7 @@ export class SyncGenerationService {
           syncDensityOverrides,
           syncImageLayoutInstruction,
           syncArchetypeContext,
+          figmaTemplateContext,
         );
         let slideUserPrompt = buildSlideGenerationUserPrompt(
           outlineSlide.slideNumber,

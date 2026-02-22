@@ -13,6 +13,10 @@ export interface FigmaFrameAnalysis {
   confidence: number;
   layoutHint: string;
   reasoning: string;
+  dominantColors?: string[];
+  isDarkFrame?: boolean;
+  textColorHint?: string;
+  contentHint?: 'short_punchy' | 'standard' | 'minimal';
 }
 
 interface AiClassificationResult {
@@ -22,6 +26,10 @@ interface AiClassificationResult {
     confidence: number;
     layoutHint: string;
     reasoning: string;
+    dominantColors?: string[];
+    isDarkFrame?: boolean;
+    textColorHint?: string;
+    contentHint?: string;
   }>;
 }
 
@@ -90,11 +98,15 @@ Available slide types with visual descriptions:
 For each frame, respond with:
 - slideType: one of the types above
 - confidence: 0.0-1.0 (how confident you are in the classification)
-- layoutHint: brief description of the visual layout (e.g. "centered title over dark gradient")
+- layoutHint: brief description of the visual layout (e.g. "centered title over dark gradient with accent bar")
 - reasoning: one-sentence explanation of why you chose this type
+- dominantColors: 3-5 hex color strings from the frame's visual palette (e.g. ["#1a1a2e", "#16213e", "#0f3460"])
+- isDarkFrame: boolean — is the text overlay area predominantly dark?
+- textColorHint: recommended text color for readability ("#FFFFFF" for dark frames, "#1A1A1A" for light frames)
+- contentHint: one of "short_punchy" (busy/complex visual — keep text minimal), "standard" (clear content areas for normal text), or "minimal" (full-bleed image — title only, no body)
 
 Return a JSON object with a "frames" array containing one entry per input frame.
-Each entry must include: nodeId, slideType, confidence, layoutHint, reasoning.`;
+Each entry must include: nodeId, slideType, confidence, layoutHint, reasoning, dominantColors, isDarkFrame, textColorHint, contentHint.`;
 
 // ── Service ────────────────────────────────────────────────
 
@@ -301,6 +313,10 @@ export class FigmaAiMapperService {
         confidence,
         layoutHint: aiFrame.layoutHint ?? '',
         reasoning: aiFrame.reasoning ?? '',
+        dominantColors: aiFrame.dominantColors,
+        isDarkFrame: aiFrame.isDarkFrame,
+        textColorHint: aiFrame.textColorHint,
+        contentHint: aiFrame.contentHint as FigmaFrameAnalysis['contentHint'],
       };
     });
   }
