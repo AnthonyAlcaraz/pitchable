@@ -1,7 +1,7 @@
 import { join } from 'node:path';
 import { existsSync, readFileSync } from 'node:fs';
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
+import { Logger, ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import helmet from 'helmet';
 import { AppModule } from './app.module.js';
@@ -85,6 +85,6 @@ async function bootstrap() {
   const httpServer = app.getHttpServer();
   httpServer.setTimeout(600_000);      // 10 min request timeout
   httpServer.keepAliveTimeout = 620_000; // slightly longer than setTimeout
-  console.log('Server timeout set to 600s');
+  Logger.log('Server timeout set to 600s', 'Bootstrap');
 }
 bootstrap();

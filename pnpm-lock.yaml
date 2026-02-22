@@ -123,9 +123,6 @@ importers:
       marked:
         specifier: ^17.0.2
         version: 17.0.2
-      mime-types:
-        specifier: ^3.0.2
-        version: 3.0.2
       multer:
         specifier: ^2.0.0
         version: 2.0.2
@@ -180,9 +177,6 @@ importers:
       undici:
         specifier: ^7.22.0
         version: 7.22.0
-      uuid:
-        specifier: ^13.0.0
-        version: 13.0.0
       xlsx:
         specifier: ^0.18.5
         version: 0.18.5
@@ -295,12 +289,6 @@ importers:
 
   apps/web:
     dependencies:
-      axios:
-        specifier: ^1.13.5
-        version: 1.13.5
-      class-variance-authority:
-        specifier: ^0.7.1
-        version: 0.7.1
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
@@ -3327,9 +3315,6 @@ packages:
     resolution: {integrity: sha512-NZKeq9AfyQvEeNlN0zSYAaWrmBffJh3IELMZfRpJVWgrpEbtEpnjvzqBPf+mxoI287JohRDoa+/nsfqqiZmF6g==}
     engines: {node: '>= 6.0.0'}
 
-  axios@1.13.5:
-    resolution: {integrity: sha512-cz4ur7Vb0xS4/KUN0tPWe44eqxrIu31me+fbang3ijiNscE129POzipJJA6zniq2C/Z6sJCjMimjS8Lc/GAs8Q==}
-
   b4a@1.7.4:
     resolution: {integrity: sha512-u20zJLDaSWpxaZ+zaAkEIB2dZZ1o+DF4T/MRbmsvGp9nletHOyiai19OzX1fF8xUBYsO1bPXxODvcd0978pnug==}
     peerDependencies:
@@ -3603,9 +3588,6 @@ packages:
 
   class-validator@0.14.3:
     resolution: {integrity: sha512-rXXekcjofVN1LTOSw+u4u9WXVEUvNBVjORW154q/IdmYWy1nMbOU9aNtZB0t8m+FJQ9q91jlr2f9CwwUFdFMRA==}
-
-  class-variance-authority@0.7.1:
-    resolution: {integrity: sha512-Ka+9Trutv7G8M6WT6SeiRWz792K5qEqIGEGzXKhAE6xOWAY6pPH8U+9IY3oCMv6kqTmLsv7Xh/2w2RigkePMsg==}
 
   cli-boxes@2.2.1:
     resolution: {integrity: sha512-y4coMcylgSCdVinjiDBuR8PCC2bLjyGTwEmPb9NHR/QaNU6EUOXcTY/s6VjGMD6ENSEaeQYHCY0GNGS5jfMwPw==}
@@ -4299,15 +4281,6 @@ packages:
 
   flatted@3.3.3:
     resolution: {integrity: sha512-GX+ysw4PBCz0PzosHDepZGANEuFCMLrnRTiEy9McGjmkCQYwRq4A/X786G/fjM/+OjsWSU1ZrY5qyARZmO/uwg==}
-
-  follow-redirects@1.15.11:
-    resolution: {integrity: sha512-deG2P0JfjrTxl50XGCDyfI97ZGVCxIpfKYmfyrQ54n5FO/0gfIES8C/Psl6kWVDolizcaaxZJnTS0QSMxvnsBQ==}
-    engines: {node: '>=4.0'}
-    peerDependencies:
-      debug: '*'
-    peerDependenciesMeta:
-      debug:
-        optional: true
 
   foreground-child@3.3.1:
     resolution: {integrity: sha512-gIXjKqtFuWEgzFRJA9WCQeSJLZDjgJUOMCMzxtvFq/37KojM1BFGufqsCy0r4qSQmYLsZYMeyRqzIWOMup03sw==}
@@ -6741,10 +6714,6 @@ packages:
 
   uuid@11.1.0:
     resolution: {integrity: sha512-0/A9rDy9P7cJ+8w1c9WD9V//9Wj15Ce2MPz8Ri6032usz+NfePxx5AcN3bN+r6ZL6jEo066/yNYB3tn4pQEx+A==}
-    hasBin: true
-
-  uuid@13.0.0:
-    resolution: {integrity: sha512-XQegIaBTVUjSHliKqcnFqYypAd4S+WCYt5NIeRs6w/UAry7z8Y9j5ZwRRL4kzq9U3sD6v+85er9FvkEaBpji2w==}
     hasBin: true
 
   v8-compile-cache-lib@3.0.1:
@@ -10280,14 +10249,6 @@ snapshots:
 
   aws-ssl-profiles@1.1.2: {}
 
-  axios@1.13.5:
-    dependencies:
-      follow-redirects: 1.15.11
-      form-data: 4.0.5
-      proxy-from-env: 1.1.0
-    transitivePeerDependencies:
-      - debug
-
   b4a@1.7.4: {}
 
   babel-jest@30.2.0(@babel/core@7.29.0):
@@ -10602,10 +10563,6 @@ snapshots:
       '@types/validator': 13.15.10
       libphonenumber-js: 1.12.36
       validator: 13.15.26
-
-  class-variance-authority@0.7.1:
-    dependencies:
-      clsx: 2.1.1
 
   cli-boxes@2.2.1: {}
 
@@ -11337,8 +11294,6 @@ snapshots:
       keyv: 4.5.4
 
   flatted@3.3.3: {}
-
-  follow-redirects@1.15.11: {}
 
   foreground-child@3.3.1:
     dependencies:
@@ -14365,8 +14320,6 @@ snapshots:
   utils-merge@1.0.1: {}
 
   uuid@11.1.0: {}
-
-  uuid@13.0.0: {}
 
   v8-compile-cache-lib@3.0.1: {}
 

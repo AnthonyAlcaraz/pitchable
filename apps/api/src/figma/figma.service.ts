@@ -7,6 +7,7 @@ import type {
   FigmaFrameInfo,
 } from './interfaces/figma-api.interfaces.js';
 
+const figmaLogger = new Logger('FigmaRateLimiter');
 const FIGMA_API = 'https://api.figma.com/v1';
 
 // Simple rate limiter: Figma allows ~30 requests/minute
@@ -39,7 +40,7 @@ async function rateLimitedFetch(
         retryAfter > 0 ? retryAfter * 1000 : 5000 * (attempt + 1),
         MAX_RETRY_WAIT_MS,
       );
-      console.log(`Figma 429 — retry ${attempt + 1}/${MAX_RETRIES} after ${waitMs}ms`);
+      figmaLogger.warn(`Figma 429 — retry ${attempt + 1}/${MAX_RETRIES} after ${waitMs}ms`);
       await new Promise((r) => setTimeout(r, waitMs));
       continue;
     }

@@ -2,6 +2,7 @@ import {
   Injectable,
   ConflictException,
   UnauthorizedException,
+  Logger,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
@@ -33,6 +34,7 @@ export interface AuthResponse {
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService,
@@ -209,9 +211,9 @@ export class AuthService {
 
     if (this.configService.get<string>('NODE_ENV') === 'production') {
       // TODO: Send email via Resend in production
-      console.log(`[PRODUCTION] Password reset email would be sent to ${email}`);
+      this.logger.warn(`Password reset email not configured for ${email}`);
     } else {
-      console.log(`[DEV] Password reset URL: ${resetUrl}`);
+      this.logger.debug(`Password reset URL: ${resetUrl}`);
     }
   }
 

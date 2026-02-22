@@ -54,7 +54,6 @@
     "jsonwebtoken": "^9.0.2",
     "mammoth": "^1.11.0",
     "marked": "^17.0.2",
-    "mime-types": "^3.0.2",
     "multer": "^2.0.0",
     "officeparser": "^6.0.4",
     "openai": "^6.22.0",
@@ -73,7 +72,6 @@
     "stripe": "^20.3.1",
     "swagger-ui-express": "^5.0.1",
     "undici": "^7.22.0",
-    "uuid": "^13.0.0",
     "xlsx": "^0.18.5",
     "zeroentropy": "^0.1.0-alpha.7",
     "zod": "^4.3.6"
