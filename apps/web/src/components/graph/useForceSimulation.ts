@@ -13,6 +13,8 @@ interface UseForceSimulationOpts {
   width: number;
   height: number;
   onTick: () => void;
+  /** Increment to force a simulation rebuild even if counts haven't changed */
+  rebuildKey: number;
 }
 
 /**
@@ -28,9 +30,8 @@ export function useForceSimulation(
   const optsRef = useRef(opts);
   optsRef.current = opts;
 
-  // Rebuild simulation when node/edge count changes
-  const nodeCount = nodesRef.current.length;
-  const edgeCount = edgesRef.current.length;
+  // Rebuild simulation when rebuildKey changes (covers count changes AND content changes)
+  const { rebuildKey } = opts;
 
   useEffect(() => {
     if (simRef.current) {
@@ -69,7 +70,7 @@ export function useForceSimulation(
       sim.stop();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [nodeCount, edgeCount]);
+  }, [rebuildKey]);
 
   // Cleanup on unmount
   useEffect(() => {

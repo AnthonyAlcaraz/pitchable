@@ -110,6 +110,15 @@ export class KnowledgeBaseController {
     return this.kbService.deleteDocument(user.userId, id);
   }
 
+  @Post('documents/:id/reprocess')
+  @HttpCode(HttpStatus.OK)
+  async reprocessDocument(
+    @CurrentUser() user: RequestUser,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.kbService.reprocessDocument(user.userId, id);
+  }
+
   @Post('search')
   @HttpCode(HttpStatus.OK)
   async searchKnowledgeBase(

@@ -238,6 +238,42 @@ export class KnowledgeBaseService {
     return { message: 'Document deleted' };
   }
 
+  async reprocessDocument(userId: string, documentId: string) {
+    const doc = await this.prisma.document.findFirst({
+      where: { id: documentId, userId },
+    });
+    if (!doc) throw new NotFoundException('Document not found');
+
+    // Delete existing chunks so processor starts fresh
+    await this.prisma.documentChunk.deleteMany({ where: { documentId } });
+
+    // Reset document status
+    await this.prisma.document.update({
+      where: { id: documentId },
+      data: {
+        status: DocumentStatus.UPLOADED,
+        chunkCount: 0,
+        errorMessage: null,
+        processedAt: null,
+      },
+    });
+
+    // Re-enqueue processing job
+    await this.docQueue.add('process-document', {
+      documentId: doc.id,
+      userId,
+      sourceType: doc.sourceType as 'FILE' | 'TEXT' | 'URL',
+      mimeType: doc.mimeType ?? undefined,
+      s3Key: doc.s3Key ?? undefined,
+      url: doc.sourceUrl ?? undefined,
+      correlationId: randomUUID(),
+      timestamp: Date.now(),
+    } satisfies DocumentProcessingJobData);
+
+    this.logger.log('Document ' + documentId + ' reset and re-queued for processing');
+    return { message: 'Document reprocessing started', documentId };
+  }
+
   /** Returns true when ZeroEntropy is the primary retrieval backend (has built-in reranking). */
   isZeroEntropyPrimary(): boolean {
     return this.zeRetrieval.isAvailable();

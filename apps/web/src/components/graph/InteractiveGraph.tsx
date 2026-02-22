@@ -44,22 +44,43 @@ export function InteractiveGraph({ graphData, briefId, onRefresh }: InteractiveG
 
   // Zoom/pan state
   const [viewBox, setViewBox] = useState({ x: 0, y: 0, w: GRAPH_WIDTH, h: GRAPH_HEIGHT });
+  const viewBoxRef = useRef({ x: 0, y: 0, w: GRAPH_WIDTH, h: GRAPH_HEIGHT });
   const [isPanning, setIsPanning] = useState(false);
   const panStartRef = useRef<{ x: number; y: number; vx: number; vy: number } | null>(null);
 
   // Drag state
   const [draggingNodeId, setDraggingNodeId] = useState<string | null>(null);
+  const wasDraggedRef = useRef(false);
+
+  // Click/double-click disambiguation
+  const clickTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   // Mutable refs for simulation data (d3 mutates in place)
   const simNodesRef = useRef<PositionedNode[]>([]);
   const simEdgesRef = useRef<SimEdge[]>([]);
 
-  // Build the all-nodes map from graphData (source of truth for node data)
+  // Rebuild key: increments whenever simulation arrays are rebuilt
+  const [rebuildKey, setRebuildKey] = useState(0);
+
+  // Separate ref for expanded neighbor nodes (not from graphData)
+  const expandedNodesRef = useRef<Map<string, GraphNode>>(new Map());
+
+  // Keep viewBoxRef in sync
+  useEffect(() => {
+    viewBoxRef.current = viewBox;
+  }, [viewBox]);
+
+  // Build the all-nodes map from graphData + expanded neighbors
   const allNodesMap = useMemo(() => {
     const map = new Map<string, GraphNode>();
     for (const n of graphData.nodes) map.set(n.id, n);
+    // Merge expanded neighbor nodes
+    for (const [id, n] of expandedNodesRef.current) {
+      if (!map.has(id)) map.set(id, n);
+    }
     return map;
-  }, [graphData.nodes]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [graphData.nodes, rebuildKey]);
 
   // Initialize visible nodes from graphData
   useEffect(() => {
@@ -71,10 +92,11 @@ export function InteractiveGraph({ graphData, briefId, onRefresh }: InteractiveG
     const types = new Set(graphData.nodes.map((n) => n.type));
     setActiveTypes(types);
 
-    // Reset selection
+    // Reset state
     setSelectedNodeId(null);
     setExpandedNodeIds(new Set());
     setVisibleEdges([]);
+    expandedNodesRef.current = new Map();
   }, [graphData]);
 
   // Rebuild simulation arrays when inputs change
@@ -114,9 +136,8 @@ export function InteractiveGraph({ graphData, briefId, onRefresh }: InteractiveG
 
     simNodesRef.current = nodes;
     simEdgesRef.current = edges;
-    // Trigger re-render so simulation hook sees new count
-    forceRender();
-  }, [visibleNodeIds, activeTypes, allNodesMap, graphData.edges, visibleEdges, forceRender]);
+    setRebuildKey((k) => k + 1);
+  }, [visibleNodeIds, activeTypes, allNodesMap, graphData.edges, visibleEdges]);
 
   const handleTick = useCallback(() => {
     forceRender();
@@ -126,18 +147,21 @@ export function InteractiveGraph({ graphData, briefId, onRefresh }: InteractiveG
     width: GRAPH_WIDTH,
     height: GRAPH_HEIGHT,
     onTick: handleTick,
+    rebuildKey,
   });
 
   // Read current nodes/edges from refs for rendering
   const renderedNodes = simNodesRef.current;
   const renderedEdges = simEdgesRef.current;
 
-  // Available types from all graph data nodes
+  // Available types from all graph data nodes + expanded nodes
   const availableTypes = useMemo(() => {
     const types = new Set<string>();
     for (const n of graphData.nodes) types.add(n.type);
+    for (const [, n] of expandedNodesRef.current) types.add(n.type);
     return Array.from(types).sort();
-  }, [graphData.nodes]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [graphData.nodes, rebuildKey]);
 
   const handleToggleType = useCallback((type: string) => {
     setActiveTypes((prev) => {
@@ -151,43 +175,70 @@ export function InteractiveGraph({ graphData, briefId, onRefresh }: InteractiveG
     });
   }, []);
 
-  // Node click = select
+  // Node click = select (with drag guard and dblclick disambiguation)
   const handleNodeClick = useCallback((nodeId: string) => {
-    setSelectedNodeId((prev) => (prev === nodeId ? null : nodeId));
+    if (wasDraggedRef.current) {
+      wasDraggedRef.current = false;
+      return;
+    }
+    clearTimeout(clickTimeoutRef.current);
+    clickTimeoutRef.current = setTimeout(() => {
+      setSelectedNodeId((prev) => (prev === nodeId ? null : nodeId));
+    }, 200);
   }, []);
 
   // Double-click = expand
   const handleNodeDoubleClick = useCallback(
     async (nodeId: string) => {
+      // Cancel pending single-click
+      clearTimeout(clickTimeoutRef.current);
+      // Select the node on double-click
+      setSelectedNodeId(nodeId);
+
       if (expandedNodeIds.has(nodeId) || isExpanding) return;
       setIsExpanding(true);
       try {
         const data = await loadNeighbors(briefId, nodeId, 20);
-        // Merge new nodes into allNodesMap
+
+        // Merge new nodes into expandedNodesRef (not into useMemo)
         for (const n of data.neighbors) {
-          if (!allNodesMap.has(n.id)) {
-            allNodesMap.set(n.id, n);
+          if (!expandedNodesRef.current.has(n.id)) {
+            expandedNodesRef.current.set(n.id, n);
           }
         }
-        // Merge new node IDs
+
+        // Collect new node IDs and types
+        const newNodeIds = data.neighbors.map((n) => n.id);
+        const newTypes = new Set(data.neighbors.map((n) => n.type));
+
+        // Merge new node IDs into visible set
         setVisibleNodeIds((prev) => {
           const next = new Set(prev);
-          for (const n of data.neighbors) {
-            next.add(n.id);
-            // Ensure type is active
-            setActiveTypes((at) => {
-              if (!at.has(n.type)) {
-                const updated = new Set(at);
-                updated.add(n.type);
-                return updated;
-              }
-              return at;
-            });
-          }
+          for (const id of newNodeIds) next.add(id);
           return next;
         });
-        // Merge new edges
-        setVisibleEdges((prev) => [...prev, ...data.edges]);
+
+        // Ensure new types are active (separate setState, not nested)
+        setActiveTypes((prev) => {
+          let updated = prev;
+          for (const type of newTypes) {
+            if (!updated.has(type)) {
+              if (updated === prev) updated = new Set(prev);
+              updated.add(type);
+            }
+          }
+          return updated;
+        });
+
+        // Merge new edges (deduplicated)
+        setVisibleEdges((prev) => {
+          const existing = new Set(prev.map((e) => `${e.source}-${e.target}-${e.type}`));
+          const newEdges = data.edges.filter(
+            (e) => !existing.has(`${e.source}-${e.target}-${e.type}`),
+          );
+          return newEdges.length > 0 ? [...prev, ...newEdges] : prev;
+        });
+
         setExpandedNodeIds((prev) => new Set(prev).add(nodeId));
         // Give React a tick to rebuild arrays, then reheat
         setTimeout(() => reheat(0.3), 50);
@@ -197,7 +248,7 @@ export function InteractiveGraph({ graphData, briefId, onRefresh }: InteractiveG
         setIsExpanding(false);
       }
     },
-    [briefId, expandedNodeIds, isExpanding, loadNeighbors, allNodesMap, reheat],
+    [briefId, expandedNodeIds, isExpanding, loadNeighbors, reheat],
   );
 
   const handleExpand = useCallback(() => {
@@ -208,42 +259,48 @@ export function InteractiveGraph({ graphData, briefId, onRefresh }: InteractiveG
 
   const handleCenter = useCallback(() => {
     if (!selectedNodeId) return;
-    const node = renderedNodes.find((n) => n.id === selectedNodeId);
-    if (!node) return;
+    // Read directly from ref for live positions
+    const node = simNodesRef.current.find((n) => n.id === selectedNodeId);
+    if (!node || isNaN(node.x) || isNaN(node.y)) return;
     setViewBox((prev) => ({
       ...prev,
       x: node.x - prev.w / 2,
       y: node.y - prev.h / 2,
     }));
-  }, [selectedNodeId, renderedNodes]);
+  }, [selectedNodeId]);
 
-  // Zoom via mouse wheel
-  const handleWheel = useCallback((e: React.WheelEvent) => {
-    e.preventDefault();
-    setViewBox((prev) => {
-      const factor = e.deltaY > 0 ? 1.1 : 0.9;
-      const newW = Math.max(MIN_VIEWBOX_SIZE, Math.min(MAX_VIEWBOX_SIZE, prev.w * factor));
-      const newH = Math.max(MIN_VIEWBOX_SIZE, Math.min(MAX_VIEWBOX_SIZE, prev.h * factor));
-      // Zoom toward center
-      const dx = (newW - prev.w) / 2;
-      const dy = (newH - prev.h) / 2;
-      return { x: prev.x - dx, y: prev.y - dy, w: newW, h: newH };
-    });
-  }, []);
-
-  // Pan handlers (on SVG background)
+  // Zoom via native wheel event (non-passive to allow preventDefault)
   const svgRef = useRef<SVGSVGElement>(null);
 
+  useEffect(() => {
+    const svg = svgRef.current;
+    if (!svg) return;
+    const handler = (e: WheelEvent) => {
+      e.preventDefault();
+      const factor = e.deltaY > 0 ? 1.1 : 0.9;
+      setViewBox((prev) => {
+        const newW = Math.max(MIN_VIEWBOX_SIZE, Math.min(MAX_VIEWBOX_SIZE, prev.w * factor));
+        const newH = Math.max(MIN_VIEWBOX_SIZE, Math.min(MAX_VIEWBOX_SIZE, prev.h * factor));
+        const dx = (newW - prev.w) / 2;
+        const dy = (newH - prev.h) / 2;
+        return { x: prev.x - dx, y: prev.y - dy, w: newW, h: newH };
+      });
+    };
+    svg.addEventListener('wheel', handler, { passive: false });
+    return () => svg.removeEventListener('wheel', handler);
+  }, []);
+
+  // Pan handlers (on SVG background) — use viewBoxRef to avoid closure staleness
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
-      // Only pan when clicking on background (not on a node)
       const tag = (e.target as SVGElement).tagName;
       if (tag === 'svg' || tag === 'rect') {
         setIsPanning(true);
-        panStartRef.current = { x: e.clientX, y: e.clientY, vx: viewBox.x, vy: viewBox.y };
+        const vb = viewBoxRef.current;
+        panStartRef.current = { x: e.clientX, y: e.clientY, vx: vb.x, vy: vb.y };
       }
     },
-    [viewBox],
+    [],
   );
 
   const handleMouseMove = useCallback(
@@ -251,27 +308,30 @@ export function InteractiveGraph({ graphData, briefId, onRefresh }: InteractiveG
       if (isPanning && panStartRef.current) {
         const svg = svgRef.current;
         if (!svg) return;
-        const scale = viewBox.w / svg.clientWidth;
+        const vb = viewBoxRef.current;
+        const scale = vb.w / svg.clientWidth;
         const dx = (e.clientX - panStartRef.current.x) * scale;
         const dy = (e.clientY - panStartRef.current.y) * scale;
-        setViewBox((prev) => ({
-          ...prev,
-          x: panStartRef.current!.vx - dx,
-          y: panStartRef.current!.vy - dy,
-        }));
+        setViewBox({
+          ...vb,
+          x: panStartRef.current.vx - dx,
+          y: panStartRef.current.vy - dy,
+        });
       }
 
       if (draggingNodeId) {
+        wasDraggedRef.current = true;
         const svg = svgRef.current;
         if (!svg) return;
         const rect = svg.getBoundingClientRect();
-        const scale = viewBox.w / rect.width;
-        const x = viewBox.x + (e.clientX - rect.left) * scale;
-        const y = viewBox.y + (e.clientY - rect.top) * scale;
+        const vb = viewBoxRef.current;
+        const scale = vb.w / rect.width;
+        const x = vb.x + (e.clientX - rect.left) * scale;
+        const y = vb.y + (e.clientY - rect.top) * scale;
         pinNode(draggingNodeId, x, y);
       }
     },
-    [isPanning, draggingNodeId, viewBox, pinNode],
+    [isPanning, draggingNodeId, pinNode],
   );
 
   const handleMouseUp = useCallback(() => {
@@ -280,23 +340,27 @@ export function InteractiveGraph({ graphData, briefId, onRefresh }: InteractiveG
     if (draggingNodeId) {
       unpinNode(draggingNodeId);
       setDraggingNodeId(null);
+      // Gentle reheat so nodes don't overlap after drop
+      reheat(0.1);
     }
-  }, [draggingNodeId, unpinNode]);
+  }, [draggingNodeId, unpinNode, reheat]);
 
   // Node drag handlers
   const handleNodeMouseDown = useCallback(
     (e: React.MouseEvent, nodeId: string) => {
       e.stopPropagation();
+      wasDraggedRef.current = false;
       setDraggingNodeId(nodeId);
       const svg = svgRef.current;
       if (!svg) return;
       const rect = svg.getBoundingClientRect();
-      const scale = viewBox.w / rect.width;
-      const x = viewBox.x + (e.clientX - rect.left) * scale;
-      const y = viewBox.y + (e.clientY - rect.top) * scale;
+      const vb = viewBoxRef.current;
+      const scale = vb.w / rect.width;
+      const x = vb.x + (e.clientX - rect.left) * scale;
+      const y = vb.y + (e.clientY - rect.top) * scale;
       pinNode(nodeId, x, y);
     },
-    [viewBox, pinNode],
+    [pinNode],
   );
 
   // Edge tooltip
@@ -363,7 +427,6 @@ export function InteractiveGraph({ graphData, briefId, onRefresh }: InteractiveG
         viewBox={`${viewBox.x} ${viewBox.y} ${viewBox.w} ${viewBox.h}`}
         className={`w-full ${graphHeight} bg-background rounded-lg border border-border select-none`}
         style={{ cursor: isPanning ? 'grabbing' : draggingNodeId ? 'grabbing' : 'grab' }}
-        onWheel={handleWheel}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
@@ -384,10 +447,10 @@ export function InteractiveGraph({ graphData, briefId, onRefresh }: InteractiveG
           const target = typeof edge.target === 'object' ? edge.target : renderedNodes.find((n) => n.id === edge.target);
           if (!source || !target) return null;
 
-          const sx = typeof source === 'object' ? source.x : 0;
-          const sy = typeof source === 'object' ? source.y : 0;
-          const tx = typeof target === 'object' ? target.x : 0;
-          const ty = typeof target === 'object' ? target.y : 0;
+          const sx = (source as PositionedNode).x;
+          const sy = (source as PositionedNode).y;
+          const tx = (target as PositionedNode).x;
+          const ty = (target as PositionedNode).y;
 
           if (isNaN(sx) || isNaN(sy) || isNaN(tx) || isNaN(ty)) return null;
 
@@ -402,12 +465,9 @@ export function InteractiveGraph({ graphData, briefId, onRefresh }: InteractiveG
               strokeWidth="1"
               opacity={getEdgeOpacity(edge.weight)}
               onMouseEnter={(ev) => {
-                const svg = svgRef.current;
-                if (!svg) return;
-                const r = svg.getBoundingClientRect();
                 setHoveredEdge({
-                  x: ev.clientX - r.left,
-                  y: ev.clientY - r.top - 20,
+                  x: ev.clientX,
+                  y: ev.clientY - 30,
                   label: edge.type + (edge.description ? `: ${edge.description}` : ''),
                 });
               }}
@@ -491,10 +551,10 @@ export function InteractiveGraph({ graphData, briefId, onRefresh }: InteractiveG
         })}
       </svg>
 
-      {/* Edge tooltip */}
+      {/* Edge tooltip (fixed positioning to work in both normal and fullscreen) */}
       {hoveredEdge && (
         <div
-          className="absolute px-2 py-1 bg-card border border-border rounded text-xs text-foreground shadow-lg pointer-events-none z-10"
+          className="fixed px-2 py-1 bg-card border border-border rounded text-xs text-foreground shadow-lg pointer-events-none z-[60]"
           style={{ left: hoveredEdge.x, top: hoveredEdge.y, transform: 'translateX(-50%)' }}
         >
           {hoveredEdge.label}
