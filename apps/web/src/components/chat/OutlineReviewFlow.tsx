@@ -2,6 +2,31 @@ import { useState } from 'react';
 import { Check, ChevronRight, Edit3, SkipForward, Loader2, Coins } from 'lucide-react';
 import type { OutlineReviewState } from '../../stores/chat.store.js';
 
+/** Short descriptions to help users understand each slide type */
+const SLIDE_TYPE_DESCRIPTIONS: Record<string, string> = {
+  TITLE: 'Opening slide with your deck title and subtitle',
+  PROBLEM: 'Define the pain point or challenge your audience faces',
+  SOLUTION: 'Present your answer to the problem',
+  ARCHITECTURE: 'Show system design, technical stack, or how components connect',
+  PROCESS: 'Step-by-step flow or methodology breakdown',
+  COMPARISON: 'Side-by-side analysis — before/after, us vs them, options evaluated',
+  DATA_METRICS: 'Key numbers, charts, KPIs, or quantitative evidence',
+  CTA: 'Call-to-action — what you want the audience to do next',
+  CONTENT: 'General content slide with bullets or paragraphs',
+  QUOTE: 'Featured quote from a customer, expert, or notable source',
+  VISUAL_HUMOR: 'Image-forward humor slide to lighten the mood',
+  OUTLINE: 'Agenda or table of contents for the presentation',
+  TEAM: 'Team members, roles, and credentials',
+  TIMELINE: 'Chronological milestones or roadmap',
+  SECTION_DIVIDER: 'Visual break between major sections',
+  METRICS_HIGHLIGHT: 'Spotlight on 2-3 hero metrics with large numbers',
+  FEATURE_GRID: 'Grid layout showing multiple features or capabilities',
+  PRODUCT_SHOWCASE: 'Product screenshot or demo walkthrough',
+  LOGO_WALL: 'Client logos, partner logos, or tech stack icons',
+  MARKET_SIZING: 'TAM/SAM/SOM or market opportunity analysis',
+  SPLIT_STATEMENT: 'Bold statement split across the slide for impact',
+};
+
 interface OutlineReviewFlowProps {
   state: OutlineReviewState;
   onApproveStep: (step: number) => void;
@@ -178,6 +203,11 @@ export function OutlineReviewFlow({
                     <Check className="h-3.5 w-3.5 text-green-400" />
                   )}
                 </div>
+                {SLIDE_TYPE_DESCRIPTIONS[slide.slideType] && (
+                  <p className="text-[10px] text-muted-foreground/70 italic mb-1">
+                    {SLIDE_TYPE_DESCRIPTIONS[slide.slideType]}
+                  </p>
+                )}
                 <h4 className="text-sm font-semibold text-foreground mb-1">
                   {slide.title}
                 </h4>

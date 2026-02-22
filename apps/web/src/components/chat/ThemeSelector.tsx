@@ -35,7 +35,7 @@ export function ThemeSelector({ selection, presentationId, onSelect }: ThemeSele
         <span className="text-xs font-medium text-foreground">Choose a theme for your deck</span>
       </div>
 
-      <div className="grid grid-cols-3 gap-2 p-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 p-3">
         {selection.options.map((theme) => {
           const isSelected = selected === theme.id;
           const palette = theme.colorPalette;

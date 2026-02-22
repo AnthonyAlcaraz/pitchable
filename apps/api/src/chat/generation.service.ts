@@ -431,8 +431,13 @@ OUTPUT: Valid JSON matching this schema (no markdown fences):
     }
 
     // Tier-based slide truncation: FREE tier gets sample preview only
-    const userForTier = await this.prisma.user.findUnique({ where: { id: userId }, select: { tier: true } });
-    const userTier = userForTier?.tier ?? 'FREE';
+    const userForTier = await this.prisma.user.findUnique({ where: { id: userId }, select: { tier: true, creditBalance: true } });
+    let userTier = userForTier?.tier ?? 'FREE';
+    // Defensive: if tier is null but user has significant credits, they're at least PRO (manually provisioned accounts)
+    if (!userForTier?.tier && (userForTier?.creditBalance ?? 0) > 5) {
+      userTier = 'PRO';
+      this.logger.warn(`User ${userId} has ${userForTier?.creditBalance} credits but null tier — treating as PRO`);
+    }
     const maxSlides = this.tierEnforcement.getMaxSlidesPerDeck(userTier);
     const originalSlideCount = outline.slides.length;
     let isSamplePreview = false;
@@ -477,7 +482,7 @@ OUTPUT: Valid JSON matching this schema (no markdown fences):
       const audience = (lens?.pitchLens as unknown as Record<string, unknown> | null)?.targetAudience as string | undefined;
       const goals = (lens?.pitchLens as unknown as Record<string, unknown> | null)?.goals as string[] | undefined;
 
-      const recommended = await this.themesService.recommendThemes(presType, audience, goals, 3);
+      const recommended = await this.themesService.recommendThemes(presType, audience, goals, 6);
 
       if (recommended.length > 0) {
         const contextId = `theme-${presentationId}-${Date.now()}`;

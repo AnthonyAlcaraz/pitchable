@@ -51,7 +51,7 @@ export function SlideRenderer({ slide, theme, className, scale = 1, onClick }: S
       }}
       onClick={onClick}
     >
-      <div className={cn('flex h-full flex-col p-[6%]', (isTitle || isCTA) && 'items-center justify-center')}>
+      <div className={cn('relative z-10 flex h-full flex-col p-[6%]', (isTitle || isCTA) && 'items-center justify-center', slide.imageUrl && !['VISUAL_HUMOR', 'TITLE', 'CTA'].includes(slide.slideType ?? '') && 'w-[60%]')}>
         {/* Slide type badge */}
         <div className="mb-2 flex items-center gap-2">
           <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[0.5em] font-medium text-primary">
@@ -69,6 +69,7 @@ export function SlideRenderer({ slide, theme, className, scale = 1, onClick }: S
             isTitle ? 'mb-auto text-[1.8em]' : 'mb-3 text-[1.2em]',
             (isTitle || isCTA) && 'text-center',
             isQuote && 'italic',
+            slide.slideType === 'VISUAL_HUMOR' && slide.imageUrl && 'text-white drop-shadow-lg mt-auto',
           )}
         >
           {slide.title}
@@ -93,10 +94,29 @@ export function SlideRenderer({ slide, theme, className, scale = 1, onClick }: S
         )}
       </div>
 
-      {/* Background image overlay */}
-      {slide.imageUrl && (
+      {/* Image display — layout depends on slide type */}
+      {slide.imageUrl && (slide.slideType === 'VISUAL_HUMOR') && (
         <div
-          className="absolute inset-0 bg-cover bg-center opacity-15"
+          className="absolute inset-0 bg-cover bg-center"
+          style={{ backgroundImage: `url(${slide.imageUrl})` }}
+        >
+          <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-black/30" />
+        </div>
+      )}
+      {slide.imageUrl && !['VISUAL_HUMOR', 'TITLE', 'CTA'].includes(slide.slideType ?? '') && (
+        <div className="absolute right-0 top-0 bottom-0 w-[40%] overflow-hidden">
+          <img
+            src={slide.imageUrl}
+            alt=""
+            className="h-full w-full object-cover"
+            loading="lazy"
+          />
+          <div className="absolute inset-y-0 left-0 w-4 bg-gradient-to-r from-[var(--color-card,hsl(var(--card)))]" />
+        </div>
+      )}
+      {slide.imageUrl && ['TITLE', 'CTA'].includes(slide.slideType ?? '') && (
+        <div
+          className="absolute inset-0 bg-cover bg-center opacity-25"
           style={{ backgroundImage: `url(${slide.imageUrl})` }}
         />
       )}
