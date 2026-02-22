@@ -84,8 +84,8 @@ export function WorkspacePage() {
       {/* Split-screen workspace */}
       <div className="flex-1">
         <SplitScreen
-          leftPanel={<ChatPanel presentationId={id} briefId={briefId ?? undefined} lensId={lensId ?? undefined} />}
-          rightPanel={<PreviewPanel presentationId={id} />}
+          leftPanel={<PreviewPanel presentationId={id} />}
+          rightPanel={<ChatPanel presentationId={id} briefId={briefId ?? undefined} lensId={lensId ?? undefined} />}
         />
       </div>
     </div>

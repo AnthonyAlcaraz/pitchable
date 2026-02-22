@@ -122,10 +122,37 @@ export function ChatPanel({ presentationId, briefId, lensId }: ChatPanelProps) {
   );
 
   const handleExport = useCallback(
-    (pid: string, format: string) => {
-      sendMessage(pid, `/export ${format}`);
+    async (pid: string, format: string) => {
+      // Open tab immediately in user-gesture context (avoids popup blocker)
+      const newTab = window.open('', '_blank');
+      if (newTab) {
+        newTab.document.write(
+          '<html><body style="background:#0f0f1a;color:#fff;display:flex;align-items:center;justify-content:center;height:100vh;font-family:system-ui">' +
+          '<div style="text-align:center"><p style="font-size:1.2rem">Preparing your export...</p><p style="color:#888">This may take a moment.</p></div></body></html>',
+        );
+      }
+      try {
+        const formatMap: Record<string, string> = {
+          pdf: 'PDF', pptx: 'PPTX', html: 'REVEAL_JS',
+          'pdf-figma': 'PDF', 'pptx-figma': 'PPTX',
+        };
+        const { jobId } = await api.post<{ jobId: string; status: string }>(
+          `/presentations/${pid}/export`,
+          { format: formatMap[format] || 'PPTX', renderEngine: format.includes('figma') ? 'figma' : 'auto' },
+        );
+        // Poll for completion (max 3 min)
+        for (let i = 0; i < 90; i++) {
+          const job = await api.get<{ status: string }>(`/exports/${jobId}`);
+          if (job.status === 'COMPLETED') break;
+          if (job.status === 'FAILED') throw new Error('Export failed');
+          await new Promise((r) => setTimeout(r, 2000));
+        }
+        if (newTab) newTab.location.href = `/exports/${jobId}/download`;
+      } catch {
+        if (newTab) newTab.close();
+      }
     },
-    [sendMessage],
+    [],
   );
 
   const isNew = !presentationId || presentationId === 'new';

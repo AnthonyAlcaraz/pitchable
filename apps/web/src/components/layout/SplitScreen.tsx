@@ -9,10 +9,10 @@ interface SplitScreenProps {
 }
 
 const MIN_PANEL_WIDTH = 300;
-const DEFAULT_LEFT_RATIO = 0.4;
+const DEFAULT_LEFT_RATIO = 0.6;
 
 export function SplitScreen({ leftPanel, rightPanel }: SplitScreenProps) {
-  const [activeTab, setActiveTab] = useState<'chat' | 'preview'>('chat');
+  const [activeTab, setActiveTab] = useState<'chat' | 'preview'>('preview');
   const [leftRatio, setLeftRatio] = useState(DEFAULT_LEFT_RATIO);
   const [isDragging, setIsDragging] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -104,9 +104,9 @@ export function SplitScreen({ leftPanel, rightPanel }: SplitScreenProps) {
       {/* Mobile content */}
       <div className="flex-1 overflow-auto md:hidden">
         {activeTab === 'chat' ? (
-          <div className="flex h-full flex-col">{leftContent}</div>
-        ) : (
           <div className="flex h-full flex-col">{rightContent}</div>
+        ) : (
+          <div className="flex h-full flex-col">{leftContent}</div>
         )}
       </div>
 
@@ -116,14 +116,14 @@ export function SplitScreen({ leftPanel, rightPanel }: SplitScreenProps) {
         className="hidden h-full md:flex"
         style={{ cursor: isDragging ? 'col-resize' : undefined }}
       >
-        {/* Left panel (Chat) */}
+        {/* Left panel (Preview) */}
         <div
           className="flex flex-col overflow-hidden border-r border-border"
           style={{ width: `${leftRatio * 100}%` }}
         >
           <div className="flex h-10 items-center gap-2 border-b border-border px-4">
-            <MessageSquare className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm font-medium text-foreground">Chat</span>
+            <Monitor className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm font-medium text-foreground">Preview</span>
           </div>
           <div className="flex flex-1 flex-col overflow-auto">
             {leftContent}
@@ -141,14 +141,14 @@ export function SplitScreen({ leftPanel, rightPanel }: SplitScreenProps) {
           aria-orientation="vertical"
         />
 
-        {/* Right panel (Preview) */}
+        {/* Right panel (Chat) */}
         <div
           className="flex flex-col overflow-hidden"
           style={{ width: `${(1 - leftRatio) * 100}%` }}
         >
           <div className="flex h-10 items-center gap-2 border-b border-border px-4">
-            <Monitor className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm font-medium text-foreground">Preview</span>
+            <MessageSquare className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm font-medium text-foreground">Chat</span>
           </div>
           <div className="flex flex-1 flex-col overflow-auto">
             {rightContent}

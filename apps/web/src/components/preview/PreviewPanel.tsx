@@ -2,7 +2,6 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { PeachLogo } from '@/components/icons/PeachLogo';
 import { Download, ChevronDown, FileText, Loader2 } from 'lucide-react';
 import { usePresentationStore } from '@/stores/presentation.store';
-import { useChatStore } from '@/stores/chat.store';
 import { useWorkflowStore } from '@/stores/workflow.store';
 import { useSlideUpdates } from '@/hooks/useSlideUpdates';
 import { ThumbnailSidebar } from './ThumbnailSidebar';
@@ -70,17 +69,40 @@ export function PreviewPanel({ presentationId }: PreviewPanelProps) {
     setIsFullscreen(false);
   }, []);
 
-  const sendMessage = useChatStore((s) => s.sendMessage);
   const updateSlide = usePresentationStore((s) => s.updateSlide);
 
   const slides = presentation?.slides ?? [];
   const currentSlide = slides[currentSlideIndex];
 
-  const handleExport = useCallback((format: string) => {
-    if (presentationId) {
-      sendMessage(presentationId, `/export ${format}`);
+  const handleExport = useCallback(async (format: string) => {
+    if (!presentationId) return;
+    const newTab = window.open('', '_blank');
+    if (newTab) {
+      newTab.document.write(
+        '<html><body style="background:#0f0f1a;color:#fff;display:flex;align-items:center;justify-content:center;height:100vh;font-family:system-ui">' +
+        '<div style="text-align:center"><p style="font-size:1.2rem">Preparing your export...</p><p style="color:#888">This may take a moment.</p></div></body></html>',
+      );
     }
-  }, [presentationId, sendMessage]);
+    try {
+      const formatMap: Record<string, string> = {
+        pdf: 'PDF', pptx: 'PPTX', html: 'REVEAL_JS',
+        'pdf-figma': 'PDF', 'pptx-figma': 'PPTX',
+      };
+      const { jobId } = await api.post<{ jobId: string; status: string }>(
+        `/presentations/${presentationId}/export`,
+        { format: formatMap[format] || 'PPTX', renderEngine: format.includes('figma') ? 'figma' : 'auto' },
+      );
+      for (let i = 0; i < 90; i++) {
+        const job = await api.get<{ status: string }>(`/exports/${jobId}`);
+        if (job.status === 'COMPLETED') break;
+        if (job.status === 'FAILED') throw new Error('Export failed');
+        await new Promise((r) => setTimeout(r, 2000));
+      }
+      if (newTab) newTab.location.href = `/exports/${jobId}/download`;
+    } catch {
+      if (newTab) newTab.close();
+    }
+  }, [presentationId]);
 
   const handleSaveSpeakerNotes = useCallback(async (value: string) => {
     if (!currentSlide || !presentationId) return;
