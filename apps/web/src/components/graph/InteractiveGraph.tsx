@@ -141,33 +141,44 @@ export function InteractiveGraph({ graphData, briefId, onRefresh }: InteractiveG
     setRebuildKey((k) => k + 1);
   }, [visibleNodeIds, activeTypes, allNodesMap, graphData.edges, visibleEdges]);
 
-  // Auto-fit viewbox after simulation settles (800ms after rebuild)
+  // Auto-fit viewbox after simulation settles (tick-counter approach)
+  const tickCountRef = useRef(0);
+  const autoFitDoneRef = useRef(false);
+
+  // Reset auto-fit on rebuild
   useEffect(() => {
-    const timer = setTimeout(() => {
-      const nodes = simNodesRef.current;
-      if (nodes.length === 0) return;
-      let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
-      for (const n of nodes) {
-        if (isNaN(n.x) || isNaN(n.y)) return;
-        minX = Math.min(minX, n.x);
-        maxX = Math.max(maxX, n.x);
-        minY = Math.min(minY, n.y);
-        maxY = Math.max(maxY, n.y);
-      }
-      const padding = 50;
-      const w = Math.min(MAX_VIEWBOX_SIZE, Math.max(MIN_VIEWBOX_SIZE, maxX - minX + padding * 2));
-      const h = Math.min(MAX_VIEWBOX_SIZE, Math.max(MIN_VIEWBOX_SIZE, maxY - minY + padding * 2));
-      const cx = (minX + maxX) / 2;
-      const cy = (minY + maxY) / 2;
-      setViewBox({ x: cx - w / 2, y: cy - h / 2, w, h });
-    }, 800);
-    return () => clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    tickCountRef.current = 0;
+    autoFitDoneRef.current = false;
   }, [rebuildKey]);
+
+  const fitViewBox = useCallback(() => {
+    const nodes = simNodesRef.current;
+    if (nodes.length === 0) return;
+    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+    for (const n of nodes) {
+      if (isNaN(n.x) || isNaN(n.y)) return;
+      minX = Math.min(minX, n.x);
+      maxX = Math.max(maxX, n.x);
+      minY = Math.min(minY, n.y);
+      maxY = Math.max(maxY, n.y);
+    }
+    const padding = 50;
+    const w = Math.min(MAX_VIEWBOX_SIZE, Math.max(MIN_VIEWBOX_SIZE, maxX - minX + padding * 2));
+    const h = Math.min(MAX_VIEWBOX_SIZE, Math.max(MIN_VIEWBOX_SIZE, maxY - minY + padding * 2));
+    const cx = (minX + maxX) / 2;
+    const cy = (minY + maxY) / 2;
+    setViewBox({ x: cx - w / 2, y: cy - h / 2, w, h });
+  }, []);
 
   const handleTick = useCallback(() => {
     forceRender();
-  }, [forceRender]);
+    // Auto-fit after 60 simulation ticks (~1 second of physics)
+    tickCountRef.current += 1;
+    if (!autoFitDoneRef.current && tickCountRef.current >= 60) {
+      autoFitDoneRef.current = true;
+      fitViewBox();
+    }
+  }, [forceRender, fitViewBox]);
 
   const { reheat, pinNode, unpinNode } = useForceSimulation(simNodesRef, simEdgesRef, {
     width: GRAPH_WIDTH,
