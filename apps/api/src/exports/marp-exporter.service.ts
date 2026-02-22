@@ -729,7 +729,16 @@ h3 { margin-top: 10px; font-size: 0.8em; }
       // Strip any <style scoped> the LLM may have included (we inject our own above)
       const bodyToRender = (slide.body.replace(/<style scoped>[\s\S]*?<\/style>\s*/g, '').trim() || slide.body)
         .replace(/\[([A-Z][a-z]+ ?(needed|statement|here|example|data|TBD))\]/gi, '')
-        .replace(/\n{3,}/g, '\n\n');
+        .replace(/\n{3,}/g, '\n\n')
+        .split('\n')
+        .filter((ln) => !/^\s*\|[-:\s|]+\|\s*$/.test(ln))       // Remove table separator rows
+        .map((ln) => {
+          if (/^\s*\|/.test(ln)) {                                // Strip pipe-delimited table rows
+            return ln.replace(/^\s*\|/, '').replace(/\|\s*$/, '').replace(/\|/g, ' \u2014 ').trim();
+          }
+          return ln;
+        })
+        .join('\n');
 
       // Types that handle their own layout (scoped CSS grids, lead class, etc.) skip glass-card
       const skipGlassCard = ['TITLE', 'CTA', 'VISUAL_HUMOR', 'TEAM', 'TIMELINE', 'METRICS_HIGHLIGHT', 'FEATURE_GRID', 'PRODUCT_SHOWCASE', 'LOGO_WALL', 'MARKET_SIZING', 'SPLIT_STATEMENT'];

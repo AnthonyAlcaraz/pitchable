@@ -119,6 +119,7 @@ UNIVERSAL FORMATTING RULES:
 - NEVER output placeholder text in brackets like [example], [data needed], [principle needed]. If you lack specific data, write a generic but complete statement instead.
 - NEVER use markdown formatting (bold **text**, italic *text*) in slide titles. Titles must be plain text only.
 - NEVER include HTML tags (<div>, <span>, <style>, etc.) or CSS classes in slide body content for TEAM, METRICS_HIGHLIGHT, FEATURE_GRID, MARKET_SIZING, COMPARISON, PROCESS, PROBLEM, SOLUTION, or CTA types. Output plain text only — the visual layout is handled automatically by the renderer.
+- NEVER use markdown table syntax (| pipes and dashes) in body text for METRICS_HIGHLIGHT, TEAM, FEATURE_GRID, MARKET_SIZING, COMPARISON, PROCESS, PROBLEM, SOLUTION, or CTA types. Use plain text with line breaks instead — the visual renderer handles layout.
 
 PHILLIPS' VISUAL HIERARCHY (enforce strictly):
 - Max 6 visual objects per slide (title + table = 2; title + 4 bullets = 5). Count every element.

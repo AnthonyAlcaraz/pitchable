@@ -602,6 +602,23 @@ export function generateMarpDarkTierCSS(palette: ColorPalette): string {
     `  section.bg-circuit h1 { color: ${palette.primary} !important; }`,
     `  section.bg-corner-accent { color: ${palette.text} !important; }`,
     `  section.bg-corner-accent h1 { color: ${palette.primary} !important; }`,
+    `  section.bg-mesh-gradient { color: ${palette.text} !important; }`,
+    `  section.bg-mesh-gradient h1 { color: ${palette.primary} !important; }`,
+    `  section.bg-noise-texture { color: ${palette.text} !important; }`,
+    `  section.bg-noise-texture h1 { color: ${palette.primary} !important; }`,
+    // Ensure ALL text elements in dark background variants have readable colors
+    `  section.bg-radial-glow h2, section.bg-radial-glow h3, section.bg-radial-glow p, section.bg-radial-glow li, section.bg-radial-glow strong { color: ${palette.text} !important; }`,
+    `  section.bg-diagonal-lines h2, section.bg-diagonal-lines h3, section.bg-diagonal-lines p, section.bg-diagonal-lines li, section.bg-diagonal-lines strong { color: ${palette.text} !important; }`,
+    `  section.bg-wave h2, section.bg-wave h3, section.bg-wave p, section.bg-wave li, section.bg-wave strong { color: ${palette.text} !important; }`,
+    `  section.bg-subtle-grid h2, section.bg-subtle-grid h3, section.bg-subtle-grid p, section.bg-subtle-grid li, section.bg-subtle-grid strong { color: ${palette.text} !important; }`,
+    `  section.bg-circuit h2, section.bg-circuit h3, section.bg-circuit p, section.bg-circuit li, section.bg-circuit strong { color: ${palette.text} !important; }`,
+    `  section.bg-corner-accent h2, section.bg-corner-accent h3, section.bg-corner-accent p, section.bg-corner-accent li, section.bg-corner-accent strong { color: ${palette.text} !important; }`,
+    `  section.bg-mesh-gradient h2, section.bg-mesh-gradient h3, section.bg-mesh-gradient p, section.bg-mesh-gradient li, section.bg-mesh-gradient strong { color: ${palette.text} !important; }`,
+    `  section.bg-noise-texture h2, section.bg-noise-texture h3, section.bg-noise-texture p, section.bg-noise-texture li, section.bg-noise-texture strong { color: ${palette.text} !important; }`,
+    // Callout-dark tier also needs explicit text color for all elements
+    `  section.bg-callout-dark h1 { color: ${palette.primary} !important; }`,
+    `  section.bg-callout-dark h2, section.bg-callout-dark h3, section.bg-callout-dark p, section.bg-callout-dark li { color: ${palette.text} !important; }`,
+    `  section.bg-callout-dark strong { color: ${palette.accent} !important; }`,
     `  .glass-card { background: rgba(255,255,255,0.07); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.14); box-shadow: 0 4px 30px rgba(0,0,0,0.15); border-radius: 16px; padding: 20px 24px; }`,
   ].join('\n');
 }

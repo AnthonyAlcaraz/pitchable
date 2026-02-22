@@ -847,23 +847,42 @@ export class ExportsService {
         const localFilename = `slide-img-${slide.slideNumber}.${ext}`;
         const localPath = join(tempDir, localFilename);
 
-        const response = await fetch(slide.imageUrl, { signal: AbortSignal.timeout(15_000) });
-        if (!response.ok) {
-          this.logger.warn(`Failed to download image for slide ${slide.slideNumber}: HTTP ${response.status}`);
-          modifiedSlides.push(slide);
-          continue;
+        let imageBuffer: Buffer | null = null;
+
+        // Try S3 client download first (for R2 URLs that aren't publicly accessible)
+        const bucketMarker = '/pitchable-documents/';
+        const bucketIdx = slide.imageUrl.indexOf(bucketMarker);
+        if (bucketIdx !== -1) {
+          const key = slide.imageUrl.slice(bucketIdx + bucketMarker.length);
+          try {
+            imageBuffer = await this.s3.getBuffer(key);
+            this.logger.debug(`Downloaded image via S3 for slide ${slide.slideNumber}`);
+          } catch (s3Err: unknown) {
+            const s3Msg = s3Err instanceof Error ? s3Err.message : String(s3Err);
+            this.logger.warn(`S3 download failed for slide ${slide.slideNumber}: ${s3Msg}, trying fetch...`);
+          }
         }
 
-        const arrayBuf = await response.arrayBuffer();
-        await writeFile(localPath, Buffer.from(arrayBuf));
+        // Fallback to direct fetch (for non-R2 URLs like imgur)
+        if (!imageBuffer) {
+          const response = await fetch(slide.imageUrl, { signal: AbortSignal.timeout(15_000) });
+          if (!response.ok) {
+            this.logger.warn(`Failed to download image for slide ${slide.slideNumber}: HTTP ${response.status}`);
+            modifiedSlides.push(slide);
+            continue;
+          }
+          const arrayBuf = await response.arrayBuffer();
+          imageBuffer = Buffer.from(arrayBuf);
+        }
 
-        // Create a shallow copy with the local path
+        await writeFile(localPath, imageBuffer);
+
         modifiedSlides.push({
           ...slide,
           imageUrl: localPath.replace(/\\/g, '/'),
         } as SlideModel);
 
-        this.logger.debug(`Downloaded image for slide ${slide.slideNumber} -> ${localFilename}`);
+        this.logger.debug(`Saved image for slide ${slide.slideNumber} -> ${localFilename}`);
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : String(err);
         this.logger.warn(`Image download failed for slide ${slide.slideNumber}: ${msg}`);

@@ -41,13 +41,28 @@ function escHtml(s: string): string {
 }
 
 function stripMarkdown(s: string): string {
-  return s.replace(/\*\*(.+?)\*\*/g, '$1').replace(/__(.+?)__/g, '$1').replace(/\*(.+?)\*/g, '$1').replace(/_(.+?)_/g, '$1');
+  return s
+    .replace(/\*\*(.+?)\*\*/g, '$1')
+    .replace(/__(.+?)__/g, '$1')
+    .replace(/\*(.+?)\*/g, '$1')
+    .replace(/_(.+?)_/g, '$1')
+    .replace(/^#{1,3}\s+/, '');
 }
 
 function parseBodyLines(body: string): string[] {
   return body
     .split('\n')
-    .map((l) => stripMarkdown(l.replace(/^[-•*]\s*/, '').replace(/<[^>]*>/g, '').trim()))
+    .filter((l) => !/^\s*\|[-:\s|]+\|\s*$/.test(l))  // Remove table separator rows (|---|---|)
+    .map((l) => {
+      // Strip table row pipes: "| Metric | Value |" -> "Metric  Value"
+      let cleaned = l;
+      if (/^\s*\|/.test(cleaned)) {
+        cleaned = cleaned.replace(/^\s*\|/, '').replace(/\|\s*$/, '').replace(/\|/g, '  ').trim();
+      }
+      // Strip HTML tags, bullet markers, markdown formatting
+      cleaned = cleaned.replace(/^[-•*]\s*/, '').replace(/<[^>]*>/g, '').trim();
+      return stripMarkdown(cleaned);
+    })
     .filter(Boolean);
 }
 
