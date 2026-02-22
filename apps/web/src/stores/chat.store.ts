@@ -183,7 +183,12 @@ export const useChatStore = create<ChatState>((set, get) => ({
       set({ messages: msgs, isLoading: false });
 
       // Restore workflow phase from message history + slide count
-      const slideCount = usePresentationStore.getState().presentation?.slides?.length ?? 0;
+      // If presentation isn't loaded yet, load it now to get accurate slide count
+      let slideCount = usePresentationStore.getState().presentation?.slides?.length ?? 0;
+      if (slideCount === 0) {
+        await usePresentationStore.getState().loadPresentation(presentationId);
+        slideCount = usePresentationStore.getState().presentation?.slides?.length ?? 0;
+      }
       useWorkflowStore.getState().restoreFromState(msgs, slideCount, hasPendingOutline, presentationId);
       // If phase restored to 'reviewing', re-initialize review state from sessionStorage
       if (useWorkflowStore.getState().phase === 'reviewing') {
