@@ -1,11 +1,14 @@
 import { useMemo } from 'react';
 import { ChevronLeft, ChevronRight, Download, Eye } from 'lucide-react';
 import { usePresentationStore } from '@/stores/presentation.store';
+import type { SlideData } from '@/stores/presentation.store';
 import { useChatStore } from '@/stores/chat.store';
 import { cn } from '@/lib/utils';
 
+const EMPTY_SLIDES: SlideData[] = [];
+
 export function StickySlidePreview() {
-  const slides = usePresentationStore((s) => s.presentation?.slides ?? []);
+  const slides = usePresentationStore((s) => s.presentation?.slides ?? EMPTY_SLIDES);
   const currentSlideIndex = usePresentationStore((s) => s.currentSlideIndex);
   const setCurrentSlide = usePresentationStore((s) => s.setCurrentSlide);
   const nextSlide = usePresentationStore((s) => s.nextSlide);
