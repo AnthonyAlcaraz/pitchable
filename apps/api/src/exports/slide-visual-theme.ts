@@ -588,6 +588,7 @@ export function generateMarpDarkTierCSS(palette: ColorPalette): string {
     `  section.bg-hero strong { color: #FFFFFF !important; }`,
     `  section.bg-callout-dark {`,
     `    background: ${palette.surface} !important;`,
+    `    color: ${palette.text} !important;`,
     `    border-top: 4px solid ${palette.accent};`,
     `  }`,
     `  section.bg-radial-glow { color: ${palette.text} !important; }`,
