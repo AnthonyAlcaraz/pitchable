@@ -534,9 +534,13 @@ export class MarpExporterService {
       }
       lines.push('');
     } else if (type === 'METRICS_HIGHLIGHT') {
-      lines.push(`<!-- _class: lead ${bgVariant.className} -->`);
-      if (bgVariant.className === 'bg-callout-dark' && palette) {
-        lines.push(`<!-- _backgroundColor: ${palette.surface} -->`);
+      // FIGMA_GRADE templates use inline colors designed for light backgrounds.
+      // Override dark surface to white so inline p.primary/p.text are readable.
+      if (bgVariant.className === 'bg-callout-dark') {
+        lines.push(`<!-- _class: lead bg-callout -->`);
+        lines.push('<!-- _backgroundColor: #F5F7FA -->');
+      } else {
+        lines.push(`<!-- _class: lead ${bgVariant.className} -->`);
       }
       lines.push('');
     } else {
