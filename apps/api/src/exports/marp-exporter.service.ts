@@ -180,7 +180,7 @@ export class MarpExporterService {
     figmaContrastOverrides?: Map<number, { isDark: boolean; textColor: string }>,
   ): string {
     const palette = theme.colorPalette as unknown as ColorPalette;
-    const sections: string[] = [];
+
     const profile = LAYOUT_PROFILE_CONFIGS[layoutProfile];
     // McKinsey theme always forces consulting profile behavior
     const isMcKinsey = theme.name === 'mckinsey-executive';
@@ -480,7 +480,7 @@ export class MarpExporterService {
       '---',
     );
 
-    sections.push(frontmatter.join('\n'));
+    const slideSections: string[] = [];
 
     const sortedSlides = [...slides].sort(
       (a, b) => a.slideNumber - b.slideNumber,
@@ -489,10 +489,10 @@ export class MarpExporterService {
     for (const slide of sortedSlides) {
       const rendererOverride = rendererOverrides?.get(slide.slideNumber);
       const figmaBg = figmaBackgrounds?.get(slide.slideNumber);
-      sections.push(this.buildSlideMarkdown(slide, bg, safePrimary, profile, palette, rendererOverride, figmaBg, figmaContrastOverrides?.get(slide.slideNumber)));
+      slideSections.push(this.buildSlideMarkdown(slide, bg, safePrimary, profile, palette, rendererOverride, figmaBg, figmaContrastOverrides?.get(slide.slideNumber)));
     }
 
-    return sections.join('\n\n---\n\n');
+    return frontmatter.join('\n') + '\n\n' + slideSections.join('\n\n---\n\n');
   }
 
   private buildSlideMarkdown(slide: SlideModel, bgColor?: string, primaryColor?: string, profile?: LayoutProfileConfig, palette?: ColorPalette, rendererOverride?: string, figmaBackground?: string, figmaContrast?: { isDark: boolean; textColor: string }): string {
