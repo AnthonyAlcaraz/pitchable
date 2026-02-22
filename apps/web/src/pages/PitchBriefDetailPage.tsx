@@ -7,6 +7,7 @@ import { usePitchLensStore } from '@/stores/pitch-lens.store';
 import { ArrowLeft, BookOpen, Plus, Trash2, Upload, FileText, Link2, Unlink, Search, Network } from 'lucide-react';
 import { useDocumentProgress } from '@/hooks/useDocumentProgress';
 import { useKbStore } from '@/stores/kb.store';
+import { InteractiveGraph } from '@/components/graph/InteractiveGraph';
 
 const STATUS_COLORS: Record<string, string> = {
   EMPTY: 'bg-gray-500/10 text-gray-400',
@@ -18,17 +19,7 @@ const STATUS_COLORS: Record<string, string> = {
   ERROR: 'bg-red-500/10 text-red-500',
 };
 
-const NODE_COLORS: Record<string, string> = {
-  PERSON: '#3b82f6',
-  ORGANIZATION: '#f59e0b',
-  CONCEPT: '#10b981',
-  TECHNOLOGY: '#a855f7',
-  PRODUCT: '#f43f5e',
-  EVENT: '#06b6d4',
-  LOCATION: '#f97316',
-  METRIC: '#14b8a6',
-  Document: '#64748b',
-};
+
 
 const ENTITY_COLORS: Record<string, string> = {
   PERSON: 'bg-blue-500/10 text-blue-400',
@@ -548,84 +539,13 @@ export function PitchBriefDetailPage() {
           </div>
 
           {/* Knowledge Graph Visualization */}
-          <div className="bg-card border border-border rounded-lg p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold text-foreground">{t('pitch_briefs.detail.knowledge_graph_title')}</h2>
-              <button
-                onClick={() => id && loadGraph(id)}
-                className="px-3 py-1 text-sm bg-background border border-border rounded-lg hover:border-primary/50 transition-colors"
-              >
-                {t('common.refresh')}
-              </button>
-            </div>
-
-            {graphData && graphData.nodes.length > 0 ? (
-              <svg
-                viewBox="0 0 400 400"
-                className="w-full h-[400px] bg-background rounded-lg border border-border"
-              >
-                {/* Render edges */}
-                {graphData.edges.map((edge, i) => {
-                  const sourceNode = graphData.nodes.find((n) => n.id === edge.source);
-                  const targetNode = graphData.nodes.find((n) => n.id === edge.target);
-                  if (!sourceNode || !targetNode) return null;
-
-                  const sourceAngle = (graphData.nodes.indexOf(sourceNode) / graphData.nodes.length) * 2 * Math.PI;
-                  const targetAngle = (graphData.nodes.indexOf(targetNode) / graphData.nodes.length) * 2 * Math.PI;
-                  const radius = 150;
-
-                  const x1 = 200 + Math.cos(sourceAngle) * radius;
-                  const y1 = 200 + Math.sin(sourceAngle) * radius;
-                  const x2 = 200 + Math.cos(targetAngle) * radius;
-                  const y2 = 200 + Math.sin(targetAngle) * radius;
-
-                  return (
-                    <line
-                      key={`edge-${i}`}
-                      x1={x1}
-                      y1={y1}
-                      x2={x2}
-                      y2={y2}
-                      stroke="#444"
-                      strokeWidth="1"
-                      opacity="0.3"
-                    />
-                  );
-                })}
-
-                {/* Render nodes */}
-                {graphData.nodes.map((node, i) => {
-                  const angle = (i / graphData.nodes.length) * 2 * Math.PI;
-                  const radius = 150;
-                  const x = 200 + Math.cos(angle) * radius;
-                  const y = 200 + Math.sin(angle) * radius;
-                  const color = NODE_COLORS[node.type] || '#6b7280';
-                  const displayLabel = (node.name || '').length > 12 ? node.name.substring(0, 12) + '...' : (node.name || '');
-
-                  return (
-                    <g key={node.id}>
-                      <circle
-                        cx={x}
-                        cy={y}
-                        r="8"
-                        fill={color}
-                        stroke="#fff"
-                        strokeWidth="2"
-                      />
-                      <text
-                        x={x}
-                        y={y + 20}
-                        textAnchor="middle"
-                        fontSize="10"
-                        fill="#9ca3af"
-                        className="select-none"
-                      >
-                        {displayLabel}
-                      </text>
-                    </g>
-                  );
-                })}
-              </svg>
+          <div className="bg-card border border-border rounded-lg p-6 relative">
+            {graphData ? (
+              <InteractiveGraph
+                graphData={graphData}
+                briefId={id!}
+                onRefresh={() => id && loadGraph(id)}
+              />
             ) : (
               <div className="flex flex-col items-center justify-center h-[400px] bg-background rounded-lg border border-border">
                 <Network className="w-12 h-12 text-muted-foreground mb-3" />
