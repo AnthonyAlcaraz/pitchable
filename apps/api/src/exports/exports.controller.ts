@@ -38,7 +38,9 @@ export class ExportsController {
     const jobs = await Promise.all(
       requestedFormats.map(async (fmt) => {
         const job = await this.exportsService.createExportJob(presentationId, fmt);
-        void this.exportsService.processExport(job.id, body.renderEngine);
+        this.exportsService.processExport(job.id, body.renderEngine).catch(() => {
+          // Error already logged and persisted in processExport's catch block
+        });
         return { id: job.id, status: job.status, format: job.format };
       }),
     );
@@ -83,7 +85,9 @@ export class ExportsController {
 
   @Post('presentations/:id/generate-previews')
   async generatePreviews(@Param('id') presentationId: string) {
-    void this.exportsService.generatePreviewsForPresentation(presentationId);
+    this.exportsService.generatePreviewsForPresentation(presentationId).catch(() => {
+      // Best-effort, errors logged internally
+    });
     return { status: 'started' };
   }
 

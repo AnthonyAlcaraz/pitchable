@@ -30,6 +30,9 @@ importers:
       '@aws-sdk/s3-request-presigner':
         specifier: ^3.990.0
         version: 3.990.0
+      '@marp-team/marp-cli':
+        specifier: ^4.1.0
+        version: 4.2.3(typescript@5.9.3)
       '@modelcontextprotocol/sdk':
         specifier: ^1.26.0
         version: 1.26.0(zod@4.3.6)

@@ -789,9 +789,10 @@ h3 { margin-top: 10px; font-size: 0.8em; }
         shellSafePath(imagesBaseName + '.jpeg'),
       ], { timeout: 300_000, shell: true });
     } catch (error: unknown) {
+      const stderr = (error as { stderr?: string })?.stderr ?? '';
       const message =
         error instanceof Error ? error.message : 'Unknown export error';
-      this.logger.error(`Marp image export failed: ${message}`);
+      this.logger.error(`Marp image export failed: ${message}${stderr ? `\nstderr: ${stderr}` : ''}`);
       throw new Error(`PPTX export failed (image render): ${message}`);
     }
 
@@ -865,9 +866,10 @@ h3 { margin-top: 10px; font-size: 0.8em; }
       this.logger.log(`PDF exported to ${resolvedOutput}`);
       return resolvedOutput;
     } catch (error: unknown) {
+      const stderr = (error as { stderr?: string })?.stderr ?? '';
       const message =
         error instanceof Error ? error.message : 'Unknown export error';
-      this.logger.error(`PDF export failed: ${message}`);
+      this.logger.error(`PDF export failed: ${message}${stderr ? `\nstderr: ${stderr}` : ''}`);
       throw new Error(`PDF export failed: ${message}`);
     }
   }
@@ -898,8 +900,9 @@ h3 { margin-top: 10px; font-size: 0.8em; }
         shellSafePath(imagesBase + '.jpeg'),
       ], { timeout: 300_000, shell: true });
     } catch (error: unknown) {
+      const stderr = (error as { stderr?: string })?.stderr ?? '';
       const message = error instanceof Error ? error.message : 'Unknown error';
-      this.logger.error(`Preview image render failed: ${message}`);
+      this.logger.error(`Preview image render failed: ${message}${stderr ? `\nstderr: ${stderr}` : ''}`);
       return [];
     }
 
