@@ -241,7 +241,12 @@ function buildMetricsHighlight(slide: SlideInput, p: ColorPalette): string {
     }
   }
 
-  const heroY = Math.round(H * 0.22);
+  // Auto-scale hero font: short metrics get 80px, long titles scale down
+  const heroFontSize = bigValue.length <= 10 ? 80
+    : bigValue.length <= 25 ? 56
+    : bigValue.length <= 50 ? 38
+    : 28;
+  const heroY = Math.round(H * (heroFontSize >= 56 ? 0.22 : 0.14));
   const supportText = supportLines.join(' ');
 
   // Secondary metrics: look for lines with "value: label" or "value - label" pattern
@@ -270,7 +275,7 @@ function buildMetricsHighlight(slide: SlideInput, p: ColorPalette): string {
   return `${SCOPED_RESET}
 <div style="position:relative;width:${W}px;height:${H}px;">
   <div style="position:absolute;left:0;top:0;width:${W}px;height:${H}px;background:radial-gradient(ellipse 800px 600px at 50% 40%,${hexToRgba(p.primary, 0.08)} 0%,transparent 70%)"></div>
-  <div style="position:absolute;left:${PAD}px;top:${heroY}px;width:${W - PAD * 2}px;text-align:center;font-size:80px;font-weight:bold;color:${p.primary};line-height:1">${escHtml(bigValue)}</div>
+  <div style="position:absolute;left:${PAD}px;top:${heroY}px;width:${W - PAD * 2}px;text-align:center;font-size:${heroFontSize}px;font-weight:bold;color:${p.primary};line-height:1.1">${escHtml(bigValue)}</div>
   ${bigLabel || bigValue !== slide.title ? `<div style="position:absolute;left:${PAD + 100}px;top:${heroY + 100}px;width:${W - PAD * 2 - 200}px;text-align:center;font-size:21px;font-weight:bold;color:${p.text};line-height:1.3">${escHtml(bigLabel || slide.title)}</div>` : ''}
   <div style="position:absolute;left:${Math.round((W - 80) / 2)}px;top:${heroY + 140}px;width:80px;height:3px;background:${p.accent};border-radius:2px"></div>
   ${displaySupport ? `<div style="position:absolute;left:${PAD + 160}px;top:${heroY + 164}px;width:${W - PAD * 2 - 320}px;text-align:center;font-size:15px;line-height:1.5;color:${p.text};opacity:0.7">${escHtml(displaySupport)}</div>` : ''}
