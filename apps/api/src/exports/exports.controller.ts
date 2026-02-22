@@ -19,11 +19,11 @@ interface CreateExportBody {
   renderEngine?: 'auto' | 'marp' | 'figma';
 }
 
-@UseGuards(JwtAuthGuard)
 @Controller()
 export class ExportsController {
   constructor(private readonly exportsService: ExportsService) {}
 
+  @UseGuards(JwtAuthGuard)
   @Post('presentations/:id/export')
   async createExport(
     @Param('id') presentationId: string,
@@ -48,17 +48,20 @@ export class ExportsController {
     return jobs;
   }
 
+  @UseGuards(JwtAuthGuard)
   @Get('exports/:jobId')
   async getExportStatus(@Param('jobId') jobId: string) {
     return this.exportsService.getExportStatus(jobId);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Get('exports/:jobId/download-url')
   async getDownloadUrl(@Param('jobId') jobId: string) {
     return this.exportsService.getSignedDownloadUrl(jobId);
   }
 
 
+  @UseGuards(JwtAuthGuard)
   @Get('exports/:jobId/download')
   async downloadExport(
     @Param('jobId') jobId: string,
