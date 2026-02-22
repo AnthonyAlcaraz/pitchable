@@ -84,6 +84,31 @@ export interface NeighborData {
   edges: GraphEdge[];
 }
 
+export interface NodeRelationship {
+  targetId: string;
+  targetName: string;
+  targetType: string;
+  edgeType: string;
+  edgeDescription: string;
+  direction: 'outgoing' | 'incoming';
+  weight: number;
+}
+
+export interface NodeSourceDocument {
+  documentId: string;
+  documentTitle: string;
+}
+
+export interface NodeDetails {
+  id: string;
+  name: string;
+  type: string;
+  description: string;
+  connectionCount: number;
+  relationships: NodeRelationship[];
+  sourceDocuments: NodeSourceDocument[];
+}
+
 export interface SearchResult {
   answer: string;
   sources: Array<{
@@ -122,6 +147,7 @@ interface PitchBriefState {
   loadNeighbors: (briefId: string, nodeId: string, limit?: number) => Promise<NeighborData>;
   search: (briefId: string, query: string) => Promise<SearchResult>;
 
+  loadNodeDetails: (briefId: string, nodeId: string) => Promise<NodeDetails | null>;
   linkLens: (briefId: string, lensId: string) => Promise<void>;
   unlinkLens: (briefId: string, lensId: string) => Promise<void>;
 
@@ -256,6 +282,14 @@ export const usePitchBriefStore = create<PitchBriefState>((set, get) => ({
 
   async search(briefId, query) {
     return api.post<SearchResult>(`/pitch-briefs/${briefId}/search`, { query });
+  },
+
+  async loadNodeDetails(briefId, nodeId) {
+    try {
+      return await api.get<NodeDetails>(`/pitch-briefs/${briefId}/graph/node/${nodeId}/details`);
+    } catch {
+      return null;
+    }
   },
 
   // ─── Lens Linking ─────────────────────────────────────────

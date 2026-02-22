@@ -73,4 +73,30 @@ export const ENTITY_TYPES = [
 ] as const;
 
 export interface NeighborResult {  centerNode: GraphNode | null;  neighbors: GraphNode[];  edges: GraphEdge[];}
+
+export interface NodeRelationship {
+  targetId: string;
+  targetName: string;
+  targetType: string;
+  edgeType: string;
+  edgeDescription: string;
+  direction: 'outgoing' | 'incoming';
+  weight: number;
+}
+
+export interface NodeSourceDocument {
+  documentId: string;
+  documentTitle: string;
+}
+
+export interface NodeDetails {
+  id: string;
+  name: string;
+  type: string;
+  description: string;
+  connectionCount: number;
+  relationships: NodeRelationship[];
+  sourceDocuments: NodeSourceDocument[];
+}
+
 export type EntityType = (typeof ENTITY_TYPES)[number];

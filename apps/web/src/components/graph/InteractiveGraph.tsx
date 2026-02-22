@@ -584,6 +584,7 @@ export function InteractiveGraph({ graphData, briefId, onRefresh }: InteractiveG
         <div className="mt-3">
           <NodeInfoPanel
             node={selectedNode}
+            briefId={briefId}
             onExpand={handleExpand}
             onCenter={handleCenter}
             isExpanding={isExpanding}

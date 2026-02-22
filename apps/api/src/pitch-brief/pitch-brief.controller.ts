@@ -212,6 +212,15 @@ export class PitchBriefController {
     });
   }
 
+  @Get(':id/graph/node/:nodeId/details')
+  async getNodeDetails(
+    @CurrentUser() user: RequestUser,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('nodeId') nodeId: string,
+  ) {
+    return this.briefService.getNodeDetails(user.userId, id, nodeId);
+  }
+
   @Get(':id/graph/stats')
   async getGraphStats(
     @CurrentUser() user: RequestUser,

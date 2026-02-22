@@ -12,6 +12,7 @@ import type {
   ExtractedEntity,
   ExtractedRelationship,
   NeighborResult,
+  NodeDetails,
 } from './falkordb.types.js';
 
 @Injectable()
@@ -438,6 +439,71 @@ export class FalkorDbService implements OnModuleDestroy {
     }
 
     return { centerNode, neighbors, edges };
+  }
+
+  async getNodeDetails(graphName: string, nodeId: string): Promise<NodeDetails | null> {
+    const graph = await this.getGraph(graphName);
+
+    // Fetch the node
+    const nodeResult = await graph.query(
+      `MATCH (n:Entity) WHERE n.id = $nodeId
+       RETURN n.id AS id, n.name AS name, n.type AS type, n.description AS description`,
+      { params: { nodeId } },
+    );
+    const nodeRow = (nodeResult.data ?? [])[0] as Record<string, unknown> | undefined;
+    if (!nodeRow) return null;
+
+    // Fetch relationships with other entities
+    const relResult = await graph.query(
+      `MATCH (n:Entity {id: $nodeId})-[r]-(other:Entity)
+       RETURN other.id AS targetId, other.name AS targetName, other.type AS targetType,
+              type(r) AS edgeType, COALESCE(r.description, '') AS edgeDescription,
+              COALESCE(r.weight, 1.0) AS weight,
+              startNode(r) = n AS isOutgoing
+       ORDER BY r.weight DESC
+       LIMIT 50`,
+      { params: { nodeId } },
+    );
+
+    const relationships = (relResult.data ?? []).map((row: Record<string, unknown>) => ({
+      targetId: String(row['targetId'] ?? ''),
+      targetName: String(row['targetName'] ?? ''),
+      targetType: String(row['targetType'] ?? ''),
+      edgeType: String(row['edgeType'] ?? ''),
+      edgeDescription: String(row['edgeDescription'] ?? ''),
+      direction: (row['isOutgoing'] === true ? 'outgoing' : 'incoming') as 'outgoing' | 'incoming',
+      weight: Number(row['weight'] ?? 1),
+    }));
+
+    // Fetch source documents via EXTRACTED_FROM edges
+    const docResult = await graph.query(
+      `MATCH (n:Entity {id: $nodeId})-[:EXTRACTED_FROM]->(d:Document)
+       RETURN d.id AS documentId, d.title AS documentTitle`,
+      { params: { nodeId } },
+    );
+
+    const sourceDocuments = (docResult.data ?? []).map((row: Record<string, unknown>) => ({
+      documentId: String(row['documentId'] ?? ''),
+      documentTitle: String(row['documentTitle'] ?? ''),
+    }));
+
+    // Get connection count
+    const degreeResult = await graph.query(
+      `MATCH (n:Entity {id: $nodeId})-[r]-() RETURN count(r) AS degree`,
+      { params: { nodeId } },
+    );
+    const degreeRow = (degreeResult.data ?? [])[0] as Record<string, unknown> | undefined;
+    const connectionCount = Number(degreeRow?.['degree'] ?? 0);
+
+    return {
+      id: String(nodeRow['id'] ?? ''),
+      name: String(nodeRow['name'] ?? ''),
+      type: String(nodeRow['type'] ?? ''),
+      description: String(nodeRow['description'] ?? ''),
+      connectionCount,
+      relationships,
+      sourceDocuments,
+    };
   }
 
   async getGraphStats(graphName: string): Promise<GraphStats> {

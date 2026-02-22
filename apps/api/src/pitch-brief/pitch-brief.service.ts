@@ -312,6 +312,19 @@ export class PitchBriefService {
     return this.falkordb.getNodeNeighbors(graphName, nodeId, opts);
   }
 
+  async getNodeDetails(
+    userId: string,
+    briefId: string,
+    nodeId: string,
+  ) {
+    const brief = await this.ensureOwnership(userId, briefId);
+    const graphName = await this.ensureGraphName(briefId, brief.graphName);
+    if (!graphName) {
+      return null;
+    }
+    return this.falkordb.getNodeDetails(graphName, nodeId);
+  }
+
   async getGraphStats(userId: string, briefId: string) {
     const brief = await this.ensureOwnership(userId, briefId);
     const graphName = await this.ensureGraphName(briefId, brief.graphName);
