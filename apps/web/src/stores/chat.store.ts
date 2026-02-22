@@ -133,6 +133,7 @@ interface ChatState {
   generationComplete: GenerationCompleteData | null;
   skipLocalMessage: boolean;
   outlineReviewState: OutlineReviewState | null;
+  lastExportUrl: string | null;
 
   loadHistory: (presentationId: string) => Promise<void>;
   sendMessage: (presentationId: string, content: string, opts?: { briefId?: string; lensId?: string }) => Promise<void>;
@@ -178,6 +179,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
   generationComplete: null,
   skipLocalMessage: false,
   outlineReviewState: null,
+  lastExportUrl: null,
 
   loadHistory: async (presentationId: string) => {
     set({ isLoading: true, error: null });
@@ -263,6 +265,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
           } else if (metadata?.action === 'export_ready') {
             const downloadUrl = metadata.downloadUrl as string;
             if (downloadUrl) {
+              set({ lastExportUrl: downloadUrl });
               window.open(downloadUrl, '_blank');
             }
           } else if (metadata?.action === 'presentation_created') {
@@ -549,6 +552,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
     pendingLayoutSelections: [],
     pendingImageSelections: [],
     outlineReviewState: null,
+    lastExportUrl: null,
   }),
   clearError: () => set({ error: null }),
 

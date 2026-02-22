@@ -211,31 +211,6 @@ export function PreviewPanel({ presentationId }: PreviewPanelProps) {
           <div ref={mainContentRef} className="flex-1 overflow-y-auto bg-muted/20 p-6">
             {currentSlide && (
               <div className="mx-auto w-full max-w-5xl space-y-4">
-                {/* Final Result — exported slide image, or placeholder */}
-                <div>
-                  <p className="mb-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wide">Final Result</p>
-                  {currentSlide.previewUrl ? (
-                    <div className="overflow-hidden rounded-lg border border-border shadow-sm" style={{ aspectRatio: '16/9' }}>
-                      <img
-                        src={`/slides/${currentSlide.id}/preview?t=${Date.now()}`}
-                        alt={`Slide ${currentSlide.slideNumber} preview`}
-                        className="h-full w-full object-contain bg-black"
-                        onError={(e) => {
-                          const target = e.currentTarget;
-                          target.style.display = 'none';
-                          target.parentElement?.classList.add('preview-fallback');
-                        }}
-                      />
-                    </div>
-                  ) : (
-                    <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border bg-card/50" style={{ aspectRatio: '16/9' }}>
-                      <PeachLogo className="mb-3 h-12 w-12 opacity-30" />
-                      <p className="text-sm text-muted-foreground">Export to see final result</p>
-                      <p className="mt-1 text-xs text-muted-foreground/60">PDF or PowerPoint with images &amp; backgrounds</p>
-                    </div>
-                  )}
-                </div>
-
                 {/* Editable slide + export button */}
                 <div>
                   <div className="mb-1.5 flex items-center justify-between">
