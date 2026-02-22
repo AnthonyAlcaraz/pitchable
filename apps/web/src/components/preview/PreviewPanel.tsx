@@ -97,10 +97,13 @@ export function PreviewPanel({ presentationId }: PreviewPanelProps) {
         pdf: 'PDF', pptx: 'PPTX', html: 'REVEAL_JS',
         'pdf-figma': 'PDF', 'pptx-figma': 'PPTX',
       };
-      const { jobId } = await api.post<{ jobId: string; status: string }>(
+      const exportFormat = formatMap[format] || 'PPTX';
+      const jobs = await api.post<Array<{ id: string; format: string; status: string }>>(
         `/presentations/${presentationId}/export`,
-        { format: formatMap[format] || 'PPTX', renderEngine: format.includes('figma') ? 'figma' : 'auto' },
+        { formats: [exportFormat] },
       );
+      const jobId = jobs[0]?.id;
+      if (!jobId) throw new Error('No export job created');
       for (let i = 0; i < 90; i++) {
         const job = await api.get<{ status: string }>(`/exports/${jobId}`);
         if (job.status === 'COMPLETED') break;

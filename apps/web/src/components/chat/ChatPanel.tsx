@@ -119,10 +119,13 @@ export function ChatPanel({ presentationId, briefId, lensId }: ChatPanelProps) {
           pdf: 'PDF', pptx: 'PPTX', html: 'REVEAL_JS',
           'pdf-figma': 'PDF', 'pptx-figma': 'PPTX',
         };
-        const { jobId } = await api.post<{ jobId: string; status: string }>(
+        const exportFormat = formatMap[format] || 'PPTX';
+        const jobs = await api.post<Array<{ id: string; format: string; status: string }>>(
           `/presentations/${pid}/export`,
-          { format: formatMap[format] || 'PPTX', renderEngine: format.includes('figma') ? 'figma' : 'auto' },
+          { formats: [exportFormat] },
         );
+        const jobId = jobs[0]?.id;
+        if (!jobId) throw new Error('No export job created');
         // Poll for completion (max 3 min)
         for (let i = 0; i < 90; i++) {
           const job = await api.get<{ status: string }>(`/exports/${jobId}`);
