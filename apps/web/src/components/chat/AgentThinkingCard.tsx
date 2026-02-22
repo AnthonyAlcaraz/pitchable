@@ -48,7 +48,7 @@ export function AgentThinkingCard({ text }: AgentThinkingCardProps) {
 
       <div className="flex items-center gap-3">
         <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-orange-500/10">
-          <PeachLogo className="h-5 w-5 animate-pulse" />
+          <PeachLogo className="h-5 w-5 animate-[spin_5s_linear_infinite]" />
         </div>
         <div>
           <p className="text-sm font-medium text-foreground">{text}</p>

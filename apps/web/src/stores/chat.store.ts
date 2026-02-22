@@ -361,7 +361,6 @@ export const useChatStore = create<ChatState>((set, get) => ({
             const existing = state.agentSteps.find((s) => s.id === stepId);
             if (existing) {
               return {
-                thinkingText: null,
                 agentSteps: state.agentSteps.map((s) =>
                   s.id === stepId
                     ? {
@@ -378,7 +377,6 @@ export const useChatStore = create<ChatState>((set, get) => ({
               };
             }
             return {
-              thinkingText: null,
               agentSteps: [
                 ...state.agentSteps,
                 {
