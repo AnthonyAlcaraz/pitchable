@@ -17,6 +17,7 @@ import {
   getAvailableCommands,
 } from './slash-command.parser.js';
 import type { LlmMessage } from './llm.service.js';
+import { TtlMap } from '../common/ttl-map.js';
 
 export interface ChatStreamEvent {
   type: 'token' | 'done' | 'error' | 'action' | 'thinking' | 'progress';
@@ -30,6 +31,10 @@ const OFF_TOPIC_RESPONSE =
 @Injectable()
 export class ChatService {
   private readonly logger = new Logger(ChatService.name);
+  private readonly suggestionCache = new TtlMap<string, { title: string; description: string; source: string }[]>(
+    60 * 60 * 1000, // 1 hour TTL
+    500,            // max 500 entries
+  );
 
   constructor(
     private readonly prisma: PrismaService,
@@ -759,6 +764,10 @@ export class ChatService {
   }
 
   async suggestSubjects(lensId?: string, briefId?: string): Promise<{ title: string; description: string; source: string }[]> {
+    const cacheKey = (lensId ?? 'none') + ':' + (briefId ?? 'none');
+    const cached = this.suggestionCache.get(cacheKey);
+    if (cached) return cached;
+
     // Build context from lens
     let context = '';
     if (lensId) {
@@ -791,7 +800,9 @@ export class ChatService {
         ],
         LlmModel.SONNET,
       );
-      return (suggestions.suggestions ?? []).map((s) => ({ ...s, source: lensId ? 'pitchlens' : 'brief' }));
+      const result = (suggestions.suggestions ?? []).map((s) => ({ ...s, source: lensId ? 'pitchlens' : 'brief' }));
+      this.suggestionCache.set(cacheKey, result);
+      return result;
     } catch {
       return [
         { title: 'Product Overview', description: 'Showcase your product features and value proposition', source: 'default' },

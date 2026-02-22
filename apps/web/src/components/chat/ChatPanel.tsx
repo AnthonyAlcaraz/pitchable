@@ -46,6 +46,8 @@ export function ChatPanel({ presentationId, briefId, lensId }: ChatPanelProps) {
   const phase = useWorkflowStore((s) => s.phase);
   const subjectSuggestions = useWorkflowStore((s) => s.subjectSuggestions);
   const setSubjectSuggestions = useWorkflowStore((s) => s.setSubjectSuggestions);
+  const cacheSuggestions = useWorkflowStore((s) => s.cacheSuggestions);
+  const getCachedSuggestions = useWorkflowStore((s) => s.getCachedSuggestions);
   const resetWorkflow = useWorkflowStore((s) => s.reset);
 
   useEffect(() => {
@@ -62,22 +64,32 @@ export function ChatPanel({ presentationId, briefId, lensId }: ChatPanelProps) {
     if (subjectSuggestions.length > 0) return;
     if (!lensId && !briefId) return;
 
+    // Check frontend cache first
+    const cacheKey = (lensId ?? 'none') + ':' + (briefId ?? 'none');
+    const cached = getCachedSuggestions(cacheKey);
+    if (cached) {
+      setSubjectSuggestions(cached);
+      return;
+    }
+
     let cancelled = false;
     api.post<{ suggestions: { title: string; description: string; source: string }[] }>(
       '/chat/suggest-subjects',
       { lensId, briefId },
     ).then((res) => {
       if (!cancelled && res.suggestions?.length) {
-        setSubjectSuggestions(res.suggestions.map((s) => ({
+        const mapped = res.suggestions.map((s) => ({
           title: s.title,
           description: s.description,
           source: (s.source as 'pitchlens' | 'brief' | 'custom') ?? 'pitchlens',
-        })));
+        }));
+        setSubjectSuggestions(mapped);
+        cacheSuggestions(cacheKey, mapped);
       }
-    }).catch(() => { /* ignore — suggestions are optional */ });
+    }).catch(() => { /* ignore - suggestions are optional */ });
 
     return () => { cancelled = true; };
-  }, [phase, lensId, briefId, subjectSuggestions.length, setSubjectSuggestions]);
+  }, [phase, lensId, briefId, subjectSuggestions.length, setSubjectSuggestions, getCachedSuggestions, cacheSuggestions]);
 
   const handleSend = useCallback((content: string) => {
     if (!presentationId) return;
