@@ -1,4 +1,5 @@
 import ReactMarkdown from 'react-markdown';
+import rehypeRaw from 'rehype-raw';
 import remarkGfm from 'remark-gfm';
 import type { Components } from 'react-markdown';
 
@@ -77,6 +78,7 @@ export function MarkdownBody({ children, compact = false, className }: MarkdownB
     <div className={className}>
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
+        rehypePlugins={[rehypeRaw]}
         components={compact ? compactComponents : fullComponents}
       >
         {children}

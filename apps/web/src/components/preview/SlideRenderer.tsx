@@ -89,7 +89,7 @@ export function SlideRenderer({ slide, theme, className, scale = 1, onClick }: S
 
         {/* Title slide subtitle */}
         {isTitle && slide.body && (
-          <div className="text-[0.9em] text-muted-foreground">{slide.body}</div>
+          <MarkdownBody className="text-[0.9em] text-muted-foreground">{slide.body}</MarkdownBody>
         )}
       </div>
 

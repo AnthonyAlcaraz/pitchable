@@ -103,7 +103,7 @@ export function EditableText({
       )}
       title="Click to edit"
     >
-      {value || placeholder}
+      <MarkdownBody compact>{value || placeholder}</MarkdownBody>
     </span>
   );
 }
