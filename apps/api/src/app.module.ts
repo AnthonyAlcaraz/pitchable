@@ -53,9 +53,9 @@ const redisConnection = redisUrl
   imports: [
     ConfigModule.forRoot({ isGlobal: true, validate }),
     ThrottlerModule.forRoot([
-      { name: 'short', ttl: 1000, limit: 3 },
-      { name: 'medium', ttl: 10000, limit: 20 },
-      { name: 'long', ttl: 60000, limit: 100 },
+      { name: 'short', ttl: 1000, limit: 30 },
+      { name: 'medium', ttl: 10000, limit: 100 },
+      { name: 'long', ttl: 60000, limit: 300 },
     ]),
     BullModule.forRoot({
       connection: redisConnection,
