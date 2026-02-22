@@ -756,22 +756,6 @@ export function PitchBriefDetailPage() {
             )}
           </div>
 
-          {/* Knowledge Graph Visualization */}
-          <div className="bg-card border border-border rounded-lg p-6 relative">
-            {graphData ? (
-              <InteractiveGraph
-                graphData={graphData}
-                briefId={id!}
-                onRefresh={() => id && loadGraph(id)}
-              />
-            ) : (
-              <div className="flex flex-col items-center justify-center h-[400px] bg-background rounded-lg border border-border">
-                <Network className="w-12 h-12 text-muted-foreground mb-3" />
-                <p className="text-sm text-muted-foreground">{t('pitch_briefs.detail.empty_graph')}</p>
-              </div>
-            )}
-          </div>
-
           {/* Search Panel */}
           <div className="bg-card border border-border rounded-lg p-6">
             <h2 className="text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
@@ -824,6 +808,22 @@ export function PitchBriefDetailPage() {
             )}
           </div>
         </div>
+      </div>
+
+      {/* Knowledge Graph — full width for better node visibility */}
+      <div className="mt-8 bg-card border border-border rounded-lg p-6 relative">
+        {graphData ? (
+          <InteractiveGraph
+            graphData={graphData}
+            briefId={id!}
+            onRefresh={() => id && loadGraph(id)}
+          />
+        ) : (
+          <div className="flex flex-col items-center justify-center h-[400px] bg-background rounded-lg border border-border">
+            <Network className="w-12 h-12 text-muted-foreground mb-3" />
+            <p className="text-sm text-muted-foreground">{t('pitch_briefs.detail.empty_graph')}</p>
+          </div>
+        )}
       </div>
     </div>
   );

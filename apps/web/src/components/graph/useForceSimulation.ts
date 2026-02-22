@@ -54,10 +54,10 @@ export function useForceSimulation(
           .id((d) => d.id)
           .distance(80),
       )
-      .force('charge', forceManyBody().strength(-120))
+      .force('charge', forceManyBody().strength(-80))
       .force('center', forceCenter(width / 2, height / 2))
-      .force('x', forceX<PositionedNode>(width / 2).strength(0.05))
-      .force('y', forceY<PositionedNode>(height / 2).strength(0.05))
+      .force('x', forceX<PositionedNode>(width / 2).strength(0.1))
+      .force('y', forceY<PositionedNode>(height / 2).strength(0.1))
       .force(
         'collide',
         forceCollide<PositionedNode>().radius(

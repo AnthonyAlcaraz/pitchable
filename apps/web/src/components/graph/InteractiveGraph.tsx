@@ -155,9 +155,11 @@ export function InteractiveGraph({ graphData, briefId, onRefresh }: InteractiveG
         maxY = Math.max(maxY, n.y);
       }
       const padding = 50;
-      const w = Math.max(MIN_VIEWBOX_SIZE, maxX - minX + padding * 2);
-      const h = Math.max(MIN_VIEWBOX_SIZE, maxY - minY + padding * 2);
-      setViewBox({ x: minX - padding, y: minY - padding, w, h });
+      const w = Math.min(MAX_VIEWBOX_SIZE, Math.max(MIN_VIEWBOX_SIZE, maxX - minX + padding * 2));
+      const h = Math.min(MAX_VIEWBOX_SIZE, Math.max(MIN_VIEWBOX_SIZE, maxY - minY + padding * 2));
+      const cx = (minX + maxX) / 2;
+      const cy = (minY + maxY) / 2;
+      setViewBox({ x: cx - w / 2, y: cy - h / 2, w, h });
     }, 800);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -398,6 +400,9 @@ export function InteractiveGraph({ graphData, briefId, onRefresh }: InteractiveG
     [pinNode],
   );
 
+  // Hover state for nodes
+  const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
+
   // Edge tooltip
   const [hoveredEdge, setHoveredEdge] = useState<{ x: number; y: number; label: string } | null>(null);
 
@@ -536,6 +541,8 @@ export function InteractiveGraph({ graphData, briefId, onRefresh }: InteractiveG
               key={node.id}
               style={{ cursor: draggingNodeId === node.id ? 'grabbing' : 'pointer' }}
               onMouseDown={(e) => handleNodeMouseDown(e, node.id)}
+              onMouseEnter={() => setHoveredNodeId(node.id)}
+              onMouseLeave={() => setHoveredNodeId((prev) => prev === node.id ? null : prev)}
               onClick={(e) => {
                 e.stopPropagation();
                 handleNodeClick(node.id);
@@ -549,10 +556,22 @@ export function InteractiveGraph({ graphData, briefId, onRefresh }: InteractiveG
               <circle
                 cx={node.x}
                 cy={node.y}
-                r={Math.max(20, radius)}
+                r={Math.max(35, radius + 15)}
                 fill="transparent"
                 stroke="none"
               />
+              {/* Hover highlight */}
+              {hoveredNodeId === node.id && !isSelected && (
+                <circle
+                  cx={node.x}
+                  cy={node.y}
+                  r={radius + 5}
+                  fill="none"
+                  stroke={color}
+                  strokeWidth="1.5"
+                  opacity={0.4}
+                />
+              )}
               {/* Selection ring */}
               {isSelected && (
                 <circle

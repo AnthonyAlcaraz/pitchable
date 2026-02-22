@@ -43,7 +43,7 @@ export const NODE_TYPE_LABELS: Record<string, string> = {
 export function getNodeRadius(connectionCount: number | undefined, importance?: number): number {
   // Prefer importance score if available, fall back to connectionCount
   const score = importance ?? (connectionCount ?? 1);
-  return Math.max(6, Math.min(20, score * 1.5));
+  return Math.max(8, Math.min(22, score * 1.5 + 2));
 }
 
 export function getEdgeOpacity(weight: number): number {
