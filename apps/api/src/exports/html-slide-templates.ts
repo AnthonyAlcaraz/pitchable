@@ -39,10 +39,14 @@ function escHtml(s: string): string {
     .replace(/"/g, '&quot;');
 }
 
+function stripMarkdown(s: string): string {
+  return s.replace(/\*\*(.+?)\*\*/g, '$1').replace(/__(.+?)__/g, '$1').replace(/\*(.+?)\*/g, '$1').replace(/_(.+?)_/g, '$1');
+}
+
 function parseBodyLines(body: string): string[] {
   return body
     .split('\n')
-    .map((l) => l.replace(/^[-•*]\s*/, '').trim())
+    .map((l) => stripMarkdown(l.replace(/^[-•*]\s*/, '').trim()))
     .filter(Boolean);
 }
 
@@ -275,12 +279,14 @@ function buildComparison(slide: SlideInput, p: ColorPalette): string {
   const cardH = H - cardY - PAD;                      // 534
   const rightX = PAD + colW + 40;
 
+  const maxItems = Math.floor((cardH - 80) / 40);
   function renderItems(items: string[], x: number, bullet: string): string {
     let html = '';
     let y = cardY + 68;
-    for (const item of items) {
-      html += `<div style="position:absolute;left:${x + 24}px;top:${y}px;width:${colW - 48}px;font-size:13px;line-height:1.5;color:${p.text};opacity:0.85">${bullet} ${escHtml(item)}</div>`;
-      y += 32;
+    const limited = items.slice(0, maxItems);
+    for (const item of limited) {
+      html += `<div style="position:absolute;left:${x + 24}px;top:${y}px;width:${colW - 48}px;font-size:13px;line-height:1.5;color:${p.text};opacity:0.85;overflow:hidden;text-overflow:ellipsis;word-wrap:break-word;max-height:36px">${bullet} ${escHtml(stripMarkdown(item))}</div>`;
+      y += 40;
     }
     return html;
   }
@@ -385,8 +391,8 @@ function buildFeatureGrid(slide: SlideInput, p: ColorPalette): string {
   const lines = parseBodyLines(slide.body);
   const features = lines.map((line) => {
     const sep = line.indexOf(':');
-    if (sep > -1) return { title: line.slice(0, sep).trim(), desc: line.slice(sep + 1).trim() };
-    return { title: line, desc: '' };
+    if (sep > -1) return { title: stripMarkdown(line.slice(0, sep).trim()), desc: stripMarkdown(line.slice(sep + 1).trim()) };
+    return { title: stripMarkdown(line), desc: '' };
   });
 
   if (features.length === 0) {
