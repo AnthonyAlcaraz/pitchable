@@ -539,6 +539,18 @@ export function generateMarpDarkTierCSS(palette: ColorPalette): string {
     `    background: ${palette.surface} !important;`,
     `    border-top: 4px solid ${palette.accent};`,
     `  }`,
+    `  section.bg-radial-glow { color: ${palette.text} !important; }`,
+    `  section.bg-radial-glow h1 { color: ${palette.primary} !important; }`,
+    `  section.bg-diagonal-lines { color: ${palette.text} !important; }`,
+    `  section.bg-diagonal-lines h1 { color: ${palette.primary} !important; }`,
+    `  section.bg-wave { color: ${palette.text} !important; }`,
+    `  section.bg-wave h1 { color: ${palette.primary} !important; }`,
+    `  section.bg-subtle-grid { color: ${palette.text} !important; }`,
+    `  section.bg-subtle-grid h1 { color: ${palette.primary} !important; }`,
+    `  section.bg-circuit { color: ${palette.text} !important; }`,
+    `  section.bg-circuit h1 { color: ${palette.primary} !important; }`,
+    `  section.bg-corner-accent { color: ${palette.text} !important; }`,
+    `  section.bg-corner-accent h1 { color: ${palette.primary} !important; }`,
   ].join('\n');
 }
 
