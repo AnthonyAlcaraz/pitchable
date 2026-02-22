@@ -55,6 +55,7 @@ interface PresentationState {
   isLoading: boolean;
   error: string | null;
   reviewState: ReviewState | null;
+  previewCacheBuster: number;
 
   loadPresentation: (id: string) => Promise<void>;
   setCurrentSlide: (index: number) => void;
@@ -68,6 +69,7 @@ interface PresentationState {
   reorderSlides: (slideIds: string[]) => void;
   setTheme: (themeId: string) => void;
   setTitle: (title: string) => void;
+  bustPreviewCache: () => void;
 
   clearPresentation: () => void;
   clearError: () => void;
@@ -110,6 +112,7 @@ export const usePresentationStore = create<PresentationState>((set, get) => ({
   isLoading: false,
   error: null,
   reviewState: null,
+  previewCacheBuster: 0,
 
   async loadPresentation(id: string) {
     set({ isLoading: true, error: null });
@@ -236,6 +239,10 @@ export const usePresentationStore = create<PresentationState>((set, get) => ({
         presentation: { ...state.presentation, title },
       };
     });
+  },
+
+  bustPreviewCache() {
+    set({ previewCacheBuster: Date.now() });
   },
 
   clearPresentation() {

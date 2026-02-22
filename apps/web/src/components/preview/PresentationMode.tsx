@@ -1,6 +1,7 @@
 import { useEffect, useCallback } from 'react';
 import { X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { SlideRenderer } from './SlideRenderer';
+import { usePresentationStore } from '@/stores/presentation.store';
 import type { SlideData, ThemeData } from '@/stores/presentation.store';
 
 interface PresentationModeProps {
@@ -19,6 +20,7 @@ export function PresentationMode({
   theme,
 }: PresentationModeProps) {
   const currentSlide = slides[currentIndex];
+  const cacheBuster = usePresentationStore((s) => s.previewCacheBuster);
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
@@ -110,7 +112,7 @@ export function PresentationMode({
         {currentSlide.previewUrl ? (
           <div className="overflow-hidden rounded-lg" style={{ aspectRatio: '16/9' }}>
             <img
-              src={`/slides/${currentSlide.id}/preview`}
+              src={`/slides/${currentSlide.id}/preview?v=${cacheBuster}`}
               alt={`Slide ${currentSlide.slideNumber}`}
               className="h-full w-full object-contain"
             />

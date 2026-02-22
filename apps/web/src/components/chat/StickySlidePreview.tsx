@@ -13,6 +13,7 @@ export function StickySlidePreview() {
   const setCurrentSlide = usePresentationStore((s) => s.setCurrentSlide);
   const nextSlide = usePresentationStore((s) => s.nextSlide);
   const previousSlide = usePresentationStore((s) => s.previousSlide);
+  const cacheBuster = usePresentationStore((s) => s.previewCacheBuster);
   const lastExportUrl = useChatStore((s) => s.lastExportUrl);
 
   const hasAnyPreview = useMemo(
@@ -33,7 +34,7 @@ export function StickySlidePreview() {
       >
         {currentSlide?.previewUrl ? (
           <img
-            src={`/slides/${currentSlide.id}/preview`}
+            src={`/slides/${currentSlide.id}/preview?v=${cacheBuster}`}
             alt={`Slide ${currentSlide.slideNumber}`}
             className="h-full w-full object-contain"
           />
@@ -105,7 +106,7 @@ export function StickySlidePreview() {
             >
               {slide.previewUrl ? (
                 <img
-                  src={`/slides/${slide.id}/preview`}
+                  src={`/slides/${slide.id}/preview?v=${cacheBuster}`}
                   alt={`Slide ${slide.slideNumber}`}
                   className="h-full w-full object-contain bg-black"
                 />

@@ -5,7 +5,7 @@ import { usePresentationStore } from '../stores/presentation.store.js';
 import { useChatStore } from '../stores/chat.store.js';
 import { useWorkflowStore } from '../stores/workflow.store.js';
 import { useAuthStore } from '../stores/auth.store.js';
-import { api } from '../lib/api.js';
+
 import type { SlideData } from '../stores/presentation.store.js';
 
 interface SlideAddedEvent {
@@ -112,9 +112,9 @@ export function useSlideUpdates(presentationId: string | undefined) {
       updateSlide(event.slideId, { imageUrl: event.imageUrl });
     };
 
-    const handleImagesComplete = (event: ImagesCompleteEvent) => {
-      // All images done — regenerate preview thumbnails so they include images
-      api.post(`/presentations/${event.presentationId}/generate-previews`).catch(() => {});
+    const handleImagesComplete = (_event: ImagesCompleteEvent) => {
+      // Backend already regenerated previews with images — bust browser cache so img tags refetch
+      usePresentationStore.getState().bustPreviewCache();
       // Refresh credit balance (image generation consumes credits)
       useAuthStore.getState().refreshCreditBalance();
     };

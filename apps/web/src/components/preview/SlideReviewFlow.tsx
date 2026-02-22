@@ -57,6 +57,7 @@ export function SlideReviewFlow({
   const setCurrentSlide = usePresentationStore((s) => s.setCurrentSlide);
   const updateSlide = usePresentationStore((s) => s.updateSlide);
   const unapproveSlides = usePresentationStore((s) => s.unapproveSlides);
+  const cacheBuster = usePresentationStore((s) => s.previewCacheBuster);
 
   const [editingFeedback, setEditingFeedback] = useState<string>('');
   const [isEditing, setIsEditing] = useState(false);
@@ -316,7 +317,7 @@ export function SlideReviewFlow({
               {slide.previewUrl ? (
                 <div className="aspect-video w-full overflow-hidden rounded-md bg-card">
                   <img
-                    src={`/slides/${slide.id}/preview`}
+                    src={`/slides/${slide.id}/preview?v=${cacheBuster}`}
                     alt={slide.title}
                     className="h-full w-full object-cover"
                     loading="lazy"

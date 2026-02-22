@@ -62,6 +62,7 @@ export function PreviewPanel({ presentationId }: PreviewPanelProps) {
   const approveReviewSlide = usePresentationStore((s) => s.approveReviewSlide);
   const approveAllReviewSlides = usePresentationStore((s) => s.approveAllReviewSlides);
   const unapproveSlides = usePresentationStore((s) => s.unapproveSlides);
+  const cacheBuster = usePresentationStore((s) => s.previewCacheBuster);
 
   // Workflow store
   const phase = useWorkflowStore((s) => s.phase);
@@ -529,7 +530,7 @@ export function PreviewPanel({ presentationId }: PreviewPanelProps) {
                 >
                   {currentSlide.previewUrl ? (
                     <img
-                      src={`/slides/${currentSlide.id}/preview`}
+                      src={`/slides/${currentSlide.id}/preview?v=${cacheBuster}`}
                       alt={`Slide ${currentSlide.slideNumber}: ${currentSlide.title}`}
                       className="h-full w-full object-contain"
                     />

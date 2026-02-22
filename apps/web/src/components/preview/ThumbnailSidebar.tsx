@@ -1,6 +1,7 @@
 import { cn } from '@/lib/utils';
 import { SlideRenderer } from './SlideRenderer';
 import { Check, ChevronRight } from 'lucide-react';
+import { usePresentationStore } from '@/stores/presentation.store';
 import type { SlideData, ThemeData } from '@/stores/presentation.store';
 
 interface ThumbnailSidebarProps {
@@ -12,6 +13,7 @@ interface ThumbnailSidebarProps {
 }
 
 export function ThumbnailSidebar({ slides, currentIndex, onSelect, theme, approvedSlides }: ThumbnailSidebarProps) {
+  const cacheBuster = usePresentationStore((s) => s.previewCacheBuster);
   if (slides.length === 0) return null;
 
   return (
@@ -36,7 +38,7 @@ export function ThumbnailSidebar({ slides, currentIndex, onSelect, theme, approv
             {slide.previewUrl ? (
               <div className="aspect-video w-full overflow-hidden rounded-md bg-card">
                 <img
-                  src={`/slides/${slide.id}/preview`}
+                  src={`/slides/${slide.id}/preview?v=${cacheBuster}`}
                   alt={slide.title}
                   className="h-full w-full object-cover"
                   loading="lazy"

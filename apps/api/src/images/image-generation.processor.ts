@@ -11,6 +11,7 @@ import { CreditsService } from '../credits/credits.service.js';
 import { IMAGE_GENERATION_COST } from '../credits/tier-config.js';
 import { EventsGateway } from '../events/events.gateway.js';
 import { InteractionGateService } from '../chat/interaction-gate.service.js';
+import { ExportsService } from '../exports/exports.service.js';
 import { JobStatus, CreditReason } from '../../generated/prisma/enums.js';
 
 /** Generate an SVG placeholder when image generation fails. */
@@ -47,6 +48,7 @@ export class ImageGenerationProcessor extends WorkerHost {
     private readonly credits: CreditsService,
     private readonly events: EventsGateway,
     private readonly interactionGate: InteractionGateService,
+    private readonly exports: ExportsService,
   ) {
     super();
   }
@@ -435,10 +437,18 @@ export class ImageGenerationProcessor extends WorkerHost {
     });
 
     if (pendingJobs === 0) {
-      this.events.emitImagesComplete({ presentationId });
       this.logger.log(
-        `All images complete for presentation ${presentationId}`,
+        `All images complete for presentation ${presentationId} — regenerating previews`,
       );
+      try {
+        await this.exports.generatePreviewsForPresentation(presentationId);
+        this.logger.log(`Preview images regenerated with final images for ${presentationId}`);
+      } catch (previewErr) {
+        this.logger.warn(
+          `Failed to regenerate previews after images: ${previewErr instanceof Error ? previewErr.message : 'unknown'}`,
+        );
+      }
+      this.events.emitImagesComplete({ presentationId });
     }
   }
 }

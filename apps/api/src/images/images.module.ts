@@ -5,6 +5,7 @@ import { PrismaModule } from '../prisma/prisma.module.js';
 import { CreditsModule } from '../credits/credits.module.js';
 import { EventsModule } from '../events/events.module.js';
 import { KnowledgeBaseModule } from '../knowledge-base/knowledge-base.module.js';
+import { ExportsModule } from '../exports/exports.module.js';
 import { ImagePromptBuilderService } from './image-prompt-builder.service.js';
 import { NanoBananaService } from './nano-banana.service.js';
 import { ImgurService } from './imgur.service.js';
@@ -20,6 +21,7 @@ import { ImageCriticService } from './image-critic.service.js';
     CreditsModule,
     EventsModule,
     KnowledgeBaseModule,
+    ExportsModule,
     BullModule.registerQueue({ name: 'image-generation' }),
   ],
   controllers: [ImagesController],
