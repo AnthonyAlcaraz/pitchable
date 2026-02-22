@@ -3,10 +3,8 @@ import remarkGfm from 'remark-gfm';
 import { User } from 'lucide-react';
 import { PeachLogo } from '../icons/PeachLogo.js';
 import { SlidePreviewCard } from './SlidePreviewCard';
-import { ChatSlidePreviewGrid } from './ChatSlidePreviewGrid.js';
 import { GenerationCompleteCard } from './GenerationCompleteCard.js';
-import type { InlineSlideCard as InlineSlideCardType, GenerationCompleteData } from '@/stores/chat.store';
-import { usePresentationStore } from '../../stores/presentation.store.js';
+import type { GenerationCompleteData } from '@/stores/chat.store';
 
 interface ChatMessageProps {
   role: 'user' | 'assistant' | 'system';
@@ -16,7 +14,6 @@ interface ChatMessageProps {
   isStreaming?: boolean;
   presentationId?: string;
   onExport?: (presentationId: string, format: string) => void;
-  onSlideClick?: (slideIndex: number) => void;
 }
 
 export function ChatMessage({
@@ -27,10 +24,8 @@ export function ChatMessage({
   isStreaming,
   presentationId: _presentationId,
   onExport,
-  onSlideClick,
 }: ChatMessageProps) {
   const isUser = role === 'user';
-  const theme = usePresentationStore((s) => s.presentation?.theme ?? null);
 
   // Extract typed metadata to avoid `unknown` leaking into JSX (React 19 strict)
   const outlineSlides = messageType === 'outline' && Array.isArray(metadata?.slides)
@@ -38,9 +33,6 @@ export function ChatMessage({
     : [];
   const outlineSources = messageType === 'outline' && Array.isArray(metadata?.sources)
     ? (metadata.sources as Array<{ documentTitle: string; documentId: string }>)
-    : [];
-  const slideCards = Array.isArray(metadata?.slideCards)
-    ? (metadata.slideCards as InlineSlideCardType[])
     : [];
   const genComplete = metadata?.generationComplete
     ? (metadata.generationComplete as GenerationCompleteData)
@@ -96,21 +88,11 @@ export function ChatMessage({
 
 
 
-        {/* Render persisted slide previews  -  full-width grid synced with sidebar */}
-        {slideCards.length > 0 && (
-          <ChatSlidePreviewGrid
-            slideCards={slideCards}
-            theme={theme}
-            onSlideClick={onSlideClick}
-          />
-        )}
-
         {/* Render persisted generation complete card */}
         {genComplete && onExport ? (
           <GenerationCompleteCard
             data={genComplete}
             onExport={onExport}
-            onSlideClick={onSlideClick}
           />
         ) : null}
       </div>

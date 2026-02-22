@@ -7,7 +7,6 @@ import { ImageSelector } from './ImageSelector.js';
 import { OutlineReviewFlow } from './OutlineReviewFlow.js';
 import { useChatStore } from '../../stores/chat.store.js';
 import type { ChatMessage as ChatMessageType, AgentStep, PendingThemeSelection, PendingLayoutSelection, PendingImageSelection } from '../../stores/chat.store.js';
-import { usePresentationStore } from '../../stores/presentation.store.js';
 
 interface ChatHistoryProps {
   messages: ChatMessageType[];
@@ -41,7 +40,6 @@ export function ChatHistory({
   const bottomRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const userScrolled = useRef(false);
-  const { setCurrentSlide } = usePresentationStore();
 
   const outlineReviewState = useChatStore((s) => s.outlineReviewState);
   const approveOutlineStep = useChatStore((s) => s.approveOutlineStep);
@@ -91,7 +89,6 @@ export function ChatHistory({
             metadata={msg.metadata}
             presentationId={presentationId}
             onExport={onExport}
-            onSlideClick={(index) => setCurrentSlide(index)}
           />
         );
       })}

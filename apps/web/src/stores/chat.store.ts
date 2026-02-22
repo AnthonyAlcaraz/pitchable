@@ -24,15 +24,6 @@ export interface PendingValidation {
   reviewPassed: boolean;
 }
 
-export interface InlineSlideCard {
-  id: string;
-  slideNumber: number;
-  title: string;
-  body: string;
-  slideType: string;
-  imageUrl: string | null;
-}
-
 export interface PendingThemeSelection {
   contextId: string;
   options: Array<{
@@ -126,7 +117,6 @@ interface ChatState {
   error: string | null;
   pendingValidations: PendingValidation[];
   pendingCreditConfirmation: null;
-  inlineSlideCards: InlineSlideCard[];
   pendingThemeSelection: PendingThemeSelection | null;
   pendingLayoutSelections: PendingLayoutSelection[];
   pendingImageSelections: PendingImageSelection[];
@@ -173,7 +163,6 @@ export const useChatStore = create<ChatState>((set, get) => ({
   error: null,
   pendingValidations: [],
   pendingCreditConfirmation: null,
-  inlineSlideCards: [],
   pendingThemeSelection: null,
   pendingLayoutSelections: [],
   pendingImageSelections: [],
@@ -228,7 +217,6 @@ export const useChatStore = create<ChatState>((set, get) => ({
       thinkingText: null,
       agentSteps: [],
       error: null,
-      inlineSlideCards: [],
       generationComplete: null,
       pendingThemeSelection: null,
       pendingLayoutSelections: [],
@@ -302,17 +290,6 @@ export const useChatStore = create<ChatState>((set, get) => ({
                   approvedSteps: [],
                 },
               });
-            }
-          } else if (metadata?.action === 'slide_preview') {
-            const slide = metadata.slide as InlineSlideCard;
-            if (slide) {
-              set((state) => ({
-                inlineSlideCards: [...state.inlineSlideCards, slide],
-              }));
-              // First slide preview means generation has started
-              if (get().inlineSlideCards.length === 0) {
-                useWorkflowStore.getState().setPhase('generating');
-              }
             }
           } else if (metadata?.action === 'theme_selection') {
             set({
@@ -416,8 +393,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
         }
       }
 
-      // Add assistant message (persist inline slide cards in metadata)
-      const currentSlideCards = get().inlineSlideCards;
+      // Add assistant message
       const currentCompletion = get().generationComplete;
       if (fullContent && !get().skipLocalMessage) {
         const assistantMsg: ChatMessage = {
@@ -426,7 +402,6 @@ export const useChatStore = create<ChatState>((set, get) => ({
           content: fullContent,
           messageType: 'text',
           metadata: {
-            ...(currentSlideCards.length > 0 ? { slideCards: currentSlideCards } : {}),
             ...(currentCompletion ? { generationComplete: currentCompletion } : {}),
           },
           createdAt: new Date().toISOString(),
@@ -554,7 +529,6 @@ export const useChatStore = create<ChatState>((set, get) => ({
     messages: [],
     streamingContent: '',
     pendingValidations: [],
-    inlineSlideCards: [],
     generationComplete: null,
     pendingThemeSelection: null,
     pendingLayoutSelections: [],
