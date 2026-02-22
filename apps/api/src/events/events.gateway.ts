@@ -70,6 +70,19 @@ export interface ExportProgressEvent {
   message: string;
 }
 
+export interface CascadeProgressEvent {
+  presentationId: string;
+  currentSlide: number;
+  totalSlides: number;
+  slideId: string;
+  slideTitle: string;
+  status: 'regenerating' | 'complete';
+}
+
+export interface CascadeCompleteEvent {
+  presentationId: string;
+}
+
 /** Max WebSocket connections per user (prevents resource exhaustion). */
 const MAX_CONNECTIONS_PER_USER = 10;
 
@@ -326,5 +339,17 @@ export class EventsGateway
     for (const socketId of connIds) {
       this.server.to(socketId).emit('document:progress', event);
     }
+  }
+
+  emitCascadeProgress(event: CascadeProgressEvent): void {
+    this.server
+      .to(`presentation:${event.presentationId}`)
+      .emit('cascade:progress', event);
+  }
+
+  emitCascadeComplete(event: CascadeCompleteEvent): void {
+    this.server
+      .to(`presentation:${event.presentationId}`)
+      .emit('cascade:complete', event);
   }
 }

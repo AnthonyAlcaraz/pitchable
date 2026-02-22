@@ -18,7 +18,10 @@ import { PrismaService } from '../prisma/prisma.service.js';
 import { ChatService } from './chat.service.js';
 import { GenerationService } from './generation.service.js';
 import { InteractionGateService } from './interaction-gate.service.js';
+import { SlideModifierService } from './slide-modifier.service.js';
+import { EditClassifierService } from './edit-classifier.service.js';
 import { SendMessageDto } from './dto/send-message.dto.js';
+import { SLIDE_MODIFICATION_COST } from '../credits/tier-config.js';
 import {
   PresentationType,
   PresentationStatus,
@@ -46,6 +49,8 @@ export class ChatController {
     private readonly generation: GenerationService,
     private readonly prisma: PrismaService,
     private readonly interactionGate: InteractionGateService,
+    private readonly slideModifier: SlideModifierService,
+    private readonly editClassifier: EditClassifierService,
   ) {}
 
   @Post(':presentationId/message')
@@ -253,5 +258,107 @@ export class ChatController {
       body.slideIndex,
       body.feedback,
     );
+  }
+
+  /**
+   * Classify + execute edit. Cosmetic changes execute immediately.
+   * Structural changes return classification data for frontend confirmation.
+   */
+  @Post(':presentationId/edit-slide')
+  @UseGuards(PresentationOwnerGuard)
+  async editSlide(
+    @CurrentUser() user: RequestUser,
+    @Param('presentationId') presentationId: string,
+    @Body() body: { slideId: string; feedback: string },
+  ) {
+    // Find the slide
+    const slide = await this.prisma.slide.findFirst({
+      where: { id: body.slideId, presentationId },
+    });
+
+    if (!slide) {
+      return { success: false, message: 'Slide not found.' };
+    }
+
+    // Load all slides for deck context
+    const allSlides = await this.prisma.slide.findMany({
+      where: { presentationId },
+      orderBy: { slideNumber: 'asc' },
+      select: { slideNumber: true, title: true, slideType: true },
+    });
+
+    // Classify the edit
+    const classification = await this.editClassifier.classify(
+      { title: slide.title, body: slide.body, slideType: slide.slideType },
+      body.feedback,
+      allSlides,
+    );
+
+    if (classification.type === 'cosmetic') {
+      // Execute immediately — same behavior as before
+      const result = await this.slideModifier.modifySlide(
+        user.userId,
+        presentationId,
+        slide.slideNumber,
+        body.feedback,
+      );
+
+      return {
+        success: result.success,
+        classification: 'cosmetic' as const,
+        message: result.message,
+        slide: result.success
+          ? (await this.prisma.slide.findUnique({ where: { id: slide.id } })) ?? undefined
+          : undefined,
+      };
+    }
+
+    // Structural — return classification data for confirmation
+    const downstreamCount = allSlides.filter((s) => s.slideNumber > slide.slideNumber).length;
+    const totalAffected = 1 + downstreamCount;
+    const creditCost = totalAffected * SLIDE_MODIFICATION_COST;
+
+    const affectedSlides = allSlides
+      .filter((s) => s.slideNumber >= slide.slideNumber)
+      .map((s) => ({ slideNumber: s.slideNumber, title: s.title, slideType: s.slideType }));
+
+    return {
+      success: true,
+      classification: 'structural' as const,
+      reason: classification.reason,
+      affectedSlideCount: totalAffected,
+      creditCost,
+      affectedSlides,
+      slideNumber: slide.slideNumber,
+    };
+  }
+
+  /**
+   * Execute a confirmed structural cascade edit.
+   * Called after user confirms in the CascadeConfirmModal.
+   */
+  @Post(':presentationId/execute-cascade')
+  @UseGuards(PresentationOwnerGuard)
+  async executeCascade(
+    @CurrentUser() user: RequestUser,
+    @Param('presentationId') presentationId: string,
+    @Body() body: { slideId: string; feedback: string },
+  ) {
+    const slide = await this.prisma.slide.findFirst({
+      where: { id: body.slideId, presentationId },
+    });
+
+    if (!slide) {
+      return { success: false, message: 'Slide not found.' };
+    }
+
+    const result = await this.slideModifier.cascadeRegenerateSlides(
+      user.userId,
+      presentationId,
+      slide.slideNumber,
+      body.feedback,
+    );
+
+    return result;
   }
 }

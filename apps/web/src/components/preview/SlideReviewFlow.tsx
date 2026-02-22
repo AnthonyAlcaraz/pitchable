@@ -2,9 +2,33 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { Check, ChevronRight, Edit3, SkipForward, Download, ChevronDown, Coins, Loader2 } from 'lucide-react';
 import { EditableSlide } from './EditableSlide';
 import { NarrativeAdvice } from './NarrativeAdvice';
+import { CascadeConfirmModal } from './CascadeConfirmModal';
 import { usePresentationStore } from '@/stores/presentation.store';
 import type { ReviewState, SlideData, ThemeData } from '@/stores/presentation.store';
 import { api } from '@/lib/api';
+import { getSocket } from '@/lib/socket';
+
+interface AffectedSlide {
+  slideNumber: number;
+  title: string;
+  slideType: string;
+}
+
+interface CascadeData {
+  slideId: string;
+  feedback: string;
+  affectedSlideCount: number;
+  creditCost: number;
+  reason: string;
+  affectedSlides: AffectedSlide[];
+  slideNumber: number;
+}
+
+interface CascadeProgress {
+  current: number;
+  total: number;
+  slideTitle: string;
+}
 
 interface SlideReviewFlowProps {
   slides: SlideData[];
@@ -31,10 +55,16 @@ export function SlideReviewFlow({
   const approveAllReviewSlides = usePresentationStore((s) => s.approveAllReviewSlides);
   const setCurrentSlide = usePresentationStore((s) => s.setCurrentSlide);
   const updateSlide = usePresentationStore((s) => s.updateSlide);
+  const unapproveSlides = usePresentationStore((s) => s.unapproveSlides);
 
   const [editingFeedback, setEditingFeedback] = useState<string>('');
   const [isEditing, setIsEditing] = useState(false);
   const [editLoading, setEditLoading] = useState(false);
+
+  // Cascade state
+  const [cascadeData, setCascadeData] = useState<CascadeData | null>(null);
+  const [cascadeProgress, setCascadeProgress] = useState<CascadeProgress | null>(null);
+  const [cascadeExecuting, setCascadeExecuting] = useState(false);
 
   // Export dropdown
   const [showExportMenu, setShowExportMenu] = useState(false);
@@ -54,6 +84,40 @@ export function SlideReviewFlow({
     mainRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
   }, [currentStep]);
 
+  // Listen for cascade WebSocket events
+  useEffect(() => {
+    const socket = getSocket();
+
+    const handleCascadeProgress = (event: {
+      presentationId: string;
+      currentSlide: number;
+      totalSlides: number;
+      slideTitle: string;
+    }) => {
+      if (event.presentationId !== presentationId) return;
+      setCascadeProgress({
+        current: event.currentSlide,
+        total: event.totalSlides,
+        slideTitle: event.slideTitle,
+      });
+    };
+
+    const handleCascadeComplete = (event: { presentationId: string }) => {
+      if (event.presentationId !== presentationId) return;
+      setCascadeExecuting(false);
+      setCascadeProgress(null);
+      setCascadeData(null);
+    };
+
+    socket.on('cascade:progress', handleCascadeProgress);
+    socket.on('cascade:complete', handleCascadeComplete);
+
+    return () => {
+      socket.off('cascade:progress', handleCascadeProgress);
+      socket.off('cascade:complete', handleCascadeComplete);
+    };
+  }, [presentationId]);
+
   const currentSlide = slides[currentStep];
 
   const handleApprove = useCallback(() => {
@@ -72,21 +136,73 @@ export function SlideReviewFlow({
     if (!editingFeedback.trim() || !currentSlide) return;
     setEditLoading(true);
     try {
-      const res = await api.post<{ success: boolean; slide?: Partial<SlideData> }>(`/chat/${presentationId}/edit-slide`, {
+      const res = await api.post<{
+        success: boolean;
+        classification: 'cosmetic' | 'structural';
+        message?: string;
+        slide?: Partial<SlideData>;
+        reason?: string;
+        affectedSlideCount?: number;
+        creditCost?: number;
+        affectedSlides?: AffectedSlide[];
+        slideNumber?: number;
+      }>(`/chat/${presentationId}/edit-slide`, {
         slideId: currentSlide.id,
         feedback: editingFeedback.trim(),
       });
-      if (res.success && res.slide) {
+
+      if (res.classification === 'cosmetic' && res.success && res.slide) {
         updateSlide(currentSlide.id, res.slide);
+        setIsEditing(false);
+        setEditingFeedback('');
+      } else if (res.classification === 'structural') {
+        setCascadeData({
+          slideId: currentSlide.id,
+          feedback: editingFeedback.trim(),
+          affectedSlideCount: res.affectedSlideCount ?? 0,
+          creditCost: res.creditCost ?? 0,
+          reason: res.reason ?? 'This change affects the narrative arc.',
+          affectedSlides: res.affectedSlides ?? [],
+          slideNumber: res.slideNumber ?? currentSlide.slideNumber,
+        });
+        setIsEditing(false);
+        setEditingFeedback('');
       }
     } catch (err) {
       console.error('Failed to edit slide:', err);
     } finally {
       setEditLoading(false);
-      setIsEditing(false);
-      setEditingFeedback('');
     }
   }, [editingFeedback, currentSlide, presentationId, updateSlide]);
+
+  const handleCascadeConfirm = useCallback(async () => {
+    if (!cascadeData) return;
+    setCascadeExecuting(true);
+    setCascadeProgress(null);
+
+    try {
+      await api.post(`/chat/${presentationId}/execute-cascade`, {
+        slideId: cascadeData.slideId,
+        feedback: cascadeData.feedback,
+      });
+
+      // Unapprove all affected slide indices (0-based)
+      const affectedIndices = cascadeData.affectedSlides.map((s) => s.slideNumber - 1);
+      unapproveSlides(affectedIndices);
+    } catch (err) {
+      console.error('Cascade execution failed:', err);
+      setCascadeExecuting(false);
+      setCascadeProgress(null);
+      setCascadeData(null);
+    }
+    // Note: cascade:complete WS event will clear cascadeExecuting/Data
+  }, [cascadeData, presentationId, unapproveSlides]);
+
+  const handleCascadeCancel = useCallback(() => {
+    setCascadeData(null);
+    setCascadeProgress(null);
+    setCascadeExecuting(false);
+  }, []);
 
   const handleSaveSpeakerNotes = useCallback(async (value: string) => {
     if (!currentSlide) return;
@@ -116,6 +232,19 @@ export function SlideReviewFlow({
 
   return (
     <div className="flex h-full flex-col">
+      {/* Cascade confirmation modal */}
+      {cascadeData && (
+        <CascadeConfirmModal
+          reason={cascadeData.reason}
+          affectedSlides={cascadeData.affectedSlides}
+          creditCost={cascadeData.creditCost}
+          progress={cascadeProgress}
+          isExecuting={cascadeExecuting}
+          onConfirm={() => void handleCascadeConfirm()}
+          onCancel={handleCascadeCancel}
+        />
+      )}
+
       {/* Review progress header */}
       <div className="flex items-center gap-3 border-b border-border bg-card/50 px-4 py-2.5">
         <span className="text-sm font-medium text-orange-400">
@@ -258,7 +387,7 @@ export function SlideReviewFlow({
               <div className="space-y-2 rounded-lg border border-orange-500/30 bg-orange-500/5 p-3" style={{ animation: 'fadeSlideIn 0.2s ease-out' }}>
                 <div className="flex items-center gap-1.5 text-[10px] text-yellow-400">
                   <Coins className="h-3 w-3" />
-                  Editing costs 1 credit
+                  Editing costs 1 credit (structural changes may cost more)
                 </div>
                 <textarea
                   value={editingFeedback}
@@ -287,7 +416,7 @@ export function SlideReviewFlow({
                     className="flex items-center gap-1.5 rounded bg-orange-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-orange-600 disabled:opacity-50 transition-colors"
                   >
                     {editLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Edit3 className="h-3 w-3" />}
-                    {editLoading ? 'Regenerating...' : 'Regenerate'}
+                    {editLoading ? 'Analyzing...' : 'Regenerate'}
                   </button>
                   <button
                     type="button"

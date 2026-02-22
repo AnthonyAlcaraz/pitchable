@@ -51,6 +51,19 @@ export interface ExportProgressEvent {
   message: string;
 }
 
+export interface CascadeProgressEvent {
+  presentationId: string;
+  currentSlide: number;
+  totalSlides: number;
+  slideId: string;
+  slideTitle: string;
+  status: 'regenerating' | 'complete';
+}
+
+export interface CascadeCompleteEvent {
+  presentationId: string;
+}
+
 let socket: Socket | null = null;
 
 function getToken(): string | null {

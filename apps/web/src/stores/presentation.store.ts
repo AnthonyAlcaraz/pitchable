@@ -76,6 +76,7 @@ interface PresentationState {
   startReview: () => void;
   approveReviewSlide: (index: number) => void;
   approveAllReviewSlides: () => void;
+  unapproveSlides: (indices: number[]) => void;
   resetReview: () => void;
 }
 
@@ -225,6 +226,18 @@ export const usePresentationStore = create<PresentationState>((set, get) => ({
       const allApproved = Array.from({ length: total }, (_, i) => i);
       return {
         reviewState: { approvedSlides: allApproved, currentStep: total - 1 },
+      };
+    });
+  },
+
+  unapproveSlides(indices: number[]) {
+    set((state) => {
+      if (!state.reviewState) return state;
+      const remaining = state.reviewState.approvedSlides.filter(
+        (i) => !indices.includes(i),
+      );
+      return {
+        reviewState: { ...state.reviewState, approvedSlides: remaining },
       };
     });
   },

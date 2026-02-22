@@ -6,6 +6,7 @@ import { ContextBuilderService } from './context-builder.service.js';
 import { GenerationService } from './generation.service.js';
 import { IntentClassifierService } from './intent-classifier.service.js';
 import { SlideModifierService } from './slide-modifier.service.js';
+import { EditClassifierService } from './edit-classifier.service.js';
 import { ContentReviewerService } from './content-reviewer.service.js';
 import { FeedbackLogService } from './feedback-log.service.js';
 import { ValidationGateService } from './validation-gate.service.js';
@@ -33,6 +34,7 @@ import { FigmaModule } from '../figma/figma.module.js';
     GenerationService,
     IntentClassifierService,
     SlideModifierService,
+    EditClassifierService,
     ContentReviewerService,
     FeedbackLogService,
     ValidationGateService,
@@ -48,6 +50,7 @@ import { FigmaModule } from '../figma/figma.module.js';
     GenerationService,
     IntentClassifierService,
     SlideModifierService,
+    EditClassifierService,
     ContentReviewerService,
     FeedbackLogService,
     ValidationGateService,

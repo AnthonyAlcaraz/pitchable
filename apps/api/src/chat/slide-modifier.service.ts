@@ -7,6 +7,7 @@ import { EventsGateway } from '../events/events.gateway.js';
 import { ImagesService } from '../images/images.service.js';
 import { NanoBananaService } from '../images/nano-banana.service.js';
 import { buildModifySlideSystemPrompt, buildAddSlideSystemPrompt } from './prompts/modify-slide.prompt.js';
+import { buildCascadeRegenPrompt } from './prompts/cascade-regen.prompt.js';
 import { buildPitchLensInjection } from '../pitch-lens/prompts/pitch-lens-injection.prompt.js';
 import { getFrameworkConfig } from '../pitch-lens/frameworks/story-frameworks.config.js';
 import type { ThemeColorContext } from './prompts/slide-generation.prompt.js';
@@ -17,6 +18,7 @@ import { isValidSlideContent } from './validators.js';
 import type { GeneratedSlideContent } from './validators.js';
 import { SlideType, CreditReason } from '../../generated/prisma/enums.js';
 import { CreditsService } from '../credits/credits.service.js';
+import { CreditReservationService } from '../credits/credit-reservation.service.js';
 import { SLIDE_MODIFICATION_COST } from '../credits/tier-config.js';
 
 @Injectable()
@@ -32,6 +34,7 @@ export class SlideModifierService {
     private readonly imagesService: ImagesService,
     private readonly nanoBanana: NanoBananaService,
     private readonly credits: CreditsService,
+    private readonly creditReservation: CreditReservationService,
   ) {}
 
   /**
@@ -209,6 +212,303 @@ export class SlideModifierService {
       const msg = err instanceof Error ? err.message : 'Unknown error';
       this.logger.error(`Slide modification failed: ${msg}`);
       return { success: false, message: `Failed to modify slide: ${msg}` };
+    }
+  }
+
+  /**
+   * Cascade regeneration: modify the primary slide, then regenerate all subsequent slides
+   * to maintain narrative coherence. Uses credit reservation for atomic billing.
+   */
+  async cascadeRegenerateSlides(
+    userId: string,
+    presentationId: string,
+    primarySlideNumber: number,
+    feedback: string,
+  ): Promise<{ success: boolean; message: string; modifiedCount: number }> {
+    // Load all slides
+    const allSlides = await this.prisma.slide.findMany({
+      where: { presentationId },
+      orderBy: { slideNumber: 'asc' },
+    });
+
+    const primarySlide = allSlides.find((s) => s.slideNumber === primarySlideNumber);
+    if (!primarySlide) {
+      return { success: false, message: `Slide ${primarySlideNumber} not found.`, modifiedCount: 0 };
+    }
+
+    const downstreamSlides = allSlides.filter((s) => s.slideNumber > primarySlideNumber);
+    const totalCost = (1 + downstreamSlides.length) * SLIDE_MODIFICATION_COST;
+
+    // Reserve credits atomically for all slides
+    let reservationId: string;
+    try {
+      const reservation = await this.creditReservation.reserve(
+        userId,
+        totalCost,
+        CreditReason.SLIDE_MODIFICATION,
+        presentationId,
+      );
+      reservationId = reservation.reservationId;
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Insufficient credits';
+      return { success: false, message: msg, modifiedCount: 0 };
+    }
+
+    try {
+      // Step 1: Modify the primary slide
+      const primaryResult = await this.modifySlideInternal(userId, presentationId, primarySlide, feedback);
+      if (!primaryResult.success) {
+        await this.creditReservation.release(reservationId);
+        return { success: false, message: primaryResult.message, modifiedCount: 0 };
+      }
+
+      let modifiedCount = 1;
+
+      // Step 2: Regenerate each downstream slide sequentially
+      for (let i = 0; i < downstreamSlides.length; i++) {
+        const targetSlide = downstreamSlides[i];
+
+        // Emit progress
+        this.events.emitCascadeProgress({
+          presentationId,
+          currentSlide: i + 1,
+          totalSlides: downstreamSlides.length,
+          slideId: targetSlide.id,
+          slideTitle: targetSlide.title,
+          status: 'regenerating',
+        });
+
+        // Reload all slides from DB to capture prior iteration changes
+        const freshSlides = await this.prisma.slide.findMany({
+          where: { presentationId },
+          orderBy: { slideNumber: 'asc' },
+        });
+
+        const precedingSlides = freshSlides
+          .filter((s) => s.slideNumber < targetSlide.slideNumber)
+          .map((s) => ({
+            slideNumber: s.slideNumber,
+            title: s.title,
+            body: s.body,
+            slideType: s.slideType,
+          }));
+
+        const currentTarget = freshSlides.find((s) => s.id === targetSlide.id);
+        if (!currentTarget) continue;
+
+        const cascadeResult = await this.regenerateSingleCascadeSlide(
+          userId,
+          presentationId,
+          precedingSlides,
+          currentTarget,
+          feedback,
+          primarySlideNumber,
+        );
+
+        if (cascadeResult.success) {
+          modifiedCount++;
+          this.events.emitCascadeProgress({
+            presentationId,
+            currentSlide: i + 1,
+            totalSlides: downstreamSlides.length,
+            slideId: targetSlide.id,
+            slideTitle: cascadeResult.title ?? targetSlide.title,
+            status: 'complete',
+          });
+        }
+      }
+
+      // Commit credit reservation
+      await this.creditReservation.commit(reservationId);
+
+      // Emit cascade complete
+      this.events.emitCascadeComplete({ presentationId });
+
+      return {
+        success: true,
+        message: `Cascade complete: modified ${modifiedCount} slides.`,
+        modifiedCount,
+      };
+    } catch (err) {
+      // Release reservation on failure — partial results are kept in DB
+      await this.creditReservation.release(reservationId);
+      const msg = err instanceof Error ? err.message : 'Unknown error';
+      this.logger.error(`Cascade regeneration failed: ${msg}`);
+      this.events.emitCascadeComplete({ presentationId });
+      return { success: false, message: `Cascade failed: ${msg}`, modifiedCount: 0 };
+    }
+  }
+
+  /**
+   * Internal slide modification (no credit handling — caller manages credits).
+   */
+  private async modifySlideInternal(
+    userId: string,
+    presentationId: string,
+    slide: { id: string; title: string; body: string; speakerNotes: string | null; slideType: string; slideNumber: number },
+    instruction: string,
+  ): Promise<{ success: boolean; message: string }> {
+    const ctx = await this.getPresentationContext(presentationId);
+
+    const kbContext = await this.contextBuilder.retrieveEnrichedContext(
+      userId,
+      `${slide.title} ${instruction}`,
+      5,
+      3,
+    );
+
+    const systemPrompt = buildModifySlideSystemPrompt(
+      slide.slideType,
+      kbContext,
+      ctx.themeColors,
+      ctx.pitchLensContext,
+    );
+
+    const currentContent = `Title: ${slide.title}\nBody: ${slide.body}\nSpeaker Notes: ${slide.speakerNotes ?? 'None'}\nType: ${slide.slideType}`;
+
+    try {
+      const modified = await this.llm.completeJson<ModifiedSlideContent>(
+        [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: `Current slide:\n${currentContent}\n\nInstruction: ${instruction}` },
+        ],
+        LlmModel.SONNET,
+        isValidModifiedSlideContent,
+        2,
+      );
+
+      const slideContent: SlideContent = {
+        title: modified.title || slide.title,
+        body: modified.body || slide.body,
+      };
+      const densityResult = this.constraints.validateDensity(slideContent);
+
+      if (!densityResult.valid) {
+        const fixResult = this.constraints.autoFixSlide(slideContent, ctx.theme);
+        if (fixResult.fixed && fixResult.slides.length > 0) {
+          modified.title = fixResult.slides[0].title;
+          modified.body = fixResult.slides[0].body;
+        }
+      }
+
+      const updated = await this.prisma.slide.update({
+        where: { id: slide.id },
+        data: {
+          title: modified.title || slide.title,
+          body: modified.body || slide.body,
+          speakerNotes: modified.speakerNotes || slide.speakerNotes,
+        },
+      });
+
+      this.events.emitSlideUpdated({
+        presentationId,
+        slideId: slide.id,
+        data: {
+          title: updated.title,
+          body: updated.body,
+          speakerNotes: updated.speakerNotes,
+        },
+      });
+
+      await this.queueImageForSlide(userId, slide.id, updated.title, updated.body, slide.slideType, presentationId);
+
+      return { success: true, message: `Updated slide ${slide.slideNumber}: "${updated.title}"` };
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Unknown error';
+      this.logger.error(`Internal slide modification failed: ${msg}`);
+      return { success: false, message: `Failed to modify slide: ${msg}` };
+    }
+  }
+
+  /**
+   * Regenerate a single downstream slide during cascade, using full narrative context.
+   */
+  private async regenerateSingleCascadeSlide(
+    userId: string,
+    presentationId: string,
+    precedingSlides: Array<{ slideNumber: number; title: string; body: string; slideType: string }>,
+    targetSlide: { id: string; title: string; body: string; speakerNotes: string | null; slideType: string; slideNumber: number; imageUrl?: string | null },
+    originalFeedback: string,
+    primarySlideNumber: number,
+  ): Promise<{ success: boolean; title?: string }> {
+    const ctx = await this.getPresentationContext(presentationId);
+
+    const kbContext = await this.contextBuilder.retrieveEnrichedContext(
+      userId,
+      `${targetSlide.title} ${originalFeedback}`,
+      5,
+      3,
+    );
+
+    const systemPrompt = buildCascadeRegenPrompt(
+      precedingSlides,
+      {
+        title: targetSlide.title,
+        body: targetSlide.body,
+        speakerNotes: targetSlide.speakerNotes,
+        slideType: targetSlide.slideType,
+      },
+      originalFeedback,
+      primarySlideNumber,
+      kbContext,
+      ctx.themeColors,
+      ctx.pitchLensContext,
+    );
+
+    try {
+      const modified = await this.llm.completeJson<ModifiedSlideContent>(
+        [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: 'Adapt this slide for narrative coherence with the updated preceding slides.' },
+        ],
+        LlmModel.SONNET,
+        isValidModifiedSlideContent,
+        2,
+      );
+
+      const slideContent: SlideContent = {
+        title: modified.title || targetSlide.title,
+        body: modified.body || targetSlide.body,
+      };
+      const densityResult = this.constraints.validateDensity(slideContent);
+
+      if (!densityResult.valid) {
+        const fixResult = this.constraints.autoFixSlide(slideContent, ctx.theme);
+        if (fixResult.fixed && fixResult.slides.length > 0) {
+          modified.title = fixResult.slides[0].title;
+          modified.body = fixResult.slides[0].body;
+        }
+      }
+
+      const updated = await this.prisma.slide.update({
+        where: { id: targetSlide.id },
+        data: {
+          title: modified.title || targetSlide.title,
+          body: modified.body || targetSlide.body,
+          speakerNotes: modified.speakerNotes || targetSlide.speakerNotes,
+        },
+      });
+
+      this.events.emitSlideUpdated({
+        presentationId,
+        slideId: targetSlide.id,
+        data: {
+          title: updated.title,
+          body: updated.body,
+          speakerNotes: updated.speakerNotes,
+        },
+      });
+
+      // Queue image regen if slide had an image
+      if (targetSlide.imageUrl) {
+        await this.queueImageForSlide(userId, targetSlide.id, updated.title, updated.body, targetSlide.slideType, presentationId);
+      }
+
+      return { success: true, title: updated.title };
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Unknown error';
+      this.logger.warn(`Cascade regen failed for slide ${targetSlide.slideNumber}: ${msg}`);
+      return { success: false };
     }
   }
 
