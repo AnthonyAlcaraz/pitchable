@@ -5,6 +5,8 @@ import {
   forceManyBody,
   forceCenter,
   forceCollide,
+  forceX,
+  forceY,
   type Simulation,
 } from 'd3-force';
 import type { PositionedNode, SimEdge } from './graph-types';
@@ -52,8 +54,10 @@ export function useForceSimulation(
           .id((d) => d.id)
           .distance(80),
       )
-      .force('charge', forceManyBody().strength(-200))
+      .force('charge', forceManyBody().strength(-120))
       .force('center', forceCenter(width / 2, height / 2))
+      .force('x', forceX<PositionedNode>(width / 2).strength(0.05))
+      .force('y', forceY<PositionedNode>(height / 2).strength(0.05))
       .force(
         'collide',
         forceCollide<PositionedNode>().radius(
