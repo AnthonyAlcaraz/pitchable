@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import type { SlideData } from '../../stores/presentation.store.js';
 import { usePresentationStore } from '../../stores/presentation.store.js';
 import { SlideRenderer, themeToStyleVars } from '../preview/SlideRenderer.js';
 import { cn } from '../../lib/utils.js';
@@ -16,8 +17,10 @@ interface ChatSlidePreviewGridProps {
  * Shows both the exported rendered image (if available) and the editable content.
  * Syncs highlight with the lateral sidebar selection.
  */
+const EMPTY_SLIDES: SlideData[] = [];
+
 export function ChatSlidePreviewGrid({ slideCards, theme, onSlideClick }: ChatSlidePreviewGridProps) {
-  const slides = usePresentationStore((s) => s.presentation?.slides ?? []);
+  const slides = usePresentationStore((s) => s.presentation?.slides ?? EMPTY_SLIDES);
   const currentSlideIndex = usePresentationStore((s) => s.currentSlideIndex);
   const activeRef = useRef<HTMLDivElement>(null);
 

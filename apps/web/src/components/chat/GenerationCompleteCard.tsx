@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { CheckCircle2, Download, Presentation } from 'lucide-react';
 import { usePresentationStore } from '../../stores/presentation.store.js';
+import type { SlideData } from '../../stores/presentation.store.js';
 import { SlideRenderer, themeToStyleVars } from '../preview/SlideRenderer.js';
 import { cn } from '../../lib/utils.js';
 
@@ -19,8 +20,10 @@ interface GenerationCompleteCardProps {
   onSlideClick?: (slideIndex: number) => void;
 }
 
+const EMPTY_SLIDES: SlideData[] = [];
+
 export function GenerationCompleteCard({ data, onExport, onSlideClick }: GenerationCompleteCardProps) {
-  const slides = usePresentationStore((s) => s.presentation?.slides ?? []);
+  const slides = usePresentationStore((s) => s.presentation?.slides ?? EMPTY_SLIDES);
   const theme = usePresentationStore((s) => s.presentation?.theme ?? null);
   const currentSlideIndex = usePresentationStore((s) => s.currentSlideIndex);
   const cardRef = useRef<HTMLDivElement>(null);
