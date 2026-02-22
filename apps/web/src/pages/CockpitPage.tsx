@@ -366,7 +366,7 @@ export function CockpitPage() {
                   </span>
                 </div>
                 {(brief.aiSummary || brief.description) && (
-                  <p className="mb-3 line-clamp-2 text-sm text-muted-foreground">
+                  <p className="mb-3 line-clamp-5 text-sm text-muted-foreground">
                     {brief.aiSummary ?? brief.description}
                   </p>
                 )}
