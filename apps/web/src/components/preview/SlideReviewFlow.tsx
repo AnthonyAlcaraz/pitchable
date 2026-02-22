@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { Check, ChevronRight, Edit3, SkipForward, Download, ChevronDown, Coins, Loader2 } from 'lucide-react';
 import { EditableSlide } from './EditableSlide';
+import { SlideRenderer } from './SlideRenderer';
 import { NarrativeAdvice } from './NarrativeAdvice';
 import { CascadeConfirmModal } from './CascadeConfirmModal';
 import { usePresentationStore } from '@/stores/presentation.store';
@@ -322,10 +323,7 @@ export function SlideReviewFlow({
                   />
                 </div>
               ) : (
-                <div className="aspect-video w-full rounded-md bg-card p-2">
-                  <p className="truncate text-[8px] font-medium text-foreground">{slide.title}</p>
-                  <p className="mt-0.5 line-clamp-2 text-[6px] text-muted-foreground">{slide.body}</p>
-                </div>
+                <SlideRenderer slide={slide} theme={theme} scale={0.35} />
               )}
               <span className={`absolute bottom-0.5 right-1 text-[8px] font-medium ${
                 index === currentStep ? 'text-primary' : 'text-muted-foreground'
