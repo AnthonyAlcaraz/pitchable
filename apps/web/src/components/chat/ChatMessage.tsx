@@ -2,11 +2,10 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { User } from 'lucide-react';
 import { PeachLogo } from '../icons/PeachLogo.js';
-import { ValidationPrompt } from './ValidationPrompt';
 import { SlidePreviewCard } from './SlidePreviewCard';
 import { ChatSlidePreviewGrid } from './ChatSlidePreviewGrid.js';
 import { GenerationCompleteCard } from './GenerationCompleteCard.js';
-import type { PendingValidation, InlineSlideCard as InlineSlideCardType, GenerationCompleteData } from '@/stores/chat.store';
+import type { InlineSlideCard as InlineSlideCardType, GenerationCompleteData } from '@/stores/chat.store';
 import { usePresentationStore } from '../../stores/presentation.store.js';
 
 interface ChatMessageProps {
@@ -15,11 +14,7 @@ interface ChatMessageProps {
   messageType?: string;
   metadata?: Record<string, unknown>;
   isStreaming?: boolean;
-  pendingValidations?: PendingValidation[];
   presentationId?: string;
-  onAcceptSlide?: (slideId: string) => void;
-  onEditSlide?: (slideId: string, edits: { title?: string; body?: string; speakerNotes?: string }) => void;
-  onRejectSlide?: (slideId: string) => void;
   onExport?: (presentationId: string, format: string) => void;
   onSlideClick?: (slideIndex: number) => void;
 }
@@ -30,11 +25,7 @@ export function ChatMessage({
   messageType,
   metadata,
   isStreaming,
-  pendingValidations,
   presentationId: _presentationId,
-  onAcceptSlide,
-  onEditSlide,
-  onRejectSlide,
   onExport,
   onSlideClick,
 }: ChatMessageProps) {
@@ -103,20 +94,7 @@ export function ChatMessage({
           </div>
         )}
 
-        {/* Render validation prompts for pending slides */}
-        {(pendingValidations?.length ?? 0) > 0 && onAcceptSlide && onEditSlide && onRejectSlide ? (
-          <div className="mt-3 space-y-2">
-            {pendingValidations!.map((v) => (
-              <ValidationPrompt
-                key={v.slideId}
-                slide={v}
-                onAccept={onAcceptSlide}
-                onEdit={onEditSlide}
-                onReject={onRejectSlide}
-              />
-            ))}
-          </div>
-        ) : null}
+
 
         {/* Render persisted slide previews  -  full-width grid synced with sidebar */}
         {slideCards.length > 0 && (

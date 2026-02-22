@@ -28,16 +28,11 @@ export function ChatPanel({ presentationId, briefId, lensId }: ChatPanelProps) {
     agentSteps,
     isLoading,
     error,
-    pendingValidations,
-    inlineSlideCards,
     pendingThemeSelection,
     pendingLayoutSelections,
     pendingImageSelections,
     loadHistory,
     sendMessage,
-    acceptSlide,
-    editSlide,
-    rejectSlide,
     respondToInteraction,
     clearError,
     outlineReviewState,
@@ -109,30 +104,6 @@ export function ChatPanel({ presentationId, briefId, lensId }: ChatPanelProps) {
     return () => window.removeEventListener('auto-send-topic', handler);
   }, [handleSend]);
 
-  const handleAcceptSlide = useCallback(
-    (slideId: string) => {
-      if (!presentationId) return;
-      acceptSlide(presentationId, slideId);
-    },
-    [presentationId, acceptSlide],
-  );
-
-  const handleEditSlide = useCallback(
-    (slideId: string, edits: { title?: string; body?: string; speakerNotes?: string }) => {
-      if (!presentationId) return;
-      editSlide(presentationId, slideId, edits);
-    },
-    [presentationId, editSlide],
-  );
-
-  const handleRejectSlide = useCallback(
-    (slideId: string) => {
-      if (!presentationId) return;
-      rejectSlide(presentationId, slideId);
-    },
-    [presentationId, rejectSlide],
-  );
-
   const handleExport = useCallback(
     async (pid: string, format: string) => {
       // Open tab immediately in user-gesture context (avoids popup blocker)
@@ -159,7 +130,21 @@ export function ChatPanel({ presentationId, briefId, lensId }: ChatPanelProps) {
           if (job.status === 'FAILED') throw new Error('Export failed');
           await new Promise((r) => setTimeout(r, 2000));
         }
-        if (newTab) newTab.location.href = `/exports/${jobId}/download`;
+        // Use authenticated endpoint to get presigned download URL
+        const dl = await api.get<{ url: string; filename: string }>(`/exports/${jobId}/download-url`);
+        if (newTab) {
+          if (dl.url.startsWith('http')) {
+            newTab.location.href = dl.url;
+          } else {
+            const raw = localStorage.getItem('auth-storage');
+            const accessToken = raw ? JSON.parse(raw)?.state?.accessToken : null;
+            const resp = await fetch(dl.url, {
+              headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
+            });
+            const blob = await resp.blob();
+            newTab.location.href = URL.createObjectURL(blob);
+          }
+        }
       } catch {
         if (newTab) newTab.close();
       }
@@ -215,16 +200,11 @@ export function ChatPanel({ presentationId, briefId, lensId }: ChatPanelProps) {
           isStreaming={isStreaming}
           thinkingText={thinkingText}
           agentSteps={agentSteps}
-          pendingValidations={pendingValidations}
-          inlineSlideCards={inlineSlideCards}
           pendingThemeSelection={pendingThemeSelection}
           pendingLayoutSelections={pendingLayoutSelections}
           pendingImageSelections={pendingImageSelections}
           presentationId={presentationId}
           onExport={handleExport}
-          onAcceptSlide={handleAcceptSlide}
-          onEditSlide={handleEditSlide}
-          onRejectSlide={handleRejectSlide}
           onRespondToInteraction={respondToInteraction}
           onSendMessage={handleSend}
         />

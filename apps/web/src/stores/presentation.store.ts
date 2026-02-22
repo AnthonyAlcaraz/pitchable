@@ -44,11 +44,17 @@ export interface PresentationData {
   slides: SlideData[];
 }
 
+export interface ReviewState {
+  currentStep: number;
+  approvedSlides: number[];
+}
+
 interface PresentationState {
   presentation: PresentationData | null;
   currentSlideIndex: number;
   isLoading: boolean;
   error: string | null;
+  reviewState: ReviewState | null;
 
   loadPresentation: (id: string) => Promise<void>;
   setCurrentSlide: (index: number) => void;
@@ -65,6 +71,12 @@ interface PresentationState {
 
   clearPresentation: () => void;
   clearError: () => void;
+
+  // Review flow
+  startReview: () => void;
+  approveReviewSlide: (index: number) => void;
+  approveAllReviewSlides: () => void;
+  resetReview: () => void;
 }
 
 export const usePresentationStore = create<PresentationState>((set, get) => ({
@@ -72,6 +84,7 @@ export const usePresentationStore = create<PresentationState>((set, get) => ({
   currentSlideIndex: 0,
   isLoading: false,
   error: null,
+  reviewState: null,
 
   async loadPresentation(id: string) {
     set({ isLoading: true, error: null });
@@ -182,10 +195,41 @@ export const usePresentationStore = create<PresentationState>((set, get) => ({
   },
 
   clearPresentation() {
-    set({ presentation: null, currentSlideIndex: 0, isLoading: false, error: null });
+    set({ presentation: null, currentSlideIndex: 0, isLoading: false, error: null, reviewState: null });
   },
 
   clearError() {
     set({ error: null });
+  },
+
+  startReview() {
+    set({ reviewState: { currentStep: 0, approvedSlides: [] } });
+  },
+
+  approveReviewSlide(index: number) {
+    set((state) => {
+      if (!state.reviewState || !state.presentation) return state;
+      const approved = [...state.reviewState.approvedSlides, index];
+      const totalSlides = state.presentation.slides.length;
+      const nextStep = index + 1 < totalSlides ? index + 1 : index;
+      return {
+        reviewState: { approvedSlides: approved, currentStep: nextStep },
+      };
+    });
+  },
+
+  approveAllReviewSlides() {
+    set((state) => {
+      if (!state.presentation) return state;
+      const total = state.presentation.slides.length;
+      const allApproved = Array.from({ length: total }, (_, i) => i);
+      return {
+        reviewState: { approvedSlides: allApproved, currentStep: total - 1 },
+      };
+    });
+  },
+
+  resetReview() {
+    set({ reviewState: null });
   },
 }));

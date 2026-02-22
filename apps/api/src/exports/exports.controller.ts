@@ -47,6 +47,12 @@ export class ExportsController {
     return this.exportsService.getExportStatus(jobId);
   }
 
+  @Get('exports/:jobId/download-url')
+  async getDownloadUrl(@Param('jobId') jobId: string) {
+    return this.exportsService.getSignedDownloadUrl(jobId);
+  }
+
+
   @Get('exports/:jobId/download')
   async downloadExport(
     @Param('jobId') jobId: string,

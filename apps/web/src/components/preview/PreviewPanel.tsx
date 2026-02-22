@@ -9,6 +9,7 @@ import { SlideHeader } from './SlideHeader';
 import { PresentationMode } from './PresentationMode';
 import { EditableSlide } from './EditableSlide';
 import { NarrativeAdvice } from './NarrativeAdvice';
+import { SlideReviewFlow } from './SlideReviewFlow';
 import { api } from '@/lib/api';
 
 interface PreviewPanelProps {
@@ -28,6 +29,9 @@ export function PreviewPanel({ presentationId }: PreviewPanelProps) {
 
   // Must be called unconditionally (Rules of Hooks)
   const phase = useWorkflowStore((s) => s.phase);
+  const setPhase = useWorkflowStore((s) => s.setPhase);
+  const reviewState = usePresentationStore((s) => s.reviewState);
+  const resetReview = usePresentationStore((s) => s.resetReview);
 
   // Subscribe to real-time slide updates
   useSlideUpdates(presentationId);
@@ -69,6 +73,11 @@ export function PreviewPanel({ presentationId }: PreviewPanelProps) {
     setIsFullscreen(false);
   }, []);
 
+  const handleFinishReview = useCallback(() => {
+    resetReview();
+    setPhase('editing');
+  }, [resetReview, setPhase]);
+
   const updateSlide = usePresentationStore((s) => s.updateSlide);
 
   const slides = presentation?.slides ?? [];
@@ -98,7 +107,21 @@ export function PreviewPanel({ presentationId }: PreviewPanelProps) {
         if (job.status === 'FAILED') throw new Error('Export failed');
         await new Promise((r) => setTimeout(r, 2000));
       }
-      if (newTab) newTab.location.href = `/exports/${jobId}/download`;
+      // Use authenticated endpoint to get presigned download URL
+      const dl = await api.get<{ url: string; filename: string }>(`/exports/${jobId}/download-url`);
+      if (newTab) {
+        if (dl.url.startsWith('http')) {
+          newTab.location.href = dl.url;
+        } else {
+          const raw = localStorage.getItem('auth-storage');
+          const accessToken = raw ? JSON.parse(raw)?.state?.accessToken : null;
+          const resp = await fetch(dl.url, {
+            headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
+          });
+          const blob = await resp.blob();
+          newTab.location.href = URL.createObjectURL(blob);
+        }
+      }
     } catch {
       if (newTab) newTab.close();
     }
@@ -183,6 +206,11 @@ export function PreviewPanel({ presentationId }: PreviewPanelProps) {
         title: 'Building Your Deck',
         subtitle: 'Slides are being generated â€” watch progress in the chat panel',
       },
+      reviewing: {
+        icon: <Loader2 className="h-10 w-10 animate-spin text-orange-400" />,
+        title: 'Preparing Review',
+        subtitle: 'Your slides are almost ready for review',
+      },
       editing: {
         icon: <PeachLogo className="h-10 w-10 opacity-50" />,
         title: presentation?.title ?? 'Untitled Presentation',
@@ -193,15 +221,29 @@ export function PreviewPanel({ presentationId }: PreviewPanelProps) {
     return (
       <div className="flex h-full flex-col items-center justify-center p-8">
         <div className="mb-4 rounded-2xl border border-border/50 bg-card/50 p-4">
-          {phaseContent.icon}
+          {phaseContent?.icon}
         </div>
         <p className="mb-2 text-center text-sm font-medium text-foreground">
-          {phaseContent.title}
+          {phaseContent?.title}
         </p>
         <p className="text-center text-sm text-muted-foreground">
-          {phaseContent.subtitle}
+          {phaseContent?.subtitle}
         </p>
       </div>
+    );
+  }
+
+  // Review flow — shown after generation, before editing
+  if (phase === 'reviewing' && slides.length > 0 && reviewState) {
+    return (
+      <SlideReviewFlow
+        slides={slides}
+        presentationId={presentationId!}
+        theme={presentation?.theme}
+        reviewState={reviewState}
+        onExport={handleExport}
+        onFinishReview={handleFinishReview}
+      />
     );
   }
 

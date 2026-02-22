@@ -348,7 +348,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
                 isSamplePreview: metadata.isSamplePreview as boolean | undefined,
               },
             });
-            useWorkflowStore.getState().setPhase('editing');
+            useWorkflowStore.getState().setPhase('reviewing');
+            usePresentationStore.getState().startReview();
             // Refresh credit balance after deck generation consumed credits
             useAuthStore.getState().refreshCreditBalance();
           }

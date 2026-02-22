@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-export type WorkflowPhase = 'subject_selection' | 'outline_review' | 'generating' | 'editing';
+export type WorkflowPhase = 'subject_selection' | 'outline_review' | 'generating' | 'reviewing' | 'editing';
 
 export interface SubjectSuggestion {
   title: string;
