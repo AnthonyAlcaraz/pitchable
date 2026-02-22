@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { usePitchBriefStore } from '@/stores/pitch-brief.store';
 import type { SearchResult } from '@/stores/pitch-brief.store';
 import { usePitchLensStore } from '@/stores/pitch-lens.store';
-import { ArrowLeft, BookOpen, Plus, Trash2, Upload, FileText, Link2, Unlink, Search, AlertTriangle, CheckCircle2, Clock, Presentation, Globe, ExternalLink } from 'lucide-react';
+import { ArrowLeft, BookOpen, Plus, Trash2, Upload, FileText, Link2, Unlink, Search, AlertTriangle, CheckCircle2, Clock, Presentation, Globe, ExternalLink, Network } from 'lucide-react';
 import { useDocumentProgress } from '@/hooks/useDocumentProgress';
 import { useKbStore } from '@/stores/kb.store';
 
@@ -16,6 +16,17 @@ const STATUS_COLORS: Record<string, string> = {
   PROCESSING: 'bg-yellow-500/10 text-yellow-500',
   READY: 'bg-green-500/10 text-green-500',
   ERROR: 'bg-red-500/10 text-red-500',
+};
+
+const ENTITY_COLORS: Record<string, string> = {
+  PERSON: 'bg-blue-500/10 text-blue-400',
+  ORGANIZATION: 'bg-purple-500/10 text-purple-400',
+  TECHNOLOGY: 'bg-green-500/10 text-green-400',
+  CONCEPT: 'bg-orange-500/10 text-orange-400',
+  PRODUCT: 'bg-pink-500/10 text-pink-400',
+  LOCATION: 'bg-yellow-500/10 text-yellow-400',
+  EVENT: 'bg-red-500/10 text-red-400',
+  METRIC: 'bg-teal-500/10 text-teal-400',
 };
 
 function formatFileSize(bytes: number | null): string {
@@ -53,6 +64,8 @@ export function PitchBriefDetailPage() {
     linkLens,
     unlinkLens,
     search,
+    graphStats,
+    loadGraphStats,
   } = usePitchBriefStore();
 
   const { lenses, loadLenses } = usePitchLensStore();
@@ -101,8 +114,9 @@ export function PitchBriefDetailPage() {
     if (id) {
       loadBrief(id);
       loadLenses();
+      loadGraphStats(id);
     }
-  }, [id, loadBrief, loadLenses]);
+  }, [id, loadBrief, loadLenses, loadGraphStats]);
 
   useEffect(() => {
     const hasProcessing = docs.some(
@@ -187,6 +201,7 @@ export function PitchBriefDetailPage() {
   // Readiness checks
   const hasDocuments = docs.length > 0;
   const allDocsReady = docs.length > 0 && docs.every((d) => d.status === 'READY' || d.status === 'ERROR');
+  const hasEntities = (graphStats?.totalNodes ?? 0) > 0;
   const hasLenses = briefLenses.length > 0;
   const isReady = currentBrief?.status === 'READY';
   const canGenerate = isReady && hasLenses;
@@ -288,6 +303,19 @@ export function PitchBriefDetailPage() {
             </div>
           </div>
 
+          <div className={`flex items-center gap-2 p-3 rounded-lg ${hasEntities ? 'bg-green-500/5' : 'bg-muted/50'}`}>
+            {hasEntities ? (
+              <Network className="w-4 h-4 text-green-500 flex-shrink-0" />
+            ) : (
+              <Network className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+            )}
+            <div>
+              <div className="text-sm font-medium text-foreground">{graphStats?.totalNodes ?? 0} Entities</div>
+              <div className="text-[10px] text-muted-foreground">
+                {hasEntities ? `${graphStats?.totalEdges ?? 0} relationships` : 'No entities yet'}
+              </div>
+            </div>
+          </div>
 
           <div className={`flex items-center gap-2 p-3 rounded-lg ${hasLenses ? 'bg-green-500/5' : 'bg-orange-500/5'}`}>
             {hasLenses ? (
@@ -671,8 +699,52 @@ export function PitchBriefDetailPage() {
           </div>
         </div>
 
-        {/* Right Column - Search */}
+        {/* Right Column - Graph Stats & Search */}
         <div className="lg:col-span-2 space-y-8">
+          {/* Graph Stats Panel */}
+          {hasEntities && graphStats && (
+            <div className="bg-card border border-border rounded-lg p-6">
+              <h2 className="text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
+                <Network className="w-5 h-5" />
+                Graph Stats
+              </h2>
+              <div className="grid grid-cols-2 gap-3 mb-4">
+                <div className="p-3 bg-background rounded-lg text-center">
+                  <div className="text-2xl font-bold text-foreground">{graphStats.totalNodes}</div>
+                  <div className="text-xs text-muted-foreground">Nodes</div>
+                </div>
+                <div className="p-3 bg-background rounded-lg text-center">
+                  <div className="text-2xl font-bold text-foreground">{graphStats.totalEdges}</div>
+                  <div className="text-xs text-muted-foreground">Edges</div>
+                </div>
+              </div>
+              {Object.keys(graphStats.nodeTypes).length > 0 && (
+                <div className="mb-3">
+                  <h3 className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wider">Node Types</h3>
+                  <div className="flex flex-wrap gap-1.5">
+                    {Object.entries(graphStats.nodeTypes).sort((a, b) => b[1] - a[1]).map(([type, count]) => (
+                      <span key={type} className={`text-xs px-2 py-1 rounded-full ${ENTITY_COLORS[type] ?? 'bg-gray-500/10 text-gray-400'}`}>
+                        {type} ({count})
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {Object.keys(graphStats.edgeTypes).length > 0 && (
+                <div>
+                  <h3 className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wider">Edge Types</h3>
+                  <div className="flex flex-wrap gap-1.5">
+                    {Object.entries(graphStats.edgeTypes).sort((a, b) => b[1] - a[1]).map(([type, count]) => (
+                      <span key={type} className="text-xs px-2 py-1 rounded-full bg-gray-500/10 text-gray-400">
+                        {type} ({count})
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Search Panel */}
           <div className="bg-card border border-border rounded-lg p-6">
             <h2 className="text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
