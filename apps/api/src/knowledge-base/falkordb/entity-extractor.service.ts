@@ -9,14 +9,15 @@ Entity types: ${ENTITY_TYPES.join(', ')}
 
 Rules:
 - Extract only clearly stated entities, not implied ones
-- Entity names should be normalized (e.g., "Google" not "google", "AI" not "artificial intelligence" unless that's the full form used)
+- Entity names should be the most common/canonical form used in the text
+- Include aliases: common abbreviations, acronyms, or alternate names (e.g., name "Artificial Intelligence" with aliases ["AI"], or name "Google" with aliases ["Alphabet", "GOOG"])
 - Relationships should describe how two entities relate
 - Keep descriptions concise (1 sentence max)
 - Return valid JSON only, no markdown fences
 
 Return this exact JSON structure:
 {
-  "entities": [{"name": "...", "type": "CONCEPT", "description": "..."}],
+  "entities": [{"name": "...", "type": "CONCEPT", "description": "...", "aliases": ["..."]}],
   "relationships": [{"source": "EntityName1", "target": "EntityName2", "description": "how they relate"}]
 }`;
 
@@ -106,6 +107,9 @@ export class EntityExtractorService {
           ? String(e.type)
           : 'CONCEPT',
         description: String(e.description ?? '').trim(),
+        aliases: Array.isArray(e.aliases)
+          ? (e.aliases as unknown[]).filter((a): a is string => typeof a === 'string').map((a) => a.trim())
+          : undefined,
       }));
 
     const relationships = (parsed.relationships ?? [])

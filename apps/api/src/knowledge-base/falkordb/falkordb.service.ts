@@ -115,13 +115,28 @@ export class FalkorDbService implements OnModuleDestroy {
       { params: { id: documentId, title } },
     );
 
+    // Build alias-to-canonical map for entity disambiguation
+    const aliasMap = new Map<string, string>();
+    for (const entity of entities) {
+      if (entity.aliases) {
+        for (const alias of entity.aliases) {
+          aliasMap.set(alias.toLowerCase(), entity.name);
+        }
+      }
+    }
+
     // Create Entity nodes and EXTRACTED_FROM relationships
     for (const entity of entities) {
-      // MERGE on name+type to deduplicate entities across documents
+      const aliases = entity.aliases ?? [];
+      // Check if this entity name matches an existing entity's alias
+      // First try exact name MERGE, then store aliases for future matching
       await graph.query(
         `MERGE (e:Entity {name: $name, type: $type})
-         ON CREATE SET e.id = $id, e.description = $desc, e.documentId = $docId, e.createdAt = timestamp()
-         ON MATCH SET e.description = CASE WHEN size(e.description) < size($desc) THEN $desc ELSE e.description END
+         ON CREATE SET e.id = $id, e.description = $desc, e.documentId = $docId,
+                       e.aliases = $aliases, e.createdAt = timestamp()
+         ON MATCH SET e.description = CASE WHEN size(e.description) < size($desc) THEN $desc ELSE e.description END,
+                      e.aliases = CASE WHEN e.aliases IS NULL THEN $aliases
+                                       ELSE e.aliases + [x IN $aliases WHERE NOT x IN e.aliases] END
          WITH e
          MATCH (d:Document {id: $docId})
          MERGE (e)-[:EXTRACTED_FROM]->(d)`,
@@ -132,13 +147,21 @@ export class FalkorDbService implements OnModuleDestroy {
             type: entity.type,
             desc: entity.description,
             docId: documentId,
+            aliases: aliases,
           },
         },
       );
     }
 
+    // Resolve relationship endpoints: if source/target matches an alias, use canonical name
+    const resolvedRelationships = relationships.map((rel) => ({
+      ...rel,
+      source: aliasMap.get(rel.source.toLowerCase()) ?? rel.source,
+      target: aliasMap.get(rel.target.toLowerCase()) ?? rel.target,
+    }));
+
     // Create RELATED_TO relationships between entities
-    for (const rel of relationships) {
+    for (const rel of resolvedRelationships) {
       await graph.query(
         `MATCH (a:Entity {name: $source}), (b:Entity {name: $target})
          MERGE (a)-[r:RELATED_TO]->(b)

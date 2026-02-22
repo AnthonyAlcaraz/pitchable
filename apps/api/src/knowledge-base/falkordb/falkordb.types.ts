@@ -48,6 +48,7 @@ export interface ExtractedEntity {
   name: string;
   type: string;
   description: string;
+  aliases?: string[];
 }
 
 export interface ExtractedRelationship {
