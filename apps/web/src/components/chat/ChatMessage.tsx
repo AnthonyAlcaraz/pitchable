@@ -4,11 +4,10 @@ import { User } from 'lucide-react';
 import { PeachLogo } from '../icons/PeachLogo.js';
 import { ValidationPrompt } from './ValidationPrompt';
 import { SlidePreviewCard } from './SlidePreviewCard';
-import { InlineSlideCard } from './InlineSlideCard.js';
+import { ChatSlidePreviewGrid } from './ChatSlidePreviewGrid.js';
 import { GenerationCompleteCard } from './GenerationCompleteCard.js';
 import type { PendingValidation, InlineSlideCard as InlineSlideCardType, GenerationCompleteData } from '@/stores/chat.store';
 import { usePresentationStore } from '../../stores/presentation.store.js';
-import { themeToStyleVars } from '../preview/SlideRenderer.js';
 
 interface ChatMessageProps {
   role: 'user' | 'assistant' | 'system';
@@ -119,18 +118,13 @@ export function ChatMessage({
           </div>
         ) : null}
 
-        {/* Render persisted inline slide cards from message metadata */}
+        {/* Render persisted slide previews  -  full-width grid synced with sidebar */}
         {slideCards.length > 0 && (
-          <div className="mt-3 flex gap-2 overflow-x-auto pb-2 scrollbar-thin" style={themeToStyleVars(theme)}>
-            {slideCards.map((slide) => (
-              <InlineSlideCard
-                key={slide.id}
-                slide={slide}
-                theme={theme}
-                onClick={onSlideClick ? () => onSlideClick(slide.slideNumber - 1) : undefined}
-              />
-            ))}
-          </div>
+          <ChatSlidePreviewGrid
+            slideCards={slideCards}
+            theme={theme}
+            onSlideClick={onSlideClick}
+          />
         )}
 
         {/* Render persisted generation complete card */}
