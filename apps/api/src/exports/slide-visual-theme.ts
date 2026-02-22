@@ -72,6 +72,8 @@ const VARIANT_POOL: BackgroundVariant[] = [
   { className: 'bg-subtle-grid', label: 'Dot grid pattern' },
   { className: 'bg-circuit', label: 'Circuit trace pattern' },
   { className: 'bg-corner-accent', label: 'Corner accent glow' },
+  { className: 'bg-mesh-gradient', label: 'Conic mesh gradient' },
+  { className: 'bg-noise-texture', label: 'Noise texture overlay' },
 ];
 
 // ── Slide Type → Variant Mapping (Dark Themes) ──────────────
@@ -105,6 +107,9 @@ const LIGHT_VARIANT_POOL: BackgroundVariant[] = [
   { className: 'bg-clean', label: 'Clean white' },
   { className: 'bg-section-divider', label: 'Navy section divider' },
   { className: 'bg-callout', label: 'Light blue callout' },
+  { className: 'bg-warm-cream', label: 'Warm cream paper' },
+  { className: 'bg-soft-gradient', label: 'Soft vertical gradient' },
+  { className: 'bg-accent-tint', label: 'Accent tint' },
 ];
 
 const LIGHT_TYPE_TO_VARIANT: Record<SlideType, number> = {
@@ -113,17 +118,17 @@ const LIGHT_TYPE_TO_VARIANT: Record<SlideType, number> = {
   QUOTE: 2,          // bg-callout (ice blue)
   PROBLEM: 0,        // bg-clean (white)
   SOLUTION: 0,
-  ARCHITECTURE: 0,
-  PROCESS: 0,
+  ARCHITECTURE: 4,   // bg-soft-gradient
+  PROCESS: 4,        // bg-soft-gradient
   DATA_METRICS: 0,
   COMPARISON: 0,
   CONTENT: 0,
   VISUAL_HUMOR: 0,  // bg-clean (image dominates)
-  TEAM: 0,            // bg-clean
+  TEAM: 3,           // bg-warm-cream
   TIMELINE: 0,        // bg-clean
   SECTION_DIVIDER: 1, // bg-section-divider
   METRICS_HIGHLIGHT: 2, // bg-callout
-  FEATURE_GRID: 0,    // bg-clean
+  FEATURE_GRID: 3,   // bg-warm-cream
   PRODUCT_SHOWCASE: 0,    // bg-clean (product image carries visual weight)
   LOGO_WALL: 0,           // bg-clean
   MARKET_SIZING: 0,       // bg-clean
@@ -147,6 +152,8 @@ const VARIANT_TO_SHADE: Record<number, number> = {
   3: 3, // bg-subtle-grid → shade 3 (ARCHITECTURE, PROCESS, FEATURE_GRID)
   4: 1, // bg-circuit → shade 1 (DATA_METRICS, METRICS_HIGHLIGHT)
   5: 2, // bg-corner-accent → shade 2 (QUOTE, TEAM)
+  6: 3, // bg-mesh-gradient → shade 3
+  7: 0, // bg-noise-texture → shade 0 (base)
 };
 
 /**
@@ -272,12 +279,19 @@ function circuitSvg(bg: string): string {
     + `<line x1='20' y1='20' x2='80' y2='20' stroke='${pc}' stroke-width='1.5'/>`
     + `<line x1='80' y1='20' x2='80' y2='80' stroke='${pc}' stroke-width='1.5'/>`
     + `<circle cx='80' cy='80' r='3' fill='${pc}'/>`
+    + `<line x1='80' y1='80' x2='140' y2='80' stroke='${pc}' stroke-width='1.5'/>`
+    + `<line x1='140' y1='80' x2='140' y2='40' stroke='${pc}' stroke-width='1.5'/>`
+    + `<circle cx='140' cy='40' r='3' fill='${pc}'/>`
     + `<line x1='120' y1='60' x2='180' y2='60' stroke='${pc}' stroke-width='1.5'/>`
     + `<line x1='120' y1='60' x2='120' y2='140' stroke='${pc}' stroke-width='1.5'/>`
     + `<circle cx='120' cy='140' r='3' fill='${pc}'/>`
     + `<line x1='40' y1='120' x2='40' y2='180' stroke='${pc}' stroke-width='1.5'/>`
     + `<line x1='40' y1='180' x2='160' y2='180' stroke='${pc}' stroke-width='1.5'/>`
     + `<circle cx='160' cy='180' r='3' fill='${pc}'/>`
+    + `<line x1='160' y1='180' x2='160' y2='140' stroke='${pc}' stroke-width='1.5'/>`
+    + `<line x1='20' y1='100' x2='60' y2='100' stroke='${pc}' stroke-width='1.5'/>`
+    + `<line x1='60' y1='100' x2='60' y2='160' stroke='${pc}' stroke-width='1.5'/>`
+    + `<circle cx='60' cy='160' r='3' fill='${pc}'/>`
     + `</svg>`,
   );
 }
@@ -329,23 +343,35 @@ export function generateMarpBackgroundCSS(
   lines.push(`      radial-gradient(ellipse 600px 500px at 15% 60%, ${bokehPrimary} 0%, transparent 70%),`);
   lines.push(`      radial-gradient(ellipse 500px 400px at 80% 25%, ${bokehAccent} 0%, transparent 70%),`);
   lines.push(`      radial-gradient(ellipse 350px 350px at 50% 85%, ${bokehSecondary} 0%, transparent 65%),`);
+  lines.push(`      radial-gradient(ellipse 280px 280px at 70% 65%, ${hexToRgba(palette.success || palette.primary, 0.10)} 0%, transparent 60%),`);
+  lines.push(`      radial-gradient(ellipse 200px 250px at 30% 20%, ${hexToRgba(palette.warning || palette.accent, 0.08)} 0%, transparent 55%),`);
   lines.push(`      ${baseGrad};`);
   lines.push(`  }`);
 
-  // 1. bg-diagonal-lines — fine hairlines
+  // 1. bg-diagonal-lines — double-line pattern
   lines.push(`  section.bg-diagonal-lines {`);
-  lines.push(`    background: repeating-linear-gradient(45deg, transparent, transparent 14px, ${pc} 14px, ${pc} 15px), ${variantGrad(1)};`);
+  lines.push(`    background:`);
+  lines.push(`      repeating-linear-gradient(45deg, transparent, transparent 14px, ${pc} 14px, ${pc} 15px),`);
+  lines.push(`      repeating-linear-gradient(135deg, transparent, transparent 20px, ${hexToRgba(palette.primary, 0.03)} 20px, ${hexToRgba(palette.primary, 0.03)} 21px),`);
+  lines.push(`      ${variantGrad(1)};`);
   lines.push(`  }`);
 
-  // 2. bg-wave — SVG wave at bottom
+  // 2. bg-wave — dual layered waves
   lines.push(`  section.bg-wave {`);
-  lines.push(`    background: url("data:image/svg+xml,${waveSvg(palette.accent)}") no-repeat bottom center / 100% 80px, ${variantGrad(2)};`);
+  lines.push(`    background:`);
+  lines.push(`      url("data:image/svg+xml,${waveSvg(palette.accent)}") no-repeat bottom center / 100% 80px,`);
+  lines.push(`      url("data:image/svg+xml,${waveSvg(palette.primary)}") no-repeat bottom 20px center / 100% 60px,`);
+  lines.push(`      ${variantGrad(2)};`);
   lines.push(`  }`);
 
-  // 3. bg-subtle-grid — dot grid
+  // 3. bg-subtle-grid — isometric dot grid with faint connecting lines
   lines.push(`  section.bg-subtle-grid {`);
-  lines.push(`    background: radial-gradient(circle, ${pc} 1px, transparent 1px), ${variantGrad(3)};`);
-  lines.push(`    background-size: 30px 30px, 100% 100%;`);
+  lines.push(`    background:`);
+  lines.push(`      radial-gradient(circle, ${pc} 1px, transparent 1px),`);
+  lines.push(`      linear-gradient(0deg, transparent 29px, ${hexToRgba(palette.primary, 0.02)} 29px, ${hexToRgba(palette.primary, 0.02)} 30px, transparent 30px),`);
+  lines.push(`      linear-gradient(90deg, transparent 29px, ${hexToRgba(palette.primary, 0.02)} 29px, ${hexToRgba(palette.primary, 0.02)} 30px, transparent 30px),`);
+  lines.push(`      ${variantGrad(3)};`);
+  lines.push(`    background-size: 30px 30px, 30px 30px, 30px 30px, 100% 100%;`);
   lines.push(`  }`);
 
   // 4. bg-circuit — trace pattern
@@ -354,12 +380,33 @@ export function generateMarpBackgroundCSS(
   lines.push(`    background-size: 200px 200px, 100% 100%;`);
   lines.push(`  }`);
 
-  // 5. bg-corner-accent — glow in top-right + subtle bokeh
+  // 5. bg-corner-accent — corner gradient wedge + mesh orb
   lines.push(`  section.bg-corner-accent {`);
   lines.push(`    background:`);
   lines.push(`      radial-gradient(ellipse 400px 350px at 85% 15%, ${bokehAccent} 0%, transparent 65%),`);
   lines.push(`      radial-gradient(ellipse 300px 300px at 20% 75%, ${bokehPrimary} 0%, transparent 70%),`);
+  lines.push(`      linear-gradient(225deg, ${hexToRgba(palette.accent, 0.08)} 0%, transparent 30%),`);
   lines.push(`      ${variantGrad(5)};`);
+  lines.push(`  }`);
+
+  // 6. bg-mesh-gradient — CSS conic-gradient mesh
+  lines.push(`  section.bg-mesh-gradient {`);
+  lines.push(`    background:`);
+  lines.push(`      conic-gradient(from 45deg at 30% 40%, ${hexToRgba(palette.primary, 0.08)}, ${hexToRgba(palette.accent, 0.06)}, ${hexToRgba(palette.secondary || palette.primary, 0.04)}, ${hexToRgba(palette.primary, 0.08)}),`);
+  lines.push(`      ${baseGrad};`);
+  lines.push(`  }`);
+
+  // 7. bg-noise-texture — SVG turbulence filter + gradient base
+  lines.push(`  section.bg-noise-texture {`);
+  lines.push(`    background: ${baseGrad};`);
+  lines.push(`    position: relative;`);
+  lines.push(`  }`);
+  lines.push(`  section.bg-noise-texture::before {`);
+  lines.push(`    content: '';`);
+  lines.push(`    position: absolute;`);
+  lines.push(`    inset: 0;`);
+  lines.push(`    background: url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(#n)' opacity='0.03'/></svg>`)}");`);
+  lines.push(`    pointer-events: none;`);
   lines.push(`  }`);
 
   return lines.join('\n');
@@ -457,6 +504,9 @@ export function generateMarpMcKinseyCSS(palette: ColorPalette): string {
     `    font-size: 0.85em;`,
     `    color: ${palette.text};`,
     `  }`,
+    `  section.bg-warm-cream { background: #FBF8F3 !important; }`,
+    `  section.bg-soft-gradient { background: linear-gradient(180deg, ${palette.background} 0%, ${palette.surface} 100%) !important; }`,
+    `  section.bg-accent-tint { background: ${hexToRgba(palette.accent, 0.05)} !important; }`,
   ].join('\n');
 }
 
@@ -523,7 +573,7 @@ export function generateMarpDarkTierCSS(palette: ColorPalette): string {
   const heroBg = getHeroBackground(palette);
   return [
     `  section.bg-hero {`,
-    `    background: ${heroBg} !important;`,
+    `    background: linear-gradient(135deg, ${heroBg} 0%, ${darkenForGradient(heroBg)} 60%, ${hexToRgba(palette.accent, 0.15)} 100%) !important;`,
     `    color: #FFFFFF !important;`,
     `    text-align: center;`,
     `    display: flex;`,
@@ -533,6 +583,7 @@ export function generateMarpDarkTierCSS(palette: ColorPalette): string {
     `  section.bg-hero h1,`,
     `  section.bg-hero h2,`,
     `  section.bg-hero h3 { color: #FFFFFF !important; }`,
+    `  section.bg-hero h1::after { content: ''; display: block; width: 60px; height: 3px; background: ${palette.accent}; margin: 8px auto 0; border-radius: 2px; }`,
     `  section.bg-hero p, section.bg-hero li { color: rgba(255,255,255,0.9) !important; }`,
     `  section.bg-hero strong { color: #FFFFFF !important; }`,
     `  section.bg-callout-dark {`,
@@ -551,6 +602,7 @@ export function generateMarpDarkTierCSS(palette: ColorPalette): string {
     `  section.bg-circuit h1 { color: ${palette.primary} !important; }`,
     `  section.bg-corner-accent { color: ${palette.text} !important; }`,
     `  section.bg-corner-accent h1 { color: ${palette.primary} !important; }`,
+    `  .glass-card { background: rgba(255,255,255,0.07); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.14); box-shadow: 0 4px 30px rgba(0,0,0,0.15); border-radius: 16px; padding: 20px 24px; }`,
   ].join('\n');
 }
 

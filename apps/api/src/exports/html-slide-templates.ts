@@ -27,6 +27,7 @@ const H = 720;
 // Slide types that use Figma-grade HTML+SVG templates for superior visuals.
 export const FIGMA_GRADE_TYPES: Set<string> = new Set([
   'COMPARISON', 'TIMELINE', 'METRICS_HIGHLIGHT', 'MARKET_SIZING', 'TEAM', 'FEATURE_GRID',
+  'PROCESS', 'PROBLEM', 'SOLUTION', 'CTA',
 ]);
 
 // ── Helpers ──────────────────────────────────────────────────
@@ -84,6 +85,14 @@ export function buildHtmlSlideContent(
       return buildTeam(slide, palette);
     case 'FEATURE_GRID':
       return buildFeatureGrid(slide, palette);
+    case 'PROCESS':
+      return buildProcess(slide, palette);
+    case 'PROBLEM':
+      return buildProblem(slide, palette);
+    case 'SOLUTION':
+      return buildSolution(slide, palette);
+    case 'CTA':
+      return buildCta(slide, palette);
     default:
       return '';
   }
@@ -298,10 +307,12 @@ function buildComparison(slide: SlideInput, p: ColorPalette): string {
   <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${W - PAD * 2}px;text-align:center;font-size:27px;font-weight:bold;color:${p.text};line-height:1.2">${escHtml(slide.title)}</div>
   <div style="position:absolute;left:${Math.round((W - 60) / 2)}px;top:${PAD + 56}px;width:60px;height:3px;background:${p.accent};border-radius:2px"></div>
   <div style="position:absolute;left:${PAD}px;top:${cardY}px;width:${colW}px;height:${cardH}px;background:${p.surface};border:1px solid ${p.border};border-radius:16px"></div>
-  <div style="position:absolute;left:${PAD + 24}px;top:${cardY + 24}px;font-size:16px;font-weight:bold;color:${p.primary}">${escHtml(leftTitle)}</div>
+  <div style="position:absolute;left:${PAD}px;top:${cardY}px;width:${colW}px;height:52px;background:${hexToRgba(p.primary, 0.1)};border-radius:16px 16px 0 0"></div>
+  <div style="position:absolute;left:${PAD + 24}px;top:${cardY + 14}px;font-size:16px;font-weight:bold;color:${p.primary}">${escHtml(stripMarkdown(leftTitle))}</div>
   ${renderItems(leftLines, PAD, '\u2022')}
   <div style="position:absolute;left:${rightX}px;top:${cardY}px;width:${colW}px;height:${cardH}px;background:${p.surface};border:2px solid ${p.primary};border-radius:16px"></div>
-  <div style="position:absolute;left:${rightX + 24}px;top:${cardY + 24}px;font-size:16px;font-weight:bold;color:${p.primary}">${escHtml(rightTitle)}</div>
+  <div style="position:absolute;left:${rightX}px;top:${cardY}px;width:${colW}px;height:52px;background:${hexToRgba(p.primary, 0.15)};border-radius:16px 16px 0 0"></div>
+  <div style="position:absolute;left:${rightX + 24}px;top:${cardY + 14}px;font-size:16px;font-weight:bold;color:${p.primary}">${escHtml(stripMarkdown(rightTitle))}</div>
   ${renderItems(rightLines, rightX, '\u2713')}
   <svg style="position:absolute;left:0;top:0" width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg">
     <circle cx="${W / 2}" cy="${Math.round(vsCy)}" r="24" fill="${p.background}" stroke="${p.border}" stroke-width="1" />
@@ -419,7 +430,7 @@ function buildFeatureGrid(slide: SlideInput, p: ColorPalette): string {
     const cx = PAD + col * (cardW + gapX);
     const cy = startY + row * (cardH + gapY);
 
-    html += `<div style="position:absolute;left:${cx}px;top:${cy}px;width:${cardW}px;height:${cardH}px;background:${p.surface};border:1px solid ${p.border};border-radius:16px"></div>`;
+    html += `<div style="position:absolute;left:${cx}px;top:${cy}px;width:${cardW}px;height:${cardH}px;background:${p.surface};border:1px solid ${p.border};border-radius:16px;border-top:3px solid ${p.accent}"></div>`;
     // Icon placeholder
     html += `<div style="position:absolute;left:${cx + 24}px;top:${cy + 24}px;width:36px;height:36px;background:${p.primary};border-radius:8px;opacity:0.8"></div>`;
     // Title
@@ -435,5 +446,151 @@ function buildFeatureGrid(slide: SlideInput, p: ColorPalette): string {
   <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${W - PAD * 2}px;text-align:center;font-size:27px;font-weight:bold;color:${p.text};line-height:1.2">${escHtml(slide.title)}</div>
   <div style="position:absolute;left:${Math.round((W - 60) / 2)}px;top:${PAD + 56}px;width:60px;height:3px;background:${p.accent};border-radius:2px"></div>
   ${html}
+</div>`;
+}
+
+// ── PROCESS ─────────────────────────────────────────────────
+// Numbered step cards with connectors
+
+function buildProcess(slide: SlideInput, p: ColorPalette): string {
+  const lines = parseBodyLines(slide.body);
+  const steps = lines.map((line, i) => {
+    const sep = line.indexOf(':');
+    const numMatch = line.match(/^\d+\.\s*/);
+    const cleaned = numMatch ? line.slice(numMatch[0].length) : line;
+    const sepIdx = cleaned.indexOf(':');
+    if (sepIdx > -1) return { num: i + 1, title: stripMarkdown(cleaned.slice(0, sepIdx).trim()), desc: stripMarkdown(cleaned.slice(sepIdx + 1).trim()) };
+    return { num: i + 1, title: stripMarkdown(cleaned), desc: '' };
+  });
+
+  if (steps.length === 0) {
+    return `${SCOPED_RESET}
+<div style="position:relative;width:${W}px;height:${H}px;">
+  <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${W - PAD * 2}px;text-align:center;font-size:27px;font-weight:bold;color:${p.text}">${escHtml(slide.title)}</div>
+</div>`;
+  }
+
+  const count = Math.min(steps.length, 5);
+  const cardW = 200;
+  const cardH = 260;
+  const gapX = 24;
+  const totalW = count * cardW + (count - 1) * gapX;
+  const startX = Math.round((W - totalW) / 2);
+  const cardY = Math.round(PAD + 100);
+
+  let cardsHtml = '';
+  let connectorsSvg = '';
+
+  for (let i = 0; i < count; i++) {
+    const cx = startX + i * (cardW + gapX);
+    // Card background
+    cardsHtml += `<div style="position:absolute;left:${cx}px;top:${cardY}px;width:${cardW}px;height:${cardH}px;background:${p.surface};border:1px solid ${p.border};border-radius:16px;border-top:3px solid ${p.accent}"></div>`;
+    // Step number circle
+    cardsHtml += `<div style="position:absolute;left:${cx + cardW / 2 - 20}px;top:${cardY + 20}px;width:40px;height:40px;border-radius:50%;background:${p.accent};display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:bold;color:#FFFFFF;text-align:center;line-height:40px">${String(steps[i].num).padStart(2, '0')}</div>`;
+    // Title
+    cardsHtml += `<div style="position:absolute;left:${cx + 16}px;top:${cardY + 76}px;width:${cardW - 32}px;text-align:center;font-size:14px;font-weight:bold;color:${p.text}">${escHtml(steps[i].title)}</div>`;
+    // Description
+    if (steps[i].desc) {
+      cardsHtml += `<div style="position:absolute;left:${cx + 16}px;top:${cardY + 104}px;width:${cardW - 32}px;text-align:center;font-size:11px;line-height:1.5;color:${p.text};opacity:0.7">${escHtml(steps[i].desc)}</div>`;
+    }
+    // Connector arrow between cards
+    if (i < count - 1) {
+      const arrowX1 = cx + cardW + 2;
+      const arrowX2 = cx + cardW + gapX - 2;
+      const arrowY = cardY + cardH / 2;
+      connectorsSvg += `<line x1="${arrowX1}" y1="${arrowY}" x2="${arrowX2}" y2="${arrowY}" stroke="${p.border}" stroke-width="2" marker-end="url(#arrowhead)" />`;
+    }
+  }
+
+  return `${SCOPED_RESET}
+<div style="position:relative;width:${W}px;height:${H}px;">
+  <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${W - PAD * 2}px;text-align:center;font-size:27px;font-weight:bold;color:${p.text};line-height:1.2">${escHtml(slide.title)}</div>
+  <div style="position:absolute;left:${Math.round((W - 60) / 2)}px;top:${PAD + 56}px;width:60px;height:3px;background:${p.accent};border-radius:2px"></div>
+  ${cardsHtml}
+  <svg style="position:absolute;left:0;top:0" width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg">
+    <defs><marker id="arrowhead" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="${p.border}" /></marker></defs>
+    ${connectorsSvg}
+  </svg>
+</div>`;
+}
+
+// ── PROBLEM ─────────────────────────────────────────────────
+// Left accent bar + warning-style icon
+
+function buildProblem(slide: SlideInput, p: ColorPalette): string {
+  const lines = parseBodyLines(slide.body);
+  const barColor = p.error || p.accent;
+
+  let bodyHtml = '';
+  let ty = PAD + 100;
+  for (const line of lines.slice(0, 6)) {
+    bodyHtml += `<div style="position:absolute;left:${PAD + 32}px;top:${ty}px;width:${W - PAD * 2 - 40}px;font-size:14px;line-height:1.6;color:${p.text};opacity:0.85;padding-left:12px;border-left:2px solid ${hexToRgba(barColor, 0.3)}">${escHtml(stripMarkdown(line))}</div>`;
+    ty += 48;
+  }
+
+  return `${SCOPED_RESET}
+<div style="position:relative;width:${W}px;height:${H}px;">
+  <div style="position:absolute;left:0;top:0;width:6px;height:${H}px;background:${barColor}"></div>
+  <svg style="position:absolute;left:${PAD + 4}px;top:${PAD}px" width="32" height="32" xmlns="http://www.w3.org/2000/svg">
+    <polygon points="16,2 30,28 2,28" fill="none" stroke="${barColor}" stroke-width="2"/>
+    <text x="16" y="24" text-anchor="middle" fill="${barColor}" font-size="16" font-weight="bold">!</text>
+  </svg>
+  <div style="position:absolute;left:${PAD + 44}px;top:${PAD + 4}px;font-size:27px;font-weight:bold;color:${p.text};line-height:1.2">${escHtml(slide.title)}</div>
+  <div style="position:absolute;left:${PAD + 44}px;top:${PAD + 48}px;width:60px;height:3px;background:${barColor};border-radius:2px"></div>
+  ${bodyHtml}
+</div>`;
+}
+
+// ── SOLUTION ────────────────────────────────────────────────
+// Left accent bar + checkmark icon
+
+function buildSolution(slide: SlideInput, p: ColorPalette): string {
+  const lines = parseBodyLines(slide.body);
+  const barColor = p.success || p.accent;
+
+  let bodyHtml = '';
+  let ty = PAD + 100;
+  for (const line of lines.slice(0, 6)) {
+    bodyHtml += `<div style="position:absolute;left:${PAD + 32}px;top:${ty}px;width:${W - PAD * 2 - 40}px;font-size:14px;line-height:1.6;color:${p.text};opacity:0.85;padding-left:12px;border-left:2px solid ${hexToRgba(barColor, 0.3)}">${escHtml(stripMarkdown(line))}</div>`;
+    ty += 48;
+  }
+
+  return `${SCOPED_RESET}
+<div style="position:relative;width:${W}px;height:${H}px;">
+  <div style="position:absolute;left:0;top:0;width:6px;height:${H}px;background:${barColor}"></div>
+  <svg style="position:absolute;left:${PAD + 4}px;top:${PAD}px" width="32" height="32" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="16" cy="16" r="14" fill="none" stroke="${barColor}" stroke-width="2"/>
+    <polyline points="10,16 14,22 24,10" fill="none" stroke="${barColor}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+  <div style="position:absolute;left:${PAD + 44}px;top:${PAD + 4}px;font-size:27px;font-weight:bold;color:${p.text};line-height:1.2">${escHtml(slide.title)}</div>
+  <div style="position:absolute;left:${PAD + 44}px;top:${PAD + 48}px;width:60px;height:3px;background:${barColor};border-radius:2px"></div>
+  ${bodyHtml}
+</div>`;
+}
+
+// ── CTA ─────────────────────────────────────────────────────
+// Centered action card
+
+function buildCta(slide: SlideInput, p: ColorPalette): string {
+  const lines = parseBodyLines(slide.body);
+  const cardW = 700;
+  const cardH = 320;
+  const cardX = Math.round((W - cardW) / 2);
+  const cardY = Math.round((H - cardH) / 2) + 20;
+
+  let actionsHtml = '';
+  let ay = cardY + 100;
+  for (const line of lines.slice(0, 3)) {
+    actionsHtml += `<div style="position:absolute;left:${cardX + 40}px;top:${ay}px;width:${cardW - 80}px;font-size:16px;line-height:1.5;color:${p.text}"><span style="color:${p.accent};font-weight:bold;margin-right:8px">&rarr;</span>${escHtml(stripMarkdown(line))}</div>`;
+    ay += 44;
+  }
+
+  return `${SCOPED_RESET}
+<div style="position:relative;width:${W}px;height:${H}px;">
+  <div style="position:absolute;left:0;top:0;width:${W}px;height:${H}px;background:radial-gradient(ellipse 800px 600px at 50% 50%,${hexToRgba(p.accent, 0.06)} 0%,transparent 70%)"></div>
+  <div style="position:absolute;left:${cardX}px;top:${cardY}px;width:${cardW}px;height:${cardH}px;background:${p.surface};border:2px solid ${p.accent};border-radius:20px;box-shadow:0 8px 40px ${hexToRgba(p.accent, 0.1)}"></div>
+  <div style="position:absolute;left:${cardX}px;top:${cardY + 28}px;width:${cardW}px;text-align:center;font-size:28px;font-weight:bold;color:${p.text};line-height:1.2">${escHtml(slide.title)}</div>
+  <div style="position:absolute;left:${Math.round(W / 2 - 30)}px;top:${cardY + 72}px;width:60px;height:3px;background:${p.accent};border-radius:2px"></div>
+  ${actionsHtml}
 </div>`;
 }
