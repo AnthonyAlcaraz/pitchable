@@ -11,6 +11,7 @@ import type {
   GraphQueryResult,
   ExtractedEntity,
   ExtractedRelationship,
+  NeighborResult,
 } from './falkordb.types.js';
 
 @Injectable()
@@ -283,6 +284,23 @@ export class FalkorDbService implements OnModuleDestroy {
       }),
     );
 
+    // Populate connectionCount via degree query
+    try {
+      const degreeResult = await graph.query(
+        `MATCH (n)-[r]-() WHERE n:Entity OR n:Document RETURN n.id AS id, count(r) AS degree`,
+      );
+      const degreeMap = new Map<string, number>();
+      for (const row of degreeResult.data ?? []) {
+        const r = row as Record<string, unknown>;
+        degreeMap.set(String(r['id'] ?? ''), Number(r['degree'] ?? 0));
+      }
+      for (const node of nodes) {
+        node.connectionCount = degreeMap.get(node.id) ?? 0;
+      }
+    } catch {
+      // Non-critical - leave connectionCount undefined
+    }
+
     const edgeResult = await graph.query(
       `MATCH (a)-[r]->(b)
        WHERE (a:Entity OR a:Document) AND (b:Entity OR b:Document)
@@ -313,6 +331,113 @@ export class FalkorDbService implements OnModuleDestroy {
       totalNodes: nodes.length,
       totalEdges: edges.length,
     };
+  }
+
+  async getNodeNeighbors(
+    graphName: string,
+    nodeId: string,
+    opts?: { limit?: number },
+  ): Promise<NeighborResult> {
+    const graph = await this.getGraph(graphName);
+    const limit = opts?.limit ?? 20;
+
+    // Fetch center node
+    const centerResult = await graph.query(
+      `MATCH (n) WHERE (n:Entity OR n:Document) AND n.id = $nodeId
+       RETURN n.id AS id, n.name AS name,
+              COALESCE(n.type, labels(n)[0]) AS type,
+              COALESCE(n.description, n.title, '') AS description,
+              n.documentId AS documentId
+       LIMIT 1`,
+      { params: { nodeId } },
+    );
+
+    const centerRow = (centerResult.data ?? [])[0] as Record<string, unknown> | undefined;
+    const centerNode: GraphNode | null = centerRow
+      ? {
+          id: String(centerRow['id'] ?? ''),
+          name: String(centerRow['name'] ?? ''),
+          type: String(centerRow['type'] ?? 'UNKNOWN'),
+          description: String(centerRow['description'] ?? ''),
+          documentId: centerRow['documentId'] ? String(centerRow['documentId']) : undefined,
+          properties: {},
+        }
+      : null;
+
+    if (!centerNode) {
+      return { centerNode: null, neighbors: [], edges: [] };
+    }
+
+    // Fetch neighbors (bidirectional)
+    const neighborResult = await graph.query(
+      `MATCH (center)-[r]-(neighbor)
+       WHERE (center:Entity OR center:Document) AND center.id = $nodeId
+         AND (neighbor:Entity OR neighbor:Document)
+       RETURN DISTINCT neighbor.id AS id, neighbor.name AS name,
+              COALESCE(neighbor.type, labels(neighbor)[0]) AS type,
+              COALESCE(neighbor.description, neighbor.title, '') AS description,
+              neighbor.documentId AS documentId,
+              type(r) AS relType,
+              COALESCE(r.description, '') AS relDesc,
+              COALESCE(r.weight, 1.0) AS weight,
+              startNode(r) = center AS isOutgoing
+       LIMIT $limit`,
+      { params: { nodeId, limit } },
+    );
+
+    const seen = new Set<string>();
+    const neighbors: GraphNode[] = [];
+    const edges: GraphEdge[] = [];
+
+    for (const row of neighborResult.data ?? []) {
+      const r = row as Record<string, unknown>;
+      const nId = String(r['id'] ?? '');
+      if (!nId || nId === nodeId) continue;
+
+      if (!seen.has(nId)) {
+        seen.add(nId);
+        neighbors.push({
+          id: nId,
+          name: String(r['name'] ?? ''),
+          type: String(r['type'] ?? 'UNKNOWN'),
+          description: String(r['description'] ?? ''),
+          documentId: r['documentId'] ? String(r['documentId']) : undefined,
+          properties: {},
+        });
+      }
+
+      const isOutgoing = r['isOutgoing'] === true;
+      edges.push({
+        source: isOutgoing ? nodeId : nId,
+        target: isOutgoing ? nId : nodeId,
+        type: String(r['relType'] ?? ''),
+        description: String(r['relDesc'] ?? ''),
+        weight: Number(r['weight'] ?? 1),
+      });
+    }
+
+    // Populate connectionCount for neighbors
+    if (neighbors.length > 0) {
+      try {
+        const nIds = neighbors.map((n) => n.id);
+        const degreeResult = await graph.query(
+          `MATCH (n)-[r]-() WHERE n.id IN $ids RETURN n.id AS id, count(r) AS degree`,
+          { params: { ids: nIds } },
+        );
+        const degreeMap = new Map<string, number>();
+        for (const row of degreeResult.data ?? []) {
+          const dr = row as Record<string, unknown>;
+          degreeMap.set(String(dr['id'] ?? ''), Number(dr['degree'] ?? 0));
+        }
+        for (const n of neighbors) {
+          n.connectionCount = degreeMap.get(n.id) ?? 0;
+        }
+      } catch {
+        // Non-critical
+      }
+    }
+
+    return { centerNode, neighbors, edges };
   }
 
   async getGraphStats(graphName: string): Promise<GraphStats> {

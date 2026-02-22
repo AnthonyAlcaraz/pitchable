@@ -200,6 +200,18 @@ export class PitchBriefController {
     });
   }
 
+  @Get(':id/graph/neighbors/:nodeId')
+  async getNodeNeighbors(
+    @CurrentUser() user: RequestUser,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('nodeId') nodeId: string,
+    @Query('limit') limit?: string,
+  ) {
+    return this.briefService.getNodeNeighbors(user.userId, id, nodeId, {
+      limit: limit ? parseInt(limit, 10) : undefined,
+    });
+  }
+
   @Get(':id/graph/stats')
   async getGraphStats(
     @CurrentUser() user: RequestUser,

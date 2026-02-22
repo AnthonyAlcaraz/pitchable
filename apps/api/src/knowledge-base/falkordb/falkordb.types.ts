@@ -4,6 +4,7 @@ export interface GraphNode {
   type: string;
   description: string;
   documentId?: string;
+  connectionCount?: number;
   properties: Record<string, unknown>;
 }
 
@@ -71,4 +72,5 @@ export const ENTITY_TYPES = [
   'PRODUCT',
 ] as const;
 
+export interface NeighborResult {  centerNode: GraphNode | null;  neighbors: GraphNode[];  edges: GraphEdge[];}
 export type EntityType = (typeof ENTITY_TYPES)[number];
