@@ -269,7 +269,7 @@ export function PitchBriefDetailPage() {
               const firstLens = briefLenses[0]?.lens?.id;
               if (firstLens) params.set('lensId', firstLens);
               const qs = params.toString();
-              navigate("/workspace/new" + (qs ? "?" + qs : ''));
+              window.location.href = "/workspace/new" + (qs ? "?" + qs : '');
             }}
             disabled={!canGenerate}
             className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
