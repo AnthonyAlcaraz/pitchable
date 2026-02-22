@@ -1137,9 +1137,7 @@ export class ExportsService {
     });
 
     const layoutProfile = selection.layoutProfile;
-    const rendererOverrides = await this.rendererChooser.chooseRenderers(
-      slides as unknown as SlideModel[],
-    );
+    const rendererOverrides = new Map<number, string>();
 
     await this.generateSlidePreviewImages(
       presentation as unknown as PresentationModel,
