@@ -485,7 +485,7 @@ OUTPUT: Valid JSON matching this schema (no markdown fences):
       const audience = (lens?.pitchLens as unknown as Record<string, unknown> | null)?.targetAudience as string | undefined;
       const goals = (lens?.pitchLens as unknown as Record<string, unknown> | null)?.goals as string[] | undefined;
 
-      const recommended = await this.themesService.recommendThemes(presType, audience, goals, 6);
+      const recommended = await this.themesService.recommendThemes(presType, audience, goals, 16);
 
       if (recommended.length > 0) {
         const contextId = `theme-${presentationId}-${Date.now()}`;
