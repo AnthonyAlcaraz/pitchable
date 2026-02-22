@@ -1103,10 +1103,50 @@ export class ExportsService {
     });
     if (slides.length === 0) return;
 
+    const theme = presentation.theme as unknown as ThemeModel;
+
+    // Load PitchLens context (same as export pipeline)
+    let audienceType: string | null = null;
+    let pitchGoal: string | null = null;
+    let toneStyle: string | null = null;
+    let deckArchetype: string | null = null;
+
+    if (presentation.pitchLensId) {
+      const lens = await this.prisma.pitchLens.findUnique({
+        where: { id: presentation.pitchLensId },
+        select: { audienceType: true, pitchGoal: true, toneStyle: true, deckArchetype: true },
+      });
+      audienceType = lens?.audienceType ?? null;
+      pitchGoal = lens?.pitchGoal ?? null;
+      toneStyle = lens?.toneStyle ?? null;
+      deckArchetype = lens?.deckArchetype ?? null;
+    }
+
+    // Match the export pipeline: use theme-aware layout profile + AI renderer chooser
+    const themeMeta = this.themesService.getThemeMeta(theme.name);
+    const selection = this.templateSelector.selectRenderEngine({
+      format: ExportFormat.PDF,
+      themeName: theme.name,
+      themeCategory: themeMeta?.category ?? 'dark',
+      defaultLayoutProfile: themeMeta?.defaultLayoutProfile ?? 'startup',
+      figmaTemplateId: null,
+      audienceType,
+      pitchGoal,
+      toneStyle,
+      deckArchetype,
+    });
+
+    const layoutProfile = selection.layoutProfile;
+    const rendererOverrides = await this.rendererChooser.chooseRenderers(
+      slides as unknown as SlideModel[],
+    );
+
     await this.generateSlidePreviewImages(
       presentation as unknown as PresentationModel,
       slides as unknown as SlideModel[],
-      presentation.theme as unknown as ThemeModel,
+      theme,
+      layoutProfile,
+      rendererOverrides,
     );
   }
 
