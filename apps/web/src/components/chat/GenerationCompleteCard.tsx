@@ -43,13 +43,15 @@ export function GenerationCompleteCard({ data, onExport }: GenerationCompleteCar
         );
         const jobId = jobs[0]?.id;
         if (!jobId) throw new Error('No export job created');
+        let completed = false;
         for (let i = 0; i < 90; i++) {
           if (cancelled) return;
-          const job = await api.get<{ status: string }>(`/exports/${jobId}`);
-          if (job.status === 'COMPLETED') break;
-          if (job.status === 'FAILED') throw new Error('Export failed');
+          const job = await api.get<{ status: string; errorMessage?: string }>(`/exports/${jobId}`);
+          if (job.status === 'COMPLETED') { completed = true; break; }
+          if (job.status === 'FAILED') throw new Error(job.errorMessage || 'Export failed');
           await new Promise((r) => setTimeout(r, 2000));
         }
+        if (!completed) throw new Error('Export timed out');
         if (!cancelled) {
           const dl = await api.get<{ url: string; filename: string }>(`/exports/${jobId}/download-url`);
           setAutoExportUrl(dl.url.startsWith('http') ? dl.url : `/exports/${jobId}/download`);
@@ -111,6 +113,15 @@ export function GenerationCompleteCard({ data, onExport }: GenerationCompleteCar
           <ExternalLink className="h-3.5 w-3.5" />
           Your PDF is ready — click to open
         </a>
+      )}
+      {autoExportStatus === 'failed' && (
+        <button
+          type="button"
+          onClick={() => setAutoExportStatus('idle')}
+          className="mb-3 flex items-center gap-2 rounded-md bg-red-500/10 px-3 py-2 text-xs text-red-400 hover:bg-red-500/20 transition-colors"
+        >
+          PDF export failed — click to retry
+        </button>
       )}
 
       <div className="flex gap-2">

@@ -104,12 +104,14 @@ export function PreviewPanel({ presentationId }: PreviewPanelProps) {
       );
       const jobId = jobs[0]?.id;
       if (!jobId) throw new Error('No export job created');
+      let completed = false;
       for (let i = 0; i < 90; i++) {
-        const job = await api.get<{ status: string }>(`/exports/${jobId}`);
-        if (job.status === 'COMPLETED') break;
-        if (job.status === 'FAILED') throw new Error('Export failed');
+        const job = await api.get<{ status: string; errorMessage?: string }>(`/exports/${jobId}`);
+        if (job.status === 'COMPLETED') { completed = true; break; }
+        if (job.status === 'FAILED') throw new Error(job.errorMessage || 'Export failed');
         await new Promise((r) => setTimeout(r, 2000));
       }
+      if (!completed) throw new Error('Export timed out. Please try again.');
       // Use authenticated endpoint to get presigned download URL
       const dl = await api.get<{ url: string; filename: string }>(`/exports/${jobId}/download-url`);
       if (newTab) {
@@ -125,8 +127,14 @@ export function PreviewPanel({ presentationId }: PreviewPanelProps) {
           newTab.location.href = URL.createObjectURL(blob);
         }
       }
-    } catch {
-      if (newTab) newTab.close();
+    } catch (err) {
+      if (newTab) {
+        const msg = err instanceof Error ? err.message : 'Export failed';
+        newTab.document.write(
+          '<html><body style="background:#0f0f1a;color:#fff;display:flex;align-items:center;justify-content:center;height:100vh;font-family:system-ui">' +
+          `<div style="text-align:center"><p style="font-size:1.2rem;color:#f87171">Export Failed</p><p style="color:#888">${msg}</p><p style="margin-top:1rem"><a href="javascript:window.close()" style="color:#f97316">Close this tab</a></p></div></body></html>`,
+        );
+      }
     }
   }, [presentationId]);
 

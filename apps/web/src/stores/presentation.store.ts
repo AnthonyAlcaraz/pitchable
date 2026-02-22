@@ -204,6 +204,17 @@ export const usePresentationStore = create<PresentationState>((set, get) => ({
   },
 
   startReview() {
+    // Restore from sessionStorage if available (survives page reload)
+    try {
+      const saved = sessionStorage.getItem('pitchable-review-state');
+      if (saved) {
+        const parsed = JSON.parse(saved) as ReviewState;
+        if (parsed && Array.isArray(parsed.approvedSlides) && typeof parsed.currentStep === 'number') {
+          set({ reviewState: parsed });
+          return;
+        }
+      }
+    } catch { /* ignore */ }
     set({ reviewState: { currentStep: 0, approvedSlides: [] } });
   },
 
@@ -213,9 +224,9 @@ export const usePresentationStore = create<PresentationState>((set, get) => ({
       const approved = [...state.reviewState.approvedSlides, index];
       const totalSlides = state.presentation.slides.length;
       const nextStep = index + 1 < totalSlides ? index + 1 : index;
-      return {
-        reviewState: { approvedSlides: approved, currentStep: nextStep },
-      };
+      const next = { approvedSlides: approved, currentStep: nextStep };
+      try { sessionStorage.setItem('pitchable-review-state', JSON.stringify(next)); } catch { /* */ }
+      return { reviewState: next };
     });
   },
 
@@ -224,9 +235,9 @@ export const usePresentationStore = create<PresentationState>((set, get) => ({
       if (!state.presentation) return state;
       const total = state.presentation.slides.length;
       const allApproved = Array.from({ length: total }, (_, i) => i);
-      return {
-        reviewState: { approvedSlides: allApproved, currentStep: total - 1 },
-      };
+      const next = { approvedSlides: allApproved, currentStep: total - 1 };
+      try { sessionStorage.setItem('pitchable-review-state', JSON.stringify(next)); } catch { /* */ }
+      return { reviewState: next };
     });
   },
 
@@ -236,13 +247,14 @@ export const usePresentationStore = create<PresentationState>((set, get) => ({
       const remaining = state.reviewState.approvedSlides.filter(
         (i) => !indices.includes(i),
       );
-      return {
-        reviewState: { ...state.reviewState, approvedSlides: remaining },
-      };
+      const next = { ...state.reviewState, approvedSlides: remaining };
+      try { sessionStorage.setItem('pitchable-review-state', JSON.stringify(next)); } catch { /* */ }
+      return { reviewState: next };
     });
   },
 
   resetReview() {
+    try { sessionStorage.removeItem('pitchable-review-state'); } catch { /* */ }
     set({ reviewState: null });
   },
 }));
