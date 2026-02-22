@@ -33,8 +33,10 @@ export function LoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="w-full max-w-md rounded-lg border border-border bg-card p-8 shadow-md">
         <div className="mb-8 flex flex-col items-center gap-2">
-          <PeachLogo className="h-10 w-10" />
-          <h1 className="text-2xl font-bold text-foreground">{t('common.app_name')}</h1>
+          <Link to="/" className="flex flex-col items-center gap-2">
+            <PeachLogo className="h-10 w-10" />
+            <h1 className="text-2xl font-bold text-foreground hover:text-primary transition-colors">{t('common.app_name')}</h1>
+          </Link>
           <p className="text-sm text-muted-foreground">
             {t('auth.login.title')}
           </p>
