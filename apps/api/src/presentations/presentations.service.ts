@@ -352,11 +352,15 @@ export class PresentationsService {
     }
 
     // Build update data from provided fields
-    const updateData: Record<string, string> = {};
+    const updateData: Record<string, string | null> = {};
     if (dto.title !== undefined) updateData.title = dto.title;
     if (dto.body !== undefined) updateData.body = dto.body;
     if (dto.speakerNotes !== undefined) updateData.speakerNotes = dto.speakerNotes;
     if (dto.slideType !== undefined) updateData.slideType = dto.slideType;
+    // Invalidate preview thumbnail when content changes (will be re-rendered on next export)
+    if (dto.title !== undefined || dto.body !== undefined) {
+      updateData.previewUrl = null;
+    }
 
     if (Object.keys(updateData).length === 0) {
       throw new BadRequestException('At least one field must be provided for update');

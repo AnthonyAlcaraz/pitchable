@@ -336,8 +336,11 @@ export const useChatStore = create<ChatState>((set, get) => ({
               usePresentationStore.getState().loadPresentation(pid).then(() => {
                 usePresentationStore.getState().startReview();
               });
-              // Trigger slide preview image generation (non-blocking)
-              api.post(`/presentations/${pid}/generate-previews`).catch(() => {});
+              // Preview generation is triggered after images:complete (useSlideUpdates.ts)
+              // If no images are being generated, trigger previews now
+              if (!(metadata.imageCount as number)) {
+                api.post(`/presentations/${pid}/generate-previews`).catch(() => {});
+              }
             } else {
               usePresentationStore.getState().startReview();
             }

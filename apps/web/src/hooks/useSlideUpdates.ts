@@ -3,6 +3,8 @@ import { getSocket, joinPresentation, leavePresentation } from '../lib/socket.js
 import type { ExportProgressEvent, GenerationProgressEvent } from '../lib/socket.js';
 import { usePresentationStore } from '../stores/presentation.store.js';
 import { useChatStore } from '../stores/chat.store.js';
+import { useAuthStore } from '../stores/auth.store.js';
+import { api } from '../lib/api.js';
 import type { SlideData } from '../stores/presentation.store.js';
 
 interface SlideAddedEvent {
@@ -30,6 +32,16 @@ interface SlideReorderedEvent {
 interface ThemeChangedEvent {
   presentationId: string;
   themeId: string;
+}
+
+interface ImageGeneratedEvent {
+  presentationId: string;
+  slideId: string;
+  imageUrl: string;
+}
+
+interface ImagesCompleteEvent {
+  presentationId: string;
 }
 
 interface ImageSelectionRequestEvent {
@@ -90,6 +102,17 @@ export function useSlideUpdates(presentationId: string | undefined) {
       });
     };
 
+    const handleImageGenerated = (event: ImageGeneratedEvent) => {
+      updateSlide(event.slideId, { imageUrl: event.imageUrl });
+    };
+
+    const handleImagesComplete = (event: ImagesCompleteEvent) => {
+      // All images done — regenerate preview thumbnails so they include images
+      api.post(`/presentations/${event.presentationId}/generate-previews`).catch(() => {});
+      // Refresh credit balance (image generation consumes credits)
+      useAuthStore.getState().refreshCreditBalance();
+    };
+
     const handleExportProgress = (event: ExportProgressEvent) => {
       const stepId = `export_${event.step}`;
       const status = event.progress === 100 ? 'complete' : event.progress === -1 ? 'error' : 'running';
@@ -119,6 +142,8 @@ export function useSlideUpdates(presentationId: string | undefined) {
     socket.on('slide:removed', handleSlideRemoved);
     socket.on('slide:reordered', handleSlideReordered);
     socket.on('presentation:themeChanged', handleThemeChanged);
+    socket.on('image:generated', handleImageGenerated);
+    socket.on('images:complete', handleImagesComplete);
     socket.on('image:selectionRequest', handleImageSelectionRequest);
 
     return () => {
@@ -129,6 +154,8 @@ export function useSlideUpdates(presentationId: string | undefined) {
       socket.off('slide:removed', handleSlideRemoved);
       socket.off('slide:reordered', handleSlideReordered);
       socket.off('presentation:themeChanged', handleThemeChanged);
+      socket.off('image:generated', handleImageGenerated);
+      socket.off('images:complete', handleImagesComplete);
       socket.off('image:selectionRequest', handleImageSelectionRequest);
       leavePresentation(presentationId);
     };
