@@ -263,10 +263,17 @@ export function PitchBriefDetailPage() {
             {t('common.edit')}
           </button>
           <button
-            onClick={() => navigate('/cockpit')}
+            onClick={() => {
+              const params = new URLSearchParams();
+              if (id) params.set('briefId', id);
+              const firstLens = briefLenses[0]?.lens?.id;
+              if (firstLens) params.set('lensId', firstLens);
+              const qs = params.toString();
+              navigate("/workspace/new" + (qs ? "?" + qs : ''));
+            }}
             disabled={!canGenerate}
             className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-            title={!canGenerate ? 'Upload documents and link a lens first' : 'Go to cockpit to generate a presentation'}
+            title={!canGenerate ? 'Upload documents and link a lens first' : 'Generate a presentation from this brief'}
           >
             <Presentation className="w-4 h-4" />
             Generate Presentation

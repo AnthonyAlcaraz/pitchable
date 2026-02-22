@@ -277,9 +277,60 @@ export class GenerationService {
 
   /**
    * Check if there's a pending outline for a presentation.
+   * Checks in-memory cache first, then falls back to DB recovery.
    */
   hasPendingOutline(presentationId: string): boolean {
     return this.pendingOutlines.has(presentationId);
+  }
+
+  /**
+   * Async check: outline exists in memory OR can be recovered from DB.
+   * Use this in approval flows where TTL expiration shouldn't block the user.
+   */
+  async hasPendingOutlineOrRecoverable(presentationId: string): Promise<boolean> {
+    if (this.pendingOutlines.has(presentationId)) return true;
+    // Check if there's an outline in DB but no slides generated yet
+    const [outlineMsg, slideCount] = await Promise.all([
+      this.prisma.chatMessage.findFirst({
+        where: { presentationId, messageType: 'outline' },
+        orderBy: { createdAt: 'desc' },
+        select: { id: true },
+      }),
+      this.prisma.slide.count({ where: { presentationId } }),
+    ]);
+    return !!outlineMsg && slideCount === 0;
+  }
+
+  /**
+   * Recover a pending outline from the DB (after TTL expiration or server restart).
+   * Returns true if recovery succeeded and outline is now in memory.
+   */
+  private async recoverOutlineFromDb(presentationId: string): Promise<boolean> {
+    const outlineMsg = await this.prisma.chatMessage.findFirst({
+      where: { presentationId, messageType: 'outline' },
+      orderBy: { createdAt: 'desc' },
+      select: { metadata: true },
+    });
+    if (!outlineMsg?.metadata) return false;
+
+    const outline = outlineMsg.metadata as unknown as GeneratedOutline;
+    if (!outline.slides?.length) return false;
+
+    // Reconstruct minimal config from presentation record
+    const pres = await this.prisma.presentation.findUnique({
+      where: { id: presentationId },
+      select: { title: true, sourceContent: true, themeId: true },
+    });
+
+    const config: GenerationConfig = {
+      topic: pres?.sourceContent ?? outline.title,
+      presentationType: 'STANDARD',
+      themeId: pres?.themeId ?? undefined,
+    };
+
+    this.pendingOutlines.set(presentationId, { outline, config });
+    this.logger.log(`Recovered outline from DB for presentation ${presentationId}`);
+    return true;
   }
 
   /**
@@ -403,7 +454,14 @@ OUTPUT: Valid JSON matching this schema (no markdown fences):
     userId: string,
     presentationId: string,
   ): AsyncGenerator<ChatStreamEvent> {
-    const pending = this.pendingOutlines.get(presentationId);
+    let pending = this.pendingOutlines.get(presentationId);
+    if (!pending) {
+      // Try to recover from DB (TTL expired or server restarted)
+      const recovered = await this.recoverOutlineFromDb(presentationId);
+      if (recovered) {
+        pending = this.pendingOutlines.get(presentationId);
+      }
+    }
     if (!pending) {
       yield { type: 'error', content: 'No pending outline to approve. Use /outline or ask me to create a deck.' };
       return;

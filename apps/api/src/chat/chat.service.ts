@@ -70,8 +70,10 @@ export class ChatService {
       return;
     }
 
-    // Check if this is an approval of a pending outline
-    if (this.generation.hasPendingOutline(presentationId) && this.generation.isApproval(content)) {
+    // Check if this is an approval of a pending outline (in-memory or recoverable from DB)
+    const hasOutline = this.generation.hasPendingOutline(presentationId)
+      || (this.generation.isApproval(content) && await this.generation.hasPendingOutlineOrRecoverable(presentationId));
+    if (hasOutline && this.generation.isApproval(content)) {
       yield* this.generation.executeOutline(userId, presentationId);
       return;
     }
@@ -842,7 +844,7 @@ export class ChatService {
       messages: items,
       hasMore,
       nextCursor,
-      hasPendingOutline: this.generation.hasPendingOutline(presentationId),
+      hasPendingOutline: this.generation.hasPendingOutline(presentationId) || await this.generation.hasPendingOutlineOrRecoverable(presentationId),
     };
   }
 }
