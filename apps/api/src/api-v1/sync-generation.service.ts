@@ -263,8 +263,11 @@ export class SyncGenerationService {
       timings['slide_kb_prefetch'] = Date.now() - tSlideKb;
       this.logger.log(`[TIMING] Slide KB prefetch (parallel): ${((Date.now() - tSlideKb) / 1000).toFixed(1)}s — ${dataSlideCount}/${outline.slides.length} slides enriched`);
 
-      // 11. Generate slides sequentially (Opus needs priorSlides for coherence)
+      // 11. Wave-based parallel slide generation
+      //     Slides in the same wave share priorSlides context; LLM calls fire concurrently.
+      //     After each wave, results accumulate into priorSlides for narrative coherence.
       const priorSlides: Array<{ title: string; body: string }> = [];
+      const WAVE_SIZE = 4;
 
       // Combined effective frequency from both background + side panel frequencies
       let syncImgFreq: string | undefined;
@@ -348,140 +351,147 @@ export class SyncGenerationService {
         this.logger.debug('Outline slide injected at position 2');
       }
 
-      for (let i = 0; i < outline.slides.length; i++) {
-        const tSlide = Date.now();
-        const outlineSlide = outline.slides[i];
+      for (let waveStart = 0; waveStart < outline.slides.length; waveStart += WAVE_SIZE) {
+        const waveSlides = outline.slides.slice(waveStart, Math.min(waveStart + WAVE_SIZE, outline.slides.length));
+        const waveSnapshot = [...priorSlides]; // freeze context for this wave
 
-        const slideSystemPrompt = buildSlideGenerationSystemPrompt(
-          presType,
-          themeName,
-          kbContext,
-          pitchLensContext,
-          undefined,
-          syncImgFreq,
-          syncDensityOverrides,
-          syncImageLayoutInstruction,
-          syncArchetypeContext,
-          figmaTemplateContext,
-        );
-        let slideUserPrompt = buildSlideGenerationUserPrompt(
-          outlineSlide.slideNumber,
-          outlineSlide.title,
-          outlineSlide.bulletPoints,
-          outlineSlide.slideType,
-          priorSlides,
-          outline.slides.length,
-        );
-
-        // Inject pre-fetched per-slide KB context
-        const slideKbContext = slideKbContexts[i];
-        if (slideKbContext) {
-          slideUserPrompt += `
-
-ADDITIONAL EVIDENCE FOR THIS SLIDE (use specific data points from this context):
-${slideKbContext}`;
-        }
-
-        const slideContent = await this.llm.completeJson<GeneratedSlideContent>(
-          [
-            { role: 'system', content: slideSystemPrompt },
-            { role: 'user', content: slideUserPrompt },
-          ],
-          getModelForSlideType(outlineSlide.slideType),
-          isValidSlideContent,
-          2,
-          { cacheSystemPrompt: true },
-        );
-        const tSlideGen = Date.now() - tSlide;
-        this.logger.log(`[TIMING] Slide ${i + 1}/${outline.slides.length} generation (Opus): ${(tSlideGen / 1000).toFixed(1)}s — "${outlineSlide.title.slice(0, 40)}"`);
-
-        // Programmatic density truncation
-        const truncLimits = {
-          maxBullets: syncDensityOverrides?.maxBullets ?? 4,
-          maxWords: syncDensityOverrides?.maxWords ?? 50,
-          maxTableRows: syncDensityOverrides?.maxTableRows ?? 4,
-        };
-        const truncResult = truncateToLimits(slideContent.body, truncLimits);
-        if (truncResult.wasTruncated) {
-          slideContent.body = truncResult.body;
-          if (truncResult.overflow) {
-            slideContent.speakerNotes = (slideContent.speakerNotes || '') + '\n' + truncResult.overflow;
-          }
-        }
-
-        // Build custom density limits from PitchLens overrides
-        const customLimits: DensityLimits = {
-          ...DENSITY_LIMITS,
-          ...(syncDensityOverrides?.maxBullets && { maxBulletsPerSlide: syncDensityOverrides.maxBullets }),
-          ...(syncDensityOverrides?.maxWords && { maxWordsPerSlide: syncDensityOverrides.maxWords }),
-          ...(syncDensityOverrides?.maxTableRows && { maxTableRows: syncDensityOverrides.maxTableRows }),
-        };
-
-        // Skip content review for intentionally minimal slides or when density passes programmatically
-        const skipSyncReviewType = outlineSlide.slideType === 'VISUAL_HUMOR' || outlineSlide.slideType === 'SECTION_DIVIDER';
-        const skipSyncReviewDensity = !skipSyncReviewType && passesDensityCheck(slideContent.body, truncLimits);
-        const skipSyncReview = skipSyncReviewType || skipSyncReviewDensity;
-
-        // Run content review (Haiku — lightweight density/quality check)
-        const tReview = Date.now();
-        let finalTitle = slideContent.title;
-        let finalBody = slideContent.body;
-        if (!skipSyncReview) try {
-          const review = await this.contentReviewer.reviewSlide(
-            {
-              title: slideContent.title,
-              body: slideContent.body,
-              speakerNotes: slideContent.speakerNotes ?? '',
-              slideType: outlineSlide.slideType,
-            },
-            customLimits,
+        // Fire all LLM calls in this wave concurrently
+        const wavePromises = waveSlides.map((outlineSlide, waveIdx) => {
+          const globalIdx = waveStart + waveIdx;
+          const slideSystemPrompt = buildSlideGenerationSystemPrompt(
+            presType,
+            themeName,
+            kbContext,
+            pitchLensContext,
+            undefined,
+            syncImgFreq,
+            syncDensityOverrides,
+            syncImageLayoutInstruction,
+            syncArchetypeContext,
+            figmaTemplateContext,
+          );
+          let slideUserPrompt = buildSlideGenerationUserPrompt(
+            outlineSlide.slideNumber,
+            outlineSlide.title,
+            outlineSlide.bulletPoints,
+            outlineSlide.slideType,
+            waveSnapshot,
+            outline.slides.length,
           );
 
-          if (review.verdict === 'NEEDS_SPLIT' && review.suggestedSplits?.length) {
-            // Use the first split as the primary slide content (tighter)
-            const firstSplit = review.suggestedSplits[0];
-            finalTitle = firstSplit.title;
-            finalBody = firstSplit.body;
-            this.logger.log(`Sync slide ${i + 1} trimmed by content reviewer`);
+          const slideKbContext = slideKbContexts[globalIdx];
+          if (slideKbContext) {
+            slideUserPrompt += `\n\nADDITIONAL EVIDENCE FOR THIS SLIDE (use specific data points from this context):\n${slideKbContext}`;
           }
 
-          if (review.issues.length > 0) {
-            this.logger.debug(
-              `Sync slide ${i + 1} review issues: ${review.issues.map((iss) => iss.message).join('; ')}`,
-            );
-          }
-        } catch (reviewErr) {
-          // Content review failed — log explicitly and keep original content
-          this.logger.warn(`Content review error for sync slide ${i + 1}: ${reviewErr instanceof Error ? reviewErr.message : 'unknown'}`);
-        }
-        this.logger.debug(`[TIMING] Slide ${i + 1} content review (Haiku): ${((Date.now() - tReview) / 1000).toFixed(1)}s`);
-
-        // Density validation: truncate table rows if over limit
-        const densityResult = validateSlideContent({ title: finalTitle, body: finalBody }, customLimits);
-        if (!densityResult.valid) {
-          this.logger.debug(
-            `Sync slide ${i + 1} density violations: ${densityResult.violations.join('; ')}`,
-          );
-        }
-
-        await this.prisma.slide.create({
-          data: {
-            presentationId: presentation.id,
-            slideNumber: i + 1,
-            title: finalTitle,
-            body: finalBody,
-            speakerNotes: slideContent.speakerNotes ?? null,
-            slideType: (outlineSlide.slideType as SlideType) ?? SlideType.CONTENT,
-            imagePrompt: slideContent.imagePromptHint ?? null,
-            sectionLabel: outlineSlide.sectionLabel ?? null,
-            contentHash: computeSlideHash(finalTitle, finalBody, slideContent.speakerNotes ?? null, outlineSlide.slideType, null),
-          },
+          const tSlide = Date.now();
+          return this.llm.completeJson<GeneratedSlideContent>(
+            [
+              { role: 'system', content: slideSystemPrompt },
+              { role: 'user', content: slideUserPrompt },
+            ],
+            getModelForSlideType(outlineSlide.slideType),
+            isValidSlideContent,
+            2,
+            { cacheSystemPrompt: true },
+          ).then(result => {
+            const tSlideGen = Date.now() - tSlide;
+            this.logger.log(`[TIMING] Slide ${globalIdx + 1}/${outline.slides.length} generation (Opus): ${(tSlideGen / 1000).toFixed(1)}s \u2014 "${outlineSlide.title.slice(0, 40)}"`);
+            return { result, outlineSlide, globalIdx, tSlide };
+          });
         });
 
-        priorSlides.push({ title: finalTitle, body: finalBody });
+        const waveResults = await Promise.all(wavePromises);
+        this.logger.log(`[TIMING] Wave ${Math.floor(waveStart / WAVE_SIZE) + 1}: ${waveSlides.length} slides generated in parallel`);
 
-        const slideTotal = Date.now() - tSlide;
-        slideTimings.push(slideTotal);
+        // Process results sequentially: truncation, review, DB write, priorSlides
+        for (const { result: slideContent, outlineSlide, globalIdx, tSlide } of waveResults) {
+          // Programmatic density truncation
+          const truncLimits = {
+            maxBullets: syncDensityOverrides?.maxBullets ?? 4,
+            maxWords: syncDensityOverrides?.maxWords ?? 50,
+            maxTableRows: syncDensityOverrides?.maxTableRows ?? 4,
+          };
+          const truncResult = truncateToLimits(slideContent.body, truncLimits);
+          if (truncResult.wasTruncated) {
+            slideContent.body = truncResult.body;
+            if (truncResult.overflow) {
+              slideContent.speakerNotes = (slideContent.speakerNotes || '') + '\n' + truncResult.overflow;
+            }
+          }
+
+          // Build custom density limits from PitchLens overrides
+          const customLimits: DensityLimits = {
+            ...DENSITY_LIMITS,
+            ...(syncDensityOverrides?.maxBullets && { maxBulletsPerSlide: syncDensityOverrides.maxBullets }),
+            ...(syncDensityOverrides?.maxWords && { maxWordsPerSlide: syncDensityOverrides.maxWords }),
+            ...(syncDensityOverrides?.maxTableRows && { maxTableRows: syncDensityOverrides.maxTableRows }),
+          };
+
+          // Skip content review for intentionally minimal slides or when density passes programmatically
+          const skipSyncReviewType = outlineSlide.slideType === 'VISUAL_HUMOR' || outlineSlide.slideType === 'SECTION_DIVIDER';
+          const skipSyncReviewDensity = !skipSyncReviewType && passesDensityCheck(slideContent.body, truncLimits);
+          const skipSyncReview = skipSyncReviewType || skipSyncReviewDensity;
+
+          // Run content review (Haiku \u2014 lightweight density/quality check)
+          const tReview = Date.now();
+          let finalTitle = slideContent.title;
+          let finalBody = slideContent.body;
+          if (!skipSyncReview) try {
+            const review = await this.contentReviewer.reviewSlide(
+              {
+                title: slideContent.title,
+                body: slideContent.body,
+                speakerNotes: slideContent.speakerNotes ?? '',
+                slideType: outlineSlide.slideType,
+              },
+              customLimits,
+            );
+
+            if (review.verdict === 'NEEDS_SPLIT' && review.suggestedSplits?.length) {
+              const firstSplit = review.suggestedSplits[0];
+              finalTitle = firstSplit.title;
+              finalBody = firstSplit.body;
+              this.logger.log(`Sync slide ${globalIdx + 1} trimmed by content reviewer`);
+            }
+
+            if (review.issues.length > 0) {
+              this.logger.debug(
+                `Sync slide ${globalIdx + 1} review issues: ${review.issues.map((iss) => iss.message).join('; ')}`,
+              );
+            }
+          } catch (reviewErr) {
+            this.logger.warn(`Content review error for sync slide ${globalIdx + 1}: ${reviewErr instanceof Error ? reviewErr.message : 'unknown'}`);
+          }
+          this.logger.debug(`[TIMING] Slide ${globalIdx + 1} content review (Haiku): ${((Date.now() - tReview) / 1000).toFixed(1)}s`);
+
+          // Density validation
+          const densityResult = validateSlideContent({ title: finalTitle, body: finalBody }, customLimits);
+          if (!densityResult.valid) {
+            this.logger.debug(
+              `Sync slide ${globalIdx + 1} density violations: ${densityResult.violations.join('; ')}`,
+            );
+          }
+
+          await this.prisma.slide.create({
+            data: {
+              presentationId: presentation.id,
+              slideNumber: globalIdx + 1,
+              title: finalTitle,
+              body: finalBody,
+              speakerNotes: slideContent.speakerNotes ?? null,
+              slideType: (outlineSlide.slideType as SlideType) ?? SlideType.CONTENT,
+              imagePrompt: slideContent.imagePromptHint ?? null,
+              sectionLabel: outlineSlide.sectionLabel ?? null,
+              contentHash: computeSlideHash(finalTitle, finalBody, slideContent.speakerNotes ?? null, outlineSlide.slideType, null),
+            },
+          });
+
+          priorSlides.push({ title: finalTitle, body: finalBody });
+
+          const slideTotal = Date.now() - tSlide;
+          slideTimings.push(slideTotal);
+        }
       }
 
       timings['slides_loop'] = Date.now() - tSlidesLoop;

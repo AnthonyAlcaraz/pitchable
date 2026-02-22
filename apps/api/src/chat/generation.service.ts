@@ -744,343 +744,376 @@ OUTPUT: Valid JSON matching this schema (no markdown fences):
       this.logger.debug('Outline slide injected at position 2');
     }
 
-    for (const [slideIndex, outlineSlide] of outline.slides.entries()) {
-      const actualSlideNumber = outlineSlide.slideNumber + slideNumberOffset;
+    // Wave-based parallel slide generation: LLM calls fire concurrently within each wave
+    const WAVE_SIZE = 4;
+    for (let waveStart = 0; waveStart < outline.slides.length; waveStart += WAVE_SIZE) {
+      const waveSlides = outline.slides.slice(waveStart, Math.min(waveStart + WAVE_SIZE, outline.slides.length));
 
-      yield {
-        type: 'progress',
-        content: `Generating slide ${outlineSlide.slideNumber}/${outline.slides.length}: ${outlineSlide.title}`,
-        metadata: {
-          step: 'generate_slide',
-          status: 'running',
-          current: outlineSlide.slideNumber,
-          total: outline.slides.length,
-          label: outlineSlide.title,
-        },
-      };
+      // Phase 1: Layout gates (sequential - interactive, but most auto-skip)
+      const wavePrepped: Array<{
+        slideIndex: number;
+        outlineSlide: typeof outline.slides[0];
+        effectiveSlideType: string;
+        slideForGeneration: typeof outline.slides[0];
+        slideKbContext: string;
+        slideKbSources: typeof slideKbResults[0]['sources'];
+        actualSlideNumber: number;
+      }> = [];
 
-      // Emit progress via WebSocket
-      this.events.emitGenerationProgress({
-        presentationId,
-        step: `slide-${outlineSlide.slideNumber}`,
-        progress: outlineSlide.slideNumber / outline.slides.length,
-        message: `Generating slide ${outlineSlide.slideNumber}/${outline.slides.length}: ${outlineSlide.title}`,
-      });
+      for (let wi = 0; wi < waveSlides.length; wi++) {
+        const slideIndex = waveStart + wi;
+        const outlineSlide = waveSlides[wi];
+        const actualSlideNumber = outlineSlide.slideNumber + slideNumberOffset;
 
-      // Layout Selection Gate: offer layout alternatives for eligible slides
-      let effectiveSlideType: string = outlineSlide.slideType;
-      if (!GenerationService.SKIP_LAYOUT_TYPES.has(outlineSlide.slideType)) {
-        const layoutOptions = this.generateLayoutOptions(outlineSlide);
-        if (layoutOptions.length > 1) {
-          const layoutContextId = `layout-${presentationId}-${outlineSlide.slideNumber}-${Date.now()}`;
-          const layoutTimeoutMs = 15_000;
+        yield {
+          type: 'progress',
+          content: `Generating slide ${outlineSlide.slideNumber}/${outline.slides.length}: ${outlineSlide.title}`,
+          metadata: {
+            step: 'generate_slide',
+            status: 'running',
+            current: outlineSlide.slideNumber,
+            total: outline.slides.length,
+            label: outlineSlide.title,
+          },
+        };
 
-          yield {
-            type: 'action',
-            content: '',
-            metadata: {
-              action: 'layout_selection',
-              contextId: layoutContextId,
-              slideNumber: outlineSlide.slideNumber,
-              slideTitle: outlineSlide.title,
-              options: layoutOptions,
-              defaultLayout: outlineSlide.slideType,
-              timeoutMs: layoutTimeoutMs,
-            },
-          };
+        this.events.emitGenerationProgress({
+          presentationId,
+          step: `slide-${outlineSlide.slideNumber}`,
+          progress: outlineSlide.slideNumber / outline.slides.length,
+          message: `Generating slide ${outlineSlide.slideNumber}/${outline.slides.length}: ${outlineSlide.title}`,
+        });
 
-          const selectedLayout = await this.interactionGate.waitForResponse<string>(
-            presentationId,
-            'layout_selection',
-            layoutContextId,
-            outlineSlide.slideType,
-            layoutTimeoutMs,
-          );
+        let effectiveSlideType: string = outlineSlide.slideType;
+        if (!GenerationService.SKIP_LAYOUT_TYPES.has(outlineSlide.slideType)) {
+          const layoutOptions = this.generateLayoutOptions(outlineSlide);
+          if (layoutOptions.length > 1) {
+            const layoutContextId = `layout-${presentationId}-${outlineSlide.slideNumber}-${Date.now()}`;
+            const layoutTimeoutMs = 15_000;
 
-          effectiveSlideType = selectedLayout;
-          if (selectedLayout !== outlineSlide.slideType) {
-            this.logger.debug(`Layout changed for slide ${outlineSlide.slideNumber}: ${outlineSlide.slideType} → ${selectedLayout}`);
+            yield {
+              type: 'action',
+              content: '',
+              metadata: {
+                action: 'layout_selection',
+                contextId: layoutContextId,
+                slideNumber: outlineSlide.slideNumber,
+                slideTitle: outlineSlide.title,
+                options: layoutOptions,
+                defaultLayout: outlineSlide.slideType,
+                timeoutMs: layoutTimeoutMs,
+              },
+            };
+
+            const selectedLayout = await this.interactionGate.waitForResponse<string>(
+              presentationId,
+              'layout_selection',
+              layoutContextId,
+              outlineSlide.slideType,
+              layoutTimeoutMs,
+            );
+
+            effectiveSlideType = selectedLayout;
+            if (selectedLayout !== outlineSlide.slideType) {
+              this.logger.debug(`Layout changed for slide ${outlineSlide.slideNumber}: ${outlineSlide.slideType} → ${selectedLayout}`);
+            }
           }
         }
-      }
 
-      // Override outlineSlide type for generation
-      const slideForGeneration = { ...outlineSlide, slideType: effectiveSlideType as SlideType };
+        const slideForGeneration = { ...outlineSlide, slideType: effectiveSlideType as SlideType };
+        const slideKbResult = slideKbResults[slideIndex];
 
-      // Use pre-fetched per-slide KB context + sources
-      const slideKbResult = slideKbResults[slideIndex];
-      const slideKbContext = slideKbResult.contextString;
-      const slideKbSources = slideKbResult.sources;
-
-      const slideContent = await this.generateSlideContent(
-        slideSystemPrompt,
-        slideForGeneration,
-        generatedSlides,
-        slideKbContext,
-        outline.slides.length,
-      );
-
-      // Programmatic density truncation (runs before content reviewer)
-      const truncLimits = {
-        maxBullets: densityOverrides?.maxBullets ?? 4,
-        maxWords: densityOverrides?.maxWords ?? 50,
-        maxTableRows: densityOverrides?.maxTableRows ?? 4,
-      };
-      const truncResult = truncateToLimits(slideContent.body, truncLimits);
-      if (truncResult.wasTruncated) {
-        slideContent.body = truncResult.body;
-        if (truncResult.overflow) {
-          slideContent.speakerNotes = (slideContent.speakerNotes || '') + '\n' + truncResult.overflow;
-        }
-      }
-
-      // Validate density and auto-fix
-      const validated = this.validateSlideContent(slideContent, slideForGeneration, themeColors);
-
-      // Save to DB (use effectiveSlideType)
-      const slide = await this.prisma.slide.create({
-        data: {
-          presentationId,
-          slideNumber: actualSlideNumber,
-          title: validated.title,
-          body: validated.body,
-          speakerNotes: validated.speakerNotes,
-          slideType: effectiveSlideType as SlideType,
-          imagePrompt: validated.imagePromptHint,
-          sectionLabel: outlineSlide.sectionLabel ?? null,
-          contentHash: computeSlideHash(validated.title, validated.body, validated.speakerNotes ?? null, effectiveSlideType, null),
-        },
-      });
-
-      // Link slide to KB chunk sources (content lineage)
-      if (slideKbSources.length > 0) {
-        await this.prisma.slideSource.createMany({
-          data: slideKbSources
-            .filter((s) => s.chunkId)
-            .map((s) => ({
-              slideId: slide.id,
-              chunkId: s.chunkId,
-              relevance: s.relevance,
-            })),
-          skipDuplicates: true,
+        wavePrepped.push({
+          slideIndex,
+          outlineSlide,
+          effectiveSlideType,
+          slideForGeneration,
+          slideKbContext: slideKbResult.contextString,
+          slideKbSources: slideKbResult.sources,
+          actualSlideNumber,
         });
       }
 
-      // Emit slide update via WebSocket
-      this.events.emitSlideAdded({
-        presentationId,
-        slide: {
-          id: slide.id,
-          slideNumber: slide.slideNumber,
-          title: slide.title,
-          body: slide.body,
-          speakerNotes: slide.speakerNotes,
-          slideType: slide.slideType,
-          imageUrl: null,
-          imagePrompt: slide.imagePrompt,
-          previewUrl: null,
-        },
-        position: actualSlideNumber,
-      });
+      // Phase 2: Fire LLM calls concurrently (all share same generatedSlides snapshot)
+      const waveSnapshot = [...generatedSlides];
+      const waveLlmResults = await Promise.all(
+        wavePrepped.map((prep) =>
+          this.generateSlideContent(
+            slideSystemPrompt,
+            prep.slideForGeneration,
+            waveSnapshot,
+            prep.slideKbContext,
+            outline.slides.length,
+          ),
+        ),
+      );
 
-      // Emit inline slide preview card to chat stream
-      yield {
-        type: 'action',
-        content: '',
-        metadata: {
-          action: 'slide_preview',
+      // Phase 3: Process results sequentially (validation, DB, yields, accumulate)
+      for (let wi = 0; wi < wavePrepped.length; wi++) {
+        const prep = wavePrepped[wi];
+        const slideContent = waveLlmResults[wi];
+
+        // Programmatic density truncation (runs before content reviewer)
+        const truncLimits = {
+          maxBullets: densityOverrides?.maxBullets ?? 4,
+          maxWords: densityOverrides?.maxWords ?? 50,
+          maxTableRows: densityOverrides?.maxTableRows ?? 4,
+        };
+        const truncResult = truncateToLimits(slideContent.body, truncLimits);
+        if (truncResult.wasTruncated) {
+          slideContent.body = truncResult.body;
+          if (truncResult.overflow) {
+            slideContent.speakerNotes = (slideContent.speakerNotes || '') + '\n' + truncResult.overflow;
+          }
+        }
+
+        // Validate density and auto-fix
+        const validated = this.validateSlideContent(slideContent, prep.slideForGeneration, themeColors);
+
+        // Save to DB (use effectiveSlideType)
+        const slide = await this.prisma.slide.create({
+          data: {
+            presentationId,
+            slideNumber: prep.actualSlideNumber,
+            title: validated.title,
+            body: validated.body,
+            speakerNotes: validated.speakerNotes,
+            slideType: prep.effectiveSlideType as SlideType,
+            imagePrompt: validated.imagePromptHint,
+            sectionLabel: prep.outlineSlide.sectionLabel ?? null,
+            contentHash: computeSlideHash(validated.title, validated.body, validated.speakerNotes ?? null, prep.effectiveSlideType, null),
+          },
+        });
+
+        // Link slide to KB chunk sources (content lineage)
+        if (prep.slideKbSources.length > 0) {
+          await this.prisma.slideSource.createMany({
+            data: prep.slideKbSources
+              .filter((s) => s.chunkId)
+              .map((s) => ({
+                slideId: slide.id,
+                chunkId: s.chunkId,
+                relevance: s.relevance,
+              })),
+            skipDuplicates: true,
+          });
+        }
+
+        // Emit slide update via WebSocket
+        this.events.emitSlideAdded({
+          presentationId,
           slide: {
             id: slide.id,
             slideNumber: slide.slideNumber,
             title: slide.title,
             body: slide.body,
+            speakerNotes: slide.speakerNotes,
             slideType: slide.slideType,
             imageUrl: null,
+            imagePrompt: slide.imagePrompt,
+            previewUrl: null,
           },
-        },
-      };
+          position: prep.actualSlideNumber,
+        });
 
-      // Track for prior-slides context (Recommendation #5)
-      generatedSlides.push({ title: validated.title, body: validated.body });
-
-      // Run content reviewer (pipelined: await previous review, fire this one async)
-      // VISUAL_HUMOR slides are intentionally minimal — skip density review
-      const skipReviewType = outlineSlide.slideType === 'VISUAL_HUMOR' || outlineSlide.slideType === 'SECTION_DIVIDER';
-      // Skip LLM content reviewer when programmatic validation passes (saves ~$0.15-0.30/deck)
-      const skipReviewDensity = !skipReviewType && passesDensityCheck(validated.body, truncLimits);
-      const skipReview = skipReviewType || skipReviewDensity;
-      let reviewPassed = true;
-      if (skipReview) {
-        this.logger.debug(`Skipping content review for VISUAL_HUMOR slide ${actualSlideNumber}`);
-      } else try {
-        const customLimits = densityOverrides ? {
-          ...DENSITY_LIMITS,
-          ...(densityOverrides.maxBullets != null && { maxBulletsPerSlide: densityOverrides.maxBullets }),
-          ...(densityOverrides.maxWords != null && { maxWordsPerSlide: densityOverrides.maxWords }),
-          ...(densityOverrides.maxTableRows != null && { maxTableRows: densityOverrides.maxTableRows }),
-        } : undefined;
-        // Await review synchronously since NEEDS_SPLIT affects slideNumberOffset for next slide
-        const review = await this.contentReviewer.reviewSlide({
-          title: validated.title,
-          body: validated.body,
-          speakerNotes: validated.speakerNotes,
-          slideType: outlineSlide.slideType,
-        }, customLimits);
-
-        reviewPassed = review.verdict === 'PASS';
-
-        if (review.issues.length > 0) {
-          for (const issue of review.issues) {
-            const category = issue.rule === 'density' ? 'density' as const
-              : issue.rule === 'concept' ? 'concept' as const
-              : issue.rule === 'clarity' ? 'style' as const
-              : 'style' as const;
-            this.feedbackLog.logViolation(
-              userId,
-              presentationId,
-              slide.id,
-              category,
-              issue.message,
-            ).catch(() => {});
-          }
-        }
-
-        // Handle NEEDS_SPLIT: insert additional split slides (with budget guard)
-        const currentTotal = outline.slides.length + slideNumberOffset;
-        const splitCount = review.suggestedSplits?.length ?? 0;
-        const splitBudgetExhausted = currentTotal + splitCount - 1 > maxTotalSlides;
-        // Cap splits at 2 parts max (even if reviewer suggests more)
-        const cappedSplits = review.suggestedSplits?.slice(0, 2);
-
-        if (
-          review.verdict === 'NEEDS_SPLIT'
-          && cappedSplits
-          && cappedSplits.length > 1
-          && !splitBudgetExhausted
-        ) {
-          this.logger.log(
-            `Slide ${actualSlideNumber} split into ${cappedSplits.length} slides (budget: ${currentTotal + cappedSplits.length - 1}/${maxTotalSlides})`,
-          );
-
-          // Update the original slide with the first split's content
-          const firstSplit = cappedSplits[0];
-          await this.prisma.slide.update({
-            where: { id: slide.id },
-            data: {
-              title: firstSplit.title,
-              body: firstSplit.body,
-            },
-          });
-
-          this.events.emitSlideUpdated({
-            presentationId,
-            slideId: slide.id,
-            data: { title: firstSplit.title, body: firstSplit.body },
-          });
-
-          generatedSlides[generatedSlides.length - 1] = {
-            title: firstSplit.title,
-            body: firstSplit.body,
-          };
-
-          // Insert remaining splits as new slides (max 1 additional)
-          for (let si = 1; si < cappedSplits.length; si++) {
-            slideNumberOffset++;
-            const splitNum = actualSlideNumber + si;
-            const splitData = cappedSplits[si];
-
-            const splitSlide = await this.prisma.slide.create({
-              data: {
-                presentationId,
-                slideNumber: splitNum,
-                title: splitData.title,
-                body: splitData.body,
-                speakerNotes: validated.speakerNotes,
-                slideType: outlineSlide.slideType as SlideType,
-                imagePrompt: validated.imagePromptHint,
-                sectionLabel: outlineSlide.sectionLabel ?? null,
-                contentHash: computeSlideHash(splitData.title, splitData.body, validated.speakerNotes ?? null, outlineSlide.slideType, null),
-              },
-            });
-
-            this.events.emitSlideAdded({
-              presentationId,
-              slide: {
-                id: splitSlide.id,
-                slideNumber: splitSlide.slideNumber,
-                title: splitSlide.title,
-                body: splitSlide.body,
-                speakerNotes: splitSlide.speakerNotes,
-                slideType: splitSlide.slideType,
-                imageUrl: null,
-                imagePrompt: splitSlide.imagePrompt,
-                previewUrl: null,
-              },
-              position: splitNum,
-            });
-
-            generatedSlides.push({ title: splitData.title, body: splitData.body });
-
-            yield {
-              type: 'token',
-              content: `  Auto-split: created slide ${splitNum} — "${splitData.title}"\n`,
-            };
-          }
-        } else if (review.verdict === 'NEEDS_SPLIT' && splitBudgetExhausted) {
-          this.logger.log(
-            `Slide ${actualSlideNumber} split skipped — budget exhausted (${currentTotal}/${maxTotalSlides})`,
-          );
-        }
-      } catch (reviewErr) {
-        // Content review failed — log and continue with original content (blocking behavior
-        // is handled by the service itself; if it throws, we still proceed with the slide)
-        this.logger.warn(`Content review error for slide ${actualSlideNumber}: ${reviewErr}`);
-      }
-
-      // Queue for validation gate (non-blocking: if auto-approved, skip)
-      const needsValidation = this.validationGate.queueValidation({
-        presentationId,
-        slideId: slide.id,
-        slideNumber: actualSlideNumber,
-        title: validated.title,
-        body: validated.body,
-        speakerNotes: validated.speakerNotes,
-        slideType: outlineSlide.slideType,
-        reviewPassed,
-      });
-
-      if (needsValidation) {
-        // Emit validation request to chat stream
+        // Emit inline slide preview card to chat stream
         yield {
           type: 'action',
           content: '',
           metadata: {
-            action: 'validation_request',
-            slideId: slide.id,
-            slideNumber: actualSlideNumber,
+            action: 'slide_preview',
+            slide: {
+              id: slide.id,
+              slideNumber: slide.slideNumber,
+              title: slide.title,
+              body: slide.body,
+              slideType: slide.slideType,
+              imageUrl: null,
+            },
+          },
+        };
+
+        // Track for prior-slides context (Recommendation #5)
+        generatedSlides.push({ title: validated.title, body: validated.body });
+
+        // Run content reviewer (pipelined: await previous review, fire this one async)
+        // VISUAL_HUMOR slides are intentionally minimal - skip density review
+        const skipReviewType = prep.outlineSlide.slideType === 'VISUAL_HUMOR' || prep.outlineSlide.slideType === 'SECTION_DIVIDER';
+        // Skip LLM content reviewer when programmatic validation passes (saves ~$0.15-0.30/deck)
+        const skipReviewDensity = !skipReviewType && passesDensityCheck(validated.body, truncLimits);
+        const skipReview = skipReviewType || skipReviewDensity;
+        let reviewPassed = true;
+        if (skipReview) {
+          this.logger.debug(`Skipping content review for VISUAL_HUMOR slide ${prep.actualSlideNumber}`);
+        } else try {
+          const customLimits = densityOverrides ? {
+            ...DENSITY_LIMITS,
+            ...(densityOverrides.maxBullets != null && { maxBulletsPerSlide: densityOverrides.maxBullets }),
+            ...(densityOverrides.maxWords != null && { maxWordsPerSlide: densityOverrides.maxWords }),
+            ...(densityOverrides.maxTableRows != null && { maxTableRows: densityOverrides.maxTableRows }),
+          } : undefined;
+          // Await review synchronously since NEEDS_SPLIT affects slideNumberOffset for next slide
+          const review = await this.contentReviewer.reviewSlide({
             title: validated.title,
             body: validated.body,
             speakerNotes: validated.speakerNotes,
-            slideType: outlineSlide.slideType,
-            reviewPassed,
+            slideType: prep.outlineSlide.slideType,
+          }, customLimits);
+
+          reviewPassed = review.verdict === 'PASS';
+
+          if (review.issues.length > 0) {
+            for (const issue of review.issues) {
+              const category = issue.rule === 'density' ? 'density' as const
+                : issue.rule === 'concept' ? 'concept' as const
+                : issue.rule === 'clarity' ? 'style' as const
+                : 'style' as const;
+              this.feedbackLog.logViolation(
+                userId,
+                presentationId,
+                slide.id,
+                category,
+                issue.message,
+              ).catch(() => {});
+            }
+          }
+
+          // Handle NEEDS_SPLIT: insert additional split slides (with budget guard)
+          const currentTotal = outline.slides.length + slideNumberOffset;
+          const splitCount = review.suggestedSplits?.length ?? 0;
+          const splitBudgetExhausted = currentTotal + splitCount - 1 > maxTotalSlides;
+          // Cap splits at 2 parts max (even if reviewer suggests more)
+          const cappedSplits = review.suggestedSplits?.slice(0, 2);
+
+          if (
+            review.verdict === 'NEEDS_SPLIT'
+            && cappedSplits
+            && cappedSplits.length > 1
+            && !splitBudgetExhausted
+          ) {
+            this.logger.log(
+              `Slide ${prep.actualSlideNumber} split into ${cappedSplits.length} slides (budget: ${currentTotal + cappedSplits.length - 1}/${maxTotalSlides})`,
+            );
+
+            // Update the original slide with the first split's content
+            const firstSplit = cappedSplits[0];
+            await this.prisma.slide.update({
+              where: { id: slide.id },
+              data: {
+                title: firstSplit.title,
+                body: firstSplit.body,
+              },
+            });
+
+            this.events.emitSlideUpdated({
+              presentationId,
+              slideId: slide.id,
+              data: { title: firstSplit.title, body: firstSplit.body },
+            });
+
+            generatedSlides[generatedSlides.length - 1] = {
+              title: firstSplit.title,
+              body: firstSplit.body,
+            };
+
+            // Insert remaining splits as new slides (max 1 additional)
+            for (let si = 1; si < cappedSplits.length; si++) {
+              slideNumberOffset++;
+              const splitNum = prep.actualSlideNumber + si;
+              const splitData = cappedSplits[si];
+
+              const splitSlide = await this.prisma.slide.create({
+                data: {
+                  presentationId,
+                  slideNumber: splitNum,
+                  title: splitData.title,
+                  body: splitData.body,
+                  speakerNotes: validated.speakerNotes,
+                  slideType: prep.outlineSlide.slideType as SlideType,
+                  imagePrompt: validated.imagePromptHint,
+                  sectionLabel: prep.outlineSlide.sectionLabel ?? null,
+                  contentHash: computeSlideHash(splitData.title, splitData.body, validated.speakerNotes ?? null, prep.outlineSlide.slideType, null),
+                },
+              });
+
+              this.events.emitSlideAdded({
+                presentationId,
+                slide: {
+                  id: splitSlide.id,
+                  slideNumber: splitSlide.slideNumber,
+                  title: splitSlide.title,
+                  body: splitSlide.body,
+                  speakerNotes: splitSlide.speakerNotes,
+                  slideType: splitSlide.slideType,
+                  imageUrl: null,
+                  imagePrompt: splitSlide.imagePrompt,
+                  previewUrl: null,
+                },
+                position: splitNum,
+              });
+
+              generatedSlides.push({ title: splitData.title, body: splitData.body });
+
+              yield {
+                type: 'token',
+                content: `  Auto-split: created slide ${splitNum} — "${splitData.title}"\n`,
+              };
+            }
+          } else if (review.verdict === 'NEEDS_SPLIT' && splitBudgetExhausted) {
+            this.logger.log(
+              `Slide ${prep.actualSlideNumber} split skipped — budget exhausted (${currentTotal}/${maxTotalSlides})`,
+            );
+          }
+        } catch (reviewErr) {
+          // Content review failed - log and continue with original content (blocking behavior
+          // is handled by the service itself; if it throws, we still proceed with the slide)
+          this.logger.warn(`Content review error for slide ${prep.actualSlideNumber}: ${reviewErr}`);
+        }
+
+        // Queue for validation gate (non-blocking: if auto-approved, skip)
+        const needsValidation = this.validationGate.queueValidation({
+          presentationId,
+          slideId: slide.id,
+          slideNumber: prep.actualSlideNumber,
+          title: validated.title,
+          body: validated.body,
+          speakerNotes: validated.speakerNotes,
+          slideType: prep.outlineSlide.slideType,
+          reviewPassed,
+        });
+
+        if (needsValidation) {
+          // Emit validation request to chat stream
+          yield {
+            type: 'action',
+            content: '',
+            metadata: {
+              action: 'validation_request',
+              slideId: slide.id,
+              slideNumber: prep.actualSlideNumber,
+              title: validated.title,
+              body: validated.body,
+              speakerNotes: validated.speakerNotes,
+              slideType: prep.outlineSlide.slideType,
+              reviewPassed,
+            },
+          };
+        }
+
+        // Mark slide as complete in progress
+        yield {
+          type: 'progress',
+          content: `Generating slide ${prep.outlineSlide.slideNumber}/${outline.slides.length}: ${prep.outlineSlide.title}`,
+          metadata: {
+            step: 'generate_slide',
+            status: 'complete',
+            current: prep.outlineSlide.slideNumber,
+            total: outline.slides.length,
+            label: prep.outlineSlide.title,
           },
         };
       }
-
-      // Mark slide as complete in progress
-      yield {
-        type: 'progress',
-        content: `Generating slide ${outlineSlide.slideNumber}/${outline.slides.length}: ${outlineSlide.title}`,
-        metadata: {
-          step: 'generate_slide',
-          status: 'complete',
-          current: outlineSlide.slideNumber,
-          total: outline.slides.length,
-          label: outlineSlide.title,
-        },
-      };
     }
-
     // 6. Multi-Agent Quality Review (Style + Narrative + Fact Check — all Opus 4.6)
     yield { type: 'progress', content: 'Running quality review agents', metadata: { step: 'quality_review', status: 'running' } };
 
