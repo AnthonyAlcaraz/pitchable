@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/stores/auth.store';
@@ -20,6 +20,23 @@ import { PeachLogo } from '@/components/icons/PeachLogo';
 import { cn } from '@/lib/utils';
 
 // ── Constants ─────────────────────────────────────────────────
+
+const INGESTION_VERBS = [
+  'Peeling through your documents',
+  'Juicing the key insights',
+  'Ripening your knowledge base',
+  'Extracting the good stuff',
+  'Pulping through the pages',
+  'Preserving every detail',
+  'Blending facts into fuel',
+  'Sun-drying the highlights',
+  'Fermenting your data',
+  'Pit-stopping to chunk smartly',
+  'Caramelizing the takeaways',
+  'Orchard-sorting your content',
+  'Squeezing meaning from words',
+  'Peach-pressing your sources',
+];
 
 type Phase = 'welcome' | 'brief' | 'lens' | 'generate';
 
@@ -183,6 +200,21 @@ export function OnboardingPage() {
   const [dragActive, setDragActive] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [ingestionVerb, setIngestionVerb] = useState(0);
+  const ingestionTimer = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    if (isSubmitting && briefStep === 1) {
+      setIngestionVerb(Math.floor(Math.random() * INGESTION_VERBS.length));
+      ingestionTimer.current = setInterval(() => {
+        setIngestionVerb((v) => (v + 1) % INGESTION_VERBS.length);
+      }, 2800);
+    } else if (ingestionTimer.current) {
+      clearInterval(ingestionTimer.current);
+      ingestionTimer.current = null;
+    }
+    return () => { if (ingestionTimer.current) clearInterval(ingestionTimer.current); };
+  }, [isSubmitting, briefStep]);
 
   const totalDocs = pendingFiles.length + pendingTexts.length + pendingUrls.length;
 
@@ -298,13 +330,17 @@ export function OnboardingPage() {
     try {
       await completeOnboarding();
       clearState();
-      navigate('/cockpit', { replace: true });
+      const params = new URLSearchParams();
+      if (briefId) params.set('briefId', briefId);
+      if (lensId) params.set('lensId', lensId);
+      const qs = params.toString();
+      navigate(`/workspace/new${qs ? `?${qs}` : ''}`, { replace: true });
     } catch (err) {
       console.error('Failed to complete onboarding:', err);
     } finally {
       setIsSubmitting(false);
     }
-  }, [completeOnboarding, clearState, navigate]);
+  }, [completeOnboarding, clearState, navigate, briefId, lensId]);
 
   // ── Drag & Drop handlers ───────────────────────────────────
 
@@ -455,6 +491,7 @@ export function OnboardingPage() {
                 {/* Brief Step 1: Documents */}
                 {briefStep === 1 && (
                   <div className="space-y-6">
+                    {!isSubmitting && (<>
                     {/* File upload */}
                     <div
                       onDragEnter={handleDrag}
@@ -534,6 +571,7 @@ export function OnboardingPage() {
                         {t('onboarding.brief.add_url_title')}
                       </button>
                     </div>
+                    </>)}
 
                     {/* Upload error */}
                     {uploadError && (
@@ -542,8 +580,58 @@ export function OnboardingPage() {
                       </div>
                     )}
 
+                    {/* Ingestion loading overlay */}
+                    {isSubmitting && (
+                      <div
+                        className="flex flex-col items-center justify-center gap-4 rounded-xl border border-orange-500/20 bg-orange-500/5 py-10"
+                        style={{ animation: 'fadeSlideIn 0.3s ease-out' }}
+                      >
+                        <div className="relative">
+                          <div
+                            className="absolute -inset-3 rounded-full opacity-20"
+                            style={{
+                              background: 'radial-gradient(circle, #f97316 0%, transparent 70%)',
+                              animation: 'shimmer 2s ease-in-out infinite',
+                            }}
+                          />
+                          <PeachLogo className="h-14 w-14 animate-[spin_4s_linear_infinite]" />
+                        </div>
+                        <div className="text-center">
+                          <p className="text-sm font-medium text-foreground">
+                            Ingesting {totalDocs} {totalDocs === 1 ? 'document' : 'documents'}...
+                          </p>
+                          <p
+                            className="mt-1 text-xs font-medium"
+                            style={{
+                              backgroundImage: 'linear-gradient(to right, #fb923c, #ea580c, #171717)',
+                              backgroundSize: '200% 100%',
+                              backgroundClip: 'text',
+                              WebkitBackgroundClip: 'text',
+                              color: 'transparent',
+                              animation: 'gradientShift 3s ease-in-out infinite',
+                            }}
+                          >
+                            {INGESTION_VERBS[ingestionVerb]}...
+                          </p>
+                        </div>
+                        <div
+                          className="h-0.5 w-48 overflow-hidden rounded-full bg-orange-500/10"
+                        >
+                          <div
+                            className="h-full rounded-full"
+                            style={{
+                              background: 'linear-gradient(90deg, #f97316, #fb923c, #f97316)',
+                              backgroundSize: '200% 100%',
+                              animation: 'shimmer 1.5s ease-in-out infinite',
+                              width: '100%',
+                            }}
+                          />
+                        </div>
+                      </div>
+                    )}
+
                     {/* Pending documents list */}
-                    {totalDocs > 0 && (
+                    {!isSubmitting && totalDocs > 0 && (
                       <div>
                         <h3 className="mb-2 text-sm font-medium text-foreground">{t('onboarding.brief.added_count', { count: totalDocs })}</h3>
                         <div className="space-y-2">
