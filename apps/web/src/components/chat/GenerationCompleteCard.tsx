@@ -37,7 +37,12 @@ export function GenerationCompleteCard({ data, onExport }: GenerationCompleteCar
     let cancelled = false;
     (async () => {
       try {
-        const { jobId } = await api.post<{ jobId: string }>(`/presentations/${data.presentationId}/export`, { format: 'PDF' });
+        const jobs = await api.post<Array<{ id: string; format: string; status: string }>>(
+          `/presentations/${data.presentationId}/export`,
+          { formats: ['PDF'] },
+        );
+        const jobId = jobs[0]?.id;
+        if (!jobId) throw new Error('No export job created');
         for (let i = 0; i < 90; i++) {
           if (cancelled) return;
           const job = await api.get<{ status: string }>(`/exports/${jobId}`);
@@ -46,7 +51,8 @@ export function GenerationCompleteCard({ data, onExport }: GenerationCompleteCar
           await new Promise((r) => setTimeout(r, 2000));
         }
         if (!cancelled) {
-          setAutoExportUrl(`/exports/${jobId}/download`);
+          const dl = await api.get<{ url: string; filename: string }>(`/exports/${jobId}/download-url`);
+          setAutoExportUrl(dl.url.startsWith('http') ? dl.url : `/exports/${jobId}/download`);
           setAutoExportStatus('ready');
         }
       } catch {
