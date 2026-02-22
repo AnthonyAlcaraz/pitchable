@@ -49,14 +49,33 @@ export function getEdgeOpacity(weight: number): number {
   return Math.max(0.2, Math.min(0.8, weight * 0.3));
 }
 
-export function getInitialNodes(nodes: GraphNode[], maxCount = 15): GraphNode[] {
-  // Prioritize CONCEPT and ORGANIZATION, then sort by connectionCount
-  const priorityTypes = new Set(['CONCEPT', 'ORGANIZATION']);
-  const sorted = [...nodes].sort((a, b) => {
-    const aPriority = priorityTypes.has(a.type) ? 1 : 0;
-    const bPriority = priorityTypes.has(b.type) ? 1 : 0;
-    if (bPriority !== aPriority) return bPriority - aPriority;
-    return (b.connectionCount ?? 0) - (a.connectionCount ?? 0);
-  });
-  return sorted.slice(0, maxCount);
+export function getInitialNodes(nodes: GraphNode[], maxCount = 30): GraphNode[] {
+  // Guarantee at least 1 node per type, then fill by connectionCount
+  const byType = new Map<string, GraphNode[]>();
+  for (const n of nodes) {
+    const list = byType.get(n.type) ?? [];
+    list.push(n);
+    byType.set(n.type, list);
+  }
+
+  const picked = new Set<string>();
+  // Phase 1: pick the top node from each type
+  for (const [, list] of byType) {
+    const best = list.reduce((a, b) =>
+      (b.connectionCount ?? 0) > (a.connectionCount ?? 0) ? b : a,
+    );
+    picked.add(best.id);
+    if (picked.size >= maxCount) break;
+  }
+
+  // Phase 2: fill remaining slots by connectionCount
+  const remaining = [...nodes]
+    .filter((n) => !picked.has(n.id))
+    .sort((a, b) => (b.connectionCount ?? 0) - (a.connectionCount ?? 0));
+  for (const n of remaining) {
+    if (picked.size >= maxCount) break;
+    picked.add(n.id);
+  }
+
+  return nodes.filter((n) => picked.has(n.id));
 }

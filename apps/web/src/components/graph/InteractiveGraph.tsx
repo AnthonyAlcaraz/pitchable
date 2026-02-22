@@ -51,6 +51,7 @@ export function InteractiveGraph({ graphData, briefId, onRefresh }: InteractiveG
   // Drag state
   const [draggingNodeId, setDraggingNodeId] = useState<string | null>(null);
   const wasDraggedRef = useRef(false);
+  const dragStartRef = useRef<{ x: number; y: number } | null>(null);
 
   // Click/double-click disambiguation
   const clickTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -321,7 +322,13 @@ export function InteractiveGraph({ graphData, briefId, onRefresh }: InteractiveG
       }
 
       if (draggingNodeId) {
-        wasDraggedRef.current = true;
+        // Only mark as dragged after 3px movement threshold
+        if (!wasDraggedRef.current && dragStartRef.current) {
+          const dx = e.clientX - dragStartRef.current.x;
+          const dy = e.clientY - dragStartRef.current.y;
+          if (dx * dx + dy * dy < 9) return;
+          wasDraggedRef.current = true;
+        }
         const svg = svgRef.current;
         if (!svg) return;
         const rect = svg.getBoundingClientRect();
@@ -341,6 +348,7 @@ export function InteractiveGraph({ graphData, briefId, onRefresh }: InteractiveG
     if (draggingNodeId) {
       unpinNode(draggingNodeId);
       setDraggingNodeId(null);
+      dragStartRef.current = null;
       // Gentle reheat so nodes don't overlap after drop
       reheat(0.1);
     }
@@ -351,6 +359,7 @@ export function InteractiveGraph({ graphData, briefId, onRefresh }: InteractiveG
     (e: React.MouseEvent, nodeId: string) => {
       e.stopPropagation();
       wasDraggedRef.current = false;
+      dragStartRef.current = { x: e.clientX, y: e.clientY };
       setDraggingNodeId(nodeId);
       const svg = svgRef.current;
       if (!svg) return;
@@ -503,6 +512,14 @@ export function InteractiveGraph({ graphData, briefId, onRefresh }: InteractiveG
                 void handleNodeDoubleClick(node.id);
               }}
             >
+              {/* Invisible hit area for small nodes */}
+              <circle
+                cx={node.x}
+                cy={node.y}
+                r={Math.max(14, radius)}
+                fill="transparent"
+                stroke="none"
+              />
               {/* Selection ring */}
               {isSelected && (
                 <circle
