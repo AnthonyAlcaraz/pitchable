@@ -184,7 +184,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
       // Restore workflow phase from message history + slide count
       const slideCount = usePresentationStore.getState().presentation?.slides?.length ?? 0;
-      useWorkflowStore.getState().restoreFromState(msgs, slideCount, hasPendingOutline);
+      useWorkflowStore.getState().restoreFromState(msgs, slideCount, hasPendingOutline, presentationId);
       // If phase restored to 'reviewing', re-initialize review state from sessionStorage
       if (useWorkflowStore.getState().phase === 'reviewing') {
         usePresentationStore.getState().startReview();

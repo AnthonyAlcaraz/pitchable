@@ -80,6 +80,30 @@ interface PresentationState {
   resetReview: () => void;
 }
 
+// Scope review state to the current presentation ID to prevent cross-contamination
+function reviewKey(id: string) { return `pitchable-review-${id}`; }
+
+function saveReview(state: { presentation: PresentationData | null }, review: ReviewState) {
+  if (!state.presentation) return;
+  try { sessionStorage.setItem(reviewKey(state.presentation.id), JSON.stringify(review)); } catch { /* */ }
+}
+
+function loadReview(id: string): ReviewState | null {
+  try {
+    const saved = sessionStorage.getItem(reviewKey(id));
+    if (!saved) return null;
+    const parsed = JSON.parse(saved) as ReviewState;
+    if (parsed && Array.isArray(parsed.approvedSlides) && typeof parsed.currentStep === 'number') {
+      return parsed;
+    }
+  } catch { /* */ }
+  return null;
+}
+
+function clearReviewStorage(id: string) {
+  try { sessionStorage.removeItem(reviewKey(id)); } catch { /* */ }
+}
+
 export const usePresentationStore = create<PresentationState>((set, get) => ({
   presentation: null,
   currentSlideIndex: 0,
@@ -99,24 +123,41 @@ export const usePresentationStore = create<PresentationState>((set, get) => ({
   },
 
   setCurrentSlide(index: number) {
-    const { presentation } = get();
+    const { presentation, reviewState } = get();
     if (!presentation) return;
     const clamped = Math.max(0, Math.min(index, presentation.slides.length - 1));
-    set({ currentSlideIndex: clamped });
+    if (reviewState) {
+      const next = { ...reviewState, currentStep: clamped };
+      saveReview({ presentation }, next);
+      set({ currentSlideIndex: clamped, reviewState: next });
+    } else {
+      set({ currentSlideIndex: clamped });
+    }
   },
 
   nextSlide() {
-    const { currentSlideIndex, presentation } = get();
-    if (!presentation) return;
-    if (currentSlideIndex < presentation.slides.length - 1) {
-      set({ currentSlideIndex: currentSlideIndex + 1 });
+    const { currentSlideIndex, presentation, reviewState } = get();
+    if (!presentation || currentSlideIndex >= presentation.slides.length - 1) return;
+    const next = currentSlideIndex + 1;
+    if (reviewState) {
+      const nextReview = { ...reviewState, currentStep: next };
+      saveReview({ presentation }, nextReview);
+      set({ currentSlideIndex: next, reviewState: nextReview });
+    } else {
+      set({ currentSlideIndex: next });
     }
   },
 
   previousSlide() {
-    const { currentSlideIndex } = get();
-    if (currentSlideIndex > 0) {
-      set({ currentSlideIndex: currentSlideIndex - 1 });
+    const { currentSlideIndex, presentation, reviewState } = get();
+    if (currentSlideIndex <= 0) return;
+    const prev = currentSlideIndex - 1;
+    if (reviewState) {
+      const nextReview = { ...reviewState, currentStep: prev };
+      saveReview({ presentation }, nextReview);
+      set({ currentSlideIndex: prev, reviewState: nextReview });
+    } else {
+      set({ currentSlideIndex: prev });
     }
   },
 
@@ -204,18 +245,19 @@ export const usePresentationStore = create<PresentationState>((set, get) => ({
   },
 
   startReview() {
-    // Restore from sessionStorage if available (survives page reload)
-    try {
-      const saved = sessionStorage.getItem('pitchable-review-state');
-      if (saved) {
-        const parsed = JSON.parse(saved) as ReviewState;
-        if (parsed && Array.isArray(parsed.approvedSlides) && typeof parsed.currentStep === 'number') {
-          set({ reviewState: parsed });
-          return;
-        }
-      }
-    } catch { /* ignore */ }
-    set({ reviewState: { currentStep: 0, approvedSlides: [] } });
+    const { presentation } = get();
+    if (!presentation) {
+      set({ reviewState: { currentStep: 0, approvedSlides: [] }, currentSlideIndex: 0 });
+      return;
+    }
+    // Restore from sessionStorage scoped to this presentation
+    const saved = loadReview(presentation.id);
+    if (saved) {
+      set({ reviewState: saved, currentSlideIndex: saved.currentStep });
+      return;
+    }
+    // Fresh review
+    set({ reviewState: { currentStep: 0, approvedSlides: [] }, currentSlideIndex: 0 });
   },
 
   approveReviewSlide(index: number) {
@@ -225,8 +267,8 @@ export const usePresentationStore = create<PresentationState>((set, get) => ({
       const totalSlides = state.presentation.slides.length;
       const nextStep = index + 1 < totalSlides ? index + 1 : index;
       const next = { approvedSlides: approved, currentStep: nextStep };
-      try { sessionStorage.setItem('pitchable-review-state', JSON.stringify(next)); } catch { /* */ }
-      return { reviewState: next };
+      saveReview(state, next);
+      return { reviewState: next, currentSlideIndex: nextStep };
     });
   },
 
@@ -236,25 +278,28 @@ export const usePresentationStore = create<PresentationState>((set, get) => ({
       const total = state.presentation.slides.length;
       const allApproved = Array.from({ length: total }, (_, i) => i);
       const next = { approvedSlides: allApproved, currentStep: total - 1 };
-      try { sessionStorage.setItem('pitchable-review-state', JSON.stringify(next)); } catch { /* */ }
-      return { reviewState: next };
+      saveReview(state, next);
+      return { reviewState: next, currentSlideIndex: total - 1 };
     });
   },
 
   unapproveSlides(indices: number[]) {
     set((state) => {
-      if (!state.reviewState) return state;
+      if (!state.reviewState || !state.presentation) return state;
       const remaining = state.reviewState.approvedSlides.filter(
         (i) => !indices.includes(i),
       );
       const next = { ...state.reviewState, approvedSlides: remaining };
-      try { sessionStorage.setItem('pitchable-review-state', JSON.stringify(next)); } catch { /* */ }
+      saveReview(state, next);
       return { reviewState: next };
     });
   },
 
   resetReview() {
-    try { sessionStorage.removeItem('pitchable-review-state'); } catch { /* */ }
+    const { presentation } = get();
+    if (presentation) {
+      clearReviewStorage(presentation.id);
+    }
     set({ reviewState: null });
   },
 }));

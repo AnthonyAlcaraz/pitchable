@@ -4,6 +4,7 @@ import { Send, AlertCircle } from 'lucide-react';
 import { SlashCommandMenu } from './SlashCommandMenu.js';
 import { useWorkflowStore } from '../../stores/workflow.store.js';
 import { useAuthStore } from '../../stores/auth.store.js';
+import { usePresentationStore } from '../../stores/presentation.store.js';
 
 interface ChatInputProps {
   onSend: (message: string) => void;
@@ -13,6 +14,7 @@ interface ChatInputProps {
 export function ChatInput({ onSend, disabled }: ChatInputProps) {
   const phase = useWorkflowStore((s) => s.phase);
   const creditBalance = useAuthStore((s) => s.user?.creditBalance ?? null);
+  const slideCount = usePresentationStore((s) => s.presentation?.slides?.length ?? 0);
   const { t } = useTranslation();
   const [value, setValue] = useState('');
   const [showCommands, setShowCommands] = useState(false);
@@ -65,6 +67,11 @@ export function ChatInput({ onSend, disabled }: ChatInputProps) {
     textareaRef.current?.focus();
   };
 
+  // Context-aware placeholder
+  const placeholder = slideCount > 0
+    ? 'What would you like to change or add to your slides?'
+    : t('chat.input.placeholder');
+
   return (
     <div className="relative border-t border-border bg-card p-3">
       {showCommands && (
@@ -80,7 +87,7 @@ export function ChatInput({ onSend, disabled }: ChatInputProps) {
           value={value}
           onChange={handleChange}
           onKeyDown={handleKeyDown}
-          placeholder={t('chat.input.placeholder')}
+          placeholder={placeholder}
           disabled={disabled || phase === 'generating'}
           rows={1}
           className="flex-1 resize-none rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-orange-500/50 focus:bg-background disabled:opacity-50"

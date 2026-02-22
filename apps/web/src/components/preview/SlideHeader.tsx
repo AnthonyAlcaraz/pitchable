@@ -10,6 +10,8 @@ interface SlideHeaderProps {
   onNext: () => void;
   onFullscreen: () => void;
   onExport?: (format: string) => void;
+  approvedCount?: number;
+  exportDisabled?: boolean;
 }
 
 const EXPORT_FORMATS = [
@@ -29,6 +31,8 @@ export function SlideHeader({
   onNext,
   onFullscreen,
   onExport,
+  approvedCount,
+  exportDisabled,
 }: SlideHeaderProps) {
   const [showMenu, setShowMenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -45,9 +49,23 @@ export function SlideHeader({
     }
   }, [showMenu]);
 
+  const showApprovalProgress = approvedCount != null && totalSlides > 0;
+
   return (
     <div className="flex h-10 items-center justify-between border-b border-border px-3">
-      <span className="truncate text-sm font-medium text-foreground">{title}</span>
+      <div className="flex items-center gap-2 min-w-0">
+        <span className="truncate text-sm font-medium text-foreground">{title}</span>
+        {showApprovalProgress && (
+          <span className={cn(
+            'flex-shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium',
+            approvedCount >= totalSlides
+              ? 'bg-green-500/15 text-green-400'
+              : 'bg-orange-500/15 text-orange-400',
+          )}>
+            {approvedCount}/{totalSlides} approved
+          </span>
+        )}
+      </div>
 
       <div className="flex items-center gap-1">
         <button
@@ -93,15 +111,20 @@ export function SlideHeader({
         {onExport && (
           <div className="relative" ref={menuRef}>
             <button
-              onClick={() => setShowMenu((v) => !v)}
-              className="flex items-center gap-0.5 rounded p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-              title="Export presentation"
+              onClick={() => !exportDisabled && setShowMenu((v) => !v)}
+              className={cn(
+                'flex items-center gap-0.5 rounded p-1 transition-colors',
+                exportDisabled
+                  ? 'cursor-not-allowed text-muted-foreground/30'
+                  : 'text-muted-foreground hover:bg-accent hover:text-foreground',
+              )}
+              title={exportDisabled ? 'Approve all slides to export' : 'Export presentation'}
             >
               <Download className="h-4 w-4" />
               <ChevronDown className="h-3 w-3" />
             </button>
 
-            {showMenu && (
+            {showMenu && !exportDisabled && (
               <div className="absolute right-0 top-full z-50 mt-1 min-w-[10rem] rounded-md border border-border bg-popover py-1 shadow-md">
                 {EXPORT_FORMATS.map((fmt) => (
                   <button

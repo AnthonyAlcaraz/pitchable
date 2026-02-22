@@ -30,7 +30,7 @@ interface WorkflowState {
   setSubjectSuggestions: (s: SubjectSuggestion[]) => void;
   cacheSuggestions: (key: string, s: SubjectSuggestion[]) => void;
   getCachedSuggestions: (key: string) => SubjectSuggestion[] | undefined;
-  restoreFromState: (messages: ChatMessage[], slideCount: number, hasPendingOutline: boolean) => void;
+  restoreFromState: (messages: ChatMessage[], slideCount: number, hasPendingOutline: boolean, presentationId?: string) => void;
   reset: () => void;
 }
 
@@ -62,20 +62,23 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
     return get().suggestionCache.get(key);
   },
 
-  restoreFromState: (messages, slideCount, hasPendingOutline) => {
+  restoreFromState: (messages, slideCount, hasPendingOutline, presentationId) => {
     // When slides exist AND there's a saved review state, resume review instead of editing
     if (slideCount > 0) {
-      try {
-        const savedReview = sessionStorage.getItem('pitchable-review-state');
-        if (savedReview) {
-          const parsed = JSON.parse(savedReview);
-          if (parsed && Array.isArray(parsed.approvedSlides) && parsed.approvedSlides.length < slideCount) {
-            // Not all slides approved — resume review
-            set({ phase: 'reviewing' });
-            return;
+      if (presentationId) {
+        try {
+          const key = `pitchable-review-${presentationId}`;
+          const savedReview = sessionStorage.getItem(key);
+          if (savedReview) {
+            const parsed = JSON.parse(savedReview);
+            if (parsed && Array.isArray(parsed.approvedSlides) && parsed.approvedSlides.length < slideCount) {
+              // Not all slides approved — resume review
+              set({ phase: 'reviewing' });
+              return;
+            }
           }
-        }
-      } catch { /* fall through to editing */ }
+        } catch { /* fall through to editing */ }
+      }
       set({ phase: 'editing' });
       return;
     }

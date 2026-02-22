@@ -9,7 +9,6 @@ import { ChatHistory } from './ChatHistory.js';
 import { ChatInput } from './ChatInput.js';
 import { SubjectSelector } from './SubjectSelector.js';
 import { OutlineApproveBar } from './OutlineApproveBar.js';
-import { StickySlidePreview } from './StickySlidePreview.js';
 import { api } from '../../lib/api.js';
 
 interface ChatPanelProps {
@@ -182,8 +181,6 @@ export function ChatPanel({ presentationId, briefId, lensId }: ChatPanelProps) {
           </button>
         </div>
       )}
-
-      {!isNew && <StickySlidePreview />}
 
       {isNew ? (
         <div className="flex flex-1 flex-col items-center justify-center p-8 text-center text-muted-foreground">
