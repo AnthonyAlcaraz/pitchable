@@ -254,6 +254,13 @@ export function SlideReviewFlow({
           {Math.min(approvedSlides.length, totalSlides)}/{totalSlides} approved
         </span>
         <div className="flex-1" />
+        <button
+          type="button"
+          onClick={onFinishReview}
+          className="flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+        >
+          Skip Review
+        </button>
         {!allApproved && (
           <button
             type="button"
@@ -305,10 +312,21 @@ export function SlideReviewFlow({
                   : 'border-border hover:border-primary/50'
               }`}
             >
-              <div className="aspect-video w-full rounded-md bg-card p-2">
-                <p className="truncate text-[8px] font-medium text-foreground">{slide.title}</p>
-                <p className="mt-0.5 line-clamp-2 text-[6px] text-muted-foreground">{slide.body}</p>
-              </div>
+              {slide.previewUrl ? (
+                <div className="aspect-video w-full overflow-hidden rounded-md bg-card">
+                  <img
+                    src={`/api/slides/${slide.id}/preview`}
+                    alt={slide.title}
+                    className="h-full w-full object-cover"
+                    loading="lazy"
+                  />
+                </div>
+              ) : (
+                <div className="aspect-video w-full rounded-md bg-card p-2">
+                  <p className="truncate text-[8px] font-medium text-foreground">{slide.title}</p>
+                  <p className="mt-0.5 line-clamp-2 text-[6px] text-muted-foreground">{slide.body}</p>
+                </div>
+              )}
               <span className={`absolute bottom-0.5 right-1 text-[8px] font-medium ${
                 index === currentStep ? 'text-primary' : 'text-muted-foreground'
               }`}>

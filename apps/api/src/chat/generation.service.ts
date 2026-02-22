@@ -1050,9 +1050,9 @@ OUTPUT: Valid JSON matching this schema (no markdown fences):
 
       yield { type: 'progress', content: 'Running quality review agents', metadata: { step: 'quality_review', status: 'complete' } };
 
-      // Apply auto-fixes from agents
+      // Apply auto-fixes from agents (silently — no user-facing output)
       if (qualityResult.fixes.length > 0) {
-        yield { type: 'token', content: `\n**Quality Review:** Auto-fixing ${qualityResult.fixes.length} slides...\n` };
+        this.logger.log(`Quality review auto-fixing ${qualityResult.fixes.length} slides`);
         for (const fix of qualityResult.fixes) {
           const slideToFix = allSlides.find((s) => s.slideNumber === fix.slideNumber);
           if (slideToFix) {
@@ -1065,28 +1065,15 @@ OUTPUT: Valid JSON matching this schema (no markdown fences):
               slideId: slideToFix.id,
               data: { title: fix.fixedTitle, body: fix.fixedBody },
             });
-            yield { type: 'token', content: `  Fixed slide ${fix.slideNumber} (${fix.agent}): "${fix.fixedTitle}"\n` };
           }
         }
       }
 
-      // Report quality metrics
+      // Log quality metrics internally (not shown to user)
       const m = qualityResult.metrics;
-      yield {
-        type: 'token',
-        content: `\n**Quality Scores:** Style: ${(m.avgStyleScore * 100).toFixed(0)}% | Narrative: ${(m.narrativeScore * 100).toFixed(0)}% | Facts: ${(m.avgFactScore * 100).toFixed(0)}%${m.errorsFound > 0 ? ` | Errors fixed: ${m.errorsFound}` : ''}\n`,
-      };
-
-      // Report narrative issues (if any)
-      if (qualityResult.narrativeResult?.issues.length) {
-        const errors = qualityResult.narrativeResult.issues.filter((i) => i.severity === 'error');
-        if (errors.length > 0) {
-          yield { type: 'token', content: `\n**Narrative Issues:**\n` };
-          for (const issue of errors) {
-            yield { type: 'token', content: `- Slides ${issue.slideNumbers.join(',')}: ${issue.message}\n` };
-          }
-        }
-      }
+      this.logger.log(
+        `Quality scores for ${presentationId}: Style=${(m.avgStyleScore * 100).toFixed(0)}% Narrative=${(m.narrativeScore * 100).toFixed(0)}% Facts=${(m.avgFactScore * 100).toFixed(0)}%${m.errorsFound > 0 ? ` Errors=${m.errorsFound}` : ''}`,
+      );
     } catch (qualityErr) {
       this.logger.warn(`Quality review pipeline failed (non-fatal): ${qualityErr}`);
       yield { type: 'progress', content: 'Quality review skipped', metadata: { step: 'quality_review', status: 'complete' } };

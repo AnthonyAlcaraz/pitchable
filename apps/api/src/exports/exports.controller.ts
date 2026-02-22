@@ -6,6 +6,7 @@ import {
   Param,
   Res,
   UseGuards,
+  BadRequestException,
 } from '@nestjs/common';
 import type { HttpResponse } from '../types/express.js';
 import { ExportsService } from './exports.service.js';
@@ -13,7 +14,8 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
 import { ExportFormat } from '../../generated/prisma/enums.js';
 
 interface CreateExportBody {
-  format: ExportFormat;
+  format?: ExportFormat;
+  formats?: ExportFormat[];
   renderEngine?: 'auto' | 'marp' | 'figma';
 }
 
@@ -27,19 +29,21 @@ export class ExportsController {
     @Param('id') presentationId: string,
     @Body() body: CreateExportBody,
   ) {
-    const job = await this.exportsService.createExportJob(
-      presentationId,
-      body.format,
+    // Support both { format: 'PDF' } and { formats: ['PDF'] } from frontend
+    const requestedFormats = body.formats ?? (body.format ? [body.format] : []);
+    if (requestedFormats.length === 0) {
+      throw new BadRequestException('No export format specified');
+    }
+
+    const jobs = await Promise.all(
+      requestedFormats.map(async (fmt) => {
+        const job = await this.exportsService.createExportJob(presentationId, fmt);
+        void this.exportsService.processExport(job.id, body.renderEngine);
+        return { id: job.id, status: job.status, format: job.format };
+      }),
     );
 
-    // Process the export immediately (in production, this would be a queue job)
-    void this.exportsService.processExport(job.id, body.renderEngine);
-
-    return {
-      jobId: job.id,
-      status: job.status,
-      format: job.format,
-    };
+    return jobs;
   }
 
   @Get('exports/:jobId')
@@ -75,6 +79,12 @@ export class ExportsController {
 
     // S3 presigned URL — redirect
     res.redirect(url);
+  }
+
+  @Post('presentations/:id/generate-previews')
+  async generatePreviews(@Param('id') presentationId: string) {
+    void this.exportsService.generatePreviewsForPresentation(presentationId);
+    return { status: 'started' };
   }
 
   @Get('slides/:slideId/preview')

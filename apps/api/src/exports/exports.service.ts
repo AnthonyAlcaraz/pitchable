@@ -1086,6 +1086,30 @@ export class ExportsService {
    * Uses the same Marp markdown the export uses.
    * Updates each slide's previewUrl in the database.
    */
+  /**
+   * Generate preview images for all slides in a presentation.
+   * Can be called standalone (after deck generation) or as part of export.
+   */
+  async generatePreviewsForPresentation(presentationId: string): Promise<void> {
+    const presentation = await this.prisma.presentation.findUnique({
+      where: { id: presentationId },
+      include: { theme: true },
+    });
+    if (!presentation || !presentation.theme) return;
+
+    const slides = await this.prisma.slide.findMany({
+      where: { presentationId },
+      orderBy: { slideNumber: 'asc' },
+    });
+    if (slides.length === 0) return;
+
+    await this.generateSlidePreviewImages(
+      presentation as unknown as PresentationModel,
+      slides as unknown as SlideModel[],
+      presentation.theme as unknown as ThemeModel,
+    );
+  }
+
   private async generateSlidePreviewImages(
     presentation: PresentationModel,
     slides: SlideModel[],

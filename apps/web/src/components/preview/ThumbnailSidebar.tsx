@@ -25,7 +25,18 @@ export function ThumbnailSidebar({ slides, currentIndex, onSelect, theme }: Thum
               : 'border-border hover:border-primary/50',
           )}
         >
-          <SlideRenderer slide={slide} theme={theme} scale={0.35} />
+          {slide.previewUrl ? (
+            <div className="aspect-video w-full overflow-hidden rounded-md bg-card">
+              <img
+                src={`/api/slides/${slide.id}/preview`}
+                alt={slide.title}
+                className="h-full w-full object-cover"
+                loading="lazy"
+              />
+            </div>
+          ) : (
+            <SlideRenderer slide={slide} theme={theme} scale={0.35} />
+          )}
           <span
             className={cn(
               'absolute bottom-0.5 right-1 text-[8px] font-medium',
