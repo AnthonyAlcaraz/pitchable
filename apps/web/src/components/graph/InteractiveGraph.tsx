@@ -51,6 +51,7 @@ export function InteractiveGraph({ graphData, briefId, onRefresh }: InteractiveG
   // Drag state
   const [draggingNodeId, setDraggingNodeId] = useState<string | null>(null);
   const wasDraggedRef = useRef(false);
+  const wasPannedRef = useRef(false);
   const dragStartRef = useRef<{ x: number; y: number } | null>(null);
 
   // Click/double-click disambiguation
@@ -140,6 +141,28 @@ export function InteractiveGraph({ graphData, briefId, onRefresh }: InteractiveG
     setRebuildKey((k) => k + 1);
   }, [visibleNodeIds, activeTypes, allNodesMap, graphData.edges, visibleEdges]);
 
+  // Auto-fit viewbox after simulation settles (800ms after rebuild)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const nodes = simNodesRef.current;
+      if (nodes.length === 0) return;
+      let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+      for (const n of nodes) {
+        if (isNaN(n.x) || isNaN(n.y)) return;
+        minX = Math.min(minX, n.x);
+        maxX = Math.max(maxX, n.x);
+        minY = Math.min(minY, n.y);
+        maxY = Math.max(maxY, n.y);
+      }
+      const padding = 50;
+      const w = Math.max(MIN_VIEWBOX_SIZE, maxX - minX + padding * 2);
+      const h = Math.max(MIN_VIEWBOX_SIZE, maxY - minY + padding * 2);
+      setViewBox({ x: minX - padding, y: minY - padding, w, h });
+    }, 800);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rebuildKey]);
+
   const handleTick = useCallback(() => {
     forceRender();
   }, [forceRender]);
@@ -182,10 +205,7 @@ export function InteractiveGraph({ graphData, briefId, onRefresh }: InteractiveG
       wasDraggedRef.current = false;
       return;
     }
-    clearTimeout(clickTimeoutRef.current);
-    clickTimeoutRef.current = setTimeout(() => {
-      setSelectedNodeId((prev) => (prev === nodeId ? null : nodeId));
-    }, 200);
+    setSelectedNodeId(nodeId);
   }, []);
 
   // Double-click = expand
@@ -277,13 +297,14 @@ export function InteractiveGraph({ graphData, briefId, onRefresh }: InteractiveG
     const svg = svgRef.current;
     if (!svg) return;
     const handler = (e: WheelEvent) => {
+      // Require Ctrl/Cmd to zoom -- otherwise let page scroll through
+      if (!e.ctrlKey && !e.metaKey) return;
+      e.preventDefault();
       const vb = viewBoxRef.current;
       const factor = e.deltaY > 0 ? 1.1 : 0.9;
       const newW = Math.max(MIN_VIEWBOX_SIZE, Math.min(MAX_VIEWBOX_SIZE, vb.w * factor));
       const newH = Math.max(MIN_VIEWBOX_SIZE, Math.min(MAX_VIEWBOX_SIZE, vb.h * factor));
-      // Only intercept scroll if zoom actually changes (not clamped at bounds)
       if (newW === vb.w && newH === vb.h) return;
-      e.preventDefault();
       const dx = (newW - vb.w) / 2;
       const dy = (newH - vb.h) / 2;
       setViewBox({ x: vb.x - dx, y: vb.y - dy, w: newW, h: newH });
@@ -298,6 +319,7 @@ export function InteractiveGraph({ graphData, briefId, onRefresh }: InteractiveG
       const tag = (e.target as SVGElement).tagName;
       if (tag === 'svg' || tag === 'rect') {
         setIsPanning(true);
+        wasPannedRef.current = false;
         const vb = viewBoxRef.current;
         panStartRef.current = { x: e.clientX, y: e.clientY, vx: vb.x, vy: vb.y };
       }
@@ -308,6 +330,7 @@ export function InteractiveGraph({ graphData, briefId, onRefresh }: InteractiveG
   const handleMouseMove = useCallback(
     (e: React.MouseEvent) => {
       if (isPanning && panStartRef.current) {
+        wasPannedRef.current = true;
         const svg = svgRef.current;
         if (!svg) return;
         const vb = viewBoxRef.current;
@@ -349,8 +372,10 @@ export function InteractiveGraph({ graphData, briefId, onRefresh }: InteractiveG
       unpinNode(draggingNodeId);
       setDraggingNodeId(null);
       dragStartRef.current = null;
-      // Gentle reheat so nodes don't overlap after drop
-      reheat(0.1);
+      // Only reheat if the node was actually dragged (not just clicked)
+      if (wasDraggedRef.current) {
+        reheat(0.1);
+      }
     }
   }, [draggingNodeId, unpinNode, reheat]);
 
@@ -441,6 +466,12 @@ export function InteractiveGraph({ graphData, briefId, onRefresh }: InteractiveG
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
+        onClick={(e) => {
+          const tag = (e.target as SVGElement).tagName;
+          if ((tag === 'svg' || tag === 'rect') && !wasPannedRef.current) {
+            setSelectedNodeId(null);
+          }
+        }}
       >
         {/* Background rect for pan detection */}
         <rect
@@ -491,7 +522,8 @@ export function InteractiveGraph({ graphData, briefId, onRefresh }: InteractiveG
         {/* Render nodes */}
         {renderedNodes.map((node) => {
           const color = NODE_COLORS[node.type] ?? '#6b7280';
-          const radius = getNodeRadius(node.connectionCount);
+          const importance = typeof node.properties?.importance === 'number' ? node.properties.importance : undefined;
+          const radius = getNodeRadius(node.connectionCount, importance);
           const isSelected = node.id === selectedNodeId;
           const isExpanded = expandedNodeIds.has(node.id);
           const displayLabel =
@@ -517,7 +549,7 @@ export function InteractiveGraph({ graphData, briefId, onRefresh }: InteractiveG
               <circle
                 cx={node.x}
                 cy={node.y}
-                r={Math.max(14, radius)}
+                r={Math.max(20, radius)}
                 fill="transparent"
                 stroke="none"
               />
@@ -569,6 +601,11 @@ export function InteractiveGraph({ graphData, briefId, onRefresh }: InteractiveG
           );
         })}
       </svg>
+
+      {/* Zoom hint */}
+      <div className="absolute bottom-2 right-2 text-[10px] text-muted-foreground/50 pointer-events-none select-none">
+        Ctrl + scroll to zoom
+      </div>
 
       {/* Edge tooltip (fixed positioning to work in both normal and fullscreen) */}
       {hoveredEdge && (

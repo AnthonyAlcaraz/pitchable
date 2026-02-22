@@ -130,6 +130,8 @@ export class PitchBriefService {
             status: true,
             chunkCount: true,
             createdAt: true,
+            errorMessage: true,
+            sourceUrl: true,
           },
         },
         briefLenses: {

@@ -95,6 +95,7 @@ export interface NodeDetails {
   name: string;
   type: string;
   description: string;
+  aliases: string[];
   connectionCount: number;
   relationships: NodeRelationship[];
   sourceDocuments: NodeSourceDocument[];

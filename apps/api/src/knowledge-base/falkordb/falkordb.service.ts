@@ -300,7 +300,8 @@ export class FalkorDbService implements OnModuleDestroy {
        RETURN n.id AS id, n.name AS name,
               COALESCE(n.type, labels(n)[0]) AS type,
               COALESCE(n.description, n.title, '') AS description,
-              n.documentId AS documentId
+              n.documentId AS documentId,
+              n.importance AS importance
        LIMIT $limit`,
       { params: { limit } },
     );
@@ -314,7 +315,7 @@ export class FalkorDbService implements OnModuleDestroy {
         documentId: row['documentId']
           ? String(row['documentId'])
           : undefined,
-        properties: {},
+        properties: { importance: row['importance'] != null ? Number(row['importance']) : undefined },
       }),
     );
 
@@ -480,7 +481,7 @@ export class FalkorDbService implements OnModuleDestroy {
     // Fetch the node
     const nodeResult = await graph.query(
       `MATCH (n:Entity) WHERE n.id = $nodeId
-       RETURN n.id AS id, n.name AS name, n.type AS type, n.description AS description`,
+       RETURN n.id AS id, n.name AS name, n.type AS type, n.description AS description, n.aliases AS aliases`,
       { params: { nodeId } },
     );
     const nodeRow = (nodeResult.data ?? [])[0] as Record<string, unknown> | undefined;
@@ -533,6 +534,7 @@ export class FalkorDbService implements OnModuleDestroy {
       name: String(nodeRow['name'] ?? ''),
       type: String(nodeRow['type'] ?? ''),
       description: String(nodeRow['description'] ?? ''),
+      aliases: Array.isArray(nodeRow['aliases']) ? (nodeRow['aliases'] as string[]) : [],
       connectionCount,
       relationships,
       sourceDocuments,

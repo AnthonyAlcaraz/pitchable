@@ -40,9 +40,10 @@ export const NODE_TYPE_LABELS: Record<string, string> = {
   Document: 'Document',
 };
 
-export function getNodeRadius(connectionCount: number | undefined): number {
-  const count = connectionCount ?? 1;
-  return Math.max(6, Math.min(20, count * 1.5));
+export function getNodeRadius(connectionCount: number | undefined, importance?: number): number {
+  // Prefer importance score if available, fall back to connectionCount
+  const score = importance ?? (connectionCount ?? 1);
+  return Math.max(6, Math.min(20, score * 1.5));
 }
 
 export function getEdgeOpacity(weight: number): number {
@@ -50,7 +51,6 @@ export function getEdgeOpacity(weight: number): number {
 }
 
 export function getInitialNodes(nodes: GraphNode[], maxCount = 30): GraphNode[] {
-  // Guarantee at least 1 node per type, then fill by connectionCount
   const byType = new Map<string, GraphNode[]>();
   for (const n of nodes) {
     const list = byType.get(n.type) ?? [];
@@ -58,20 +58,22 @@ export function getInitialNodes(nodes: GraphNode[], maxCount = 30): GraphNode[] 
     byType.set(n.type, list);
   }
 
+  // Score: prefer importance property, fall back to connectionCount
+  const score = (n: GraphNode) => {
+    const imp = n.properties?.importance;
+    return typeof imp === 'number' ? imp : (n.connectionCount ?? 0);
+  };
+
   const picked = new Set<string>();
-  // Phase 1: pick the top node from each type
   for (const [, list] of byType) {
-    const best = list.reduce((a, b) =>
-      (b.connectionCount ?? 0) > (a.connectionCount ?? 0) ? b : a,
-    );
+    const best = list.reduce((a, b) => score(b) > score(a) ? b : a);
     picked.add(best.id);
     if (picked.size >= maxCount) break;
   }
 
-  // Phase 2: fill remaining slots by connectionCount
   const remaining = [...nodes]
     .filter((n) => !picked.has(n.id))
-    .sort((a, b) => (b.connectionCount ?? 0) - (a.connectionCount ?? 0));
+    .sort((a, b) => score(b) - score(a));
   for (const n of remaining) {
     if (picked.size >= maxCount) break;
     picked.add(n.id);

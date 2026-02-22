@@ -26,6 +26,8 @@ export interface BriefDocument {
   status: string;
   chunkCount: number;
   createdAt: string;
+  errorMessage: string | null;
+  sourceUrl: string | null;
 }
 
 export interface BriefLensLink {
@@ -104,6 +106,7 @@ export interface NodeDetails {
   name: string;
   type: string;
   description: string;
+  aliases: string[];
   connectionCount: number;
   relationships: NodeRelationship[];
   sourceDocuments: NodeSourceDocument[];
