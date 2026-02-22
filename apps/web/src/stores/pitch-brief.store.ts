@@ -51,6 +51,7 @@ export interface GraphNode {
   type: string;
   description: string;
   documentId?: string;
+  connectionCount?: number;
   properties: Record<string, unknown>;
 }
 
@@ -75,6 +76,12 @@ export interface GraphStats {
   totalEdges: number;
   nodeTypes: Record<string, number>;
   edgeTypes: Record<string, number>;
+}
+
+export interface NeighborData {
+  centerNode: GraphNode | null;
+  neighbors: GraphNode[];
+  edges: GraphEdge[];
 }
 
 export interface SearchResult {
@@ -112,6 +119,7 @@ interface PitchBriefState {
 
   loadGraph: (briefId: string, opts?: { startNode?: string; depth?: number; maxNodes?: number }) => Promise<void>;
   loadGraphStats: (briefId: string) => Promise<void>;
+  loadNeighbors: (briefId: string, nodeId: string, limit?: number) => Promise<NeighborData>;
   search: (briefId: string, query: string) => Promise<SearchResult>;
 
   linkLens: (briefId: string, lensId: string) => Promise<void>;
@@ -239,6 +247,11 @@ export const usePitchBriefStore = create<PitchBriefState>((set, get) => ({
     } catch {
       // Non-critical — don't set error
     }
+  },
+
+  async loadNeighbors(briefId, nodeId, limit) {
+    const params = limit ? `?limit=${limit}` : '';
+    return api.get<NeighborData>(`/pitch-briefs/${briefId}/graph/neighbors/${nodeId}${params}`);
   },
 
   async search(briefId, query) {
