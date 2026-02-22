@@ -4,10 +4,9 @@ import { useTranslation } from 'react-i18next';
 import { usePitchBriefStore } from '@/stores/pitch-brief.store';
 import type { SearchResult } from '@/stores/pitch-brief.store';
 import { usePitchLensStore } from '@/stores/pitch-lens.store';
-import { ArrowLeft, BookOpen, Plus, Trash2, Upload, FileText, Link2, Unlink, Search, Network, AlertTriangle, CheckCircle2, Clock, Presentation, Globe, ExternalLink } from 'lucide-react';
+import { ArrowLeft, BookOpen, Plus, Trash2, Upload, FileText, Link2, Unlink, Search, AlertTriangle, CheckCircle2, Clock, Presentation, Globe, ExternalLink } from 'lucide-react';
 import { useDocumentProgress } from '@/hooks/useDocumentProgress';
 import { useKbStore } from '@/stores/kb.store';
-import { InteractiveGraph } from '@/components/graph/InteractiveGraph';
 
 const STATUS_COLORS: Record<string, string> = {
   EMPTY: 'bg-gray-500/10 text-gray-400',
@@ -17,16 +16,6 @@ const STATUS_COLORS: Record<string, string> = {
   PROCESSING: 'bg-yellow-500/10 text-yellow-500',
   READY: 'bg-green-500/10 text-green-500',
   ERROR: 'bg-red-500/10 text-red-500',
-};
-
-const ENTITY_COLORS: Record<string, string> = {
-  PERSON: 'bg-blue-500/10 text-blue-400',
-  ORGANIZATION: 'bg-amber-500/10 text-amber-500',
-  CONCEPT: 'bg-green-500/10 text-green-500',
-  TECHNOLOGY: 'bg-purple-500/10 text-purple-500',
-  PRODUCT: 'bg-rose-500/10 text-rose-500',
-  EVENT: 'bg-cyan-500/10 text-cyan-500',
-  LOCATION: 'bg-orange-500/10 text-orange-500',
 };
 
 function formatFileSize(bytes: number | null): string {
@@ -55,11 +44,7 @@ export function PitchBriefDetailPage() {
 
   const {
     currentBrief,
-    graphData,
-    graphStats,
     loadBrief,
-    loadGraph,
-    loadGraphStats,
     uploadDocument,
     addTextDocument,
     addUrlDocument,
@@ -115,11 +100,9 @@ export function PitchBriefDetailPage() {
   useEffect(() => {
     if (id) {
       loadBrief(id);
-      loadGraph(id);
-      loadGraphStats(id);
       loadLenses();
     }
-  }, [id, loadBrief, loadGraph, loadGraphStats, loadLenses]);
+  }, [id, loadBrief, loadLenses]);
 
   useEffect(() => {
     const hasProcessing = docs.some(
@@ -204,7 +187,6 @@ export function PitchBriefDetailPage() {
   // Readiness checks
   const hasDocuments = docs.length > 0;
   const allDocsReady = docs.length > 0 && docs.every((d) => d.status === 'READY' || d.status === 'ERROR');
-  const hasEntities = (graphStats?.totalNodes ?? 0) > 0;
   const hasLenses = briefLenses.length > 0;
   const isReady = currentBrief?.status === 'READY';
   const canGenerate = isReady && hasLenses;
@@ -306,19 +288,6 @@ export function PitchBriefDetailPage() {
             </div>
           </div>
 
-          <div className={`flex items-center gap-2 p-3 rounded-lg ${hasEntities ? 'bg-green-500/5' : 'bg-muted/50'}`}>
-            {hasEntities ? (
-              <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0" />
-            ) : (
-              <Network className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-            )}
-            <div>
-              <div className="text-sm font-medium text-foreground">{graphStats?.totalNodes ?? 0} Entities</div>
-              <div className="text-[10px] text-muted-foreground">
-                {hasEntities ? `${graphStats?.totalEdges ?? 0} relationships` : 'Extracted from docs'}
-              </div>
-            </div>
-          </div>
 
           <div className={`flex items-center gap-2 p-3 rounded-lg ${hasLenses ? 'bg-green-500/5' : 'bg-orange-500/5'}`}>
             {hasLenses ? (
@@ -702,67 +671,8 @@ export function PitchBriefDetailPage() {
           </div>
         </div>
 
-        {/* Right Column - Graph Stats & Visualization */}
+        {/* Right Column - Search */}
         <div className="lg:col-span-2 space-y-8">
-          {/* Graph Stats */}
-          <div className="bg-card border border-border rounded-lg p-6">
-            <h2 className="text-xl font-semibold text-foreground mb-6 flex items-center gap-2">
-              <Network className="w-5 h-5" />
-              {t('pitch_briefs.detail.graph_stats_title')}
-            </h2>
-
-            {graphStats ? (
-              <div className="space-y-6">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="p-4 bg-background rounded-lg">
-                    <div className="text-2xl font-bold text-foreground">{graphStats.totalNodes}</div>
-                    <div className="text-sm text-muted-foreground">{t('pitch_briefs.detail.nodes')}</div>
-                  </div>
-                  <div className="p-4 bg-background rounded-lg">
-                    <div className="text-2xl font-bold text-foreground">{graphStats.totalEdges}</div>
-                    <div className="text-sm text-muted-foreground">{t('pitch_briefs.detail.edges')}</div>
-                  </div>
-                </div>
-
-                {graphStats.nodeTypes && Object.keys(graphStats.nodeTypes).length > 0 && (
-                  <div>
-                    <h3 className="text-sm font-medium text-foreground mb-3">{t('pitch_briefs.detail.node_types')}</h3>
-                    <div className="flex flex-wrap gap-2">
-                      {Object.entries(graphStats.nodeTypes).map(([type, count]) => (
-                        <span
-                          key={type}
-                          className={`px-2 py-1 rounded-full text-xs font-medium ${
-                            ENTITY_COLORS[type] || 'bg-gray-500/10 text-gray-400'
-                          }`}
-                        >
-                          {type}: {count}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {graphStats.edgeTypes && Object.keys(graphStats.edgeTypes).length > 0 && (
-                  <div>
-                    <h3 className="text-sm font-medium text-foreground mb-3">{t('pitch_briefs.detail.edge_types')}</h3>
-                    <div className="flex flex-wrap gap-2">
-                      {Object.entries(graphStats.edgeTypes).map(([type, count]) => (
-                        <span
-                          key={type}
-                          className="px-2 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary"
-                        >
-                          {type === 'CO_OCCURS' ? 'Co-occurs' : type.replace(/_/g, ' ')}: {count}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <p className="text-sm text-muted-foreground text-center py-8">{t('pitch_briefs.detail.no_graph_data')}</p>
-            )}
-          </div>
-
           {/* Search Panel */}
           <div className="bg-card border border-border rounded-lg p-6">
             <h2 className="text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
@@ -817,21 +727,6 @@ export function PitchBriefDetailPage() {
         </div>
       </div>
 
-      {/* Knowledge Graph — full width for better node visibility */}
-      <div className="mt-8 bg-card border border-border rounded-lg p-6 relative">
-        {graphData ? (
-          <InteractiveGraph
-            graphData={graphData}
-            briefId={id!}
-            onRefresh={() => id && loadGraph(id)}
-          />
-        ) : (
-          <div className="flex flex-col items-center justify-center h-[400px] bg-background rounded-lg border border-border">
-            <Network className="w-12 h-12 text-muted-foreground mb-3" />
-            <p className="text-sm text-muted-foreground">{t('pitch_briefs.detail.empty_graph')}</p>
-          </div>
-        )}
-      </div>
     </div>
   );
 }
