@@ -11,6 +11,7 @@ import {
 import type { HttpResponse } from '../types/express.js';
 import { ExportsService } from './exports.service.js';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
+import { SkipThrottle } from '@nestjs/throttler';
 import { ExportFormat } from '../../generated/prisma/enums.js';
 
 interface CreateExportBody {
@@ -86,6 +87,7 @@ export class ExportsController {
     res.redirect(url);
   }
 
+  @SkipThrottle()
   @Post('presentations/:id/generate-previews')
   async generatePreviews(@Param('id') presentationId: string) {
     this.exportsService.generatePreviewsForPresentation(presentationId).catch(() => {
@@ -94,6 +96,7 @@ export class ExportsController {
     return { status: 'started' };
   }
 
+  @SkipThrottle()
   @Get('slides/:slideId/preview')
   async getSlidePreview(
     @Param('slideId') slideId: string,
