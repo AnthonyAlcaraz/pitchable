@@ -3,6 +3,7 @@ import { getSocket, joinPresentation, leavePresentation } from '../lib/socket.js
 import type { ExportProgressEvent, GenerationProgressEvent } from '../lib/socket.js';
 import { usePresentationStore } from '../stores/presentation.store.js';
 import { useChatStore } from '../stores/chat.store.js';
+import { useWorkflowStore } from '../stores/workflow.store.js';
 import { useAuthStore } from '../stores/auth.store.js';
 import { api } from '../lib/api.js';
 import type { SlideData } from '../stores/presentation.store.js';
@@ -73,6 +74,11 @@ export function useSlideUpdates(presentationId: string | undefined) {
       addSlide(event.slide);
       // Auto-navigate to the newly added slide
       setCurrentSlide(event.position - 1);
+      // Auto-transition to generating phase if first slide arrives during outline review
+      const phase = useWorkflowStore.getState().phase;
+      if (phase === 'outline_review') {
+        useWorkflowStore.getState().setPhase('generating');
+      }
     };
 
     const handleSlideUpdated = (event: SlideUpdateEvent) => {

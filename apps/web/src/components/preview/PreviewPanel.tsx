@@ -271,6 +271,13 @@ export function PreviewPanel({ presentationId }: PreviewPanelProps) {
           onFullscreen={handleFullscreen}
           onExport={handleExport}
         />
+        {phase === 'generating' && (
+          <div className="flex items-center gap-2 border-b border-border bg-orange-500/5 px-4 py-1.5">
+            <Loader2 className="h-3.5 w-3.5 animate-spin text-orange-400" />
+            <span className="text-xs text-orange-400">Generating slides...</span>
+            <span className="text-xs text-muted-foreground">{slides.length} ready</span>
+          </div>
+        )}
 
         {/* Main content area */}
         <div className="flex flex-1 overflow-hidden">

@@ -412,6 +412,9 @@ OUTPUT: Valid JSON matching this schema (no markdown fences):
     const { outline, config } = pending;
     this.pendingOutlines.delete(presentationId);
 
+    // Signal frontend to switch to 'generating' phase for progressive rendering
+    yield { type: 'action', content: '', metadata: { action: 'executing_outline' } };
+
     // Tier enforcement: check monthly deck limit
     const deckCheck = await this.tierEnforcement.canCreateDeck(userId);
     if (!deckCheck.allowed) {

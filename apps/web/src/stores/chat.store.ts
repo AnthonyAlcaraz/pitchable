@@ -295,6 +295,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
                 },
               });
             }
+          } else if (metadata?.action === 'executing_outline') {
+            useWorkflowStore.getState().setPhase('generating');
           } else if (metadata?.action === 'theme_selection') {
             set({
               pendingThemeSelection: {
