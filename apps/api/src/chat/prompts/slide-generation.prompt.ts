@@ -118,6 +118,7 @@ UNIVERSAL FORMATTING RULES:
 - LESS IS MORE: If you can say it in fewer words, do it. Slides are visual aids, not documents.
 - NEVER output placeholder text in brackets like [example], [data needed], [principle needed]. If you lack specific data, write a generic but complete statement instead.
 - NEVER use markdown formatting (bold **text**, italic *text*) in slide titles. Titles must be plain text only.
+- NEVER include HTML tags (<div>, <span>, <style>, etc.) or CSS classes in slide body content for TEAM, METRICS_HIGHLIGHT, FEATURE_GRID, MARKET_SIZING, COMPARISON, PROCESS, PROBLEM, SOLUTION, or CTA types. Output plain text only — the visual layout is handled automatically by the renderer.
 
 PHILLIPS' VISUAL HIERARCHY (enforce strictly):
 - Max 6 visual objects per slide (title + table = 2; title + 4 bullets = 5). Count every element.
@@ -207,31 +208,11 @@ VISUAL_HUMOR: Title IS the punchline — max 8 words, dry wit preferred over sla
   body: ""
   imagePromptHint: "A single thread being pulled from an elaborate knitted sweater that is visibly unraveling, soft studio lighting, macro photography, photorealistic"
 
-TEAM: Body must contain a <div class="team-grid"> with person cards inside <div class="team-card"> wrappers. Max 6 people, max 3 columns. Each card: **Name** / *Role* / <span>Credential</span>. Never generate imagePromptHint (AI can't make good headshots). Title should describe the team strength. DO NOT include any <style> tags — CSS is injected automatically by the renderer.
+TEAM: Plain text, one person per line. Format: Name - Role - Credential. Max 6 people. Never generate imagePromptHint (AI can't make good headshots). Title should describe the team strength. NEVER include HTML tags, CSS classes, or div wrappers — the visual layout is handled automatically by the renderer.
   Example body:
-  "<div class=\"team-grid\">
-<div class=\"team-card\">
-
-**Jane Smith**
-*CEO*
-<span>Ex-Google, Stanford</span>
-
-</div>
-<div class=\"team-card\">
-
-**John Doe**
-*CTO*
-<span>Ex-Meta, MIT</span>
-
-</div>
-<div class=\"team-card\">
-
-**Alice Chen**
-*VP Engineering*
-<span>Ex-Stripe</span>
-
-</div>
-</div>"
+  "Jane Smith - CEO - Ex-Google, Stanford
+John Doe - CTO - Ex-Meta, MIT
+Alice Chen - VP Engineering - Ex-Stripe"
 
 TIMELINE: Body must contain an ordered list where each item is **Date — Phase** Description. Max 5 milestones, 20 words per milestone max. End with ### takeaway. DO NOT include any <style> tags — CSS is injected automatically.
   Example body:
@@ -248,53 +229,20 @@ SECTION_DIVIDER: Body MUST be empty string "". Title is 1-3 words only (e.g. "In
   speakerNotes: ""
   imagePromptHint: ""
 
-METRICS_HIGHLIGHT: Body must contain a <div class="stats"> with 2-4 stat cards. Each stat card: <div class="stat-card"><div class="big-number">NUMBER</div><p>label</p></div>. Numbers should be specific and impressive. No tables. Title frames the narrative. End with ### takeaway. DO NOT include any <style> tags — CSS is injected automatically.
+METRICS_HIGHLIGHT: Plain text, one metric per line. Format: VALUE: label. 2-4 metrics, numbers should be specific and impressive. No tables. Title frames the narrative. End with ### takeaway. NEVER include HTML tags, CSS classes, or div wrappers — the visual layout is handled automatically by the renderer.
   Example body:
-  "<div class=\"stats\">
-<div class=\"stat-card\">
-<div class=\"big-number\">13,500</div>
-<p>template downloads</p>
-</div>
-<div class=\"stat-card\">
-<div class=\"big-number\">1,500</div>
-<p>custom design requests</p>
-</div>
-<div class=\"stat-card\">
-<div class=\"big-number\">$850K</div>
-<p>total revenue</p>
-</div>
-</div>
+  "13,500: template downloads
+1,500: custom design requests
+$850K: total revenue
 
 ### 6x MRR growth in 12 months"
 
-FEATURE_GRID: Body must contain a <div class="grid"> with exactly 3-4 cards inside <div class="card"> wrappers. Each card has **Title** and <span>description sentence</span>. Title frames the capabilities. End with ### takeaway. DO NOT include any <style> tags — CSS is injected automatically.
+FEATURE_GRID: Plain text, one feature per line. Format: Title: description sentence. 3-4 features. Title frames the capabilities. End with ### takeaway. NEVER include HTML tags, CSS classes, or div wrappers — the visual layout is handled automatically by the renderer.
   Example body:
-  "<div class=\"grid\">
-<div class=\"card\">
-
-**Smart Manufacturing**
-<span>Interpret and predict sensory streams from industrial machines</span>
-
-</div>
-<div class=\"card\">
-
-**AI Wearables**
-<span>Streaming video assistant with persistent memory</span>
-
-</div>
-<div class=\"card\">
-
-**Robotics**
-<span>Enable robots to understand the physical world</span>
-
-</div>
-<div class=\"card\">
-
-**Enterprise Automation**
-<span>Pilot complex workflows with contextual understanding</span>
-
-</div>
-</div>
+  "Smart Manufacturing: Interpret and predict sensory streams from industrial machines
+AI Wearables: Streaming video assistant with persistent memory
+Robotics: Enable robots to understand the physical world
+Enterprise Automation: Pilot complex workflows with contextual understanding
 
 ### One architecture powers all four domains"
 
@@ -319,21 +267,12 @@ LOGO_WALL: Grid of customer, partner, or investor names rendered as styled text 
 <div class=\"logo-badge\">Index Ventures</div>
 </div>"
 
-MARKET_SIZING: TAM/SAM/SOM market size visualization. Body must contain a <div class="market-sizing"> with three nested <div class="market-ring"> elements (tam, sam, som classes). Each ring has a <div class="ring-label"> containing <strong> for the dollar figure and <span> for the market name (keep labels SHORT — max 3 words per line). TAM label appears at ring top, SAM at ring bottom, SOM centered. Optionally include a <div class="revenue-chain"> after the market-sizing div. End with Sources line. DO NOT include any <style> tags.
+MARKET_SIZING: TAM/SAM/SOM market size visualization. Plain text, one market tier per line. Format: TIER: $VALUE - description. List TAM, SAM, SOM in order. Optionally add a revenue chain line. End with Sources line. NEVER include HTML tags, CSS classes, or div wrappers — the visual layout is handled automatically by the renderer.
   Example body:
-  "<div class=\"market-sizing\">
-<div class=\"market-ring tam\">
-<div class=\"ring-label\"><strong>$50B+</strong><span>TAM</span></div>
-</div>
-<div class=\"market-ring sam\">
-<div class=\"ring-label\"><strong>$2B</strong><span>SAM</span></div>
-</div>
-<div class=\"market-ring som\">
-<div class=\"ring-label\"><strong>$110M</strong><span>SOM</span></div>
-</div>
-</div>
-
-<div class=\"revenue-chain\">50M creators × $2.20/mo = $110M SOM</div>
+  "TAM: $50B+ - Total addressable market
+SAM: $2B - Serviceable addressable market
+SOM: $110M - Serviceable obtainable market
+50M creators × $2.20/mo = $110M SOM
 
 Sources: Company analysis, Gartner 2024"
 

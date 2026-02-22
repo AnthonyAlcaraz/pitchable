@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { join } from 'path';
 import { mkdir } from 'fs/promises';
-import { readFile, writeFile } from 'fs/promises';
+import { readFile, writeFile, unlink } from 'fs/promises';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { MarpExporterService } from './marp-exporter.service.js';
 import { RevealJsExporterService } from './revealjs-exporter.service.js';
@@ -365,10 +365,13 @@ export class ExportsService {
             }
           }
 
+          // Pre-download external images so Marp CLI can access them locally
+          const localSlidesPptx = await this.downloadSlideImages(slides, pptxDir);
+
           const pptxPath = join(pptxDir, `${safeFilename(presentation.title)}.pptx`);
           const pptxMarkdown = this.marpExporter.generateMarpMarkdown(
             presentation,
-            slides,
+            localSlidesPptx,
             theme,
             layoutProfile,
             rendererOverrides,
@@ -376,6 +379,7 @@ export class ExportsService {
             figmaContrastOverrides,
           );
           await this.marpExporter.exportToPptx(pptxMarkdown, pptxPath);
+          await this.cleanupSlideImages(pptxDir);
           buffer = await readFile(pptxPath);
           contentType =
             'application/vnd.openxmlformats-officedocument.presentationml.presentation';
@@ -406,10 +410,13 @@ export class ExportsService {
             }
           }
 
+          // Pre-download external images so Marp CLI can access them locally
+          const localSlides = await this.downloadSlideImages(slides, jobDir);
+
           const outputPath = join(jobDir, `${safeFilename(presentation.title)}.pdf`);
           const markdown = this.marpExporter.generateMarpMarkdown(
             presentation,
-            slides,
+            localSlides,
             theme,
             layoutProfile,
             rendererOverrides,
@@ -417,6 +424,7 @@ export class ExportsService {
             figmaContrastOverrides,
           );
           await this.marpExporter.exportToPdf(markdown, outputPath);
+          await this.cleanupSlideImages(jobDir);
           buffer = await readFile(outputPath);
           contentType = 'application/pdf';
           filename = `${safeFilename(presentation.title)}.pdf`;
@@ -610,9 +618,13 @@ export class ExportsService {
           }
         }
 
+        // Pre-download external images so Marp CLI can access them locally
+        const localSlidesPptx2 = await this.downloadSlideImages(slides, pptxDir);
+
         const pptxPath = join(pptxDir, `${safeFilename(presentation.title)}.pptx`);
-        const pptxMd = this.marpExporter.generateMarpMarkdown(presentation, slides, theme, layoutProfile, rendererOverrides, figmaBackgrounds, figmaContrastOverrides);
+        const pptxMd = this.marpExporter.generateMarpMarkdown(presentation, localSlidesPptx2, theme, layoutProfile, rendererOverrides, figmaBackgrounds, figmaContrastOverrides);
         await this.marpExporter.exportToPptx(pptxMd, pptxPath);
+        await this.cleanupSlideImages(pptxDir);
         buffer = await readFile(pptxPath);
         contentType = 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
         filename = `${safeFilename(presentation.title)}.pptx`;
@@ -640,9 +652,13 @@ export class ExportsService {
           }
         }
 
+        // Pre-download external images so Marp CLI can access them locally
+        const localSlides2 = await this.downloadSlideImages(slides, jobDir);
+
         const outputPath = join(jobDir, `${safeFilename(presentation.title)}.pdf`);
-        const markdown = this.marpExporter.generateMarpMarkdown(presentation, slides, theme, layoutProfile, rendererOverrides, figmaBackgrounds, figmaContrastOverrides);
+        const markdown = this.marpExporter.generateMarpMarkdown(presentation, localSlides2, theme, layoutProfile, rendererOverrides, figmaBackgrounds, figmaContrastOverrides);
         await this.marpExporter.exportToPdf(markdown, outputPath);
+        await this.cleanupSlideImages(jobDir);
         buffer = await readFile(outputPath);
         contentType = 'application/pdf';
         filename = `${safeFilename(presentation.title)}.pdf`;
@@ -806,6 +822,71 @@ export class ExportsService {
       where: { presentationId },
       orderBy: { createdAt: 'desc' },
     });
+  }
+
+
+  /**
+   * Download external slide images (e.g. R2 URLs) to local temp files.
+   * Returns modified slide copies with imageUrl replaced by local file paths.
+   * This ensures Marp CLI's Chromium can access the images during rendering.
+   */
+  private async downloadSlideImages(
+    slides: SlideModel[],
+    tempDir: string,
+  ): Promise<SlideModel[]> {
+    const modifiedSlides: SlideModel[] = [];
+
+    for (const slide of slides) {
+      if (!slide.imageUrl || !slide.imageUrl.startsWith('http')) {
+        modifiedSlides.push(slide);
+        continue;
+      }
+
+      try {
+        const ext = slide.imageUrl.match(/\.(png|jpg|jpeg|webp|gif)/i)?.[1] ?? 'png';
+        const localFilename = `slide-img-${slide.slideNumber}.${ext}`;
+        const localPath = join(tempDir, localFilename);
+
+        const response = await fetch(slide.imageUrl, { signal: AbortSignal.timeout(15_000) });
+        if (!response.ok) {
+          this.logger.warn(`Failed to download image for slide ${slide.slideNumber}: HTTP ${response.status}`);
+          modifiedSlides.push(slide);
+          continue;
+        }
+
+        const arrayBuf = await response.arrayBuffer();
+        await writeFile(localPath, Buffer.from(arrayBuf));
+
+        // Create a shallow copy with the local path
+        modifiedSlides.push({
+          ...slide,
+          imageUrl: localPath.replace(/\\/g, '/'),
+        } as SlideModel);
+
+        this.logger.debug(`Downloaded image for slide ${slide.slideNumber} -> ${localFilename}`);
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        this.logger.warn(`Image download failed for slide ${slide.slideNumber}: ${msg}`);
+        modifiedSlides.push(slide);
+      }
+    }
+
+    return modifiedSlides;
+  }
+
+  /**
+   * Clean up downloaded slide images from temp directory.
+   */
+  private async cleanupSlideImages(tempDir: string): Promise<void> {
+    try {
+      const { readdir } = await import('fs/promises');
+      const files = await readdir(tempDir);
+      for (const f of files) {
+        if (f.startsWith('slide-img-')) {
+          try { await unlink(join(tempDir, f)); } catch { /* ignore */ }
+        }
+      }
+    } catch { /* ignore */ }
   }
 
   /**
@@ -1158,9 +1239,14 @@ export class ExportsService {
   ): Promise<void> {
     if (!theme) return;
 
+    // Pre-download external images for preview rendering
+    const previewTempDir = join(this.tempDir, `preview-dl-${Date.now()}`);
+    await mkdir(previewTempDir, { recursive: true });
+    const localPreviewSlides = await this.downloadSlideImages(slides, previewTempDir);
+
     const marpMarkdown = this.marpExporter.generateMarpMarkdown(
       presentation,
-      slides,
+      localPreviewSlides,
       theme,
       layoutProfile,
       rendererOverrides,
@@ -1201,5 +1287,6 @@ export class ExportsService {
     }
 
     this.logger.log(`Saved ${Math.min(buffers.length, sortedSlides.length)} slide previews for presentation ${presentation.id}`);
+    await this.cleanupSlideImages(previewTempDir);
   }
 }

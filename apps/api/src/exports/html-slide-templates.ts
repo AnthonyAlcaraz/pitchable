@@ -47,7 +47,7 @@ function stripMarkdown(s: string): string {
 function parseBodyLines(body: string): string[] {
   return body
     .split('\n')
-    .map((l) => stripMarkdown(l.replace(/^[-•*]\s*/, '').trim()))
+    .map((l) => stripMarkdown(l.replace(/^[-•*]\s*/, '').replace(/<[^>]*>/g, '').trim()))
     .filter(Boolean);
 }
 
