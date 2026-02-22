@@ -5,6 +5,13 @@ interface ApiError {
   statusCode: number;
 }
 
+interface RequestOptions {
+  skipAuth?: boolean;
+  isRetry?: boolean;
+  /** When true, a failed refresh won't clear auth or redirect to login */
+  silentAuth?: boolean;
+}
+
 class ApiClient {
   private isRefreshing = false;
   private refreshPromise: Promise<boolean> | null = null;
@@ -29,7 +36,7 @@ class ApiClient {
     method: HttpMethod,
     url: string,
     body?: unknown,
-    { skipAuth = false, isRetry = false } = {},
+    { skipAuth = false, isRetry = false, silentAuth = false }: RequestOptions = {},
   ): Promise<T> {
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
@@ -51,11 +58,13 @@ class ApiClient {
     if (response.status === 401 && !skipAuth && !isRetry) {
       const refreshed = await this.attemptRefresh();
       if (refreshed) {
-        return this.request<T>(method, url, body, { isRetry: true });
+        return this.request<T>(method, url, body, { isRetry: true, silentAuth });
       }
-      // Refresh failed - clear auth and redirect
-      localStorage.removeItem('auth-storage');
-      window.location.href = '/login';
+      // Refresh failed — only clear auth if this is a user-facing request
+      if (!silentAuth) {
+        localStorage.removeItem('auth-storage');
+        window.location.href = '/login';
+      }
       throw new Error('Session expired');
     }
 
@@ -131,24 +140,24 @@ class ApiClient {
     }
   }
 
-  get<T>(url: string): Promise<T> {
-    return this.request<T>('GET', url);
+  get<T>(url: string, options?: RequestOptions): Promise<T> {
+    return this.request<T>('GET', url, undefined, options);
   }
 
-  post<T>(url: string, body?: unknown): Promise<T> {
-    return this.request<T>('POST', url, body);
+  post<T>(url: string, body?: unknown, options?: RequestOptions): Promise<T> {
+    return this.request<T>('POST', url, body, options);
   }
 
-  put<T>(url: string, body?: unknown): Promise<T> {
-    return this.request<T>('PUT', url, body);
+  put<T>(url: string, body?: unknown, options?: RequestOptions): Promise<T> {
+    return this.request<T>('PUT', url, body, options);
   }
 
-  patch<T>(url: string, body?: unknown): Promise<T> {
-    return this.request<T>('PATCH', url, body);
+  patch<T>(url: string, body?: unknown, options?: RequestOptions): Promise<T> {
+    return this.request<T>('PATCH', url, body, options);
   }
 
-  delete<T>(url: string): Promise<T> {
-    return this.request<T>('DELETE', url);
+  delete<T>(url: string, options?: RequestOptions): Promise<T> {
+    return this.request<T>('DELETE', url, undefined, options);
   }
 
   async uploadFile<T>(url: string, file: File, extraFields?: Record<string, string>): Promise<T> {

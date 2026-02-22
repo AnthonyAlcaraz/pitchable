@@ -164,6 +164,8 @@ export const usePresentationStore = create<PresentationState>((set, get) => ({
   addSlide(slide: SlideData) {
     set((state) => {
       if (!state.presentation) return state;
+      // Deduplicate: skip if slide with same ID already exists (WebSocket reconnection)
+      if (state.presentation.slides.some((s) => s.id === slide.id)) return state;
       const slides = [...state.presentation.slides, slide].sort(
         (a, b) => a.slideNumber - b.slideNumber,
       );

@@ -430,7 +430,7 @@ export class MarpExporterService {
       '  li { margin-bottom: 0.15em; line-height: 1.3; }',
       '  li::marker { color: var(--accent); }',
       // Layout classes for content centering/spreading
-      '  section.content-center { justify-content: center; }',
+      '  section.content-center { justify-content: center; text-align: center; align-items: center; }',
       '  section.content-spread { justify-content: space-between; }',
       // Glass card effect (controlled by layout profile)
       '  .glass-card {',

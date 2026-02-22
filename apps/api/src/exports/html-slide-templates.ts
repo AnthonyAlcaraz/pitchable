@@ -24,9 +24,10 @@ const PAD = 53;       // 40 * (1280/960)
 const W = 1280;
 const H = 720;
 
-// Figma-grade HTML+SVG templates disabled — scoped CSS Marp rendering
-// produces more consistent results across all slide types.
-export const FIGMA_GRADE_TYPES: Set<string> = new Set([]);
+// Slide types that use Figma-grade HTML+SVG templates for superior visuals.
+export const FIGMA_GRADE_TYPES: Set<string> = new Set([
+  'COMPARISON', 'TIMELINE', 'METRICS_HIGHLIGHT', 'MARKET_SIZING', 'TEAM', 'FEATURE_GRID',
+]);
 
 // ── Helpers ──────────────────────────────────────────────────
 

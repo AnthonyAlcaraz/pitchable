@@ -303,18 +303,19 @@ export function PreviewPanel({ presentationId }: PreviewPanelProps) {
       const jobs = await api.post<Array<{ id: string; format: string; status: string }>>(
         `/presentations/${presentationId}/export`,
         { formats: [exportFormat] },
+        { silentAuth: true },
       );
       const jobId = jobs[0]?.id;
       if (!jobId) throw new Error('No export job created');
       let completed = false;
       for (let i = 0; i < 90; i++) {
-        const job = await api.get<{ status: string; errorMessage?: string }>(`/exports/${jobId}`);
+        const job = await api.get<{ status: string; errorMessage?: string }>(`/exports/${jobId}`, { silentAuth: true });
         if (job.status === 'COMPLETED') { completed = true; break; }
         if (job.status === 'FAILED') throw new Error(job.errorMessage || 'Export failed');
         await new Promise((r) => setTimeout(r, 2000));
       }
       if (!completed) throw new Error('Export timed out. Please try again.');
-      const dl = await api.get<{ url: string; filename: string }>(`/exports/${jobId}/download-url`);
+      const dl = await api.get<{ url: string; filename: string }>(`/exports/${jobId}/download-url`, { silentAuth: true });
       if (newTab) {
         if (dl.url.startsWith('http')) {
           newTab.location.href = dl.url;

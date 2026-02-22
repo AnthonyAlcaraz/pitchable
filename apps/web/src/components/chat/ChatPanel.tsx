@@ -122,18 +122,19 @@ export function ChatPanel({ presentationId, briefId, lensId }: ChatPanelProps) {
         const jobs = await api.post<Array<{ id: string; format: string; status: string }>>(
           `/presentations/${pid}/export`,
           { formats: [exportFormat] },
+          { silentAuth: true },
         );
         const jobId = jobs[0]?.id;
         if (!jobId) throw new Error('No export job created');
         // Poll for completion (max 3 min)
         for (let i = 0; i < 90; i++) {
-          const job = await api.get<{ status: string }>(`/exports/${jobId}`);
+          const job = await api.get<{ status: string }>(`/exports/${jobId}`, { silentAuth: true });
           if (job.status === 'COMPLETED') break;
           if (job.status === 'FAILED') throw new Error('Export failed');
           await new Promise((r) => setTimeout(r, 2000));
         }
         // Use authenticated endpoint to get presigned download URL
-        const dl = await api.get<{ url: string; filename: string }>(`/exports/${jobId}/download-url`);
+        const dl = await api.get<{ url: string; filename: string }>(`/exports/${jobId}/download-url`, { silentAuth: true });
         if (newTab) {
           if (dl.url.startsWith('http')) {
             newTab.location.href = dl.url;
