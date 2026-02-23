@@ -519,27 +519,6 @@ export function LandingPage() {
             ]}
           />
 
-          <div className="mt-12" />
-
-          <ShowcaseDeck
-            title="CarbonBridge — AI Carbon Removal Marketplace"
-            theme="Pitchable Dark"
-            slides={12}
-            images={[
-              '/showcase/carbonbridge-01.jpg',
-              '/showcase/carbonbridge-02.jpg',
-              '/showcase/carbonbridge-03.jpg',
-              '/showcase/carbonbridge-04.jpg',
-              '/showcase/carbonbridge-05.jpg',
-              '/showcase/carbonbridge-06.jpg',
-              '/showcase/carbonbridge-07.jpg',
-              '/showcase/carbonbridge-08.jpg',
-              '/showcase/carbonbridge-09.jpg',
-              '/showcase/carbonbridge-10.jpg',
-              '/showcase/carbonbridge-11.jpg',
-              '/showcase/carbonbridge-12.jpg',
-            ]}
-          />
         </div>
       </section>
 
