@@ -1,8 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { execFile } from 'child_process';
+import { marpCli } from '@marp-team/marp-cli';
 import { writeFile, mkdir, readFile, readdir, unlink } from 'fs/promises';
 import { dirname, resolve, join } from 'path';
-import { promisify } from 'util';
+
 import PptxGenJS from 'pptxgenjs';
 import type { PresentationModel } from '../../generated/prisma/models/Presentation.js';
 import type { SlideModel } from '../../generated/prisma/models/Slide.js';
@@ -29,7 +29,6 @@ import {
   buildHtmlSlideContent,
 } from './html-slide-templates.js';
 
-const execFileAsync = promisify(execFile);
 
 // Ã¢ÂÂÃ¢ÂÂ Layout profiles Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
 export type LayoutProfile = 'corporate' | 'startup' | 'creative' | 'consulting' | 'technical';
@@ -815,22 +814,21 @@ h3 { margin-top: 10px; font-size: 0.8em; }
     // Step 1: Render slides as individual JPEG images via Marp CLI
     const imagesBaseName = resolvedOutput.replace(/\.pptx$/, '');
     try {
-      await execFileAsync('npx', [
-        '@marp-team/marp-cli',
-        shellSafePath(tempMdPath),
+      const exitCode = await marpCli([
+        tempMdPath,
         '--images', 'jpeg',
         '--html',
         '--jpeg-quality', '85',
         '--allow-local-files',
         '--no-stdin',
         '-o',
-        shellSafePath(imagesBaseName + '.jpeg'),
-      ], { timeout: 300_000, shell: true });
+        imagesBaseName + '.jpeg',
+      ]);
+      if (exitCode !== 0) throw new Error('Marp CLI exited with code ' + exitCode);
     } catch (error: unknown) {
-      const stderr = (error as { stderr?: string })?.stderr ?? '';
       const message =
         error instanceof Error ? error.message : 'Unknown export error';
-      this.logger.error(`Marp image export failed: ${message}${stderr ? `\nstderr: ${stderr}` : ''}`);
+      this.logger.error(`Marp image export failed: ${message}`);
       throw new Error(`PPTX export failed (image render): ${message}`);
     }
 
@@ -890,24 +888,23 @@ h3 { margin-top: 10px; font-size: 0.8em; }
     await writeFile(tempMdPath, marpMarkdown, 'utf-8');
 
     try {
-      await execFileAsync('npx', [
-        '@marp-team/marp-cli',
-        shellSafePath(tempMdPath),
+      const exitCode = await marpCli([
+        tempMdPath,
         '--pdf',
         '--html',
         '--allow-local-files',
         '--no-stdin',
         '-o',
-        shellSafePath(resolvedOutput),
-      ], { timeout: 300_000, shell: true });
+        resolvedOutput,
+      ]);
+      if (exitCode !== 0) throw new Error('Marp CLI exited with code ' + exitCode);
 
       this.logger.log(`PDF exported to ${resolvedOutput}`);
       return resolvedOutput;
     } catch (error: unknown) {
-      const stderr = (error as { stderr?: string })?.stderr ?? '';
       const message =
         error instanceof Error ? error.message : 'Unknown export error';
-      this.logger.error(`PDF export failed: ${message}${stderr ? `\nstderr: ${stderr}` : ''}`);
+      this.logger.error(`PDF export failed: ${message}`);
       throw new Error(`PDF export failed: ${message}`);
     }
   }
@@ -926,21 +923,20 @@ h3 { margin-top: 10px; font-size: 0.8em; }
     const imagesBase = join(tempDir, 'slide');
 
     try {
-      await execFileAsync('npx', [
-        '@marp-team/marp-cli',
-        shellSafePath(tempMdPath),
+      const exitCode = await marpCli([
+        tempMdPath,
         '--images', 'jpeg',
         '--html',
         '--jpeg-quality', '80',
         '--allow-local-files',
         '--no-stdin',
         '-o',
-        shellSafePath(imagesBase + '.jpeg'),
-      ], { timeout: 300_000, shell: true });
+        imagesBase + '.jpeg',
+      ]);
+      if (exitCode !== 0) throw new Error('Marp CLI exited with code ' + exitCode);
     } catch (error: unknown) {
-      const stderr = (error as { stderr?: string })?.stderr ?? '';
       const message = error instanceof Error ? error.message : 'Unknown error';
-      this.logger.error(`Preview image render failed: ${message}${stderr ? `\nstderr: ${stderr}` : ''}`);
+      this.logger.error(`Preview image render failed: ${message}`);
       return [];
     }
 

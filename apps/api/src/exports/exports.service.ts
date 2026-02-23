@@ -830,67 +830,79 @@ export class ExportsService {
    * Returns modified slide copies with imageUrl replaced by local file paths.
    * This ensures Marp CLI's Chromium can access the images during rendering.
    */
+  private async downloadOneImage(
+    slide: SlideModel,
+    tempDir: string,
+  ): Promise<SlideModel> {
+    if (!slide.imageUrl || !slide.imageUrl.startsWith('http')) {
+      return slide;
+    }
+
+    try {
+      const ext = slide.imageUrl.match(/\.(png|jpg|jpeg|webp|gif)/i)?.[1] ?? 'png';
+      const localFilename = `slide-img-${slide.slideNumber}.${ext}`;
+      const localPath = join(tempDir, localFilename);
+
+      let imageBuffer: Buffer | null = null;
+
+      // Try S3 client download first (for R2 URLs that aren't publicly accessible)
+      const bucketMarker = '/pitchable-documents/';
+      const bucketIdx = slide.imageUrl.indexOf(bucketMarker);
+      if (bucketIdx !== -1) {
+        const key = slide.imageUrl.slice(bucketIdx + bucketMarker.length);
+        try {
+          imageBuffer = await this.s3.getBuffer(key);
+          this.logger.debug(`Downloaded image via S3 for slide ${slide.slideNumber}`);
+        } catch (s3Err: unknown) {
+          const s3Msg = s3Err instanceof Error ? s3Err.message : String(s3Err);
+          this.logger.warn(`S3 download failed for slide ${slide.slideNumber}: ${s3Msg}, trying fetch...`);
+        }
+      }
+
+      // Fallback to direct fetch (for non-R2 URLs like imgur)
+      if (!imageBuffer) {
+        const response = await fetch(slide.imageUrl, { signal: AbortSignal.timeout(15_000) });
+        if (!response.ok) {
+          this.logger.warn(`Failed to download image for slide ${slide.slideNumber}: HTTP ${response.status}`);
+          return slide;
+        }
+        const arrayBuf = await response.arrayBuffer();
+        imageBuffer = Buffer.from(arrayBuf);
+      }
+
+      await writeFile(localPath, imageBuffer);
+
+      this.logger.debug(`Saved image for slide ${slide.slideNumber} -> ${localFilename}`);
+      return {
+        ...slide,
+        imageUrl: localPath.replace(/\\/g, '/'),
+      } as SlideModel;
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      this.logger.warn(`Image download failed for slide ${slide.slideNumber}: ${msg}`);
+      return slide;
+    }
+  }
+
   private async downloadSlideImages(
     slides: SlideModel[],
     tempDir: string,
   ): Promise<SlideModel[]> {
-    const modifiedSlides: SlideModel[] = [];
+    const CONCURRENCY = 5;
+    const results: SlideModel[] = [];
 
-    for (const slide of slides) {
-      if (!slide.imageUrl || !slide.imageUrl.startsWith('http')) {
-        modifiedSlides.push(slide);
-        continue;
-      }
-
-      try {
-        const ext = slide.imageUrl.match(/\.(png|jpg|jpeg|webp|gif)/i)?.[1] ?? 'png';
-        const localFilename = `slide-img-${slide.slideNumber}.${ext}`;
-        const localPath = join(tempDir, localFilename);
-
-        let imageBuffer: Buffer | null = null;
-
-        // Try S3 client download first (for R2 URLs that aren't publicly accessible)
-        const bucketMarker = '/pitchable-documents/';
-        const bucketIdx = slide.imageUrl.indexOf(bucketMarker);
-        if (bucketIdx !== -1) {
-          const key = slide.imageUrl.slice(bucketIdx + bucketMarker.length);
-          try {
-            imageBuffer = await this.s3.getBuffer(key);
-            this.logger.debug(`Downloaded image via S3 for slide ${slide.slideNumber}`);
-          } catch (s3Err: unknown) {
-            const s3Msg = s3Err instanceof Error ? s3Err.message : String(s3Err);
-            this.logger.warn(`S3 download failed for slide ${slide.slideNumber}: ${s3Msg}, trying fetch...`);
-          }
-        }
-
-        // Fallback to direct fetch (for non-R2 URLs like imgur)
-        if (!imageBuffer) {
-          const response = await fetch(slide.imageUrl, { signal: AbortSignal.timeout(15_000) });
-          if (!response.ok) {
-            this.logger.warn(`Failed to download image for slide ${slide.slideNumber}: HTTP ${response.status}`);
-            modifiedSlides.push(slide);
-            continue;
-          }
-          const arrayBuf = await response.arrayBuffer();
-          imageBuffer = Buffer.from(arrayBuf);
-        }
-
-        await writeFile(localPath, imageBuffer);
-
-        modifiedSlides.push({
-          ...slide,
-          imageUrl: localPath.replace(/\\/g, '/'),
-        } as SlideModel);
-
-        this.logger.debug(`Saved image for slide ${slide.slideNumber} -> ${localFilename}`);
-      } catch (err: unknown) {
-        const msg = err instanceof Error ? err.message : String(err);
-        this.logger.warn(`Image download failed for slide ${slide.slideNumber}: ${msg}`);
-        modifiedSlides.push(slide);
+    for (let i = 0; i < slides.length; i += CONCURRENCY) {
+      const batch = slides.slice(i, i + CONCURRENCY);
+      const settled = await Promise.allSettled(
+        batch.map((slide) => this.downloadOneImage(slide, tempDir)),
+      );
+      for (let j = 0; j < settled.length; j++) {
+        const result = settled[j];
+        results.push(result.status === 'fulfilled' ? result.value : batch[j]);
       }
     }
 
-    return modifiedSlides;
+    return results;
   }
 
   /**
@@ -1248,6 +1260,64 @@ export class ExportsService {
     );
   }
 
+  /**
+   * Upload preview buffers to S3 (parallel), batch DB update, then emit WebSocket events.
+   */
+  private async uploadAndEmitPreviews(
+    presentation: PresentationModel,
+    sortedSlides: SlideModel[],
+    buffers: Buffer[],
+  ): Promise<void> {
+    const count = Math.min(buffers.length, sortedSlides.length);
+    if (count === 0) return;
+
+    // Phase 1: Parallel S3 uploads
+    const uploadResults = await Promise.allSettled(
+      Array.from({ length: count }, (_, i) => {
+        const slide = sortedSlides[i];
+        const s3Key = `previews/${presentation.id}/${slide.slideNumber}.jpeg`;
+        return this.s3.upload(s3Key, buffers[i], 'image/jpeg').then(() => s3Key);
+      }),
+    );
+
+    // Resolve preview URLs (S3 key or local fallback)
+    const previewUrls: string[] = [];
+    for (let i = 0; i < count; i++) {
+      const result = uploadResults[i];
+      if (result.status === 'fulfilled') {
+        previewUrls.push(result.value);
+      } else {
+        // Fallback: save locally
+        const slide = sortedSlides[i];
+        const localDir = join(this.tempDir, '..', 'previews', presentation.id);
+        await mkdir(localDir, { recursive: true });
+        await writeFile(join(localDir, `${slide.slideNumber}.jpeg`), buffers[i]);
+        previewUrls.push(`local://previews/${presentation.id}/${slide.slideNumber}.jpeg`);
+      }
+    }
+
+    // Phase 2: Batch DB update in a single transaction
+    await this.prisma.$transaction(
+      Array.from({ length: count }, (_, i) =>
+        this.prisma.slide.update({
+          where: { id: sortedSlides[i].id },
+          data: { previewUrl: previewUrls[i] },
+        }),
+      ),
+    );
+
+    // Phase 3: Emit all WebSocket events
+    for (let i = 0; i < count; i++) {
+      this.events.emitSlideUpdated({
+        presentationId: presentation.id,
+        slideId: sortedSlides[i].id,
+        data: { previewUrl: previewUrls[i] },
+      });
+    }
+
+    this.logger.log(`Saved ${count} slide previews for presentation ${presentation.id}`);
+  }
+
   private async generateSlidePreviewImages(
     presentation: PresentationModel,
     slides: SlideModel[],
@@ -1258,12 +1328,37 @@ export class ExportsService {
   ): Promise<void> {
     if (!theme) return;
 
-    // Pre-download external images for preview rendering
+    const sortedSlides = [...slides].sort((a, b) => a.slideNumber - b.slideNumber);
+
+    // ── Phase A: Text-only previews (skip image downloads) ──
+    const textOnlySlides = sortedSlides.map((slide) => ({
+      ...slide,
+      imageUrl: null,
+    })) as SlideModel[];
+
+    const textOnlyMarkdown = this.marpExporter.generateMarpMarkdown(
+      presentation,
+      textOnlySlides,
+      theme,
+      layoutProfile,
+      rendererOverrides,
+      figmaBackgrounds,
+    );
+
+    const textOnlyBuffers = await this.marpExporter.renderSlideImages(textOnlyMarkdown);
+    if (textOnlyBuffers.length > 0) {
+      await this.uploadAndEmitPreviews(presentation, sortedSlides, textOnlyBuffers);
+    }
+
+    // ── Phase B: Full previews with images (downloads in parallel via Fix C) ──
+    const hasImages = slides.some((s) => s.imageUrl?.startsWith('http'));
+    if (!hasImages) return; // No images to download, Phase A was final
+
     const previewTempDir = join(this.tempDir, `preview-dl-${Date.now()}`);
     await mkdir(previewTempDir, { recursive: true });
     const localPreviewSlides = await this.downloadSlideImages(slides, previewTempDir);
 
-    const marpMarkdown = this.marpExporter.generateMarpMarkdown(
+    const fullMarkdown = this.marpExporter.generateMarpMarkdown(
       presentation,
       localPreviewSlides,
       theme,
@@ -1272,40 +1367,11 @@ export class ExportsService {
       figmaBackgrounds,
     );
 
-    const buffers = await this.marpExporter.renderSlideImages(marpMarkdown);
-    if (buffers.length === 0) return;
-
-    const sortedSlides = [...slides].sort((a, b) => a.slideNumber - b.slideNumber);
-
-    for (let i = 0; i < buffers.length && i < sortedSlides.length; i++) {
-      const slide = sortedSlides[i];
-      const s3Key = `previews/${presentation.id}/${slide.slideNumber}.jpeg`;
-      let previewUrl = s3Key;
-
-      try {
-        await this.s3.upload(s3Key, buffers[i], 'image/jpeg');
-      } catch {
-        // Fallback: save locally
-        const localDir = join(this.tempDir, '..', 'previews', presentation.id);
-        await mkdir(localDir, { recursive: true });
-        await writeFile(join(localDir, `${slide.slideNumber}.jpeg`), buffers[i]);
-        previewUrl = `local://previews/${presentation.id}/${slide.slideNumber}.jpeg`;
-      }
-
-      await this.prisma.slide.update({
-        where: { id: slide.id },
-        data: { previewUrl },
-      });
-
-      // Notify frontend so it shows the preview without page refresh
-      this.events.emitSlideUpdated({
-        presentationId: presentation.id,
-        slideId: slide.id,
-        data: { previewUrl },
-      });
+    const fullBuffers = await this.marpExporter.renderSlideImages(fullMarkdown);
+    if (fullBuffers.length > 0) {
+      await this.uploadAndEmitPreviews(presentation, sortedSlides, fullBuffers);
     }
 
-    this.logger.log(`Saved ${Math.min(buffers.length, sortedSlides.length)} slide previews for presentation ${presentation.id}`);
     await this.cleanupSlideImages(previewTempDir);
   }
 }

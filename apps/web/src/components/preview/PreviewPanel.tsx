@@ -2,13 +2,14 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { PeachLogo } from '@/components/icons/PeachLogo';
 import {
   Download, ChevronDown, FileText, Loader2, Check, Edit3,
-  SkipForward, Coins, Eye,
+  SkipForward, Coins,
 } from 'lucide-react';
 import { usePresentationStore } from '@/stores/presentation.store';
 import type { SlideData } from '@/stores/presentation.store';
 import { useWorkflowStore } from '@/stores/workflow.store';
 import { useSlideUpdates } from '@/hooks/useSlideUpdates';
 import { ThumbnailSidebar } from './ThumbnailSidebar';
+import { SlideRenderer } from './SlideRenderer';
 import { SlideHeader } from './SlideHeader';
 import { PresentationMode } from './PresentationMode';
 import { NarrativeAdvice } from './NarrativeAdvice';
@@ -557,12 +558,7 @@ export function PreviewPanel({ presentationId }: PreviewPanelProps) {
                       />
                     </>
                   ) : (
-                    <div className="flex h-full items-center justify-center bg-card">
-                      <div className="text-center">
-                        <Eye className="mx-auto mb-2 h-8 w-8 text-muted-foreground/40" />
-                        <p className="text-xs text-muted-foreground">Preview loading...</p>
-                      </div>
-                    </div>
+                    <SlideRenderer slide={currentSlide} theme={presentation?.theme} className="h-full w-full" />
                   )}
                 </div>
 
