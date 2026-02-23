@@ -116,12 +116,12 @@ const LIGHT_TYPE_TO_VARIANT: Record<SlideType, number> = {
   TITLE: 1,          // bg-section-divider (navy)
   CTA: 1,            // bg-section-divider (navy)
   QUOTE: 2,          // bg-callout (ice blue)
-  PROBLEM: 0,        // bg-clean (white)
-  SOLUTION: 0,
+  PROBLEM: 5,        // bg-accent-tint
+  SOLUTION: 4,        // bg-soft-gradient
   ARCHITECTURE: 4,   // bg-soft-gradient
   PROCESS: 4,        // bg-soft-gradient
-  DATA_METRICS: 0,
-  COMPARISON: 0,
+  DATA_METRICS: 5,   // bg-accent-tint
+  COMPARISON: 4,     // bg-soft-gradient
   CONTENT: 0,
   VISUAL_HUMOR: 0,  // bg-clean (image dominates)
   TEAM: 3,           // bg-warm-cream
@@ -131,8 +131,8 @@ const LIGHT_TYPE_TO_VARIANT: Record<SlideType, number> = {
   FEATURE_GRID: 3,   // bg-warm-cream
   PRODUCT_SHOWCASE: 0,    // bg-clean (product image carries visual weight)
   LOGO_WALL: 0,           // bg-clean
-  MARKET_SIZING: 0,       // bg-clean
-  SPLIT_STATEMENT: 0,     // bg-clean
+  MARKET_SIZING: 5,       // bg-accent-tint
+  SPLIT_STATEMENT: 4,     // bg-soft-gradient
 };
 
 

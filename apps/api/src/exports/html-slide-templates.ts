@@ -267,6 +267,7 @@ function buildMetricsHighlight(slide: SlideInput, p: ColorPalette): string {
       secondaryHtml += `<div style="position:absolute;left:${cx}px;top:${secY}px;width:${colW}px;text-align:center">
         <div style="font-size:24px;font-weight:bold;color:${p.primary}">${escHtml(val)}</div>
         ${label ? `<div style="font-size:10px;color:${p.text};opacity:0.6;margin-top:4px">${escHtml(label)}</div>` : ''}
+        <div style="width:${Math.round(colW * 0.6)}px;height:4px;background:${hexToRgba(p.border, 0.3)};border-radius:2px;margin:8px auto 0"><div style="width:60%;height:100%;background:${p.accent};border-radius:2px;opacity:0.7"></div></div>
       </div>`;
     }
   }
@@ -276,7 +277,11 @@ function buildMetricsHighlight(slide: SlideInput, p: ColorPalette): string {
   return `${SCOPED_RESET}
 <div style="position:relative;width:${W}px;height:${H}px;">
   <div style="position:absolute;left:0;top:0;width:${W}px;height:${H}px;background:radial-gradient(ellipse 800px 600px at 50% 40%,${hexToRgba(p.primary, 0.08)} 0%,transparent 70%)"></div>
-  <div style="position:absolute;left:${PAD}px;top:${heroY}px;width:${W - PAD * 2}px;text-align:center;font-size:${heroFontSize}px;font-weight:bold;color:${p.primary};line-height:1.1">${escHtml(bigValue)}</div>
+  <svg style="position:absolute;left:${Math.round(W / 2 - Math.min(heroFontSize * 1.2, 100))}px;top:${Math.round(heroY - Math.min(heroFontSize * 1.2, 100) * 0.3)}px" width="${Math.round(Math.min(heroFontSize * 1.2, 100) * 2)}" height="${Math.round(Math.min(heroFontSize * 1.2, 100) * 2)}" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="${Math.round(Math.min(heroFontSize * 1.2, 100))}" cy="${Math.round(Math.min(heroFontSize * 1.2, 100))}" r="${Math.round(Math.min(heroFontSize * 1.2, 100) * 0.9)}" fill="none" stroke="${p.accent}" stroke-width="2" opacity="0.08" />
+    <circle cx="${Math.round(Math.min(heroFontSize * 1.2, 100))}" cy="${Math.round(Math.min(heroFontSize * 1.2, 100))}" r="${Math.round(Math.min(heroFontSize * 1.2, 100) * 0.7)}" fill="none" stroke="${p.primary}" stroke-width="1.5" opacity="0.06" />
+  </svg>
+    <div style="position:absolute;left:${PAD}px;top:${heroY}px;width:${W - PAD * 2}px;text-align:center;font-size:${heroFontSize}px;font-weight:bold;color:${p.primary};line-height:1.1">${escHtml(bigValue)}</div>
   ${bigLabel || bigValue !== slide.title ? `<div style="position:absolute;left:${PAD + 100}px;top:${heroY + 100}px;width:${W - PAD * 2 - 200}px;text-align:center;font-size:21px;font-weight:bold;color:${p.text};line-height:1.3">${escHtml(bigLabel || slide.title)}</div>` : ''}
   <div style="position:absolute;left:${Math.round((W - 80) / 2)}px;top:${heroY + 140}px;width:80px;height:3px;background:${p.accent};border-radius:2px"></div>
   ${displaySupport ? `<div style="position:absolute;left:${PAD + 160}px;top:${heroY + 164}px;width:${W - PAD * 2 - 320}px;text-align:center;font-size:15px;line-height:1.5;color:${p.text};opacity:0.7">${escHtml(displaySupport)}</div>` : ''}
@@ -342,8 +347,14 @@ function buildComparison(slide: SlideInput, p: ColorPalette): string {
   <div style="position:absolute;left:${rightX + 24}px;top:${cardY + 14}px;font-size:16px;font-weight:bold;color:${p.primary}">${escHtml(stripMarkdown(rightTitle))}</div>
   ${renderItems(rightLines, rightX, '\u2713')}
   <svg style="position:absolute;left:0;top:0" width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg">
-    <circle cx="${W / 2}" cy="${Math.round(vsCy)}" r="24" fill="${p.background}" stroke="${p.border}" stroke-width="1" />
-    <text x="${W / 2}" y="${Math.round(vsCy + 5)}" text-anchor="middle" fill="${p.text}" font-size="12" font-weight="bold" opacity="0.5">VS</text>
+    <defs>
+      <marker id="vs-arrow" markerWidth="8" markerHeight="6" refX="4" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="${p.border}" opacity="0.4" /></marker>
+    </defs>
+    <line x1="${W / 2 - 60}" y1="${Math.round(vsCy)}" x2="${W / 2 - 32}" y2="${Math.round(vsCy)}" stroke="${p.border}" stroke-width="1.5" opacity="0.3" marker-end="url(#vs-arrow)" />
+    <line x1="${W / 2 + 32}" y1="${Math.round(vsCy)}" x2="${W / 2 + 60}" y2="${Math.round(vsCy)}" stroke="${p.border}" stroke-width="1.5" opacity="0.3" marker-start="url(#vs-arrow)" />
+    <circle cx="${W / 2}" cy="${Math.round(vsCy)}" r="28" fill="${p.background}" stroke="${p.accent}" stroke-width="2" opacity="0.9" />
+    <circle cx="${W / 2}" cy="${Math.round(vsCy)}" r="22" fill="${hexToRgba(p.accent, 0.1)}" stroke="none" />
+    <text x="${W / 2}" y="${Math.round(vsCy + 5)}" text-anchor="middle" fill="${p.accent}" font-size="13" font-weight="bold" letter-spacing="1">VS</text>
   </svg>
 </div>`;
 }
