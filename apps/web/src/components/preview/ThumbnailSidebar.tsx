@@ -24,7 +24,7 @@ export function ThumbnailSidebar({ slides, currentIndex, onSelect, theme, approv
   if (slides.length === 0) return null;
 
   return (
-    <div className="flex w-32 flex-shrink-0 flex-col gap-1.5 overflow-y-auto border-r border-border bg-muted/30 p-1.5">
+    <div className="flex w-40 flex-shrink-0 flex-col gap-1.5 overflow-y-auto border-r border-border bg-muted/30 p-1.5">
       {slides.map((slide, index) => {
         const isApproved = approvedSlides?.includes(index);
         const isCurrent = index === currentIndex;
