@@ -31,7 +31,7 @@ import {
 
 const execFileAsync = promisify(execFile);
 
-// ── Layout profiles ──────────────────────────────────────────
+// Ã¢ÂÂÃ¢ÂÂ Layout profiles Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
 export type LayoutProfile = 'corporate' | 'startup' | 'creative' | 'consulting' | 'technical';
 
 interface LayoutProfileConfig {
@@ -97,7 +97,7 @@ function shellSafePath(p: string): string {
   return `"${p.replace(/\\/g, '/')}"`;
 }
 
-// ── Color contrast helpers ──────────────────────────────────
+// Ã¢ÂÂÃ¢ÂÂ Color contrast helpers Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
 
 /** Convert RGB components (0-255) back to hex string. */
 function rgbToHex(r: number, g: number, b: number): string {
@@ -145,13 +145,13 @@ function ensureContrast(fg: string, bg: string, minRatio: number): string {
   return adjusted;
 }
 
-/** Convert hex to hex+alpha suffix (e.g. #0f172a + 0.9 → #0f172ae6). */
+/** Convert hex to hex+alpha suffix (e.g. #0f172a + 0.9 Ã¢ÂÂ #0f172ae6). */
 function hexWithAlpha(hex: string, alpha: number): string {
   const alphaHex = Math.round(alpha * 255).toString(16).padStart(2, '0');
   return `${hex}${alphaHex}`;
 }
 
-// ── Palette interface ───────────────────────────────────────
+// Ã¢ÂÂÃ¢ÂÂ Palette interface Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
 
 interface ColorPalette {
   primary: string;
@@ -186,7 +186,7 @@ export class MarpExporterService {
     const isMcKinsey = theme.name === 'mckinsey-executive';
     const isConsulting = isMcKinsey || layoutProfile === 'consulting';
 
-    // ── Contrast-safe color computation ───────────────────
+    // Ã¢ÂÂÃ¢ÂÂ Contrast-safe color computation Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
     const bg = palette.background;
     const safeText = ensureContrast(palette.text, bg, 7.0);
     const safePrimary = ensureContrast(palette.primary, bg, 4.5);
@@ -209,7 +209,7 @@ export class MarpExporterService {
         failures.map(([name, fg, b, ratio]) => `${name}(${fg} on ${b})=${ratio.toFixed(1)}`).join(', '),
       );
     } else {
-      this.logger.debug(`[CONTRAST] Theme "${theme.name}" — all ${contrastPairs.length} color pairs pass WCAG AA+`);
+      this.logger.debug(`[CONTRAST] Theme "${theme.name}" Ã¢ÂÂ all ${contrastPairs.length} color pairs pass WCAG AA+`);
     }
 
     // Table header background: surface-like, darkened from background
@@ -390,7 +390,7 @@ export class MarpExporterService {
     // Background variants + accent rotation + lead styling (profile-conditional)
     if (isConsulting) {
       frontmatter.push(generateMarpMcKinseyCSS(palette));
-      // No accent rotation — consulting uses uniform primary bold
+      // No accent rotation Ã¢ÂÂ consulting uses uniform primary bold
       frontmatter.push(generateMarpMcKinseyLeadCSS(palette));
     } else if (!profile.bokeh) {
       // Corporate/technical: backgrounds but no bokeh radial glows
@@ -534,7 +534,7 @@ export class MarpExporterService {
       }
       lines.push('');
     } else if (type === 'METRICS_HIGHLIGHT') {
-      // FIGMA_GRADE templates use inline HTML with absolute positioning � no need
+      // FIGMA_GRADE templates use inline HTML with absolute positioning Â no need
       // for the 'lead' class which forces background:primary !important on McKinsey.
       // Use a light bg so inline p.primary / p.text colors remain readable.
       if (bgVariant.className === 'bg-callout-dark') {
@@ -571,7 +571,7 @@ export class MarpExporterService {
         lines.push('');
       }
       lines.push(buildHtmlSlideContent(
-        { title: slide.title, body: slide.body || '', slideType: rendererOverride },
+        { title: slide.title, body: slide.body || '', slideType: rendererOverride, imageUrl: slide.imageUrl ?? undefined },
         palette,
       ));
       lines.push('');
@@ -591,7 +591,7 @@ export class MarpExporterService {
         lines.push('');
       }
       lines.push(buildHtmlSlideContent(
-        { title: slide.title, body: slide.body || '', slideType: type },
+        { title: slide.title, body: slide.body || '', slideType: type, imageUrl: slide.imageUrl ?? undefined },
         palette,
       ));
       lines.push('');
@@ -622,11 +622,11 @@ export class MarpExporterService {
       return lines.join('\n');
     }
 
-    // Image placement — varies by slide type and per-slide imageLayout
+    // Image placement Ã¢ÂÂ varies by slide type and per-slide imageLayout
     if (slide.imageUrl) {
       const slideLayout = (slide as Record<string, unknown>).imageLayout as string | null;
       if (type === 'VISUAL_HUMOR') {
-        // Full-screen background at high visibility — image IS the slide
+        // Full-screen background at high visibility Ã¢ÂÂ image IS the slide
         lines.push(`![bg brightness:0.7](${slide.imageUrl})`);
       } else if (type === 'TITLE' || type === 'CTA') {
         // Always background for hero slides regardless of setting
@@ -641,7 +641,7 @@ export class MarpExporterService {
         // Contain (not cover) to preserve diagram integrity
         lines.push(`![bg right:40% contain](${slide.imageUrl})`);
       } else if (type === 'PRODUCT_SHOWCASE') {
-        // Right-side product mockup — larger (45%) and contained to show full screenshot
+        // Right-side product mockup Ã¢ÂÂ larger (45%) and contained to show full screenshot
         lines.push(`![bg right:45% contain](${slide.imageUrl})`);
       } else if (slideLayout === 'BACKGROUND') {
         // Per-slide background layout
@@ -835,7 +835,7 @@ h3 { margin-top: 10px; font-size: 0.8em; }
 
     this.logger.log(`Marp rendered ${slideImages.length} slide images`);
 
-    // Step 3: Build PPTX with PptxGenJS — one full-bleed image per slide
+    // Step 3: Build PPTX with PptxGenJS Ã¢ÂÂ one full-bleed image per slide
     const pres = new PptxGenJS();
     pres.layout = 'LAYOUT_WIDE'; // 13.33 x 7.5 inches (16:9)
 

@@ -162,9 +162,9 @@ CONTENT: Lead sentence + table + takeaway + sources. The default for most inform
   Example body:
   "**$55B** in cumulative AI venture funding since 2020.\\n\\n| Metric | 2024 | 2025 |\\n|---|---|---|\\n| **Adoption** | 34% | 58% |\\n| **Deal size** | **$2.1M** | **$4.7M** |\\n| **ROI timeline** | 18 mo | 9 mo |\\n\\n### AI spending shifts from experimentation to production\\nSources: Gartner 2024, McKinsey AI Index"
 
-PROBLEM: Lead sentence with cost + table of pain points + takeaway. Use **bold** on costs.
+PROBLEM: Lead sentence with cost + bullet points + takeaway. Use **bold** on costs. PROBLEM slides use a visual template — use bullet format (- point) NOT tables. Tables will be flattened to flat text.
   Example body:
-  "Fragmented data costs enterprises **$12.9M annually**.\\n\\n| Pain Point | Impact |\\n|---|---|\\n| **Data silos** | $12.9M/year |\\n| **Manual prep** | 68% analyst time |\\n| **Decision lag** | 14 days average |\\n\\n### Inaction costs more than transformation\\nSources: Forrester TEI, Deloitte 2024"
+  "Fragmented data costs enterprises **$12.9M annually**.\n\n- **Data silos** cost $12.9M/year in duplicate effort\n- **Manual prep** consumes 68% of analyst time\n- **Decision lag** averages 14 days per cycle\n\n### Inaction costs more than transformation\nSources: Forrester TEI, Deloitte 2024"
 
 SOLUTION: Mirror problem structure. Lead sentence + outcomes table + takeaway.
   Example body:
@@ -230,7 +230,7 @@ SECTION_DIVIDER: Body MUST be empty string "". Title is 1-3 words only (e.g. "In
   speakerNotes: ""
   imagePromptHint: ""
 
-METRICS_HIGHLIGHT: Plain text, one metric per line. Format: VALUE: label. 2-4 metrics, numbers should be specific and impressive. No tables. Title frames the narrative. End with ### takeaway. NEVER include HTML tags, CSS classes, or div wrappers — the visual layout is handled automatically by the renderer.
+METRICS_HIGHLIGHT: Plain text, one metric per line. Format: VALUE: label. 2-4 metrics, numbers should be specific and impressive. No tables. Title MUST be short (3-5 words) framing the metric narrative, NOT a label like "Key Performance Metrics Q4". Good: "Growth That Compounds" | Bad: "Key Performance Metrics Q4 2024". End with ### takeaway. NEVER include HTML tags, CSS classes, or div wrappers — the visual layout is handled automatically by the renderer.
   Example body:
   "13,500: template downloads
 1,500: custom design requests

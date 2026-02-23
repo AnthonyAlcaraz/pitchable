@@ -16,6 +16,7 @@ interface SlideInput {
   title: string;
   body: string;
   slideType: string;
+  imageUrl?: string;
 }
 
 // ── Constants ────────────────────────────────────────────────
@@ -57,7 +58,7 @@ function parseBodyLines(body: string): string[] {
       // Strip table row pipes: "| Metric | Value |" -> "Metric  Value"
       let cleaned = l;
       if (/^\s*\|/.test(cleaned)) {
-        cleaned = cleaned.replace(/^\s*\|/, '').replace(/\|\s*$/, '').replace(/\|/g, '  ').trim();
+        cleaned = cleaned.replace(/^\s*\|/, '').replace(/\|\s*$/, '').replace(/\|/g, ' — ').trim();
       }
       // Strip HTML tags, bullet markers, markdown formatting
       cleaned = cleaned.replace(/^[-•*]\s*/, '').replace(/<[^>]*>/g, '').trim();
@@ -113,7 +114,7 @@ export function buildHtmlSlideContent(
     case 'SOLUTION':
       return buildSolution(cleaned, palette);
     case 'CTA':
-      return buildCta(cleaned, palette);
+      return buildCta(cleaned, palette, !!cleaned.imageUrl);
     default:
       return '';
   }
@@ -597,11 +598,12 @@ function buildSolution(slide: SlideInput, p: ColorPalette): string {
 // ── CTA ─────────────────────────────────────────────────────
 // Centered action card
 
-function buildCta(slide: SlideInput, p: ColorPalette): string {
+function buildCta(slide: SlideInput, p: ColorPalette, hasImage = false): string {
   const lines = parseBodyLines(slide.body);
-  const cardW = 700;
+  const visibleW = hasImage ? Math.round(W * 0.7) : W;
+  const cardW = hasImage ? 560 : 700;
   const cardH = 320;
-  const cardX = Math.round((W - cardW) / 2);
+  const cardX = Math.round((visibleW - cardW) / 2);
   const cardY = Math.round((H - cardH) / 2) + 20;
 
   let actionsHtml = '';
