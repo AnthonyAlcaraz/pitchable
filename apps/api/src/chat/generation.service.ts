@@ -1151,7 +1151,7 @@ OUTPUT: Valid JSON matching this schema (no markdown fences):
 
       yield { type: 'progress', content: 'Running quality review agents', metadata: { step: 'quality_review', status: 'complete' } };
 
-      // Apply auto-fixes from agents (silently — no user-facing output)
+      // Apply auto-fixes from agents and re-emit updated slide previews
       if (qualityResult.fixes.length > 0) {
         this.logger.log(`Quality review auto-fixing ${qualityResult.fixes.length} slides`);
         for (const fix of qualityResult.fixes) {
@@ -1166,6 +1166,22 @@ OUTPUT: Valid JSON matching this schema (no markdown fences):
               slideId: slideToFix.id,
               data: { title: fix.fixedTitle, body: fix.fixedBody },
             });
+            // Re-emit slide preview so chat stream reflects the fix
+            yield {
+              type: 'action',
+              content: '',
+              metadata: {
+                action: 'slide_preview',
+                slide: {
+                  id: slideToFix.id,
+                  slideNumber: slideToFix.slideNumber,
+                  title: fix.fixedTitle,
+                  body: fix.fixedBody,
+                  slideType: slideToFix.slideType,
+                  imageUrl: null,
+                },
+              },
+            };
           }
         }
       }
