@@ -49,6 +49,23 @@ export interface ReviewState {
   approvedSlides: number[];
 }
 
+export type SlideVerificationStatus = 'generating' | 'verifying' | 'verified' | 'fixed';
+
+export interface SlideVerificationEntry {
+  status: SlideVerificationStatus;
+  score?: number;
+}
+
+export interface VerificationResult {
+  passed: boolean;
+  metrics: {
+    avgStyleScore: number;
+    narrativeScore: number;
+    avgFactScore: number;
+    slidesFixed: number;
+  };
+}
+
 interface PresentationState {
   presentation: PresentationData | null;
   currentSlideIndex: number;
@@ -56,6 +73,10 @@ interface PresentationState {
   error: string | null;
   reviewState: ReviewState | null;
   previewCacheBuster: number;
+
+  // Verification state
+  slideVerification: Map<string, SlideVerificationEntry>;
+  verificationResult: VerificationResult | null;
 
   loadPresentation: (id: string) => Promise<void>;
   setCurrentSlide: (index: number) => void;
@@ -73,6 +94,11 @@ interface PresentationState {
 
   clearPresentation: () => void;
   clearError: () => void;
+
+  // Verification
+  setSlideVerification: (slideId: string, status: SlideVerificationStatus, score?: number) => void;
+  setVerificationResult: (result: VerificationResult) => void;
+  clearVerification: () => void;
 
   // Review flow
   startReview: () => void;
@@ -113,6 +139,8 @@ export const usePresentationStore = create<PresentationState>((set, get) => ({
   error: null,
   reviewState: null,
   previewCacheBuster: Date.now(),
+  slideVerification: new Map(),
+  verificationResult: null,
 
   async loadPresentation(id: string) {
     set({ isLoading: true, error: null });
@@ -246,11 +274,27 @@ export const usePresentationStore = create<PresentationState>((set, get) => ({
   },
 
   clearPresentation() {
-    set({ presentation: null, currentSlideIndex: 0, isLoading: false, error: null, reviewState: null });
+    set({ presentation: null, currentSlideIndex: 0, isLoading: false, error: null, reviewState: null, slideVerification: new Map(), verificationResult: null });
   },
 
   clearError() {
     set({ error: null });
+  },
+
+  setSlideVerification(slideId: string, status: SlideVerificationStatus, score?: number) {
+    set((state) => {
+      const next = new Map(state.slideVerification);
+      next.set(slideId, { status, score });
+      return { slideVerification: next };
+    });
+  },
+
+  setVerificationResult(result: VerificationResult) {
+    set({ verificationResult: result });
+  },
+
+  clearVerification() {
+    set({ slideVerification: new Map(), verificationResult: null });
   },
 
   startReview() {

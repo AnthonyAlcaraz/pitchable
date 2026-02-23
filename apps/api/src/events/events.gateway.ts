@@ -83,6 +83,25 @@ export interface CascadeCompleteEvent {
   presentationId: string;
 }
 
+export interface SlideVerificationEvent {
+  presentationId: string;
+  slideId: string;
+  slideNumber: number;
+  status: 'verifying' | 'verified' | 'fixed';
+  score?: number;
+}
+
+export interface VerificationCompleteEvent {
+  presentationId: string;
+  passed: boolean;
+  metrics: {
+    avgStyleScore: number;
+    narrativeScore: number;
+    avgFactScore: number;
+    slidesFixed: number;
+  };
+}
+
 /** Max WebSocket connections per user (prevents resource exhaustion). */
 const MAX_CONNECTIONS_PER_USER = 10;
 
@@ -351,5 +370,17 @@ export class EventsGateway
     this.server
       .to(`presentation:${event.presentationId}`)
       .emit('cascade:complete', event);
+  }
+
+  emitSlideVerification(event: SlideVerificationEvent): void {
+    this.server
+      .to(`presentation:${event.presentationId}`)
+      .emit('slide:verification', event);
+  }
+
+  emitVerificationComplete(event: VerificationCompleteEvent): void {
+    this.server
+      .to(`presentation:${event.presentationId}`)
+      .emit('verification:complete', event);
   }
 }

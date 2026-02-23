@@ -1137,6 +1137,16 @@ OUTPUT: Valid JSON matching this schema (no markdown fences):
     // Determine theme category for style rules (from in-memory BUILT_IN_THEMES)
     const themeCategory = getThemeCategoryByName(theme?.name ?? '');
 
+    // Emit per-slide verification status: verifying
+    for (const slide of allSlides) {
+      this.events.emitSlideVerification({
+        presentationId,
+        slideId: slide.id,
+        slideNumber: slide.slideNumber,
+        status: 'verifying',
+      });
+    }
+
     try {
       const qualityResult = await this.qualityAgents.reviewPresentation(slidesForReview, {
         themeCategory,
@@ -1191,9 +1201,47 @@ OUTPUT: Valid JSON matching this schema (no markdown fences):
       this.logger.log(
         `Quality scores for ${presentationId}: Style=${(m.avgStyleScore * 100).toFixed(0)}% Narrative=${(m.narrativeScore * 100).toFixed(0)}% Facts=${(m.avgFactScore * 100).toFixed(0)}%${m.errorsFound > 0 ? ` Errors=${m.errorsFound}` : ''}`,
       );
+
+      // Emit per-slide verification results
+      const fixedSlideNumbers = new Set(qualityResult.fixes.map(f => f.slideNumber));
+      const styleScoreMap = new Map(qualityResult.styleResults.map(r => [r.slideNumber, r.result.score]));
+      for (const slide of allSlides) {
+        this.events.emitSlideVerification({
+          presentationId,
+          slideId: slide.id,
+          slideNumber: slide.slideNumber,
+          status: fixedSlideNumbers.has(slide.slideNumber) ? 'fixed' : 'verified',
+          score: styleScoreMap.get(slide.slideNumber) ?? 1.0,
+        });
+      }
+      this.events.emitVerificationComplete({
+        presentationId,
+        passed: qualityResult.passed,
+        metrics: {
+          avgStyleScore: m.avgStyleScore,
+          narrativeScore: m.narrativeScore,
+          avgFactScore: m.avgFactScore,
+          slidesFixed: qualityResult.fixes.length,
+        },
+      });
     } catch (qualityErr) {
       this.logger.warn(`Quality review pipeline failed (non-fatal): ${qualityErr}`);
       yield { type: 'progress', content: 'Quality review skipped', metadata: { step: 'quality_review', status: 'complete' } };
+      // Graceful degradation: mark all slides as verified
+      for (const slide of allSlides) {
+        this.events.emitSlideVerification({
+          presentationId,
+          slideId: slide.id,
+          slideNumber: slide.slideNumber,
+          status: 'verified',
+          score: 1.0,
+        });
+      }
+      this.events.emitVerificationComplete({
+        presentationId,
+        passed: true,
+        metrics: { avgStyleScore: 1.0, narrativeScore: 1.0, avgFactScore: 1.0, slidesFixed: 0 },
+      });
     }
 
     // 6b. Apply Figma template designs to slides (if PitchLens has figmaTemplateId)

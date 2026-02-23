@@ -14,6 +14,7 @@ import { SlideHeader } from './SlideHeader';
 import { PresentationMode } from './PresentationMode';
 import { NarrativeAdvice } from './NarrativeAdvice';
 import { CascadeConfirmModal } from './CascadeConfirmModal';
+import { CircularProgress } from '@/components/ui/CircularProgress';
 import { api } from '@/lib/api';
 import { getSocket } from '@/lib/socket';
 
@@ -76,6 +77,8 @@ export function PreviewPanel({ presentationId }: PreviewPanelProps) {
   const approveAllReviewSlides = usePresentationStore((s) => s.approveAllReviewSlides);
   const unapproveSlides = usePresentationStore((s) => s.unapproveSlides);
   const cacheBuster = usePresentationStore((s) => s.previewCacheBuster);
+  const slideVerification = usePresentationStore((s) => s.slideVerification);
+  const verificationResult = usePresentationStore((s) => s.verificationResult);
   const [imgLoaded, setImgLoaded] = useState(false);
 
   // Workflow store
@@ -523,6 +526,43 @@ export function PreviewPanel({ presentationId }: PreviewPanelProps) {
           </div>
         )}
 
+        {/* Verification in progress banner */}
+        {phase !== 'generating' && slideVerification.size > 0 && !verificationResult && (
+          (() => {
+            const entries = Array.from(slideVerification.values());
+            const verifiedCount = entries.filter(v => v.status === 'verified' || v.status === 'fixed').length;
+            const isVerifying = entries.some(v => v.status === 'verifying');
+            if (!isVerifying && verifiedCount === 0) return null;
+            const pct = slides.length > 0 ? Math.round((verifiedCount / slides.length) * 100) : 0;
+            return (
+              <div className="flex items-center gap-2 border-b border-border bg-teal-500/5 px-4 py-1.5">
+                <CircularProgress percent={pct} size={16} strokeWidth={2} status="verifying" indeterminate={isVerifying && pct < 100} />
+                <span className="text-xs text-teal-400">{isVerifying ? 'Verifying slides...' : 'Verification complete'}</span>
+                <span className="text-xs text-muted-foreground">{verifiedCount}/{slides.length} checked</span>
+              </div>
+            );
+          })()
+        )}
+
+        {/* Verification result banner */}
+        {verificationResult && (
+          <div className={"flex items-center gap-2 border-b border-border px-4 py-1.5 " + (verificationResult.passed ? 'bg-green-500/5' : 'bg-amber-500/5')}>
+            <CircularProgress
+              percent={100}
+              size={16}
+              strokeWidth={2}
+              status={verificationResult.passed ? 'verified' : 'fixed'}
+              showCheck
+            />
+            <span className={"text-xs " + (verificationResult.passed ? 'text-green-400' : 'text-amber-400')}>
+              {verificationResult.passed ? 'All checks passed' : "Quality review: " + verificationResult.metrics.slidesFixed + ' fixes applied'}
+            </span>
+            <span className="text-xs text-muted-foreground">
+              Style {Math.round(verificationResult.metrics.avgStyleScore * 100)}% | Narrative {Math.round(verificationResult.metrics.narrativeScore * 100)}%
+            </span>
+          </div>
+        )}
+
         {/* Main content area */}
         <div className="flex flex-1 overflow-hidden">
           {/* Thumbnail sidebar with approval indicators */}
@@ -532,6 +572,7 @@ export function PreviewPanel({ presentationId }: PreviewPanelProps) {
             onSelect={setCurrentSlide}
             theme={presentation?.theme}
             approvedSlides={isReviewing ? approvedSlides : undefined}
+            slideVerification={!isReviewing ? slideVerification : undefined}
           />
 
           {/* Main slide view */}

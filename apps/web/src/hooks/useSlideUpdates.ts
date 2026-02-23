@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { getSocket, joinPresentation, leavePresentation } from '../lib/socket.js';
 import type { ExportProgressEvent, GenerationProgressEvent } from '../lib/socket.js';
 import { usePresentationStore } from '../stores/presentation.store.js';
+import type { SlideVerificationStatus } from '../stores/presentation.store.js';
 import { useChatStore } from '../stores/chat.store.js';
 import { useWorkflowStore } from '../stores/workflow.store.js';
 import { useAuthStore } from '../stores/auth.store.js';
@@ -52,6 +53,25 @@ interface ImageSelectionRequestEvent {
   candidates: Array<{ id: string; imageUrl: string; score: number; prompt: string }>;
   defaultImageId: string;
   timeoutMs: number;
+}
+
+interface SlideVerificationEvent {
+  presentationId: string;
+  slideId: string;
+  slideNumber: number;
+  status: SlideVerificationStatus;
+  score?: number;
+}
+
+interface VerificationCompleteEvent {
+  presentationId: string;
+  passed: boolean;
+  metrics: {
+    avgStyleScore: number;
+    narrativeScore: number;
+    avgFactScore: number;
+    slidesFixed: number;
+  };
 }
 
 export function useSlideUpdates(presentationId: string | undefined) {
@@ -141,6 +161,16 @@ export function useSlideUpdates(presentationId: string | undefined) {
       addOrUpdateAgentStep(stepId, event.message, status, { current: pct, total: 100 });
     };
 
+    const handleSlideVerification = (event: SlideVerificationEvent) => {
+      if (event.presentationId !== presentationId) return;
+      usePresentationStore.getState().setSlideVerification(event.slideId, event.status, event.score);
+    };
+
+    const handleVerificationComplete = (event: VerificationCompleteEvent) => {
+      if (event.presentationId !== presentationId) return;
+      usePresentationStore.getState().setVerificationResult({ passed: event.passed, metrics: event.metrics });
+    };
+
     socket.on('export:progress', handleExportProgress);
     socket.on('generation:progress', handleGenerationProgress);
     socket.on('slide:added', handleSlideAdded);
@@ -151,6 +181,8 @@ export function useSlideUpdates(presentationId: string | undefined) {
     socket.on('image:generated', handleImageGenerated);
     socket.on('images:complete', handleImagesComplete);
     socket.on('image:selectionRequest', handleImageSelectionRequest);
+    socket.on('slide:verification', handleSlideVerification);
+    socket.on('verification:complete', handleVerificationComplete);
 
     return () => {
       socket.off('export:progress', handleExportProgress);
@@ -163,6 +195,8 @@ export function useSlideUpdates(presentationId: string | undefined) {
       socket.off('image:generated', handleImageGenerated);
       socket.off('images:complete', handleImagesComplete);
       socket.off('image:selectionRequest', handleImageSelectionRequest);
+      socket.off('slide:verification', handleSlideVerification);
+      socket.off('verification:complete', handleVerificationComplete);
       leavePresentation(presentationId);
     };
   }, [presentationId, addSlide, updateSlide, removeSlide, reorderSlides, setCurrentSlide, setTheme, addImageSelection, addOrUpdateAgentStep]);
