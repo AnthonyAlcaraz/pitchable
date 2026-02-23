@@ -28,7 +28,7 @@ const H = 720;
 // Slide types that use Figma-grade HTML+SVG templates for superior visuals.
 export const FIGMA_GRADE_TYPES: Set<string> = new Set([
   'COMPARISON', 'TIMELINE', 'METRICS_HIGHLIGHT', 'MARKET_SIZING', 'TEAM', 'FEATURE_GRID',
-  'PROCESS', 'PROBLEM', 'SOLUTION', 'CTA',
+  'PROCESS', 'PROBLEM', 'SOLUTION', 'CTA', 'CONTENT', 'QUOTE', 'ARCHITECTURE',
 ]);
 
 // ── Helpers ──────────────────────────────────────────────────
@@ -115,6 +115,12 @@ export function buildHtmlSlideContent(
       return buildSolution(cleaned, palette);
     case 'CTA':
       return buildCta(cleaned, palette, !!cleaned.imageUrl);
+    case 'CONTENT':
+      return buildContent(cleaned, palette);
+    case 'QUOTE':
+      return buildQuote(cleaned, palette);
+    case 'ARCHITECTURE':
+      return buildArchitecture(cleaned, palette);
     default:
       return '';
   }
@@ -646,5 +652,121 @@ function buildCta(slide: SlideInput, p: ColorPalette, hasImage = false): string 
   <div style="position:absolute;left:${cardX}px;top:${cardY + 28}px;width:${cardW}px;text-align:center;font-size:28px;font-weight:bold;color:${p.text};line-height:1.2">${escHtml(slide.title)}</div>
   <div style="position:absolute;left:${Math.round(W / 2 - 30)}px;top:${cardY + 72}px;width:60px;height:3px;background:${p.accent};border-radius:2px"></div>
   ${actionsHtml}
+</div>`;
+}
+
+
+// ── CONTENT ─────────────────────────────────────────────────
+// Left accent bar + card rows for body lines
+
+function buildContent(slide: SlideInput, p: ColorPalette): string {
+  const lines = parseBodyLines(slide.body);
+
+  let bodyHtml = '';
+  let ty = PAD + 100;
+  const cardPad = 16;
+  const cardW = W - PAD * 2 - 40;
+
+  for (const line of lines.slice(0, 8)) {
+    bodyHtml += `<div style="position:absolute;left:${PAD + 32}px;top:${ty}px;width:${cardW}px;height:48px;background:${hexToRgba(p.surface, 0.5)};border:1px solid ${hexToRgba(p.border, 0.3)};border-radius:10px;border-left:3px solid ${hexToRgba(p.accent, 0.4)}"></div>`;
+    bodyHtml += `<div style="position:absolute;left:${PAD + 32 + cardPad}px;top:${ty + 12}px;width:${cardW - cardPad * 2}px;font-size:13px;line-height:1.5;color:${p.text};opacity:0.85">${escHtml(stripMarkdown(line))}</div>`;
+    ty += 60;
+  }
+
+  return `${SCOPED_RESET}
+<div style="position:relative;width:${W}px;height:${H}px;">
+  <div style="position:absolute;left:${PAD}px;top:0;width:3px;height:${H}px;background:${p.accent}"></div>
+  <div style="position:absolute;left:${PAD + 20}px;top:${PAD}px;font-size:27px;font-weight:bold;color:${p.text};line-height:1.2">${escHtml(slide.title)}</div>
+  <div style="position:absolute;left:${PAD + 20}px;top:${PAD + 48}px;width:60px;height:3px;background:${p.accent};border-radius:2px"></div>
+  ${bodyHtml}
+</div>`;
+}
+
+// ── QUOTE ───────────────────────────────────────────────────
+// Large decorative quotation mark + centered quote text + attribution
+
+function buildQuote(slide: SlideInput, p: ColorPalette): string {
+  const lines = parseBodyLines(slide.body);
+
+  // Last line that looks like an attribution (starts with - or em-dash, or contains title keywords)
+  let quoteLines = [...lines];
+  let attribution = '';
+  if (quoteLines.length > 1) {
+    const lastLine = quoteLines[quoteLines.length - 1];
+    if (/^[-\u2014\u2013]/.test(lastLine) || /\b(CEO|CTO|Author|Founder|VP|Director|Manager|Head of)\b/i.test(lastLine)) {
+      attribution = lastLine.replace(/^[-\u2014\u2013]\s*/, '');
+      quoteLines = quoteLines.slice(0, -1);
+    }
+  }
+
+  const quoteText = quoteLines.join(' ');
+  const fontSize = quoteText.length > 200 ? 18 : quoteText.length > 100 ? 22 : 28;
+  const quoteY = Math.round(H * 0.3);
+
+  return `${SCOPED_RESET}
+<div style="position:relative;width:${W}px;height:${H}px;">
+  <div style="position:absolute;left:${PAD + 40}px;top:${quoteY - 80}px;font-size:160px;font-family:Georgia,serif;color:${p.accent};opacity:0.2;line-height:1">\u201C</div>
+  <div style="position:absolute;left:${PAD + 80}px;top:${quoteY}px;width:${W - PAD * 2 - 160}px;font-size:${fontSize}px;font-style:italic;line-height:1.5;color:${p.text};text-align:center">${escHtml(quoteText)}</div>
+  ${attribution ? `<div style="position:absolute;left:${PAD + 80}px;bottom:${PAD + 60}px;width:${W - PAD * 2 - 160}px;font-size:14px;color:${p.text};opacity:0.6;text-align:center;letter-spacing:0.04em">\u2014 ${escHtml(attribution)}</div>` : ''}
+  <div style="position:absolute;left:${Math.round((W - 60) / 2)}px;bottom:${PAD + 30}px;width:60px;height:3px;background:${p.accent};border-radius:2px"></div>
+</div>`;
+}
+
+// ── ARCHITECTURE ─────────────────────────────────────────────
+// Horizontal flow diagram: connected box nodes with SVG connectors
+
+function buildArchitecture(slide: SlideInput, p: ColorPalette): string {
+  const lines = parseBodyLines(slide.body);
+  const nodes = lines.slice(0, 6);
+
+  if (nodes.length === 0) {
+    return `${SCOPED_RESET}
+<div style="position:relative;width:${W}px;height:${H}px;">
+  <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${W - PAD * 2}px;text-align:center;font-size:27px;font-weight:bold;color:${p.text}">${escHtml(slide.title)}</div>
+</div>`;
+  }
+
+  const count = nodes.length;
+  const boxW = 180;
+  const boxH = 80;
+  const gapX = 32;
+  const totalW = count * boxW + (count - 1) * gapX;
+  const startX = Math.round((W - totalW) / 2);
+  const boxY = Math.round(H * 0.4);
+
+  let boxesHtml = '';
+  let connectorsSvg = '';
+
+  for (let i = 0; i < count; i++) {
+    const cx = startX + i * (boxW + gapX);
+    // Parse "title: description" format
+    const sep = nodes[i].indexOf(':');
+    const title = sep > -1 ? stripMarkdown(nodes[i].slice(0, sep).trim()) : stripMarkdown(nodes[i]);
+    const desc = sep > -1 ? stripMarkdown(nodes[i].slice(sep + 1).trim()) : '';
+
+    boxesHtml += `<div style="position:absolute;left:${cx}px;top:${boxY}px;width:${boxW}px;height:${boxH}px;background:${p.surface};border:1px solid ${p.border};border-radius:12px;border-top:3px solid ${p.accent}"></div>`;
+    boxesHtml += `<div style="position:absolute;left:${cx + 12}px;top:${boxY + (desc ? 12 : 24)}px;width:${boxW - 24}px;text-align:center;font-size:13px;font-weight:bold;color:${p.text}">${escHtml(title)}</div>`;
+    if (desc) {
+      boxesHtml += `<div style="position:absolute;left:${cx + 12}px;top:${boxY + 36}px;width:${boxW - 24}px;text-align:center;font-size:10px;color:${p.text};opacity:0.7;line-height:1.4">${escHtml(desc)}</div>`;
+    }
+
+    // Connector arrow
+    if (i < count - 1) {
+      const x1 = cx + boxW + 2;
+      const x2 = cx + boxW + gapX - 2;
+      const ay = boxY + boxH / 2;
+      connectorsSvg += `<line x1="${x1}" y1="${ay}" x2="${x2}" y2="${ay}" stroke="${p.border}" stroke-width="2" marker-end="url(#arch-arrow)" />`;
+    }
+  }
+
+  return `${SCOPED_RESET}
+<div style="position:relative;width:${W}px;height:${H}px;">
+  <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${W - PAD * 2}px;text-align:center;font-size:27px;font-weight:bold;color:${p.text};line-height:1.2">${escHtml(slide.title)}</div>
+  <div style="position:absolute;left:${Math.round((W - 60) / 2)}px;top:${PAD + 56}px;width:60px;height:3px;background:${p.accent};border-radius:2px"></div>
+  ${boxesHtml}
+  <svg style="position:absolute;left:0;top:0" width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg">
+    <defs><marker id="arch-arrow" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="${p.border}" /></marker></defs>
+    ${connectorsSvg}
+  </svg>
 </div>`;
 }

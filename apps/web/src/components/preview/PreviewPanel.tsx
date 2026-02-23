@@ -540,8 +540,9 @@ export function PreviewPanel({ presentationId }: PreviewPanelProps) {
 
                 {/* ── Preview image (primary) ─────────── */}
                 <div
+                  key={currentSlide.id}
                   className="relative overflow-hidden rounded-lg border border-border bg-black shadow-lg"
-                  style={{ aspectRatio: '16/9' }}
+                  style={{ aspectRatio: '16/9', animation: 'fadeSlideIn 0.25s ease-out' }}
                 >
                   {currentSlide.previewUrl ? (
                     <>

@@ -444,6 +444,73 @@ export function generateMarpBackgroundCSS(
   lines.push(`    pointer-events: none;`);
   lines.push(`  }`);
 
+
+  // ── Boosted-opacity overrides for image-free slides ────────
+  // When a slide has no image, patterns at 0.06 opacity are invisible.
+  // The .no-image class doubles pattern visibility and adds an accent border.
+  const pcBoosted = patternColor(bg, 0.12);
+  const bokehPrimaryBoosted = hexToRgba(palette.primary, 0.30);
+  const bokehAccentBoosted = hexToRgba(palette.accent, 0.25);
+  const bokehSecondaryBoosted = hexToRgba(palette.secondary || palette.primary, 0.20);
+
+  lines.push(`  section.no-image { border-top: 3px solid ${palette.accent}; }`);
+
+  // bg-radial-glow boosted
+  lines.push(`  section.bg-radial-glow.no-image {`);
+  lines.push(`    background:`);
+  lines.push(`      radial-gradient(ellipse 600px 500px at 15% 60%, ${bokehPrimaryBoosted} 0%, transparent 70%),`);
+  lines.push(`      radial-gradient(ellipse 500px 400px at 80% 25%, ${bokehAccentBoosted} 0%, transparent 70%),`);
+  lines.push(`      radial-gradient(ellipse 350px 350px at 50% 85%, ${bokehSecondaryBoosted} 0%, transparent 65%),`);
+  lines.push(`      ${baseGrad};`);
+  lines.push(`  }`);
+
+  // bg-diagonal-lines boosted
+  lines.push(`  section.bg-diagonal-lines.no-image {`);
+  lines.push(`    background:`);
+  lines.push(`      repeating-linear-gradient(45deg, transparent, transparent 14px, ${pcBoosted} 14px, ${pcBoosted} 15px),`);
+  lines.push(`      repeating-linear-gradient(135deg, transparent, transparent 20px, ${hexToRgba(palette.primary, 0.06)} 20px, ${hexToRgba(palette.primary, 0.06)} 21px),`);
+  lines.push(`      ${variantGrad(1)};`);
+  lines.push(`  }`);
+
+  // bg-wave boosted
+  lines.push(`  section.bg-wave.no-image {`);
+  lines.push(`    background:`);
+  lines.push(`      url("data:image/svg+xml,${waveSvg(palette.accent)}") no-repeat bottom center / 100% 80px,`);
+  lines.push(`      url("data:image/svg+xml,${waveSvg(palette.primary)}") no-repeat bottom 20px center / 100% 60px,`);
+  lines.push(`      ${variantGrad(2)};`);
+  lines.push(`  }`);
+
+  // bg-subtle-grid boosted
+  lines.push(`  section.bg-subtle-grid.no-image {`);
+  lines.push(`    background:`);
+  lines.push(`      radial-gradient(circle 2px at 30px 30px, ${hexToRgba(palette.accent, 0.14)} 0%, transparent 100%),`);
+  lines.push(`      radial-gradient(circle, ${pcBoosted} 1px, transparent 1px),`);
+  lines.push(`      ${variantGrad(3)};`);
+  lines.push(`    background-size: 60px 60px, 30px 30px, 100% 100%;`);
+  lines.push(`  }`);
+
+  // bg-circuit boosted
+  lines.push(`  section.bg-circuit.no-image {`);
+  lines.push(`    background: url("data:image/svg+xml,${circuitSvg(bg)}") repeat, ${variantGrad(4)};`);
+  lines.push(`    background-size: 180px 180px, 100% 100%;`);
+  lines.push(`  }`);
+
+  // bg-corner-accent boosted
+  lines.push(`  section.bg-corner-accent.no-image {`);
+  lines.push(`    background:`);
+  lines.push(`      radial-gradient(ellipse 400px 350px at 85% 15%, ${bokehAccentBoosted} 0%, transparent 65%),`);
+  lines.push(`      radial-gradient(ellipse 300px 300px at 20% 75%, ${bokehPrimaryBoosted} 0%, transparent 70%),`);
+  lines.push(`      ${variantGrad(5)};`);
+  lines.push(`  }`);
+
+  // bg-mesh-gradient boosted
+  lines.push(`  section.bg-mesh-gradient.no-image {`);
+  lines.push(`    background:`);
+  lines.push(`      conic-gradient(from 45deg at 30% 40%, ${hexToRgba(palette.primary, 0.14)}, ${hexToRgba(palette.accent, 0.10)}, ${hexToRgba(palette.secondary || palette.primary, 0.08)}, ${hexToRgba(palette.primary, 0.14)}),`);
+  lines.push(`      ${baseGrad};`);
+  lines.push(`  }`);
+
+
   return lines.join('\n');
 }
 

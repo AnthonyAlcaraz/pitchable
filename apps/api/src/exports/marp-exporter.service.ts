@@ -555,7 +555,9 @@ export class MarpExporterService {
       }
       lines.push('');
     } else {
-      lines.push(`<!-- _class: ${bgVariant.className}${layoutClass} -->`);
+      // Append no-image class for image-free non-Figma slides to boost background pattern visibility
+      const noImageSuffix = !slide.imageUrl && !FIGMA_GRADE_TYPES.has(type) ? ' no-image' : '';
+      lines.push(`<!-- _class: ${bgVariant.className}${layoutClass}${noImageSuffix} -->`);
       if (bgVariant.className === 'bg-callout-dark' && palette) {
         lines.push(`<!-- _backgroundColor: ${palette.surface} -->`);
       }
