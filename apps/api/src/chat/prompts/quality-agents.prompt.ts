@@ -262,3 +262,25 @@ export function isValidFactCheckerResult(data: unknown): data is FactCheckerResu
   if (!Array.isArray(obj['claims'])) return false;
   return true;
 }
+
+// ── Structural Integrity Agent (Programmatic, No LLM) ────────
+
+export interface StructuralIssue {
+  slideNumber: number;
+  check: 'orphaned_split' | 'architecture_overflow' | 'feature_grid_overflow' | 'empty_body' | 'duplicate_title' | 'missing_cta';
+  severity: 'warning' | 'error';
+  message: string;
+}
+
+export interface StructuralIntegrityResult {
+  issues: StructuralIssue[];
+  fixes: Array<{
+    slideNumber: number;
+    agent: 'structural';
+    originalTitle: string;
+    originalBody: string;
+    fixedTitle: string;
+    fixedBody: string;
+  }>;
+  passed: boolean;
+}

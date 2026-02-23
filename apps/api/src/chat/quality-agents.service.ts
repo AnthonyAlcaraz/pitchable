@@ -15,6 +15,8 @@ import type {
   StyleEnforcerResult,
   NarrativeCoherenceResult,
   FactCheckerResult,
+  StructuralIssue,
+  StructuralIntegrityResult,
 } from './prompts/quality-agents.prompt.js';
 
 // ── Types ────────────────────────────────────────────────────
@@ -37,10 +39,12 @@ export interface QualityReviewResult {
   narrativeResult: NarrativeCoherenceResult | null;
   /** Fact Checker results per slide. */
   factCheckResults: Array<{ slideNumber: number; result: FactCheckerResult }>;
+  /** Structural Integrity results (programmatic checks). */
+  structuralResult: StructuralIntegrityResult | null;
   /** Slides that were auto-fixed by agents. */
   fixes: Array<{
     slideNumber: number;
-    agent: 'style' | 'fact_check';
+    agent: 'style' | 'fact_check' | 'structural';
     originalTitle: string;
     originalBody: string;
     fixedTitle: string;
@@ -177,6 +181,15 @@ export class QualityAgentsService {
       }
     }
 
+    // Run structural integrity checks (programmatic, instant — no LLM)
+    const structuralResult = this.runStructuralIntegrity(slides);
+    if (structuralResult.issues.length > 0) {
+      this.logger.log(
+        `[Structural] ${structuralResult.issues.length} issues found: ${structuralResult.issues.map(i => i.check).join(', ')}`,
+      );
+    }
+    fixes.push(...structuralResult.fixes);
+
     // Compute metrics
     const avgStyleScore =
       styleResults.length > 0
@@ -193,7 +206,8 @@ export class QualityAgentsService {
       factCheckResults.reduce(
         (c, r) => c + r.result.claims.filter((cl) => cl.status === 'contradicted').length,
         0,
-      );
+      ) +
+      structuralResult.issues.filter((i) => i.severity === 'error').length;
 
     const passed =
       avgStyleScore >= (styleGate.threshold ?? STYLE_PASS_THRESHOLD) &&
@@ -209,6 +223,7 @@ export class QualityAgentsService {
       styleResults,
       narrativeResult,
       factCheckResults,
+      structuralResult,
       fixes,
       metrics: {
         avgStyleScore,
@@ -385,6 +400,134 @@ ${slide.body}`;
     }
 
     return results;
+  }
+
+  // ── Structural Integrity Agent (programmatic) ──────
+
+  private runStructuralIntegrity(slides: SlideForReview[]): StructuralIntegrityResult {
+    const issues: StructuralIssue[] = [];
+    const fixes: StructuralIntegrityResult['fixes'] = [];
+
+    // 1. Check for orphaned split references "(1/N)", "(2/N)" etc.
+    const splitPattern = /\((\d+)\/(\d+)\)\s*$/;
+    const splitGroups = new Map<string, { slideNumber: number; part: number; total: number }[]>();
+    for (const slide of slides) {
+      const match = slide.title.match(splitPattern);
+      if (match) {
+        const baseTitle = slide.title.replace(splitPattern, '').trim();
+        const group = splitGroups.get(baseTitle) || [];
+        group.push({ slideNumber: slide.slideNumber, part: parseInt(match[1]), total: parseInt(match[2]) });
+        splitGroups.set(baseTitle, group);
+      }
+    }
+    for (const [baseTitle, parts] of splitGroups) {
+      const expectedTotal = parts[0].total;
+      if (parts.length < expectedTotal) {
+        for (const part of parts) {
+          const original = slides.find(s => s.slideNumber === part.slideNumber)!;
+          issues.push({
+            slideNumber: part.slideNumber,
+            check: 'orphaned_split',
+            severity: 'error',
+            message: `Title "${baseTitle} (${part.part}/${expectedTotal})" references ${expectedTotal} parts but only ${parts.length} exist`,
+          });
+          fixes.push({
+            slideNumber: part.slideNumber,
+            agent: 'structural',
+            originalTitle: original.title,
+            originalBody: original.body,
+            fixedTitle: parts.length === 1 ? baseTitle : `${baseTitle} (${part.part}/${parts.length})`,
+            fixedBody: original.body,
+          });
+        }
+      }
+    }
+
+    // 2. Check ARCHITECTURE/FEATURE_GRID content overflow (max 6 items)
+    for (const slide of slides) {
+      const lines = slide.body.split('\n').filter(l => l.trim());
+      if (slide.slideType === 'ARCHITECTURE' && lines.length > 6) {
+        issues.push({
+          slideNumber: slide.slideNumber,
+          check: 'architecture_overflow',
+          severity: 'warning',
+          message: `ARCHITECTURE slide has ${lines.length} components (max 6 rendered)`,
+        });
+        fixes.push({
+          slideNumber: slide.slideNumber,
+          agent: 'structural',
+          originalTitle: slide.title,
+          originalBody: slide.body,
+          fixedTitle: slide.title,
+          fixedBody: lines.slice(0, 6).join('\n'),
+        });
+      }
+      if (slide.slideType === 'FEATURE_GRID' && lines.length > 6) {
+        issues.push({
+          slideNumber: slide.slideNumber,
+          check: 'feature_grid_overflow',
+          severity: 'warning',
+          message: `FEATURE_GRID slide has ${lines.length} features (max 6 rendered)`,
+        });
+        fixes.push({
+          slideNumber: slide.slideNumber,
+          agent: 'structural',
+          originalTitle: slide.title,
+          originalBody: slide.body,
+          fixedTitle: slide.title,
+          fixedBody: lines.slice(0, 6).join('\n'),
+        });
+      }
+    }
+
+    // 3. Check for empty body (title exists but body is blank)
+    for (const slide of slides) {
+      if (slide.title && !slide.body.trim() && slide.slideType !== 'VISUAL_HUMOR' && slide.slideType !== 'SECTION_DIVIDER') {
+        issues.push({
+          slideNumber: slide.slideNumber,
+          check: 'empty_body',
+          severity: 'error',
+          message: `Slide ${slide.slideNumber} "${slide.title}" has an empty body`,
+        });
+      }
+    }
+
+    // 4. Check for duplicate titles
+    const titleCounts = new Map<string, number[]>();
+    for (const slide of slides) {
+      const existing = titleCounts.get(slide.title) || [];
+      existing.push(slide.slideNumber);
+      titleCounts.set(slide.title, existing);
+    }
+    for (const [title, slideNums] of titleCounts) {
+      if (slideNums.length > 1) {
+        issues.push({
+          slideNumber: slideNums[1],
+          check: 'duplicate_title',
+          severity: 'warning',
+          message: `Duplicate title "${title}" on slides ${slideNums.join(', ')}`,
+        });
+      }
+    }
+
+    // 5. Check missing CTA (last slide should be CTA type)
+    if (slides.length > 0) {
+      const lastSlide = slides[slides.length - 1];
+      if (lastSlide.slideType !== 'CTA') {
+        issues.push({
+          slideNumber: lastSlide.slideNumber,
+          check: 'missing_cta',
+          severity: 'warning',
+          message: `Last slide is ${lastSlide.slideType}, not CTA — deck may lack a clear call-to-action`,
+        });
+      }
+    }
+
+    return {
+      issues,
+      fixes,
+      passed: issues.filter(i => i.severity === 'error').length === 0,
+    };
   }
 
   // ── Helpers ──────────────────────────────────────────────
