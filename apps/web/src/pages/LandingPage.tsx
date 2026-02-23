@@ -471,12 +471,18 @@ export function LandingPage() {
           <ShowcaseDeck
             title="NeuroPay — AI-Powered Fraud Detection"
             theme="Creative Warm"
-            slides={5}
+            slides={10}
             images={[
+              '/showcase/investor-web-01.jpg',
               '/showcase/investor-web-02.jpg',
               '/showcase/investor-web-03.jpg',
               '/showcase/investor-web-04.jpg',
               '/showcase/investor-web-05.jpg',
+              '/showcase/investor-web-06.jpg',
+              '/showcase/investor-web-07.jpg',
+              '/showcase/investor-web-08.jpg',
+              '/showcase/investor-web-09.jpg',
+              '/showcase/investor-web-10.jpg',
             ]}
           />
 
@@ -485,12 +491,31 @@ export function LandingPage() {
           <ShowcaseDeck
             title="Financial Services Digital Transformation"
             theme="McKinsey Executive"
-            slides={5}
+            slides={23}
             images={[
+              '/showcase/mckinsey-web-01.jpg',
               '/showcase/mckinsey-web-02.jpg',
               '/showcase/mckinsey-web-03.jpg',
               '/showcase/mckinsey-web-04.jpg',
               '/showcase/mckinsey-web-05.jpg',
+              '/showcase/mckinsey-web-06.jpg',
+              '/showcase/mckinsey-web-07.jpg',
+              '/showcase/mckinsey-web-08.jpg',
+              '/showcase/mckinsey-web-09.jpg',
+              '/showcase/mckinsey-web-10.jpg',
+              '/showcase/mckinsey-web-11.jpg',
+              '/showcase/mckinsey-web-12.jpg',
+              '/showcase/mckinsey-web-13.jpg',
+              '/showcase/mckinsey-web-14.jpg',
+              '/showcase/mckinsey-web-15.jpg',
+              '/showcase/mckinsey-web-16.jpg',
+              '/showcase/mckinsey-web-17.jpg',
+              '/showcase/mckinsey-web-18.jpg',
+              '/showcase/mckinsey-web-19.jpg',
+              '/showcase/mckinsey-web-20.jpg',
+              '/showcase/mckinsey-web-21.jpg',
+              '/showcase/mckinsey-web-22.jpg',
+              '/showcase/mckinsey-web-23.jpg',
             ]}
           />
 
@@ -501,10 +526,18 @@ export function LandingPage() {
             theme="Pitchable Dark"
             slides={12}
             images={[
+              '/showcase/carbonbridge-01.jpg',
               '/showcase/carbonbridge-02.jpg',
               '/showcase/carbonbridge-03.jpg',
               '/showcase/carbonbridge-04.jpg',
               '/showcase/carbonbridge-05.jpg',
+              '/showcase/carbonbridge-06.jpg',
+              '/showcase/carbonbridge-07.jpg',
+              '/showcase/carbonbridge-08.jpg',
+              '/showcase/carbonbridge-09.jpg',
+              '/showcase/carbonbridge-10.jpg',
+              '/showcase/carbonbridge-11.jpg',
+              '/showcase/carbonbridge-12.jpg',
             ]}
           />
         </div>
