@@ -98,7 +98,7 @@ export function buildHtmlSlideContent(
     case 'MARKET_SIZING':
       return buildMarketSizing(cleaned, palette);
     case 'TIMELINE':
-      return buildTimeline(cleaned, palette);
+      return buildTimeline(cleaned, palette, !!cleaned.imageUrl);
     case 'METRICS_HIGHLIGHT':
       return buildMetricsHighlight(cleaned, palette);
     case 'COMPARISON':
@@ -170,7 +170,7 @@ function buildMarketSizing(slide: SlideInput, p: ColorPalette): string {
 // ── TIMELINE ─────────────────────────────────────────────────
 // Horizontal connector line + circle nodes at computed positions
 
-function buildTimeline(slide: SlideInput, p: ColorPalette): string {
+function buildTimeline(slide: SlideInput, p: ColorPalette, hasImage = false): string {
   const lines = parseBodyLines(slide.body);
   const milestones = lines.map((line) => {
     const sep = line.indexOf(':');
@@ -185,9 +185,10 @@ function buildTimeline(slide: SlideInput, p: ColorPalette): string {
 </div>`;
   }
 
+  const visibleW = hasImage ? Math.round(W * 0.7) : W;  // 896 when image present
   const lineY = Math.round(H * 0.55);  // 396
   const lineStartX = PAD + 53;         // ~106
-  const lineEndX = W - PAD - 53;       // ~1174
+  const lineEndX = visibleW - PAD - 53;  // 790 when image vs 1174
   const count = milestones.length;
   const spacing = (lineEndX - lineStartX) / (count - 1 || 1);
   const nodeR = 8;
@@ -202,10 +203,12 @@ function buildTimeline(slide: SlideInput, p: ColorPalette): string {
 
     nodesSvg += `<circle cx="${Math.round(cx)}" cy="${lineY}" r="${nodeR}" fill="${fill}" />`;
 
+    const dateW = hasImage ? 120 : 160;
+    const textW = hasImage ? 140 : 180;
     if (milestones[i].date) {
-      labelHtml += `<div style="position:absolute;left:${Math.round(cx - 80)}px;top:${lineY - 50}px;width:160px;text-align:center;font-size:12px;font-weight:bold;color:${p.primary};letter-spacing:1px">${escHtml(milestones[i].date)}</div>`;
+      labelHtml += `<div style="position:absolute;left:${Math.round(cx - dateW / 2)}px;top:${lineY - 50}px;width:${dateW}px;text-align:center;font-size:${hasImage ? 11 : 12}px;font-weight:bold;color:${p.primary};letter-spacing:1px">${escHtml(milestones[i].date)}</div>`;
     }
-    labelHtml += `<div style="position:absolute;left:${Math.round(cx - 90)}px;top:${lineY + 24}px;width:180px;text-align:center;font-size:11px;line-height:1.4;color:${p.text};opacity:0.8">${escHtml(milestones[i].text)}</div>`;
+    labelHtml += `<div style="position:absolute;left:${Math.round(cx - textW / 2)}px;top:${lineY + 24}px;width:${textW}px;text-align:center;font-size:${hasImage ? 10 : 11}px;line-height:1.4;color:${p.text};opacity:0.8">${escHtml(milestones[i].text)}</div>`;
   }
 
   return `${SCOPED_RESET}
@@ -559,9 +562,21 @@ function buildProblem(slide: SlideInput, p: ColorPalette): string {
   const lines = parseBodyLines(slide.body);
   const barColor = p.error || p.accent;
 
+  // Detect if first line looks like a table header (short, no numbers/dollar signs)
+  const isHeader = lines.length > 2 && !/\d/.test(lines[0]) && !/[$€£¥]/.test(lines[0]) && lines[0].length < 60;
+  const headerLine = isHeader ? lines[0] : null;
+  const dataLines = isHeader ? lines.slice(1, 7) : lines.slice(0, 6);
+
   let bodyHtml = '';
   let ty = PAD + 100;
-  for (const line of lines.slice(0, 6)) {
+
+  // Render header label if detected
+  if (headerLine) {
+    bodyHtml += `<div style="position:absolute;left:${PAD + 32}px;top:${ty}px;width:${W - PAD * 2 - 40}px;font-size:11px;line-height:1.6;color:${p.text};opacity:0.6;padding-left:12px;text-transform:uppercase;letter-spacing:0.08em;font-weight:bold">${escHtml(stripMarkdown(headerLine))}</div>`;
+    ty += 32;
+  }
+
+  for (const line of dataLines) {
     bodyHtml += `<div style="position:absolute;left:${PAD + 32}px;top:${ty}px;width:${W - PAD * 2 - 40}px;font-size:14px;line-height:1.6;color:${p.text};opacity:0.85;padding-left:12px;border-left:2px solid ${hexToRgba(barColor, 0.3)}">${escHtml(stripMarkdown(line))}</div>`;
     ty += 48;
   }

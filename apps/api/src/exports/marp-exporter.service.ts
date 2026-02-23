@@ -576,7 +576,8 @@ export class MarpExporterService {
     // AI renderer override: upgrade slide to a visual template when content matches
     if (rendererOverride && FIGMA_GRADE_TYPES.has(rendererOverride) && palette) {
       if (slide.imageUrl) {
-        lines.push(`![bg right:30% opacity:0.9](${slide.imageUrl})`);
+        const imgW = rendererOverride === 'TIMELINE' ? '25%' : '30%';
+        lines.push(`![bg right:${imgW} opacity:0.9](${slide.imageUrl})`);
         lines.push('');
       }
       lines.push(buildHtmlSlideContent(
@@ -596,7 +597,8 @@ export class MarpExporterService {
     if (FIGMA_GRADE_TYPES.has(type) && palette) {
       // Add image BEFORE the HTML content for FIGMA_GRADE slides
       if (slide.imageUrl) {
-        lines.push(`![bg right:30% opacity:0.9](${slide.imageUrl})`);
+        const imgW = type === 'TIMELINE' ? '25%' : '30%';
+        lines.push(`![bg right:${imgW} opacity:0.9](${slide.imageUrl})`);
         lines.push('');
       }
       lines.push(buildHtmlSlideContent(

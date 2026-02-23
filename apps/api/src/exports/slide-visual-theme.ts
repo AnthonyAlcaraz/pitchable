@@ -490,6 +490,7 @@ export function generateLeadEnhancementCSS(safeAccent: string, safeText: string)
     `  section.lead strong {`,
     `    color: ${safeAccent};`,
     `  }`,
+    `  section.lead h1::after { margin: 6px auto 0; }`,
     `  section.lead::after {`,
     `    content: '';`,
     `    position: absolute;`,
@@ -597,6 +598,7 @@ export function generateMarpMcKinseyLeadCSS(palette: ColorPalette): string {
     `  section.lead p, section.lead li {`,
     `    color: rgba(255,255,255,0.9) !important;`,
     `  }`,
+    `  section.lead h1::after { margin: 6px auto 0; background: ${palette.accent}; }`,
   ].join('\n');
 }
 
