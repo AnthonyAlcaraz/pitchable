@@ -272,6 +272,18 @@ function waveSvg(color: string): string {
   );
 }
 
+function waveSvgSmall(color: string): string {
+  const c = color.replace('#', '');
+  const r = parseInt(c.slice(0, 2), 16);
+  const g = parseInt(c.slice(2, 4), 16);
+  const b = parseInt(c.slice(4, 6), 16);
+  return encodeURIComponent(
+    `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 40'>`
+    + `<path fill='rgba(${r},${g},${b},0.03)' d='M0,24 C480,40 960,8 1440,24 L1440,40 L0,40Z'/>`
+    + `</svg>`,
+  );
+}
+
 function circuitSvg(bg: string): string {
   const pc = isDarkBg(bg) ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
   return encodeURIComponent(
@@ -292,6 +304,16 @@ function circuitSvg(bg: string): string {
     + `<line x1='20' y1='100' x2='60' y2='100' stroke='${pc}' stroke-width='1.5'/>`
     + `<line x1='60' y1='100' x2='60' y2='160' stroke='${pc}' stroke-width='1.5'/>`
     + `<circle cx='60' cy='160' r='3' fill='${pc}'/>`
+    + `<line x1='100' y1='20' x2='180' y2='20' stroke='${pc}' stroke-width='1.5'/>`
+    + `<line x1='180' y1='20' x2='180' y2='100' stroke='${pc}' stroke-width='1.5'/>`
+    + `<circle cx='180' cy='100' r='3' fill='${pc}'/>`
+    + `<line x1='20' y1='160' x2='100' y2='160' stroke='${pc}' stroke-width='1.5'/>`
+    + `<circle cx='100' cy='160' r='3' fill='${pc}'/>`
+    + `<line x1='100' y1='160' x2='100' y2='120' stroke='${pc}' stroke-width='1.5'/>`
+    + `<line x1='60' y1='40' x2='60' y2='80' stroke='${pc}' stroke-width='1.5'/>`
+    + `<circle cx='60' cy='40' r='2' fill='${pc}'/>`
+    + `<line x1='140' y1='140' x2='180' y2='140' stroke='${pc}' stroke-width='1.5'/>`
+    + `<circle cx='180' cy='140' r='2' fill='${pc}'/>`
     + `</svg>`,
   );
 }
@@ -348,30 +370,33 @@ export function generateMarpBackgroundCSS(
   lines.push(`      ${baseGrad};`);
   lines.push(`  }`);
 
-  // 1. bg-diagonal-lines — double-line pattern
+  // 1. bg-diagonal-lines — triple-line pattern
   lines.push(`  section.bg-diagonal-lines {`);
   lines.push(`    background:`);
   lines.push(`      repeating-linear-gradient(45deg, transparent, transparent 14px, ${pc} 14px, ${pc} 15px),`);
   lines.push(`      repeating-linear-gradient(135deg, transparent, transparent 20px, ${hexToRgba(palette.primary, 0.03)} 20px, ${hexToRgba(palette.primary, 0.03)} 21px),`);
+  lines.push(`      repeating-linear-gradient(30deg, transparent, transparent 27px, ${hexToRgba(palette.accent, 0.02)} 27px, ${hexToRgba(palette.accent, 0.02)} 28px),`);
   lines.push(`      ${variantGrad(1)};`);
   lines.push(`  }`);
 
-  // 2. bg-wave — dual layered waves
+  // 2. bg-wave — triple layered waves
   lines.push(`  section.bg-wave {`);
   lines.push(`    background:`);
   lines.push(`      url("data:image/svg+xml,${waveSvg(palette.accent)}") no-repeat bottom center / 100% 80px,`);
   lines.push(`      url("data:image/svg+xml,${waveSvg(palette.primary)}") no-repeat bottom 20px center / 100% 60px,`);
+  lines.push(`      url("data:image/svg+xml,${waveSvgSmall(palette.secondary || palette.primary)}") no-repeat bottom 50px center / 100% 40px,`);
   lines.push(`      ${variantGrad(2)};`);
   lines.push(`  }`);
 
-  // 3. bg-subtle-grid — isometric dot grid with faint connecting lines
+  // 3. bg-subtle-grid — isometric dot grid with junction highlights
   lines.push(`  section.bg-subtle-grid {`);
   lines.push(`    background:`);
+  lines.push(`      radial-gradient(circle 2px at 30px 30px, ${hexToRgba(palette.accent, 0.08)} 0%, transparent 100%),`);
   lines.push(`      radial-gradient(circle, ${pc} 1px, transparent 1px),`);
   lines.push(`      linear-gradient(0deg, transparent 29px, ${hexToRgba(palette.primary, 0.02)} 29px, ${hexToRgba(palette.primary, 0.02)} 30px, transparent 30px),`);
   lines.push(`      linear-gradient(90deg, transparent 29px, ${hexToRgba(palette.primary, 0.02)} 29px, ${hexToRgba(palette.primary, 0.02)} 30px, transparent 30px),`);
   lines.push(`      ${variantGrad(3)};`);
-  lines.push(`    background-size: 30px 30px, 30px 30px, 30px 30px, 100% 100%;`);
+  lines.push(`    background-size: 60px 60px, 30px 30px, 30px 30px, 30px 30px, 100% 100%;`);
   lines.push(`  }`);
 
   // 4. bg-circuit — trace pattern
@@ -380,26 +405,36 @@ export function generateMarpBackgroundCSS(
   lines.push(`    background-size: 200px 200px, 100% 100%;`);
   lines.push(`  }`);
 
-  // 5. bg-corner-accent — corner gradient wedge + mesh orb
+  // 5. bg-corner-accent — corner gradient wedge + mesh orb + conic mesh
   lines.push(`  section.bg-corner-accent {`);
   lines.push(`    background:`);
   lines.push(`      radial-gradient(ellipse 400px 350px at 85% 15%, ${bokehAccent} 0%, transparent 65%),`);
   lines.push(`      radial-gradient(ellipse 300px 300px at 20% 75%, ${bokehPrimary} 0%, transparent 70%),`);
+  lines.push(`      conic-gradient(from 180deg at 50% 50%, ${hexToRgba(palette.primary, 0.04)}, transparent, ${hexToRgba(palette.accent, 0.03)}, transparent),`);
   lines.push(`      linear-gradient(225deg, ${hexToRgba(palette.accent, 0.08)} 0%, transparent 30%),`);
   lines.push(`      ${variantGrad(5)};`);
   lines.push(`  }`);
 
-  // 6. bg-mesh-gradient — CSS conic-gradient mesh
+  // 6. bg-mesh-gradient — CSS dual conic-gradient mesh
   lines.push(`  section.bg-mesh-gradient {`);
   lines.push(`    background:`);
   lines.push(`      conic-gradient(from 45deg at 30% 40%, ${hexToRgba(palette.primary, 0.08)}, ${hexToRgba(palette.accent, 0.06)}, ${hexToRgba(palette.secondary || palette.primary, 0.04)}, ${hexToRgba(palette.primary, 0.08)}),`);
+  lines.push(`      conic-gradient(from 200deg at 70% 60%, ${hexToRgba(palette.accent, 0.06)}, ${hexToRgba(palette.primary, 0.04)}, ${hexToRgba(palette.secondary || palette.primary, 0.03)}, ${hexToRgba(palette.accent, 0.06)}),`);
   lines.push(`      ${baseGrad};`);
   lines.push(`  }`);
 
-  // 7. bg-noise-texture — SVG turbulence filter + gradient base
+  // 7. bg-noise-texture — SVG turbulence filter + gradient base + radial overlay
   lines.push(`  section.bg-noise-texture {`);
   lines.push(`    background: ${baseGrad};`);
   lines.push(`    position: relative;`);
+  lines.push(`  }`);
+  lines.push(`  section.bg-noise-texture::after {`);
+  lines.push(`    content: '';`);
+  lines.push(`    position: absolute;`);
+  lines.push(`    inset: 0;`);
+  lines.push(`    background: radial-gradient(ellipse 600px 400px at 60% 40%, ${hexToRgba(palette.primary, 0.06)} 0%, transparent 70%);`);
+  lines.push(`    mix-blend-mode: overlay;`);
+  lines.push(`    pointer-events: none;`);
   lines.push(`  }`);
   lines.push(`  section.bg-noise-texture::before {`);
   lines.push(`    content: '';`);
@@ -507,6 +542,7 @@ export function generateMarpMcKinseyCSS(palette: ColorPalette): string {
     `  section.bg-warm-cream { background: #FBF8F3 !important; }`,
     `  section.bg-soft-gradient { background: linear-gradient(180deg, ${palette.background} 0%, ${palette.surface} 100%) !important; }`,
     `  section.bg-accent-tint { background: ${hexToRgba(palette.accent, 0.05)} !important; }`,
+    `  .glass-card { background: rgba(255,255,255,0.8); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); border: 1px solid rgba(0,0,0,0.06); box-shadow: 0 2px 12px rgba(0,0,0,0.05); border-radius: 12px; padding: 20px 24px; }`,
   ].join('\n');
 }
 
