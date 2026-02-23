@@ -19,8 +19,6 @@ export interface SlideData {
   updatedAt?: string;
   figmaLastSyncAt?: string | null;
   figmaSyncVersion?: number;
-  healthScore?: number;
-  healthIssues?: Array<{ rule: string; severity: string; message: string }>;
 }
 
 export interface ThemeData {

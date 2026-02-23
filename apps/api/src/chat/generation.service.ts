@@ -964,15 +964,6 @@ OUTPUT: Valid JSON matching this schema (no markdown fences):
 
           reviewPassed = review.verdict === 'PASS';
 
-          // Persist health score to slide for frontend display
-          this.prisma.slide.update({
-            where: { id: slide.id },
-            data: {
-              healthScore: review.score ?? (reviewPassed ? 1.0 : 0.5),
-              healthIssues: review.issues.length > 0 ? JSON.parse(JSON.stringify(review.issues)) : undefined,
-            },
-          }).catch(() => {});
-
           if (review.issues.length > 0) {
             for (const issue of review.issues) {
               const category = issue.rule === 'density' ? 'density' as const
