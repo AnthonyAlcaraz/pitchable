@@ -141,8 +141,8 @@ export function PitchLensListPage() {
                 const bgF = lens.backgroundImageFrequency;
                 const spF = lens.sidePanelImageFrequency;
                 const range = lens.framework.idealSlideRange;
-                const bgCount = bgF > 0 ? Math.max(1, Math.floor(range.max / bgF)) : 0;
-                const spCount = spF > 0 ? Math.max(1, Math.floor(range.max / spF)) : 0;
+                const bgCount = bgF > 0 ? Math.max(1, Math.ceil(range.max / bgF)) : 0;
+                const spCount = spF > 0 ? Math.max(1, Math.ceil(range.max / spF)) : 0;
                 const totalUnique = Math.min(range.max, bgCount + spCount);
                 const labels: string[] = [];
                 if (bgF > 0) labels.push('bg');

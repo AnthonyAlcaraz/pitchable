@@ -137,8 +137,8 @@ export function PitchLensDetailPage() {
                 const bgF = currentLens.backgroundImageFrequency;
                 const spF = currentLens.sidePanelImageFrequency;
                 const range = currentLens.framework.idealSlideRange;
-                const bgCount = bgF > 0 ? Math.max(1, Math.floor(range.max / bgF)) : 0;
-                const spCount = spF > 0 ? Math.max(1, Math.floor(range.max / spF)) : 0;
+                const bgCount = bgF > 0 ? Math.max(1, Math.ceil(range.max / bgF)) : 0;
+                const spCount = spF > 0 ? Math.max(1, Math.ceil(range.max / spF)) : 0;
                 // Unique images: some slides may overlap (side panel wins), so estimate unique count
                 const totalUnique = Math.min(range.max, bgCount + spCount);
                 return (

@@ -235,17 +235,15 @@ export class ImagesService {
     if (frequency <= 1) return slides; // Every slide gets an image
 
     const totalSlides = slides.length;
-    const targetCount = Math.max(1, Math.ceil(totalSlides / frequency));
-    // Minimum 4 images per deck (user preference), but don't exceed total slides
-    const minImages = Math.min(totalSlides, Math.max(4, targetCount));
+    const targetCount = Math.min(totalSlides, Math.max(1, Math.ceil(totalSlides / frequency)));
 
-    // Force-include slides that MUST have images
+    // Force-include slides that MUST have images, but cap to target count
     const mustIncludeTypes = new Set(['TITLE', 'CTA', 'VISUAL_HUMOR']);
-    const forced = slides.filter((s) => mustIncludeTypes.has(s.slideType));
+    const forced = slides.filter((s) => mustIncludeTypes.has(s.slideType)).slice(0, targetCount);
     const forcedIds = new Set(forced.map((s) => s.id));
 
     // Remaining slots for scored selection
-    const remainingSlots = Math.max(0, minImages - forced.length);
+    const remainingSlots = Math.max(0, targetCount - forced.length);
     const candidates = slides.filter((s) => !forcedIds.has(s.id));
 
     // Priority scores: higher = more likely to get an image
@@ -266,8 +264,8 @@ export class ImagesService {
     // Score remaining candidates
     const scored = candidates.map((slide, idx) => {
       const priority = typePriority[slide.slideType] ?? 1;
-      const idealPositions = Array.from({ length: minImages }, (_, i) =>
-        Math.round((i * totalSlides) / minImages),
+      const idealPositions = Array.from({ length: targetCount }, (_, i) =>
+        Math.round((i * totalSlides) / targetCount),
       );
       const positionBonus = idealPositions.some(
         (pos) => Math.abs(pos - slides.indexOf(slide)) <= 1,

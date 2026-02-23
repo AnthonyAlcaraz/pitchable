@@ -312,8 +312,8 @@ export function NewPresentationWizardPage() {
                     const slideRange = lens.framework?.idealSlideRange;
                     const freq = lens.sidePanelImageFrequency || 5;
                     const isBackground = (lens.backgroundImageFrequency > 0 && lens.sidePanelImageFrequency === 0);
-                    const minImages = slideRange ? Math.max(1, Math.floor(slideRange.min / freq)) : 0;
-                    const maxImages = slideRange ? Math.max(1, Math.floor(slideRange.max / freq)) : 0;
+                    const minImages = slideRange ? Math.max(1, Math.ceil(slideRange.min / freq)) : 0;
+                    const maxImages = slideRange ? Math.max(1, Math.ceil(slideRange.max / freq)) : 0;
 
                     return (
                       <button
@@ -559,8 +559,8 @@ export function NewPresentationWizardPage() {
                   const noImages = freq === 0;
                   const minSlides = slideRange?.min ?? 8;
                   const maxSlides = slideRange?.max ?? 14;
-                  const minImages = noImages ? 0 : Math.max(1, Math.floor(minSlides / freq));
-                  const maxImages = noImages ? 0 : Math.max(1, Math.floor(maxSlides / freq));
+                  const minImages = noImages ? 0 : Math.max(1, Math.ceil(minSlides / freq));
+                  const maxImages = noImages ? 0 : Math.max(1, Math.ceil(maxSlides / freq));
 
                   return (
                     <div className="flex items-center gap-3 rounded-lg border border-border bg-card p-4">
