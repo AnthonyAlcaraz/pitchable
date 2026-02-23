@@ -112,13 +112,13 @@ export const usePresentationStore = create<PresentationState>((set, get) => ({
   isLoading: false,
   error: null,
   reviewState: null,
-  previewCacheBuster: 0,
+  previewCacheBuster: Date.now(),
 
   async loadPresentation(id: string) {
     set({ isLoading: true, error: null });
     try {
       const data = await api.get<PresentationData>(`/presentations/${id}`);
-      set({ presentation: data, currentSlideIndex: 0, isLoading: false });
+      set({ presentation: data, currentSlideIndex: 0, isLoading: false, previewCacheBuster: Date.now() });
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Failed to load presentation';
       set({ error: msg, isLoading: false });

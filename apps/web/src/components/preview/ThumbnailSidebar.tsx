@@ -1,3 +1,4 @@
+import { useRef, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { SlideRenderer } from './SlideRenderer';
 import { Check, ChevronRight } from 'lucide-react';
@@ -14,6 +15,12 @@ interface ThumbnailSidebarProps {
 
 export function ThumbnailSidebar({ slides, currentIndex, onSelect, theme, approvedSlides }: ThumbnailSidebarProps) {
   const cacheBuster = usePresentationStore((s) => s.previewCacheBuster);
+  const activeRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    activeRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }, [currentIndex]);
+
   if (slides.length === 0) return null;
 
   return (
@@ -25,6 +32,7 @@ export function ThumbnailSidebar({ slides, currentIndex, onSelect, theme, approv
         return (
           <button
             key={slide.id}
+            ref={isCurrent ? activeRef : undefined}
             onClick={() => onSelect(index)}
             className={cn(
               'relative rounded-md border transition-all',

@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useState } from 'react';
 import { X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { SlideRenderer } from './SlideRenderer';
 import { usePresentationStore } from '@/stores/presentation.store';
@@ -21,6 +21,9 @@ export function PresentationMode({
 }: PresentationModeProps) {
   const currentSlide = slides[currentIndex];
   const cacheBuster = usePresentationStore((s) => s.previewCacheBuster);
+  const [imgLoaded, setImgLoaded] = useState(false);
+
+  useEffect(() => setImgLoaded(false), [currentSlide?.id]);
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
@@ -75,7 +78,8 @@ export function PresentationMode({
   if (!currentSlide) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black">
+    <div className="fixed inset-0 z-50 flex items-center justify-center"
+      style={{ background: 'radial-gradient(ellipse at center, #1a1a1a 0%, #000 70%)' }}>
       {/* Close button */}
       <button
         onClick={onExit}
@@ -110,11 +114,15 @@ export function PresentationMode({
       {/* Main slide — show rendered preview if available, otherwise fallback */}
       <div className="w-full max-w-5xl px-8">
         {currentSlide.previewUrl ? (
-          <div className="overflow-hidden rounded-lg" style={{ aspectRatio: '16/9' }}>
+          <div className="relative overflow-hidden rounded-lg" style={{ aspectRatio: '16/9' }}>
+            {!imgLoaded && (
+              <div className="absolute inset-0 animate-pulse bg-gradient-to-r from-zinc-800/50 via-zinc-700 to-zinc-800/50" />
+            )}
             <img
               src={`/slides/${currentSlide.id}/preview?v=${cacheBuster}`}
               alt={`Slide ${currentSlide.slideNumber}`}
-              className="h-full w-full object-contain"
+              className={`h-full w-full object-contain transition-opacity duration-300 ${imgLoaded ? 'opacity-100' : 'opacity-0'}`}
+              onLoad={() => setImgLoaded(true)}
             />
           </div>
         ) : (

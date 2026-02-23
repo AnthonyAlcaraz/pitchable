@@ -40,6 +40,18 @@ interface CascadeProgress {
 }
 
 // ── Component ──────────────────────────────────────────────
+const SLIDE_TYPE_LABELS: Record<string, string> = {
+  SPLIT_STATEMENT: 'PROBLEM',
+  DATA_METRICS: 'DATA',
+  METRICS_HIGHLIGHT: 'METRICS',
+  FEATURE_GRID: 'FEATURES',
+  VISUAL_HUMOR: 'VISUAL',
+  SECTION_DIVIDER: 'DIVIDER',
+  PRODUCT_SHOWCASE: 'SHOWCASE',
+  MARKET_SIZING: 'MARKET',
+  LOGO_WALL: 'LOGOS',
+};
+
 interface PreviewPanelProps {
   presentationId?: string;
 }
@@ -63,6 +75,7 @@ export function PreviewPanel({ presentationId }: PreviewPanelProps) {
   const approveAllReviewSlides = usePresentationStore((s) => s.approveAllReviewSlides);
   const unapproveSlides = usePresentationStore((s) => s.unapproveSlides);
   const cacheBuster = usePresentationStore((s) => s.previewCacheBuster);
+  const [imgLoaded, setImgLoaded] = useState(false);
 
   // Workflow store
   const phase = useWorkflowStore((s) => s.phase);
@@ -140,6 +153,8 @@ export function PreviewPanel({ presentationId }: PreviewPanelProps) {
   useEffect(() => {
     mainContentRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
   }, [currentSlideIndex]);
+
+  useEffect(() => setImgLoaded(false), [currentSlide?.id]);
 
   // ── Close export menu on outside click ─────────────────
   useEffect(() => {
@@ -529,11 +544,17 @@ export function PreviewPanel({ presentationId }: PreviewPanelProps) {
                   style={{ aspectRatio: '16/9' }}
                 >
                   {currentSlide.previewUrl ? (
-                    <img
-                      src={`/slides/${currentSlide.id}/preview?v=${cacheBuster}`}
-                      alt={`Slide ${currentSlide.slideNumber}: ${currentSlide.title}`}
-                      className="h-full w-full object-contain"
-                    />
+                    <>
+                      {!imgLoaded && (
+                        <div className="absolute inset-0 animate-pulse bg-gradient-to-r from-muted/50 via-muted to-muted/50" />
+                      )}
+                      <img
+                        src={`/slides/${currentSlide.id}/preview?v=${cacheBuster}`}
+                        alt={`Slide ${currentSlide.slideNumber}: ${currentSlide.title}`}
+                        className={`h-full w-full object-contain transition-opacity duration-300 ${imgLoaded ? 'opacity-100' : 'opacity-0'}`}
+                        onLoad={() => setImgLoaded(true)}
+                      />
+                    </>
                   ) : (
                     <div className="flex h-full items-center justify-center bg-card">
                       <div className="text-center">
@@ -551,7 +572,7 @@ export function PreviewPanel({ presentationId }: PreviewPanelProps) {
                       Slide {currentSlide.slideNumber}
                     </p>
                     <span className="rounded bg-orange-500/10 px-1.5 py-0.5 text-[10px] font-medium text-orange-400">
-                      {currentSlide.slideType.replace(/_/g, ' ')}
+                      {SLIDE_TYPE_LABELS[currentSlide.slideType] ?? currentSlide.slideType.replace(/_/g, ' ')}
                     </span>
                     {isCurrentApproved && (
                       <span className="flex items-center gap-1 text-[10px] text-green-400">
