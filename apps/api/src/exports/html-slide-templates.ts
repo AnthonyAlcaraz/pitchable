@@ -477,7 +477,7 @@ function buildFeatureGrid(slide: SlideInput, p: ColorPalette): string {
     const cx = PAD + col * (cardW + gapX);
     const cy = startY + row * (cardH + gapY);
 
-    html += `<div style="position:absolute;left:${cx}px;top:${cy}px;width:${cardW}px;height:${cardH}px;background:${p.surface};border:1px solid ${p.border};border-radius:16px;border-top:3px solid ${p.accent}"></div>`;
+    html += `<div style="position:absolute;left:${cx}px;top:${cy}px;width:${cardW}px;height:${cardH}px;background:${p.surface};border:1px solid ${p.border};border-radius:16px;border-top:4px solid ${p.accent}"></div>`;
     // Icon placeholder
     html += `<div style="position:absolute;left:${cx + 24}px;top:${cy + 24}px;width:36px;height:36px;background:${p.primary};border-radius:8px;opacity:0.8"></div>`;
     // Title
@@ -517,9 +517,9 @@ function buildProcess(slide: SlideInput, p: ColorPalette): string {
 </div>`;
   }
 
-  const count = Math.min(steps.length, 5);
-  const cardW = 200;
-  const cardH = 260;
+  const count = Math.min(steps.length, 6);
+  const cardW = count <= 3 ? 280 : count <= 4 ? 240 : 190;
+  const cardH = count <= 3 ? 300 : count <= 4 ? 270 : 240;
   const gapX = 24;
   const totalW = count * cardW + (count - 1) * gapX;
   const startX = Math.round((W - totalW) / 2);
@@ -531,7 +531,7 @@ function buildProcess(slide: SlideInput, p: ColorPalette): string {
   for (let i = 0; i < count; i++) {
     const cx = startX + i * (cardW + gapX);
     // Card background
-    cardsHtml += `<div style="position:absolute;left:${cx}px;top:${cardY}px;width:${cardW}px;height:${cardH}px;background:${p.surface};border:1px solid ${p.border};border-radius:16px;border-top:3px solid ${p.accent}"></div>`;
+    cardsHtml += `<div style="position:absolute;left:${cx}px;top:${cardY}px;width:${cardW}px;height:${cardH}px;background:${p.surface};border:1px solid ${p.border};border-radius:16px;border-top:4px solid ${p.accent}"></div>`;
     // Step number circle
     cardsHtml += `<div style="position:absolute;left:${cx + cardW / 2 - 20}px;top:${cardY + 20}px;width:40px;height:40px;border-radius:50%;background:${p.accent};display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:bold;color:#FFFFFF;text-align:center;line-height:40px">${String(steps[i].num).padStart(2, '0')}</div>`;
     // Title
@@ -634,24 +634,31 @@ function buildCta(slide: SlideInput, p: ColorPalette, hasImage = false): string 
   const lines = parseBodyLines(slide.body);
   const visibleW = hasImage ? Math.round(W * 0.7) : W;
   const cardW = hasImage ? 560 : 700;
-  const cardH = 320;
+  const cardH = 340;
   const cardX = Math.round((visibleW - cardW) / 2);
-  const cardY = Math.round((H - cardH) / 2) + 20;
+  const cardY = Math.round((H - cardH) / 2) + 10;
 
   let actionsHtml = '';
-  let ay = cardY + 100;
+  let ay = cardY + 110;
   for (const line of lines.slice(0, 3)) {
     actionsHtml += `<div style="position:absolute;left:${cardX + 40}px;top:${ay}px;width:${cardW - 80}px;font-size:16px;line-height:1.5;color:${p.text}"><span style="color:${p.accent};font-weight:bold;margin-right:8px">&rarr;</span>${escHtml(stripMarkdown(line))}</div>`;
     ay += 44;
   }
 
+  // Button-style CTA element at bottom of card
+  const btnY = cardY + cardH - 60;
+  const btnW = 180;
+  const btnHtml = `<div style="position:absolute;left:${Math.round(cardX + (cardW - btnW) / 2)}px;top:${btnY}px;width:${btnW}px;height:40px;background:${p.accent};border-radius:8px;text-align:center;line-height:40px;font-size:14px;font-weight:bold;color:#FFFFFF;letter-spacing:0.04em">Get Started &rarr;</div>`;
+
   return `${SCOPED_RESET}
 <div style="position:relative;width:${W}px;height:${H}px;">
-  <div style="position:absolute;left:0;top:0;width:${W}px;height:${H}px;background:radial-gradient(ellipse 800px 600px at 50% 50%,${hexToRgba(p.accent, 0.06)} 0%,transparent 70%)"></div>
-  <div style="position:absolute;left:${cardX}px;top:${cardY}px;width:${cardW}px;height:${cardH}px;background:${p.surface};border:2px solid ${p.accent};border-radius:20px;box-shadow:0 8px 40px ${hexToRgba(p.accent, 0.1)}"></div>
-  <div style="position:absolute;left:${cardX}px;top:${cardY + 28}px;width:${cardW}px;text-align:center;font-size:28px;font-weight:bold;color:${p.text};line-height:1.2">${escHtml(slide.title)}</div>
-  <div style="position:absolute;left:${Math.round(W / 2 - 30)}px;top:${cardY + 72}px;width:60px;height:3px;background:${p.accent};border-radius:2px"></div>
+  <div style="position:absolute;left:0;top:0;width:${W}px;height:${H}px;background:radial-gradient(ellipse 900px 700px at 50% 50%,${hexToRgba(p.accent, 0.10)} 0%,transparent 70%)"></div>
+  <div style="position:absolute;left:${cardX}px;top:${cardY}px;width:${cardW}px;height:${cardH}px;background:${p.surface};border:2px solid ${p.accent};border-radius:20px;box-shadow:0 12px 48px ${hexToRgba(p.accent, 0.15)}"></div>
+  <div style="position:absolute;left:${cardX}px;top:${cardY}px;width:${cardW}px;height:5px;background:linear-gradient(90deg,${p.accent},${p.primary});border-radius:20px 20px 0 0"></div>
+  <div style="position:absolute;left:${cardX}px;top:${cardY + 32}px;width:${cardW}px;text-align:center;font-size:28px;font-weight:bold;color:${p.text};line-height:1.2">${escHtml(slide.title)}</div>
+  <div style="position:absolute;left:${Math.round(W / 2 - 30)}px;top:${cardY + 78}px;width:60px;height:3px;background:${p.accent};border-radius:2px"></div>
   ${actionsHtml}
+  ${btnHtml}
 </div>`;
 }
 
@@ -668,14 +675,14 @@ function buildContent(slide: SlideInput, p: ColorPalette): string {
   const cardW = W - PAD * 2 - 40;
 
   for (const line of lines.slice(0, 8)) {
-    bodyHtml += `<div style="position:absolute;left:${PAD + 32}px;top:${ty}px;width:${cardW}px;height:48px;background:${hexToRgba(p.surface, 0.5)};border:1px solid ${hexToRgba(p.border, 0.3)};border-radius:10px;border-left:3px solid ${hexToRgba(p.accent, 0.4)}"></div>`;
+    bodyHtml += `<div style="position:absolute;left:${PAD + 32}px;top:${ty}px;width:${cardW}px;height:48px;background:${hexToRgba(p.surface, 0.5)};border:1px solid ${hexToRgba(p.border, 0.3)};border-radius:10px;border-left:4px solid ${hexToRgba(p.accent, 0.6)}"></div>`;
     bodyHtml += `<div style="position:absolute;left:${PAD + 32 + cardPad}px;top:${ty + 12}px;width:${cardW - cardPad * 2}px;font-size:13px;line-height:1.5;color:${p.text};opacity:0.85">${escHtml(stripMarkdown(line))}</div>`;
     ty += 60;
   }
 
   return `${SCOPED_RESET}
 <div style="position:relative;width:${W}px;height:${H}px;">
-  <div style="position:absolute;left:${PAD}px;top:0;width:3px;height:${H}px;background:${p.accent}"></div>
+  <div style="position:absolute;left:${PAD}px;top:0;width:4px;height:${H}px;background:${p.accent}"></div>
   <div style="position:absolute;left:${PAD + 20}px;top:${PAD}px;font-size:27px;font-weight:bold;color:${p.text};line-height:1.2">${escHtml(slide.title)}</div>
   <div style="position:absolute;left:${PAD + 20}px;top:${PAD + 48}px;width:60px;height:3px;background:${p.accent};border-radius:2px"></div>
   ${bodyHtml}
@@ -744,7 +751,7 @@ function buildArchitecture(slide: SlideInput, p: ColorPalette): string {
     const title = sep > -1 ? stripMarkdown(nodes[i].slice(0, sep).trim()) : stripMarkdown(nodes[i]);
     const desc = sep > -1 ? stripMarkdown(nodes[i].slice(sep + 1).trim()) : '';
 
-    boxesHtml += `<div style="position:absolute;left:${cx}px;top:${boxY}px;width:${boxW}px;height:${boxH}px;background:${p.surface};border:1px solid ${p.border};border-radius:12px;border-top:3px solid ${p.accent}"></div>`;
+    boxesHtml += `<div style="position:absolute;left:${cx}px;top:${boxY}px;width:${boxW}px;height:${boxH}px;background:${p.surface};border:1px solid ${p.border};border-radius:12px;border-top:4px solid ${p.accent}"></div>`;
     boxesHtml += `<div style="position:absolute;left:${cx + 12}px;top:${boxY + (desc ? 12 : 24)}px;width:${boxW - 24}px;text-align:center;font-size:13px;font-weight:bold;color:${p.text}">${escHtml(title)}</div>`;
     if (desc) {
       boxesHtml += `<div style="position:absolute;left:${cx + 12}px;top:${boxY + 36}px;width:${boxW - 24}px;text-align:center;font-size:10px;color:${p.text};opacity:0.7;line-height:1.4">${escHtml(desc)}</div>`;

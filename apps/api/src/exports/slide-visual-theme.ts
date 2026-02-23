@@ -448,12 +448,12 @@ export function generateMarpBackgroundCSS(
   // ── Boosted-opacity overrides for image-free slides ────────
   // When a slide has no image, patterns at 0.06 opacity are invisible.
   // The .no-image class doubles pattern visibility and adds an accent border.
-  const pcBoosted = patternColor(bg, 0.12);
-  const bokehPrimaryBoosted = hexToRgba(palette.primary, 0.30);
-  const bokehAccentBoosted = hexToRgba(palette.accent, 0.25);
-  const bokehSecondaryBoosted = hexToRgba(palette.secondary || palette.primary, 0.20);
+  const pcBoosted = patternColor(bg, 0.22);
+  const bokehPrimaryBoosted = hexToRgba(palette.primary, 0.42);
+  const bokehAccentBoosted = hexToRgba(palette.accent, 0.35);
+  const bokehSecondaryBoosted = hexToRgba(palette.secondary || palette.primary, 0.28);
 
-  lines.push(`  section.no-image { border-top: 3px solid ${palette.accent}; }`);
+  lines.push(`  section.no-image { border-top: 4px solid ${palette.accent}; }`);
 
   // bg-radial-glow boosted
   lines.push(`  section.bg-radial-glow.no-image {`);
@@ -594,7 +594,7 @@ export function generateMarpMcKinseyCSS(palette: ColorPalette): string {
     `  section.bg-callout { background: #EBF2FA !important; }`,
     `  section hr {`,
     `    border: none;`,
-    `    border-top: 3px solid ${blue};`,
+    `    border-top: 4px solid ${blue};`,
     `    margin: 0.2em 0 0.6em 0;`,
     `    width: 60px;`,
     `  }`,
