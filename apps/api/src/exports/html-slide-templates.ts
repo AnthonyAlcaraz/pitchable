@@ -249,6 +249,25 @@ function buildMetricsHighlight(slide: SlideInput, p: ColorPalette): string {
     } else {
       supportLines = [];
     }
+  } else if (lines.length > 0) {
+    // Secondary extraction: find prominent numbers/percentages WITHIN prose text
+    for (let li = 0; li < lines.length; li++) {
+      const inlineMatch = lines[li].match(/(\$?[\d,]+\.?\d*[BMKTbmkt]?\+?%?)\s+(.*)/);
+      if (inlineMatch && inlineMatch[1].length >= 2) {
+        bigValue = inlineMatch[1];
+        bigLabel = inlineMatch[2] || lines[li];
+        supportLines = [...lines.slice(0, li), ...lines.slice(li + 1)];
+        break;
+      }
+      // Also try: "Over 90% reduction" or "Up to 250,000 hours"
+      const embeddedMatch = lines[li].match(/(?:over|up to|nearly|about|approximately)?\s*(\$?[\d,]+\.?\d*[BMKTbmkt]?\+?%?)/i);
+      if (embeddedMatch && embeddedMatch[1].length >= 2 && /\d/.test(embeddedMatch[1])) {
+        bigValue = embeddedMatch[1];
+        bigLabel = lines[li].replace(embeddedMatch[0], '').trim() || lines[li];
+        supportLines = [...lines.slice(0, li), ...lines.slice(li + 1)];
+        break;
+      }
+    }
   }
 
   // Auto-scale hero font: short metrics get 80px, long titles scale down
@@ -315,14 +334,35 @@ function buildComparison(slide: SlideInput, p: ColorPalette): string {
     leftLines = lines.slice(0, vsIdx);
     rightLines = lines.slice(vsIdx + 1);
   } else {
-    const mid = Math.ceil(lines.length / 2);
-    leftLines = lines.slice(0, mid);
-    rightLines = lines.slice(mid);
+    // When we have very few lines (prose), expand them by splitting on sentence boundaries
+    let expandedLines = lines;
+    if (lines.length <= 3) {
+      expandedLines = [];
+      for (const line of lines) {
+        if (line.length > 60) {
+          const parts = line.split(/(?<=\.)\s+|;\s*|,\s*(?:and|but|while|whereas)\s+/i).filter(Boolean);
+          expandedLines.push(...parts);
+        } else {
+          expandedLines.push(line);
+        }
+      }
+    }
+    const mid = Math.ceil(expandedLines.length / 2);
+    leftLines = expandedLines.slice(0, mid);
+    rightLines = expandedLines.slice(mid);
   }
 
   // Extract headers
   if (leftLines.length > 0 && !/^[-•]/.test(leftLines[0])) leftTitle = leftLines.shift()!;
   if (rightLines.length > 0 && !/^[-•]/.test(rightLines[0])) rightTitle = rightLines.shift()!;
+
+  // If either side is completely empty after header extraction, use the title as a description line
+  if (leftLines.length === 0 && leftTitle !== 'Before') {
+    leftLines.push(leftTitle);
+  }
+  if (rightLines.length === 0 && rightTitle !== 'After') {
+    rightLines.push(rightTitle);
+  }
 
   const colW = Math.round((W - PAD * 2 - 40) / 2);  // ~574
   const cardY = PAD + 80;                             // 133
@@ -446,10 +486,36 @@ function buildTeam(slide: SlideInput, p: ColorPalette): string {
 // Auto-column grid with icon placeholder squares
 
 function buildFeatureGrid(slide: SlideInput, p: ColorPalette): string {
-  const lines = parseBodyLines(slide.body);
+  let lines = parseBodyLines(slide.body);
+
+  // When body is a paragraph (few long lines), split on sentence boundaries to create more cards
+  if (lines.length < 3 && lines.some((l) => l.length > 80)) {
+    const expanded: string[] = [];
+    for (const line of lines) {
+      if (line.length > 80) {
+        const parts = line.split(/(?<=\.)\s+|;\s+/).filter((s) => s.trim().length > 0);
+        expanded.push(...parts);
+      } else {
+        expanded.push(line);
+      }
+    }
+    lines = expanded;
+  }
+
+  // Cap at 6 features max
+  lines = lines.slice(0, 6);
+
   const features = lines.map((line) => {
     const sep = line.indexOf(':');
-    if (sep > -1) return { title: stripMarkdown(line.slice(0, sep).trim()), desc: stripMarkdown(line.slice(sep + 1).trim()) };
+    if (sep > -1 && sep < 40) return { title: stripMarkdown(line.slice(0, sep).trim()), desc: stripMarkdown(line.slice(sep + 1).trim()) };
+    // For lines without a colon, try to split at first comma, dash, or em-dash
+    const breakMatch = line.match(/^(.{10,40}?)\s*[,\-—–]\s+(.+)/);
+    if (breakMatch) return { title: stripMarkdown(breakMatch[1].trim()), desc: stripMarkdown(breakMatch[2].trim()) };
+    // Truncate long titles and use remainder as description
+    if (line.length > 50) {
+      const spaceIdx = line.indexOf(' ', 30);
+      if (spaceIdx > -1) return { title: stripMarkdown(line.slice(0, spaceIdx).trim()), desc: stripMarkdown(line.slice(spaceIdx + 1).trim()) };
+    }
     return { title: stripMarkdown(line), desc: '' };
   });
 
@@ -501,14 +567,20 @@ function buildFeatureGrid(slide: SlideInput, p: ColorPalette): string {
 
 function buildProcess(slide: SlideInput, p: ColorPalette): string {
   const lines = parseBodyLines(slide.body);
-  const steps = lines.map((line, i) => {
-    const sep = line.indexOf(':');
+  const rawSteps = lines.map((line, i) => {
     const numMatch = line.match(/^\d+\.\s*/);
     const cleaned = numMatch ? line.slice(numMatch[0].length) : line;
     const sepIdx = cleaned.indexOf(':');
-    if (sepIdx > -1) return { num: i + 1, title: stripMarkdown(cleaned.slice(0, sepIdx).trim()), desc: stripMarkdown(cleaned.slice(sepIdx + 1).trim()) };
+    if (sepIdx > -1 && sepIdx < 50) return { num: i + 1, title: stripMarkdown(cleaned.slice(0, sepIdx).trim()), desc: stripMarkdown(cleaned.slice(sepIdx + 1).trim()) };
+    // For long lines without colons, split at first comma or dash to create title + description
+    if (cleaned.length > 60) {
+      const breakMatch = cleaned.match(/^(.{10,45}?)\s*[,\-—–]\s+(.*)/);
+      if (breakMatch) return { num: i + 1, title: stripMarkdown(breakMatch[1].trim()), desc: stripMarkdown(breakMatch[2].trim()) };
+    }
     return { num: i + 1, title: stripMarkdown(cleaned), desc: '' };
   });
+  // Filter out steps with empty titles after processing
+  const steps = rawSteps.filter((s) => s.title.length > 0).map((s, i) => ({ ...s, num: i + 1 }));
 
   if (steps.length === 0) {
     return `${SCOPED_RESET}

@@ -543,13 +543,12 @@ export class MarpExporterService {
       }
       lines.push('');
     } else if (type === 'METRICS_HIGHLIGHT') {
-      // FIGMA_GRADE templates use inline HTML with absolute positioning Â no need
-      // for the 'lead' class which forces background:primary !important on McKinsey.
-      // Use a light bg so inline p.primary / p.text colors remain readable.
-      if (bgVariant.className === 'bg-callout-dark') {
+      // FIGMA_GRADE templates use inline HTML with palette-driven colors.
+      // Use palette.surface for background so dark themes render correctly.
+      if (bgVariant.className === 'bg-callout-dark' && palette) {
         lines.push(`<!-- _class: bg-callout -->`);
-        lines.push('<!-- _backgroundColor: #F5F7FA -->');
-        lines.push('<!-- _color: #1A1A2E -->');
+        lines.push(`<!-- _backgroundColor: ${palette.surface} -->`);
+        lines.push(`<!-- _color: ${palette.text} -->`);
       } else {
         lines.push(`<!-- _class: ${bgVariant.className} -->`);
       }

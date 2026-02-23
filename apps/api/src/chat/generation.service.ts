@@ -49,6 +49,7 @@ import { truncateToLimits, passesDensityCheck } from '../constraints/density-tru
 import type { GeneratedSlideContent } from './validators.js';
 import { FigmaImageSyncService, type FigmaBatchItem } from '../figma/figma-image-sync.service.js';
 import { FigmaTemplateService } from '../figma/figma-template.service.js';
+import { ExportsService } from '../exports/exports.service.js';
 
 // ── Interfaces ──────────────────────────────────────────────
 
@@ -92,6 +93,7 @@ export class GenerationService {
     private readonly archetypeResolver: ArchetypeResolverService,
     private readonly themesService: ThemesService,
     private readonly interactionGate: InteractionGateService,
+    private readonly exportsService: ExportsService,
     @Optional() private readonly figmaImageSync?: FigmaImageSyncService,
     @Optional() private readonly figmaTemplateService?: FigmaTemplateService,
   ) {}
@@ -1231,10 +1233,19 @@ OUTPUT: Valid JSON matching this schema (no markdown fences):
       }
     }
 
+
+
     // Emit generation_complete action for rich UI card
     const imageJobCount = shouldGenerateImages ? (await this.prisma.slide.count({
       where: { presentationId, imagePrompt: { not: null } },
     })) : 0;
+
+    // If no image jobs were queued, generate previews directly so they don't stay as "Preview loading..." forever
+    if (imageJobCount === 0) {
+      this.exportsService.generatePreviewsForPresentation(presentationId).catch((err) => {
+        this.logger.warn(`Direct preview generation failed: ${err instanceof Error ? err.message : 'unknown'}`);
+      });
+    }
     yield {
       type: 'action',
       content: '',
