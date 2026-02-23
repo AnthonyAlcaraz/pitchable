@@ -468,6 +468,18 @@ export function PreviewPanel({ presentationId }: PreviewPanelProps) {
             <span className="text-xs text-muted-foreground">
               {Math.min(approvedSlides.length, slides.length)}/{slides.length} approved
             </span>
+            {(() => {
+              const scored = slides.filter((s) => s.healthScore != null);
+              if (scored.length === 0) return null;
+              const avg = scored.reduce((sum, s) => sum + (s.healthScore ?? 1), 0) / scored.length;
+              const pct = Math.round(avg * 100);
+              const color = pct >= 90 ? 'text-green-400 bg-green-500/10' : pct >= 70 ? 'text-yellow-400 bg-yellow-500/10' : 'text-orange-400 bg-orange-500/10';
+              return (
+                <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${color}`}>
+                  Health: {pct}%
+                </span>
+              );
+            })()}
             <div className="flex-1" />
             <button
               type="button"
@@ -571,6 +583,19 @@ export function PreviewPanel({ presentationId }: PreviewPanelProps) {
                     <span className="rounded bg-orange-500/10 px-1.5 py-0.5 text-[10px] font-medium text-orange-400">
                       {SLIDE_TYPE_LABELS[currentSlide.slideType] ?? currentSlide.slideType.replace(/_/g, ' ')}
                     </span>
+                    {currentSlide.healthScore != null && (
+                      <span
+                        className={`inline-block h-2.5 w-2.5 rounded-full ${
+                          currentSlide.healthScore >= 0.9 ? 'bg-green-400' :
+                          currentSlide.healthScore >= 0.7 ? 'bg-yellow-400' : 'bg-orange-400'
+                        }`}
+                        title={
+                          currentSlide.healthIssues?.length
+                            ? currentSlide.healthIssues.map((i) => i.message).join('; ')
+                            : `Health: ${Math.round(currentSlide.healthScore * 100)}%`
+                        }
+                      />
+                    )}
                     {isCurrentApproved && (
                       <span className="flex items-center gap-1 text-[10px] text-green-400">
                         <Check className="h-3 w-3" /> Approved

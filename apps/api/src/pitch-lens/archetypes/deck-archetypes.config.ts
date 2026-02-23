@@ -828,13 +828,13 @@ export const DECK_ARCHETYPES: DeckArchetypeConfig[] = [
     defaultAudience: 'INVESTORS',
     defaultGoal: 'RAISE_FUNDING',
     densityProfile: {
-      maxBulletsPerSlide: 4,
-      maxWordsPerSlide: 50,
+      maxBulletsPerSlide: 3,
+      maxWordsPerSlide: 40,
       maxTableRows: 4,
       maxConceptsPerSlide: 1,
       maxNestedListDepth: 1,
     },
-    slideRange: { min: 10, max: 16 },
+    slideRange: { min: 8, max: 12 },
     narrativeRules: [
       'Pre-seed = story over spreadsheets. Lead with vision and insight, not traction (you may not have much).',
       'Title slide must be a bold, memorable one-line pitch. No subtitles, no clutter.',
@@ -845,6 +845,8 @@ export const DECK_ARCHETYPES: DeckArchetypeConfig[] = [
       'Market size can use top-down TAM/SAM/SOM OR bottom-up unit economics. Both are valid at pre-seed.',
       'The Ask must be specific: "$X at $Y valuation to reach Z milestone." No vague "seeking funding" language.',
       'LOGO_WALL is optional but powerful if you have early partners, advisors, or design partners.',
+      'Brevity is strength — cut every word that does not advance the story.',
+      'Each slide should make exactly ONE point. If you need two points, use two slides.',
       'Use SPLIT_STATEMENT for bold claims that need supporting evidence. Left = emotional hook, right = proof.',
     ],
     qualityGates: [
@@ -890,12 +892,13 @@ export const DECK_ARCHETYPES: DeckArchetypeConfig[] = [
       },
     ],
     antiPatterns: [
-      'NEVER use Kawasaki 10-slide constraint. Pre-seed decks need 10-16 slides for the full narrative.',
+      'NEVER use Kawasaki 10-slide constraint. Pre-seed decks need 8-12 slides for a tight narrative.',
       'NEVER lead with traction metrics if you have none. Lead with vision and product instead.',
       'NEVER use generic market claims without a specific dollar amount or source.',
       'NEVER skip the product showcase. Investors at pre-seed want to see what you\'ve built.',
       'NEVER position the deck like a Series A (detailed financials, cohort analysis). Keep it vision-forward.',
       'NEVER end with "Questions?" — end with a specific ask and timeline.',
+      'NEVER write more than 3 bullets on any slide — pre-seed decks must be scannable in seconds.',
     ],
   },
 ];

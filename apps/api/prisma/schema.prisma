@@ -108,6 +108,8 @@ model Slide {
   previewUrl     String?
   sectionLabel      String?
   contentHash       String?
+  healthScore       Float?
+  healthIssues      Json?
   createdAt         DateTime     @default(now())
   updatedAt         DateTime     @default(now()) @updatedAt
   figmaLastSyncAt   DateTime?
