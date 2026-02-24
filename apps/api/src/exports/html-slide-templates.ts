@@ -656,7 +656,7 @@ function buildProblem(slide: SlideInput, p: ColorPalette): string {
 
   for (const line of dataLines) {
     bodyHtml += `<div style="position:absolute;left:${PAD + 32}px;top:${ty}px;width:${W - PAD * 2 - 40}px;font-size:16px;line-height:1.6;color:${p.text};opacity:0.85;padding-left:12px;border-left:2px solid ${hexToRgba(barColor, 0.3)}">${escHtml(stripMarkdown(line))}</div>`;
-    ty += 64;
+    ty += 76;
   }
 
   return `${SCOPED_RESET}
@@ -683,7 +683,7 @@ function buildSolution(slide: SlideInput, p: ColorPalette): string {
   let ty = PAD + 100;
   for (const line of lines.slice(0, 6)) {
     bodyHtml += `<div style="position:absolute;left:${PAD + 32}px;top:${ty}px;width:${W - PAD * 2 - 40}px;font-size:16px;line-height:1.6;color:${p.text};opacity:0.85;padding-left:12px;border-left:2px solid ${hexToRgba(barColor, 0.3)}">${escHtml(stripMarkdown(line))}</div>`;
-    ty += 64;
+    ty += 76;
   }
 
   return `${SCOPED_RESET}
@@ -747,9 +747,9 @@ function buildContent(slide: SlideInput, p: ColorPalette): string {
   const cardW = W - PAD * 2 - 40;
 
   for (const line of lines.slice(0, 8)) {
-    bodyHtml += `<div style="position:absolute;left:${PAD + 32}px;top:${ty}px;width:${cardW}px;height:74px;background:${hexToRgba(p.surface, 0.5)};border:1px solid ${hexToRgba(p.border, 0.3)};border-radius:10px;border-left:4px solid ${hexToRgba(p.accent, 0.6)}"></div>`;
-    bodyHtml += `<div style="position:absolute;left:${PAD + 32 + cardPad}px;top:${ty + 22}px;width:${cardW - cardPad * 2}px;font-size:24px;line-height:1.4;color:${p.text};opacity:0.85">${escHtml(stripMarkdown(line))}</div>`;
-    ty += 86;
+    bodyHtml += `<div style="position:absolute;left:${PAD + 32}px;top:${ty}px;width:${cardW}px;height:66px;background:${hexToRgba(p.surface, 0.5)};border:1px solid ${hexToRgba(p.border, 0.3)};border-radius:10px;border-left:4px solid ${hexToRgba(p.accent, 0.6)}"></div>`;
+    bodyHtml += `<div style="position:absolute;left:${PAD + 32 + cardPad}px;top:${ty + 22}px;width:${cardW - cardPad * 2}px;font-size:21px;line-height:1.45;color:${p.text};opacity:0.85">${escHtml(stripMarkdown(line))}</div>`;
+    ty += 78;
   }
 
   return `${SCOPED_RESET}
