@@ -221,12 +221,12 @@ export class SyncGenerationService {
             { role: 'system', content: outlineSystemPrompt },
             { role: 'user', content: outlineUserPrompt },
           ],
-          LlmModel.SONNET,
+          LlmModel.OPUS,
           isValidOutline,
           2,
         );
         timings['outline'] = Date.now() - tOutline;
-        this.logger.log(`[TIMING] Outline generation (Sonnet): ${((Date.now() - tOutline) / 1000).toFixed(1)}s — ${outline.slides?.length ?? 0} slides planned`);
+        this.logger.log(`[TIMING] Outline generation (Opus): ${((Date.now() - tOutline) / 1000).toFixed(1)}s — ${outline.slides?.length ?? 0} slides planned`);
       }
 
       if (!outline.slides?.length) {

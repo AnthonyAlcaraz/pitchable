@@ -4,7 +4,7 @@ import type { LlmModelId } from './llm.service.js';
 /**
  * Tiered model routing per slide type.
  * HAIKU for structural/lightweight slides (~$0.80/$4 per MTok)
- * SONNET for content-heavy slides (~$3/$15 per MTok)
+ * OPUS for content-heavy slides (~$15/$75 per MTok)
  * Saves ~30-40% LLM cost (6 of 12 slides use HAIKU).
  */
 const HAIKU_SLIDE_TYPES = new Set([
@@ -17,5 +17,5 @@ const HAIKU_SLIDE_TYPES = new Set([
 ]);
 
 export function getModelForSlideType(slideType: string): LlmModelId {
-  return HAIKU_SLIDE_TYPES.has(slideType) ? LlmModel.HAIKU : LlmModel.SONNET;
+  return HAIKU_SLIDE_TYPES.has(slideType) ? LlmModel.HAIKU : LlmModel.OPUS;
 }
