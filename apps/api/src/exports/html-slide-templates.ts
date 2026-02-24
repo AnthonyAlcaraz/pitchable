@@ -802,14 +802,20 @@ function buildFeatureGrid(slide: SlideInput, p: ColorPalette, hasImage = false):
   }
 
   const count = features.length;
-  const cols = count <= 4 ? 2 : 3;
+  const cols = count <= 3 ? count : count <= 4 ? 2 : 3;
   const rows = Math.ceil(count / cols);
   const gapX = 24;
-  const gapY = 24;
+  const gapY = 20;
   const cardW = Math.round((cW - PAD * 2 - (cols - 1) * gapX) / cols);
-  const cardH = 160;
+  // Dynamic card height: use all available vertical space
+  const availH = H - PAD * 2 - 90; // subtract title area
+  const cardH = Math.min(280, Math.round((availH - (rows - 1) * gapY) / rows));
   const totalH = rows * cardH + (rows - 1) * gapY;
   const startY = Math.round(PAD + 80 + (H - PAD * 2 - 80 - totalH) / 2);
+  // Scale font sizes based on card height
+  const titleFontSz = cardH >= 220 ? 16 : 14;
+  const descFontSz = cardH >= 220 ? 14 : 13;
+  const descMaxH = cardH - 110;
 
   let html = '';
   for (let i = 0; i < count; i++) {
@@ -820,12 +826,12 @@ function buildFeatureGrid(slide: SlideInput, p: ColorPalette, hasImage = false):
 
     html += `<div style="position:absolute;left:${cx}px;top:${cy}px;width:${cardW}px;height:${cardH}px;background:${p.surface};border:1px solid ${p.border};border-radius:16px;box-shadow:0 2px 8px rgba(0,0,0,0.08);border-top:4px solid ${p.accent}"></div>`;
     // Icon placeholder
-    html += `<div style="position:absolute;left:${cx + 24}px;top:${cy + 24}px;width:36px;height:36px;background:${p.primary};border-radius:8px;opacity:0.8"></div>`;
-    // Title
-    html += `<div style="position:absolute;left:${cx + 24}px;top:${cy + 72}px;width:${cardW - 48}px;font-size:15px;font-weight:bold;color:${p.text};overflow:hidden;max-height:20px;text-overflow:ellipsis;white-space:nowrap">${escHtml(features[i].title)}</div>`;
+    html += `<div style="position:absolute;left:${cx + 20}px;top:${cy + 20}px;width:32px;height:32px;background:${p.primary};border-radius:8px;opacity:0.8"></div>`;
+    // Title (allow 2-line wrap)
+    html += `<div style="position:absolute;left:${cx + 20}px;top:${cy + 64}px;width:${cardW - 40}px;font-size:${titleFontSz}px;font-weight:bold;color:${p.text};overflow:hidden;max-height:40px;line-height:1.3">${escHtml(features[i].title)}</div>`;
     // Description
     if (features[i].desc) {
-      html += `<div style="position:absolute;left:${cx + 24}px;top:${cy + 96}px;width:${cardW - 48}px;font-size:14px;line-height:1.4;color:${p.text};opacity:0.8;overflow:hidden;max-height:52px">${escHtml(features[i].desc)}</div>`;
+      html += `<div style="position:absolute;left:${cx + 20}px;top:${cy + 100}px;width:${cardW - 40}px;font-size:${descFontSz}px;line-height:1.4;color:${p.text};opacity:0.8;overflow:hidden;max-height:${descMaxH}px">${escHtml(features[i].desc)}</div>`;
     }
   }
 
