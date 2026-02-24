@@ -1184,9 +1184,83 @@ function buildProcess(slide: SlideInput, p: ColorPalette, hasImage = false): str
 
 // ── PROBLEM ─────────────────────────────────────────────────
 // Left accent bar + warning-style icon
+// When body has a table, renders as styled table for vertical alignment
+
+function buildProblemTable(slide: SlideInput, p: ColorPalette, table: ParsedTable, hasImage: boolean): string {
+  const cW = hasImage ? CONTENT_W_IMG : W;
+  const barColor = p.error || p.accent;
+  const dark = isDarkBackground(p.background);
+  const headerBg = barColor;
+  const headerColor = '#FFFFFF';
+  const evenRowBg = dark ? 'rgba(255,255,255,0.04)' : '#F5F5F5';
+  const oddRowBg = dark ? 'transparent' : '#FFFFFF';
+  const rowBorder = dark ? 'rgba(255,255,255,0.08)' : '#E5E5E5';
+  const colCount = table.headers.length;
+  const tableW = cW - PAD * 2 - 20;
+
+  let y = PAD;
+  let html = '';
+
+  // Warning icon + title
+  html += '<svg style="position:absolute;left:' + (PAD + 4) + 'px;top:' + PAD + 'px" width="32" height="32" xmlns="http://www.w3.org/2000/svg">' +
+    '<polygon points="16,2 30,28 2,28" fill="none" stroke="' + barColor + '" stroke-width="2"/>' +
+    '<text x="16" y="24" text-anchor="middle" fill="' + barColor + '" font-size="16" font-weight="bold">!</text></svg>';
+  html += '<div style="position:absolute;left:' + (PAD + 44) + 'px;top:' + (PAD + 4) + 'px;width:' + (cW - PAD * 2 - 60) + 'px;font-size:' + titleFontSize(slide.title) + 'px;font-weight:bold;overflow-wrap:break-word;word-wrap:break-word;color:' + p.text + ';line-height:1.2">' + escHtml(slide.title) + '</div>';
+  y += 56;
+  html += '<div style="position:absolute;left:' + (PAD + 44) + 'px;top:' + (y - 8) + 'px;width:60px;height:3px;background:' + barColor + ';border-radius:2px"></div>';
+
+  // Lead text
+  if (table.leadText) {
+    html += '<div style="position:absolute;left:' + (PAD + 20) + 'px;top:' + y + 'px;width:' + tableW + 'px;font-size:15px;line-height:1.4;color:' + p.text + ';opacity:0.8">' + escHtml(stripMarkdown(table.leadText)) + '</div>';
+    y += 30;
+  }
+
+  y += 10;
+  const cellPad = 'padding:8px 14px';
+  const thStyle = 'background:' + headerBg + ';color:' + headerColor + ';font-weight:bold;font-size:14px;text-align:left;' + cellPad + ';border-bottom:2px solid ' + headerBg;
+
+  let tableHtml = '<table style="border-collapse:collapse;width:100%;table-layout:fixed">';
+  tableHtml += '<thead><tr>';
+  for (const h of table.headers) {
+    tableHtml += '<th style="' + thStyle + '">' + escHtml(stripMarkdown(h)) + '</th>';
+  }
+  tableHtml += '</tr></thead><tbody>';
+  for (let i = 0; i < table.rows.length; i++) {
+    const bg = i % 2 === 0 ? evenRowBg : oddRowBg;
+    tableHtml += '<tr style="background:' + bg + '">';
+    for (let c = 0; c < colCount; c++) {
+      const val = table.rows[i]?.[c] ?? '';
+      const bold = c === 0 ? 'font-weight:bold;' : '';
+      tableHtml += '<td style="' + bold + 'font-size:14px;color:' + p.text + ';' + cellPad + ';border-bottom:1px solid ' + rowBorder + '">' + escHtml(stripMarkdown(val)) + '</td>';
+    }
+    tableHtml += '</tr>';
+  }
+  tableHtml += '</tbody></table>';
+
+  const tableHeight = 38 + table.rows.length * 38;
+  html += '<div style="position:absolute;left:' + (PAD + 20) + 'px;top:' + y + 'px;width:' + tableW + 'px">' + tableHtml + '</div>';
+  y += tableHeight + 12;
+
+  if (table.takeaway) {
+    html += '<div style="position:absolute;left:' + (PAD + 20) + 'px;top:' + y + 'px;width:' + tableW + 'px;font-size:15px;font-weight:bold;color:' + barColor + ';line-height:1.4">' + escHtml(table.takeaway) + '</div>';
+  }
+
+  return SCOPED_RESET + '\n<div style="position:relative;width:' + W + 'px;height:' + H + 'px;background:' + p.background + ';">' +
+    bgGradientOverlay(cW, H, barColor, 0.04, '30%') +
+    '<div style="position:absolute;left:0;top:0;width:6px;height:' + H + 'px;background:' + barColor + '"></div>' +
+    html + '</div>';
+}
+
 
 function buildProblem(slide: SlideInput, p: ColorPalette, hasImage = false): string {
   const cW = hasImage ? CONTENT_W_IMG : W;
+
+  // If body has a pipe table, render as styled table (preserves all content)
+  const probTable = parseMarkdownTable(slide.body);
+  if (probTable) {
+    return buildProblemTable(slide, p, probTable, hasImage);
+  }
+
   const lines = parseBodyLines(slide.body);
   const barColor = p.error || p.accent;
 
@@ -1318,6 +1392,13 @@ function buildCta(slide: SlideInput, p: ColorPalette, hasImage = false): string 
 
 function buildContent(slide: SlideInput, p: ColorPalette, hasImage = false): string {
   const cW = hasImage ? CONTENT_W_IMG : W;
+
+  // If body has a pipe table, render as comparison-style table
+  const contTable = parseMarkdownTable(slide.body);
+  if (contTable) {
+    return buildComparisonTable(slide, p, contTable, hasImage);
+  }
+
   const lines = parseBodyLines(slide.body);
   const contCap = titleCountCap(slide.title);
   const items = lines.slice(0, contCap || 8);
