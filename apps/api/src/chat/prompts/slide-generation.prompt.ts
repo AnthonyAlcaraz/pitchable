@@ -102,6 +102,25 @@ ANTI-REPETITION (CRITICAL \u2014 check previous slides before writing):
 - If the outline bullet overlaps with prior content, find the UNIQUE new information and focus only on that.
 - Each slide must earn its place \u2014 if you cannot add new information beyond what prior slides already said, write a minimal slide with a single new takeaway.
 
+
+SLIDE TYPE DIVERSITY (CRITICAL — vary visual layouts):
+- NEVER use the same slideType two slides in a row.
+- A 10-slide deck should use at least 6 different slide types.
+- Prefer visual types (METRICS_HIGHLIGHT, FEATURE_GRID, COMPARISON, TIMELINE, PROCESS) over plain CONTENT.
+- Use SPLIT_STATEMENT for bold thesis statements — max 1-2 per deck.
+- Use QUOTE for social proof or authority — max 1 per deck.
+- SECTION_DIVIDER between major sections of 4+ slides — max 2 per deck.
+- Map content to the BEST-FIT type:
+  - Numbers/KPIs → METRICS_HIGHLIGHT
+  - Before/after or trade-offs → COMPARISON
+  - Capabilities/features list → FEATURE_GRID
+  - Sequential steps → PROCESS or TIMELINE
+  - Market data with TAM/SAM/SOM → MARKET_SIZING
+  - Team bios → TEAM
+  - Bold claim + evidence → SPLIT_STATEMENT
+  - Customer quote → QUOTE
+  - General information → CONTENT (last resort)
+
 UNIVERSAL FORMATTING RULES:
 - Max ${maxWords} words body. 1 key concept per slide. Less text = more impact.
 - Tables: max ${maxTableRows} rows, 2-3 columns. Always include a header row and separator (|---|---|).

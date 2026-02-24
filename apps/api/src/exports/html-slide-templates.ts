@@ -78,8 +78,9 @@ function hexToRgba(hex: string, alpha: number): string {
 // ── Scoped reset injected into every Figma-grade slide ──────
 
 const SCOPED_RESET = `<style scoped>
-section { padding: 0 !important; display: block !important; overflow: hidden !important; }
+section { padding: 0 !important; display: block !important; overflow: visible !important; position: relative !important; }
 section > * { flex-shrink: unset; }
+section::after { position: absolute !important; bottom: 16px !important; right: 24px !important; font-size: 14px !important; opacity: 0.5; z-index: 10; }
 </style>`;
 
 // ── Public API ───────────────────────────────────────────────
