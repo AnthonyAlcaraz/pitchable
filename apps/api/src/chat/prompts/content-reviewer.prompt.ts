@@ -15,6 +15,7 @@ RULES (these are hard constraints \u2014 any violation is an error):
 9. ONE DATA BLOCK: Each slide uses EITHER a table OR bullets \u2014 NEVER both. If both present, flag as error.
 10. Max ${limits.maxTableRows ?? 4} table data rows (excluding header). Tables with more rows cause overflow.
 11. OVERFLOW RISK: If body has title + lead sentence + table (4+ rows) + takeaway + sources, flag density warning. Each element stacks vertically and 5+ stacked elements risk clipping at the bottom of the slide.
+12. TITLE-BODY CONSISTENCY: If the title mentions a specific count (e.g., "Three pillars", "5 strategies", "Four layers"), the body MUST contain exactly that many items. If the count does not match, flag as error.
 
 SPLIT POLICY (CRITICAL \u2014 follow strictly):
 - PREFER PASS over NEEDS_SPLIT. Only split when the slide genuinely contains 2+ DISTINCT concepts.

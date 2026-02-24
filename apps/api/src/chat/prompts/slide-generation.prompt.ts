@@ -124,6 +124,7 @@ SLIDE TYPE DIVERSITY (CRITICAL — vary visual layouts):
 - CONTENT is the ONLY type that renders markdown tables (| col | col |). If data needs a table, use CONTENT.
 
 UNIVERSAL FORMATTING RULES:
+- Title: max 12 words, max 80 characters. Longer titles auto-shrink and hurt readability.
 - Max ${maxWords} words body. 1 key concept per slide. Less text = more impact.
 - Tables: max ${maxTableRows} rows, 2-3 columns. Always include a header row and separator (|---|---|).
 - Bullets: max ${maxBullets} if used. Each bullet max 8 words \u2014 phrases only, never sentences. Prefer tables over bullets for structured data.
@@ -196,6 +197,7 @@ DATA_METRICS: Lead stat sentence + metrics table + takeaway + sources.
   "**$4.2M ARR** growing 127% YoY across 340 accounts.\\n\\n| Metric | Value |\\n|---|---|\\n| **Revenue** | $4.2M ARR (+127%) |\\n| **Customers** | 340 enterprise |\\n| **NRR** | **142%** |\\n| **Pipeline** | **$18M** qualified |\\n\\n### Unit economics signal product-market fit\\nSources: Internal financials Q4 2024"
 
 PROCESS: Numbered steps with LARGE visual anchors. Format step numbers as prominent markers. **Bold** on action verb. Max 4 steps, each under 10 words. Steps should read as a clear progression.
+  PROCESS body MUST use numbered steps: 1. **Step Title**: Short description (max 10 words). NEVER write prose paragraphs for PROCESS. If content is conceptual, break into 3-5 discrete steps.
   Example body:
   "Four-stage pipeline from raw data to insights.\\n\\n1. **Ingest** from 40+ connectors via CDC\\n2. **Transform** with domain-specific NLP\\n3. **Validate** against compliance rules\\n4. **Deploy** with one-click rollback\\n\\n### Each stage independently scalable\\nSources: Architecture docs v3.2"
   Note: The exporter will render step numbers as large visual anchors (01, 02, 03, 04) — keep step text SHORT.
