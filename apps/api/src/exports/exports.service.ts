@@ -427,6 +427,10 @@ export class ExportsService {
           await this.cleanupSlideImages(jobDir);
           buffer = await readFile(outputPath);
           contentType = 'application/pdf';
+          // Validate PDF isn't suspiciously small
+          if (buffer.length < 50_000) {
+            this.logger.warn(`PDF export suspiciously small: ${(buffer.length / 1024).toFixed(1)}KB for ${slides.length} slides`);
+          }
           filename = `${safeFilename(presentation.title)}.pdf`;
           break;
         }
@@ -661,6 +665,10 @@ export class ExportsService {
         await this.cleanupSlideImages(jobDir);
         buffer = await readFile(outputPath);
         contentType = 'application/pdf';
+        // Validate PDF isn't suspiciously small
+        if (buffer.length < 50_000) {
+          this.logger.warn(`PDF export suspiciously small: ${(buffer.length / 1024).toFixed(1)}KB for ${slides.length} slides`);
+        }
         filename = `${safeFilename(presentation.title)}.pdf`;
         break;
       }
