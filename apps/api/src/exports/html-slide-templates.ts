@@ -925,8 +925,13 @@ function buildCta(slide: SlideInput, p: ColorPalette, hasImage = false): string 
   const cardX = Math.round((visibleW - cardW) / 2);
   const cardY = Math.round((H - cardH) / 2) + 10;
 
+  // Estimate title height for accent line positioning
+  const charsPerLine = Math.floor((cardW - 80) / 14);
+  const titleLines = Math.max(1, Math.ceil(slide.title.length / charsPerLine));
+  const titleH = 32 + titleLines * 34;  // 32px top pad + 34px per line
+
   let actionsHtml = '';
-  let ay = cardY + 110;
+  let ay = cardY + titleH + 24;
   for (const line of lines.slice(0, 3)) {
     actionsHtml += `<div style="position:absolute;left:${cardX + 40}px;top:${ay}px;width:${cardW - 80}px;font-size:16px;line-height:1.5;color:${p.text}"><span style="color:${p.accent};font-weight:bold;margin-right:8px">&rarr;</span>${escHtml(stripMarkdown(line))}</div>`;
     ay += 44;
@@ -943,7 +948,7 @@ function buildCta(slide: SlideInput, p: ColorPalette, hasImage = false): string 
   <div style="position:absolute;left:${cardX}px;top:${cardY}px;width:${cardW}px;height:${cardH}px;background:${p.surface};border:2px solid ${p.accent};border-radius:20px;box-shadow:0 12px 48px ${hexToRgba(p.accent, 0.15)}"></div>
   <div style="position:absolute;left:${cardX}px;top:${cardY}px;width:${cardW}px;height:5px;background:linear-gradient(90deg,${p.accent},${p.primary});border-radius:20px 20px 0 0"></div>
   <div style="position:absolute;left:${cardX}px;top:${cardY + 32}px;width:${cardW}px;text-align:center;font-size:28px;font-weight:bold;color:${p.text};line-height:1.2">${escHtml(slide.title)}</div>
-  <div style="position:absolute;left:${Math.round(W / 2 - 30)}px;top:${cardY + 78}px;width:60px;height:3px;background:${p.accent};border-radius:2px"></div>
+  <div style="position:absolute;left:${Math.round(visibleW / 2 - 30)}px;top:${cardY + titleH + 8}px;width:60px;height:3px;background:${p.accent};border-radius:2px"></div>
   ${actionsHtml}
   ${btnHtml}
 </div>`;
