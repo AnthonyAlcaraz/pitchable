@@ -513,7 +513,7 @@ export class DocumentProcessingProcessor extends WorkerHost {
           content: `Brief name: "${brief.name}"\nDocuments: ${docTitles}\n\nContent sample:\n${contentSample}`,
         },
       ],
-      LlmModel.SONNET,
+      LlmModel.OPUS,
     );
 
     if (summary) {

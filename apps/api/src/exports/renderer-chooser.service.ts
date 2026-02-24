@@ -77,7 +77,7 @@ export class RendererChooserService {
           { role: 'system', content: SYSTEM_PROMPT },
           { role: 'user', content: `Analyze these slides:\n\n${slideDescriptions}` },
         ],
-        LlmModel.SONNET,
+        LlmModel.OPUS,
         isValidResponse as JsonValidator<RendererChooserResponse>,
         1,
       );

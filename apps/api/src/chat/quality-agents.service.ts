@@ -268,7 +268,7 @@ ${slide.imagePromptHint ? `Image Prompt: ${slide.imagePromptHint}` : ''}`;
                 { role: 'system', content: systemPrompt },
                 { role: 'user', content: userContent },
               ],
-              LlmModel.HAIKU,
+              LlmModel.OPUS,
               isValidStyleEnforcerResult,
               1,
             );
@@ -320,7 +320,7 @@ ${slide.imagePromptHint ? `Image Prompt: ${slide.imagePromptHint}` : ''}`;
             content: `Review the narrative coherence of this ${slides.length}-slide presentation:\n\n${slideSummaries}`,
           },
         ],
-        LlmModel.SONNET,
+        LlmModel.OPUS,
         isValidNarrativeCoherenceResult,
         1,
       );
@@ -377,7 +377,7 @@ ${slide.body}`;
                 { role: 'system', content: systemPrompt },
                 { role: 'user', content: userContent },
               ],
-              LlmModel.SONNET,
+              LlmModel.OPUS,
               isValidFactCheckerResult,
               1,
             );

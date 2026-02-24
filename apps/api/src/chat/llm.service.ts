@@ -54,7 +54,7 @@ export class LlmService {
     });
     this.defaultModel = configService.get<string>(
       'ANTHROPIC_MODEL',
-      LlmModel.SONNET,
+      LlmModel.OPUS,
     );
   }
 
@@ -282,7 +282,7 @@ export class LlmService {
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
       try {
         const result = await this.anthropic.messages.create({
-          model: model ?? LlmModel.SONNET,
+          model: model ?? LlmModel.OPUS,
           max_tokens: 4096,
           system: fullSystem,
           messages,

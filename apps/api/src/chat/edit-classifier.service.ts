@@ -73,7 +73,7 @@ Classify this edit as "cosmetic" or "structural".`;
           { role: 'system', content: CLASSIFIER_SYSTEM_PROMPT },
           { role: 'user', content: userPrompt },
         ],
-        LlmModel.HAIKU,
+        LlmModel.OPUS,
         isValidClassification,
         1,
       );
