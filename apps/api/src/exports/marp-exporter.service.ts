@@ -294,13 +294,13 @@ export class MarpExporterService {
       '  h3 {',
       `    color: ${safeAccent};`,
       `    font-family: ${headingFontStack};`,
-      '    font-size: 0.95em;',
+      '    font-size: 1.0em;',
       '    margin-top: 0.2em;',
       '    margin-bottom: 0.15em;',
       '  }',
       '  p, li {',
-      '    font-size: 0.85em;',
-      '    line-height: 1.4;',
+      '    font-size: 0.92em;',
+      '    line-height: 1.45;',
       '    margin-top: 0.15em;',
       '    margin-bottom: 0.15em;',
       `    color: ${safeText};`,
@@ -731,9 +731,11 @@ h3 { margin-top: 10px; font-size: 0.8em; }
       SPLIT_STATEMENT: `<style scoped>
 .split-statement { display: grid; grid-template-columns: 30% 1fr; gap: 32px; align-items: center; min-height: 280px; }
 .statement { font-size: 1.6em; font-weight: 800; line-height: 1.15; }
-.evidence { font-size: 0.75em; }
-.evidence strong { display: block; font-size: 1.1em; margin-bottom: 2px; margin-top: 12px; }
+.evidence { font-size: 0.85em; }
+.evidence strong { display: block; font-size: 1.15em; margin-bottom: 4px; margin-top: 14px; }
 .evidence hr { border: none; border-top: 1px solid rgba(255,255,255,0.15); margin: 10px 0; }
+p, li { font-size: 0.95em; line-height: 1.55; }
+strong { font-size: 1.1em; }
 </style>`,
     };
     if (scopedCSS[type]) {
@@ -757,23 +759,26 @@ h3 { margin-top: 10px; font-size: 0.8em; }
         })
         .join('\n');
 
+      // Escape standalone --- that Marp interprets as slide breaks
+      const safeMarpBody = bodyToRender.replace(/^---$/gm, '***');
+
       // Types that handle their own layout (scoped CSS grids, lead class, etc.) skip glass-card
       const skipGlassCard = ['TITLE', 'CTA', 'VISUAL_HUMOR', 'TEAM', 'TIMELINE', 'METRICS_HIGHLIGHT', 'FEATURE_GRID', 'PRODUCT_SHOWCASE', 'LOGO_WALL', 'MARKET_SIZING', 'SPLIT_STATEMENT'];
       if (type === 'QUOTE') {
         // Wrap body in blockquote
-        const quoteLines = bodyToRender
+        const quoteLines = safeMarpBody
           .split('\n')
           .filter((l) => l.trim())
           .map((l) => `> ${l.replace(/^[-*]\s+/, '')}`);
         lines.push(quoteLines.join('\n'));
       } else if (skipGlassCard.includes(type)) {
         // These types render their own scoped CSS / grid layout directly
-        lines.push(bodyToRender);
+        lines.push(safeMarpBody);
       } else {
         // AMI Labs: wrap body content in glass card for content slides
         lines.push('<div class="glass-card">');
         lines.push('');
-        lines.push(bodyToRender);
+        lines.push(safeMarpBody);
         lines.push('');
         lines.push('</div>');
       }

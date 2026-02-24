@@ -293,8 +293,8 @@ function buildMetricsHighlight(slide: SlideInput, p: ColorPalette): string {
       const val = parts[0].trim();
       const label = parts.length > 1 ? parts.slice(1).join(':').trim() : '';
       secondaryHtml += `<div style="position:absolute;left:${cx}px;top:${secY}px;width:${colW}px;text-align:center">
-        <div style="font-size:24px;font-weight:bold;color:${p.primary}">${escHtml(val)}</div>
-        ${label ? `<div style="font-size:10px;color:${p.text};opacity:0.6;margin-top:4px">${escHtml(label)}</div>` : ''}
+        <div style="font-size:28px;font-weight:bold;color:${p.primary}">${escHtml(val)}</div>
+        ${label ? `<div style="font-size:13px;color:${p.text};opacity:0.65;margin-top:4px">${escHtml(label)}</div>` : ''}
         <div style="width:${Math.round(colW * 0.6)}px;height:4px;background:${hexToRgba(p.border, 0.3)};border-radius:2px;margin:8px auto 0"><div style="width:60%;height:100%;background:${p.accent};border-radius:2px;opacity:0.7"></div></div>
       </div>`;
     }
@@ -310,9 +310,9 @@ function buildMetricsHighlight(slide: SlideInput, p: ColorPalette): string {
     <circle cx="${Math.round(Math.min(heroFontSize * 1.2, 100))}" cy="${Math.round(Math.min(heroFontSize * 1.2, 100))}" r="${Math.round(Math.min(heroFontSize * 1.2, 100) * 0.7)}" fill="none" stroke="${p.primary}" stroke-width="1.5" opacity="0.06" />
   </svg>
     <div style="position:absolute;left:${PAD}px;top:${heroY}px;width:${W - PAD * 2}px;text-align:center;font-size:${heroFontSize}px;font-weight:bold;color:${p.primary};line-height:1.1">${escHtml(bigValue)}</div>
-  ${bigLabel || bigValue !== slide.title ? `<div style="position:absolute;left:${PAD + 100}px;top:${heroY + 100}px;width:${W - PAD * 2 - 200}px;text-align:center;font-size:21px;font-weight:bold;color:${p.text};line-height:1.3">${escHtml(bigLabel || slide.title)}</div>` : ''}
+  ${bigLabel || bigValue !== slide.title ? `<div style="position:absolute;left:${PAD + 100}px;top:${heroY + 100}px;width:${W - PAD * 2 - 200}px;text-align:center;font-size:24px;font-weight:bold;color:${p.text};line-height:1.3">${escHtml(bigLabel || slide.title)}</div>` : ''}
   <div style="position:absolute;left:${Math.round((W - 80) / 2)}px;top:${heroY + 140}px;width:80px;height:3px;background:${p.accent};border-radius:2px"></div>
-  ${displaySupport ? `<div style="position:absolute;left:${PAD + 160}px;top:${heroY + 164}px;width:${W - PAD * 2 - 320}px;text-align:center;font-size:15px;line-height:1.5;color:${p.text};opacity:0.7">${escHtml(displaySupport)}</div>` : ''}
+  ${displaySupport ? `<div style="position:absolute;left:${PAD + 160}px;top:${heroY + 164}px;width:${W - PAD * 2 - 320}px;text-align:center;font-size:17px;line-height:1.5;color:${p.text};opacity:0.75">${escHtml(displaySupport)}</div>` : ''}
   ${secondaryHtml}
 </div>`;
 }
@@ -452,7 +452,7 @@ function buildTeam(slide: SlideInput, p: ColorPalette): string {
     cardsHtml += `<div style="position:absolute;left:${cx}px;top:${cy}px;width:${cardW}px;height:${cardH}px;background:${p.surface};border:1px solid ${p.border};border-radius:16px"></div>`;
 
     // Name + role
-    cardsHtml += `<div style="position:absolute;left:${cx + 12}px;top:${cy + 100}px;width:${cardW - 24}px;text-align:center;font-size:14px;font-weight:bold;color:${p.text}">${escHtml(members[i].name)}</div>`;
+    cardsHtml += `<div style="position:absolute;left:${cx + 12}px;top:${cy + 100}px;width:${cardW - 24}px;text-align:center;font-size:16px;font-weight:bold;color:${p.text}">${escHtml(members[i].name)}</div>`;
     if (members[i].role) {
       cardsHtml += `<div style="position:absolute;left:${cx + 12}px;top:${cy + 124}px;width:${cardW - 24}px;text-align:center;font-size:11px;color:${p.text};opacity:0.6">${escHtml(members[i].role)}</div>`;
     }
@@ -488,11 +488,11 @@ function buildTeam(slide: SlideInput, p: ColorPalette): string {
 function buildFeatureGrid(slide: SlideInput, p: ColorPalette): string {
   let lines = parseBodyLines(slide.body);
 
-  // When body is a paragraph (few long lines), split on sentence boundaries to create more cards
-  if (lines.length < 3 && lines.some((l) => l.length > 80)) {
+  // When body is a single blob paragraph, split on sentence boundaries (threshold: 120 chars)
+  if (lines.length < 3 && lines.some((l) => l.length > 120)) {
     const expanded: string[] = [];
     for (const line of lines) {
-      if (line.length > 80) {
+      if (line.length > 120) {
         const parts = line.split(/(?<=\.)\s+|;\s+/).filter((s) => s.trim().length > 0);
         expanded.push(...parts);
       } else {
@@ -547,10 +547,10 @@ function buildFeatureGrid(slide: SlideInput, p: ColorPalette): string {
     // Icon placeholder
     html += `<div style="position:absolute;left:${cx + 24}px;top:${cy + 24}px;width:36px;height:36px;background:${p.primary};border-radius:8px;opacity:0.8"></div>`;
     // Title
-    html += `<div style="position:absolute;left:${cx + 24}px;top:${cy + 72}px;width:${cardW - 48}px;font-size:14px;font-weight:bold;color:${p.text}">${escHtml(features[i].title)}</div>`;
+    html += `<div style="position:absolute;left:${cx + 24}px;top:${cy + 72}px;width:${cardW - 48}px;font-size:16px;font-weight:bold;color:${p.text}">${escHtml(features[i].title)}</div>`;
     // Description
     if (features[i].desc) {
-      html += `<div style="position:absolute;left:${cx + 24}px;top:${cy + 96}px;width:${cardW - 48}px;font-size:11px;line-height:1.5;color:${p.text};opacity:0.7">${escHtml(features[i].desc)}</div>`;
+      html += `<div style="position:absolute;left:${cx + 24}px;top:${cy + 96}px;width:${cardW - 48}px;font-size:15px;line-height:1.5;color:${p.text};opacity:0.8">${escHtml(features[i].desc)}</div>`;
     }
   }
 
@@ -607,10 +607,10 @@ function buildProcess(slide: SlideInput, p: ColorPalette): string {
     // Step number circle
     cardsHtml += `<div style="position:absolute;left:${cx + cardW / 2 - 20}px;top:${cardY + 20}px;width:40px;height:40px;border-radius:50%;background:${p.accent};display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:bold;color:#FFFFFF;text-align:center;line-height:40px">${String(steps[i].num).padStart(2, '0')}</div>`;
     // Title
-    cardsHtml += `<div style="position:absolute;left:${cx + 16}px;top:${cardY + 76}px;width:${cardW - 32}px;text-align:center;font-size:14px;font-weight:bold;color:${p.text}">${escHtml(steps[i].title)}</div>`;
+    cardsHtml += `<div style="position:absolute;left:${cx + 16}px;top:${cardY + 76}px;width:${cardW - 32}px;text-align:center;font-size:16px;font-weight:bold;color:${p.text}">${escHtml(steps[i].title)}</div>`;
     // Description
     if (steps[i].desc) {
-      cardsHtml += `<div style="position:absolute;left:${cx + 16}px;top:${cardY + 104}px;width:${cardW - 32}px;text-align:center;font-size:11px;line-height:1.5;color:${p.text};opacity:0.7">${escHtml(steps[i].desc)}</div>`;
+      cardsHtml += `<div style="position:absolute;left:${cx + 16}px;top:${cardY + 104}px;width:${cardW - 32}px;text-align:center;font-size:15px;line-height:1.5;color:${p.text};opacity:0.8">${escHtml(steps[i].desc)}</div>`;
     }
     // Connector arrow between cards
     if (i < count - 1) {
@@ -655,7 +655,7 @@ function buildProblem(slide: SlideInput, p: ColorPalette): string {
   }
 
   for (const line of dataLines) {
-    bodyHtml += `<div style="position:absolute;left:${PAD + 32}px;top:${ty}px;width:${W - PAD * 2 - 40}px;font-size:14px;line-height:1.6;color:${p.text};opacity:0.85;padding-left:12px;border-left:2px solid ${hexToRgba(barColor, 0.3)}">${escHtml(stripMarkdown(line))}</div>`;
+    bodyHtml += `<div style="position:absolute;left:${PAD + 32}px;top:${ty}px;width:${W - PAD * 2 - 40}px;font-size:16px;line-height:1.6;color:${p.text};opacity:0.85;padding-left:12px;border-left:2px solid ${hexToRgba(barColor, 0.3)}">${escHtml(stripMarkdown(line))}</div>`;
     ty += 48;
   }
 
@@ -682,7 +682,7 @@ function buildSolution(slide: SlideInput, p: ColorPalette): string {
   let bodyHtml = '';
   let ty = PAD + 100;
   for (const line of lines.slice(0, 6)) {
-    bodyHtml += `<div style="position:absolute;left:${PAD + 32}px;top:${ty}px;width:${W - PAD * 2 - 40}px;font-size:14px;line-height:1.6;color:${p.text};opacity:0.85;padding-left:12px;border-left:2px solid ${hexToRgba(barColor, 0.3)}">${escHtml(stripMarkdown(line))}</div>`;
+    bodyHtml += `<div style="position:absolute;left:${PAD + 32}px;top:${ty}px;width:${W - PAD * 2 - 40}px;font-size:16px;line-height:1.6;color:${p.text};opacity:0.85;padding-left:12px;border-left:2px solid ${hexToRgba(barColor, 0.3)}">${escHtml(stripMarkdown(line))}</div>`;
     ty += 48;
   }
 
@@ -824,7 +824,7 @@ function buildArchitecture(slide: SlideInput, p: ColorPalette): string {
     const desc = sep > -1 ? stripMarkdown(nodes[i].slice(sep + 1).trim()) : '';
 
     boxesHtml += `<div style="position:absolute;left:${cx}px;top:${boxY}px;width:${boxW}px;height:${boxH}px;background:${p.surface};border:1px solid ${p.border};border-radius:12px;border-top:4px solid ${p.accent}"></div>`;
-    boxesHtml += `<div style="position:absolute;left:${cx + 12}px;top:${boxY + (desc ? 12 : 24)}px;width:${boxW - 24}px;text-align:center;font-size:13px;font-weight:bold;color:${p.text}">${escHtml(title)}</div>`;
+    boxesHtml += `<div style="position:absolute;left:${cx + 12}px;top:${boxY + (desc ? 12 : 24)}px;width:${boxW - 24}px;text-align:center;font-size:15px;font-weight:bold;color:${p.text}">${escHtml(title)}</div>`;
     if (desc) {
       boxesHtml += `<div style="position:absolute;left:${cx + 12}px;top:${boxY + 36}px;width:${boxW - 24}px;text-align:center;font-size:10px;color:${p.text};opacity:0.7;line-height:1.4">${escHtml(desc)}</div>`;
     }
