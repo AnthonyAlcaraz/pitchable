@@ -11,30 +11,30 @@ export interface TierLimits {
 }
 
 /**
- * Credit economics (revised 2026-02-21):
+ * Credit economics (revised 2026-02-24, all Opus 4.6):
  *
- * Models: Sonnet 4.6 ($3/$15/MTok), Haiku 4.5 ($0.80/$4/MTok), Nano Banana Pro ($0.134/img)
+ * Models: Opus 4.6 ($15/$75/MTok, $1.875 cached input), Nano Banana Pro ($0.134/img)
  *
  * Cost per 12-slide deck (LLM):
- *   Outline (Sonnet):       ~$0.017
- *   Slide gen (Sonnet+Haiku, cached): ~$0.066
- *   Content reviewer (Haiku): ~$0.008
- *   Quality agents (Sonnet+Haiku): ~$0.12
- *   Intent classifier (Haiku): ~$0.001
- *   Total LLM:              ~$0.21
+ *   Outline (Opus):                ~$0.14
+ *   Slide gen (Opus x12, cached):  ~$0.76
+ *   Content reviewer (Opus):       ~$0.06
+ *   Quality agents (Opus):         ~$1.07
+ *   Intent classifier (Opus):      ~$0.02
+ *   Total LLM:                     ~$2.05
  *
- * Cost per image: ~$0.134 (Nano Banana Pro) + ~$0.001 critic (Haiku) = ~$0.135
- * Cost per illustrated deck (5 images): ~$0.21 + $0.675 = ~$0.89
+ * Cost per image: ~$0.134 (Nano Banana Pro) + ~$0.01 critic (Opus) = ~$0.14
+ * Cost per illustrated deck (5 images): ~$2.05 + $0.70 = ~$2.75
  *
- * Credit value: 1 credit = $0.25 user-facing
- * Free signup gift: 5 credits = $1.25 value (sample only, incentivizes upgrade)
- *   → Path A: outline (1) + deck (2) + 2 images (2) = 5 credits (no docs)
- *   → Path B: doc (1) + entities (1) + outline (1) + deck (2) = 5 credits (no images)
- *   → Either way: see the product, can't get the full experience
+ * Credit value: 1 credit ~= $0.50 user-facing
+ * Free signup gift: 5 credits = $2.50 value (sample only, incentivizes upgrade)
+ *   → Path A: outline (1) + deck (4) = 5 credits (no images, no docs)
+ *   → Path B: doc (1) + entities (1) + outline (1) + deck partial = can't finish
+ *   → See the product, must upgrade for full experience
  *
  * Credit deductions:
  *   Outline generation: 1 credit
- *   Deck execution: 2 credits (covers slides + review + quality agents)
+ *   Deck execution: 4 credits (covers slides + review + quality agents)
  *   Slide modification: 1 credit
  *   Image generation: 1 credit per image
  *   Document ingestion: 1 credit per document (flat)
@@ -47,20 +47,20 @@ export interface TierLimits {
  *
  * Pricing (targeting 50%+ margin):
  *   FREE       — 5 credits on signup (one-time), 1 deck max, 4 slides max, sample only
- *   STARTER    — $19/mo → 40 credits (6 illustrated decks, or 13 text-only)
- *   PRO        — $49/mo → 100 credits (16 illustrated, or 33 text-only)
+ *   STARTER    — $29/mo → 40 credits (4 illustrated decks, or 8 text-only)
+ *   PRO        — $79/mo → 100 credits (10 illustrated, or 20 text-only)
  *   ENTERPRISE — custom → 300 credits
  *
  * Margin at average usage:
- *   STARTER: $19 revenue - ~$6.00 cost = $13 profit (68%)
- *   PRO:     $49 revenue - ~$14 cost  = $35 profit (71%)
+ *   STARTER: $29 revenue - ~$11 cost = $18 profit (62%)
+ *   PRO:     $79 revenue - ~$27 cost = $52 profit (66%)
  */
 
 /** Credits deducted per outline generation (covers LLM + RAG costs). */
 export const OUTLINE_GENERATION_COST = 1;
 
 /** Credits deducted per deck execution after outline approval (covers slides + review + quality agents). */
-export const DECK_GENERATION_COST = 2;
+export const DECK_GENERATION_COST = 4;
 
 /** Credits deducted per single-slide modification or addition. */
 export const SLIDE_MODIFICATION_COST = 1;
@@ -71,10 +71,10 @@ export const OUTLINE_SLIDE_EDIT_COST = 1;
 /** Credits deducted per image generation. */
 export const IMAGE_GENERATION_COST = 1;
 
-/** Credits deducted per document entity extraction (Sonnet 4.6 LLM cost). */
+/** Credits deducted per document entity extraction (Opus 4.6 LLM cost). */
 export const ENTITY_EXTRACTION_COST = 1;
 
-/** Credits deducted per Figma AI template mapping (Sonnet 4.6 vision). */
+/** Credits deducted per Figma AI template mapping (Opus 4.6 vision). */
 export const FIGMA_AI_MAPPING_COST = 1;
 
 /** Credits deducted per document ingestion (flat rate regardless of size). */
@@ -99,15 +99,15 @@ export interface CreditPack {
 /**
  * One-time credit top-up packs. Priced above plan rates to incentivize upgrades.
  *
- *   Pack    $/credit   vs STARTER ($0.475)   vs PRO ($0.49)
- *   10cr    $0.80      +68%                  +63%
- *   25cr    $0.60      +26%                  +22%
- *   50cr    $0.50      +5%                   +2%
+ *   Pack    $/credit   vs STARTER ($0.725)   vs PRO ($0.79)
+ *   10cr    $1.30      +79%                  +65%
+ *   25cr    $1.00      +38%                  +27%
+ *   50cr    $0.80      +10%                  +1%
  */
 export const CREDIT_PACKS: CreditPack[] = [
-  { id: 'pack_10', credits: 10, priceCents: 799, label: '10 Credits' },
-  { id: 'pack_25', credits: 25, priceCents: 1499, label: '25 Credits' },
-  { id: 'pack_50', credits: 50, priceCents: 2499, label: '50 Credits' },
+  { id: 'pack_10', credits: 10, priceCents: 1299, label: '10 Credits' },
+  { id: 'pack_25', credits: 25, priceCents: 2499, label: '25 Credits' },
+  { id: 'pack_50', credits: 50, priceCents: 3999, label: '50 Credits' },
 ];
 
 export const TIER_LIMITS: Record<string, TierLimits> = {
