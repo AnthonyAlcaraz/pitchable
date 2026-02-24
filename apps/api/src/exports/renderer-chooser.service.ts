@@ -55,8 +55,10 @@ export class RendererChooserService {
    * Returns empty map on any failure — no export breakage.
    */
   async chooseRenderers(slides: SlideModel[]): Promise<Map<number, string>> {
+    // SPLIT_STATEMENT has its own scoped CSS — never override it
+    const SKIP_OVERRIDE = new Set([...FIGMA_GRADE_TYPES, 'SPLIT_STATEMENT', 'SECTION_DIVIDER', 'VISUAL_HUMOR', 'DATA_METRICS']);
     const candidates = slides.filter(
-      (s) => !FIGMA_GRADE_TYPES.has(s.slideType),
+      (s) => !SKIP_OVERRIDE.has(s.slideType),
     );
 
     if (candidates.length === 0) {

@@ -734,8 +734,9 @@ h3 { margin-top: 10px; font-size: 0.8em; }
 .evidence { font-size: 0.85em; }
 .evidence strong { display: block; font-size: 1.15em; margin-bottom: 4px; margin-top: 14px; }
 .evidence hr { border: none; border-top: 1px solid rgba(255,255,255,0.15); margin: 10px 0; }
-p, li { font-size: 0.95em; line-height: 1.55; }
+p, li { font-size: 0.95em; line-height: 1.55; text-align: center; }
 strong { font-size: 1.1em; }
+section { text-align: center; align-items: center; }
 </style>`,
     };
     if (scopedCSS[type]) {
