@@ -28,7 +28,7 @@ const H = 720;
 // Slide types that use Figma-grade HTML+SVG templates for superior visuals.
 export const FIGMA_GRADE_TYPES: Set<string> = new Set([
   'COMPARISON', 'TIMELINE', 'METRICS_HIGHLIGHT', 'MARKET_SIZING', 'TEAM', 'FEATURE_GRID',
-  'PROCESS', 'PROBLEM', 'SOLUTION', 'CTA', 'QUOTE', 'ARCHITECTURE',
+  'PROCESS', 'PROBLEM', 'SOLUTION', 'CTA', 'CONTENT', 'QUOTE', 'ARCHITECTURE',
 ]);
 
 // ── Helpers ──────────────────────────────────────────────────
@@ -568,8 +568,8 @@ function buildComparison(slide: SlideInput, p: ColorPalette, hasImage = false): 
     let y = cardY + 68;
     const limited = items.slice(0, maxItems);
     for (const item of limited) {
-      html += `<div style="position:absolute;left:${x + 24}px;top:${y}px;width:${colW - 48}px;font-size:22px;line-height:1.4;color:${p.text};opacity:0.85;overflow:hidden;text-overflow:ellipsis;word-wrap:break-word;max-height:48px">${bullet} ${escHtml(stripMarkdown(item))}</div>`;
-      y += 50;
+      html += `<div style="position:absolute;left:${x + 24}px;top:${y}px;width:${colW - 48}px;font-size:18px;line-height:1.4;color:${p.text};opacity:0.85;overflow:hidden;word-wrap:break-word;max-height:62px">${bullet} ${escHtml(stripMarkdown(item))}</div>`;
+      y += 56;
     }
     return html;
   }
@@ -821,10 +821,10 @@ function buildFeatureGrid(slide: SlideInput, p: ColorPalette, hasImage = false):
     // Icon placeholder
     html += `<div style="position:absolute;left:${cx + 24}px;top:${cy + 24}px;width:36px;height:36px;background:${p.primary};border-radius:8px;opacity:0.8"></div>`;
     // Title
-    html += `<div style="position:absolute;left:${cx + 24}px;top:${cy + 72}px;width:${cardW - 48}px;font-size:16px;font-weight:bold;color:${p.text}">${escHtml(features[i].title)}</div>`;
+    html += `<div style="position:absolute;left:${cx + 24}px;top:${cy + 72}px;width:${cardW - 48}px;font-size:15px;font-weight:bold;color:${p.text};overflow:hidden;max-height:20px;text-overflow:ellipsis;white-space:nowrap">${escHtml(features[i].title)}</div>`;
     // Description
     if (features[i].desc) {
-      html += `<div style="position:absolute;left:${cx + 24}px;top:${cy + 96}px;width:${cardW - 48}px;font-size:15px;line-height:1.5;color:${p.text};opacity:0.8">${escHtml(features[i].desc)}</div>`;
+      html += `<div style="position:absolute;left:${cx + 24}px;top:${cy + 96}px;width:${cardW - 48}px;font-size:14px;line-height:1.4;color:${p.text};opacity:0.8;overflow:hidden;max-height:52px">${escHtml(features[i].desc)}</div>`;
     }
   }
 
@@ -883,10 +883,10 @@ function buildProcess(slide: SlideInput, p: ColorPalette, hasImage = false): str
     // Step number circle
     cardsHtml += `<div style="position:absolute;left:${cx + cardW / 2 - 20}px;top:${cardY + 20}px;width:40px;height:40px;border-radius:50%;background:${p.accent};display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:bold;color:#FFFFFF;text-align:center;line-height:40px">${String(steps[i].num).padStart(2, '0')}</div>`;
     // Title
-    cardsHtml += `<div style="position:absolute;left:${cx + 16}px;top:${cardY + 76}px;width:${cardW - 32}px;text-align:center;font-size:16px;font-weight:bold;color:${p.text}">${escHtml(steps[i].title)}</div>`;
+    cardsHtml += `<div style="position:absolute;left:${cx + 16}px;top:${cardY + 76}px;width:${cardW - 32}px;text-align:center;font-size:15px;font-weight:bold;color:${p.text};overflow:hidden;max-height:40px">${escHtml(steps[i].title)}</div>`;
     // Description
     if (steps[i].desc) {
-      cardsHtml += `<div style="position:absolute;left:${cx + 16}px;top:${cardY + 104}px;width:${cardW - 32}px;text-align:center;font-size:15px;line-height:1.5;color:${p.text};opacity:0.8">${escHtml(steps[i].desc)}</div>`;
+      cardsHtml += `<div style="position:absolute;left:${cx + 16}px;top:${cardY + 104}px;width:${cardW - 32}px;text-align:center;font-size:14px;line-height:1.4;color:${p.text};opacity:0.8;overflow:hidden;max-height:${cardH - 130}px">${escHtml(steps[i].desc)}</div>`;
     }
     // Connector arrow between cards
     if (i < count - 1) {

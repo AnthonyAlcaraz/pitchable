@@ -589,6 +589,14 @@ export class MarpExporterService {
       lines.push(`<!-- _class: ${bgVariant.className}${layoutClass}${noImageSuffix} -->`);
       if (bgVariant.className === 'bg-callout-dark' && palette) {
         lines.push(`<!-- _backgroundColor: ${palette.surface} -->`);
+        lines.push(`<!-- _color: ${palette.text} -->`);
+      } else if (bgVariant.className === 'bg-section-divider') {
+        // Navy divider: always white text
+        lines.push('<!-- _backgroundColor: #051C2C -->');
+        lines.push('<!-- _color: #FFFFFF -->');
+      } else if (bgVariant.className === 'bg-accent-tint' && palette) {
+        // Tinted background: ensure text contrasts with the tinted surface
+        lines.push(`<!-- _color: ${palette.text} -->`);
       }
       lines.push('');
     }
