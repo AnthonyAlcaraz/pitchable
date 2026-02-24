@@ -165,6 +165,23 @@ interface ColorPalette {
   error: string;
 }
 
+function parseJpegDimensions(buf: Buffer): { width: number; height: number } | null {
+  let offset = 2; // skip SOI
+  while (offset < buf.length - 8) {
+    if (buf[offset] !== 0xFF) break;
+    const marker = buf[offset + 1];
+    // SOF0 (0xC0) or SOF2 (0xC2) — baseline or progressive
+    if (marker === 0xC0 || marker === 0xC2) {
+      const height = buf.readUInt16BE(offset + 5);
+      const width = buf.readUInt16BE(offset + 7);
+      return { width, height };
+    }
+    const segLen = buf.readUInt16BE(offset + 2);
+    offset += 2 + segLen;
+  }
+  return null;
+}
+
 @Injectable()
 export class MarpExporterService {
   private readonly logger = new Logger(MarpExporterService.name);
@@ -953,6 +970,60 @@ li { margin-bottom: 0.4em; }
     try { await (await import('fs/promises')).rmdir(tempDir); } catch { /* ignore */ }
 
     this.logger.log(`Rendered ${buffers.length} slide preview images`);
+
+    // Post-render validation (non-blocking — logs warnings, doesn't throw)
+    if (buffers.length > 0) {
+      const validation = this.validateRenderedSlides(buffers, buffers.length);
+      if (!validation.valid) {
+        this.logger.warn(`Slide render validation: ${validation.summary}`);
+        for (const r of validation.results.filter(r => !r.valid)) {
+          this.logger.warn(`  Slide ${r.slideIndex + 1}: ${r.issues.join(', ')}`);
+        }
+      }
+      this.logger.log(`Render validation: ${validation.summary}`);
+    }
+
     return buffers;
+  }
+
+  validateRenderedSlides(
+    buffers: Buffer[],
+    expectedCount: number,
+  ): { valid: boolean; results: Array<{ slideIndex: number; fileSize: number; valid: boolean; issues: string[] }>; summary: string } {
+    const results: Array<{ slideIndex: number; fileSize: number; valid: boolean; issues: string[] }> = [];
+
+    if (buffers.length !== expectedCount) {
+      return { valid: false, results: [], summary: `Expected ${expectedCount} slides, got ${buffers.length}` };
+    }
+
+    for (let i = 0; i < buffers.length; i++) {
+      const buf = buffers[i];
+      const issues: string[] = [];
+
+      const MIN_SLIDE_SIZE = 10_000;
+      if (buf.length < MIN_SLIDE_SIZE) {
+        issues.push(`Too small (${(buf.length / 1024).toFixed(1)}KB) — likely blank or broken`);
+      }
+
+      if (buf[0] !== 0xFF || buf[1] !== 0xD8) {
+        issues.push('Invalid JPEG header');
+      }
+
+      const dims = parseJpegDimensions(buf);
+      if (dims && (dims.width !== 1280 || dims.height !== 720)) {
+        issues.push(`Wrong dimensions: ${dims.width}x${dims.height}, expected 1280x720`);
+      }
+
+      results.push({ slideIndex: i, fileSize: buf.length, valid: issues.length === 0, issues });
+    }
+
+    const failCount = results.filter(r => !r.valid).length;
+    return {
+      valid: failCount === 0,
+      results,
+      summary: failCount === 0
+        ? `All ${buffers.length} slides valid (avg ${(buffers.reduce((a, b) => a + b.length, 0) / buffers.length / 1024).toFixed(1)}KB)`
+        : `${failCount}/${buffers.length} slides failed validation`,
+    };
   }
 }
