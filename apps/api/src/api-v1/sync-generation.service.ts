@@ -133,7 +133,9 @@ export class SyncGenerationService {
         title: input.topic.substring(0, 100),
         sourceContent: input.topic,
         presentationType:
-          (input.presentationType as PresentationType) ?? PresentationType.STANDARD,
+          Object.values(PresentationType).includes(input.presentationType as PresentationType)
+            ? (input.presentationType as PresentationType)
+            : PresentationType.STANDARD,
         status: PresentationStatus.PROCESSING,
         themeId,
         userId,

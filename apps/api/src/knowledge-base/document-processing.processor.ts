@@ -60,6 +60,8 @@ export class DocumentProcessingProcessor extends WorkerHost {
 
   async process(job: Job<DocumentProcessingJobData>): Promise<void> {
     const { documentId, userId, sourceType, mimeType, s3Key, rawText, url, fileBase64 } = job.data;
+    const t0 = Date.now();
+    const timing = (label: string, start: number) => this.logger.log(`[TIMING] Document ${documentId}: ${label} ${((Date.now() - start) / 1000).toFixed(1)}s`);
     this.logger.log(`Processing document ${documentId} (type: ${sourceType})`);
 
     try {
@@ -72,6 +74,7 @@ export class DocumentProcessingProcessor extends WorkerHost {
       this.emitProgress(userId, documentId, 'parsing', 10, 'Parsing document...');
 
       // 2. Extract text based on source type
+      const tParse = Date.now();
       let extractedText: string;
 
       if (sourceType === 'TEXT') {
@@ -103,6 +106,7 @@ export class DocumentProcessingProcessor extends WorkerHost {
       if (!extractedText || extractedText.trim().length === 0) {
         throw new Error('No text could be extracted from the document');
       }
+      timing('parse', tParse);
 
       // 2b. Compute and store document-level content hash
       const docHash = contentHash(extractedText);
@@ -130,6 +134,7 @@ export class DocumentProcessingProcessor extends WorkerHost {
       }
 
       // 3. Chunk the extracted text
+      const tChunk = Date.now();
       const chunks = chunkByHeadings(extractedText, {
         maxChunkSize: 2000,
         minChunkSize: 200,
@@ -157,6 +162,7 @@ export class DocumentProcessingProcessor extends WorkerHost {
         ),
       );
 
+      timing('chunk+store', tChunk);
       this.emitProgress(userId, documentId, 'storing_chunks', 45, 'Storing chunks...');
 
       // 5. Update status to EMBEDDING
@@ -223,46 +229,57 @@ export class DocumentProcessingProcessor extends WorkerHost {
 
       this.emitProgress(userId, documentId, 'indexing', 70, 'Indexing for retrieval...');
 
-      // 6. Index into ZeroEntropy (primary retrieval, non-fatal)
+      // 6+7. Index into ZeroEntropy + generate embeddings IN PARALLEL (both non-fatal)
+      const tIndex = Date.now();
+      const indexPromises: Promise<void>[] = [];
+
+      // 6. ZeroEntropy indexing (non-fatal)
       if (this.zeRetrieval.isAvailable()) {
-        try {
-          const collectionName = this.zeRetrieval.collectionNameForUser(userId);
-          await this.zeRetrieval.indexDocument(
-            collectionName,
-            documentId,
-            docTitle,
-            newChunks,
-          );
-        } catch (zeError) {
-          this.logger.warn(
-            `Document ${documentId}: ZeroEntropy indexing failed (non-fatal): ${zeError instanceof Error ? zeError.message : String(zeError)}`,
-          );
-        }
+        indexPromises.push(
+          (async () => {
+            const tZe = Date.now();
+            try {
+              const collectionName = this.zeRetrieval.collectionNameForUser(userId);
+              await this.zeRetrieval.indexDocument(collectionName, documentId, docTitle, newChunks);
+              timing('zeroentropy', tZe);
+            } catch (zeError) {
+              this.logger.warn(
+                `Document ${documentId}: ZeroEntropy indexing failed (non-fatal, ${((Date.now() - tZe) / 1000).toFixed(1)}s): ${zeError instanceof Error ? zeError.message : String(zeError)}`,
+              );
+            }
+          })(),
+        );
       }
 
-      this.emitProgress(userId, documentId, 'embedding', 85, 'Generating embeddings...');
-
-      // 7. Generate OpenAI embeddings for pgvector (fallback retrieval, non-fatal)
+      // 7. OpenAI embeddings for pgvector (non-fatal)
       if (this.embeddingService.isAvailable() && this.vectorStore.isAvailable()) {
-        try {
-          const texts = newChunks.map((c) => c.content);
-          const embeddings = await this.embeddingService.batchEmbed(texts);
-
-          if (embeddings.length > 0) {
-            const chunkEmbeddings = newChunks.map((chunk, i) => ({
-              chunkId: chunk.id,
-              embedding: embeddings[i],
-            }));
-            await this.vectorStore.updateChunkEmbeddings(documentId, chunkEmbeddings);
-          }
-        } catch (embedError) {
-          this.logger.warn(
-            `Document ${documentId}: embedding failed (non-fatal): ${embedError instanceof Error ? embedError.message : String(embedError)}`,
-          );
-        }
+        indexPromises.push(
+          (async () => {
+            const tEmbed = Date.now();
+            try {
+              const texts = newChunks.map((c) => c.content);
+              const embeddings = await this.embeddingService.batchEmbed(texts);
+              if (embeddings.length > 0) {
+                const chunkEmbeddings = newChunks.map((chunk, i) => ({
+                  chunkId: chunk.id,
+                  embedding: embeddings[i],
+                }));
+                await this.vectorStore.updateChunkEmbeddings(documentId, chunkEmbeddings);
+              }
+              timing('embeddings', tEmbed);
+            } catch (embedError) {
+              this.logger.warn(
+                `Document ${documentId}: embedding failed (non-fatal, ${((Date.now() - tEmbed) / 1000).toFixed(1)}s): ${embedError instanceof Error ? embedError.message : String(embedError)}`,
+              );
+            }
+          })(),
+        );
       } else {
         this.logger.log(`Document ${documentId}: skipping embeddings (vector store stubbed)`);
       }
+
+      await Promise.all(indexPromises);
+      timing('indexing (parallel)', tIndex);
 
       // 8. Update status to READY
       await this.prisma.document.update({
@@ -281,6 +298,7 @@ export class DocumentProcessingProcessor extends WorkerHost {
       await this.updateBriefStatusIfComplete(documentId);
 
       // 9. Extract entities and index into FalkorDB knowledge graph (non-blocking, costs 1 credit)
+      const tEntity = Date.now();
       if (this.falkordb.isEnabled()) {
         try {
           // Check if user has enough credits before extraction
@@ -364,7 +382,10 @@ export class DocumentProcessingProcessor extends WorkerHost {
             `Document ${documentId}: FalkorDB entity extraction/indexing failed (non-blocking): ${fkError instanceof Error ? fkError.message : String(fkError)}`,
           );
         }
+        timing('entity extraction', tEntity);
       }
+
+      timing('TOTAL', t0);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       this.logger.error(`Document ${documentId} processing failed: ${errorMessage}`);

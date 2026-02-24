@@ -602,7 +602,9 @@ OUTPUT: Valid JSON matching this schema (no markdown fences):
     yield { type: 'progress', content: `Building context from ${presForBrief?.briefId ? 'brief' : 'knowledge base'}`, metadata: { step: 'kb_context', status: 'complete' } };
 
     // 3. Update presentation metadata
-    const presType = config.presentationType as PresentationType ?? PresentationType.STANDARD;
+    const presType = Object.values(PresentationType).includes(config.presentationType as PresentationType)
+      ? (config.presentationType as PresentationType)
+      : PresentationType.STANDARD;
     await this.prisma.presentation.update({
       where: { id: presentationId },
       data: {
