@@ -435,7 +435,8 @@ function buildComparison(slide: SlideInput, p: ColorPalette): string {
     if (lines.length <= 3) {
       expandedLines = [];
       for (const line of lines) {
-        if (line.length > 60) {
+        // Split on periods even for shorter lines if we need more items
+        if (line.length > 40) {
           const parts = line.split(/(?<=\.)\s+|;\s*|,\s*(?:and|but|while|whereas)\s+/i).filter(Boolean);
           expandedLines.push(...parts);
         } else {
@@ -452,11 +453,11 @@ function buildComparison(slide: SlideInput, p: ColorPalette): string {
   if (leftLines.length > 0 && !/^[-•]/.test(leftLines[0])) leftTitle = leftLines.shift()!;
   if (rightLines.length > 0 && !/^[-•]/.test(rightLines[0])) rightTitle = rightLines.shift()!;
 
-  // If either side is completely empty after header extraction, use the title as a description line
-  if (leftLines.length === 0 && leftTitle !== 'Before') {
+  // If either side is completely empty after header extraction, populate with the title
+  if (leftLines.length === 0) {
     leftLines.push(leftTitle);
   }
-  if (rightLines.length === 0 && rightTitle !== 'After') {
+  if (rightLines.length === 0) {
     rightLines.push(rightTitle);
   }
 
