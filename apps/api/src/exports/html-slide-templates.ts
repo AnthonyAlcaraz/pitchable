@@ -112,6 +112,22 @@ function cardAccentColors(p: ColorPalette): string[] {
   return [p.accent, p.primary, p.secondary, p.success, p.warning, p.error].filter(Boolean);
 }
 
+// Extract numeric count from title ("Four Decisions..." → 4, "3 Key Steps" → 3)
+// Returns undefined if no count detected — caller decides whether to cap.
+function titleCountCap(title: string): number | undefined {
+  const wordMap: Record<string, number> = { two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8 };
+  const lower = title.toLowerCase();
+  for (const [word, num] of Object.entries(wordMap)) {
+    if (lower.includes(word)) return num;
+  }
+  const digitMatch = title.match(/\b(\d+)\b/);
+  if (digitMatch) {
+    const n = parseInt(digitMatch[1], 10);
+    if (n >= 2 && n <= 8) return n;
+  }
+  return undefined;
+}
+
 // ── Scoped reset injected into every Figma-grade slide ──────
 
 const SCOPED_RESET = `<style scoped>
@@ -255,7 +271,8 @@ function buildTimeline(slide: SlideInput, p: ColorPalette, hasImage = false): st
   const expanded = splitProseToItems(rawLines, 3)
     .map((l) => l.trim().replace(/^[→►▸➜]\s*/, ''))
     .filter((l) => l.trim().length >= 10);
-  const milestones = expanded.slice(0, 5).map((line, i) => {
+  const tlCap = titleCountCap(slide.title);
+  const milestones = expanded.slice(0, tlCap ? Math.min(tlCap, 5) : 5).map((line, i) => {
     const sep = line.indexOf(':');
     if (sep > -1 && sep < 40) return { date: line.slice(0, sep).trim(), text: line.slice(sep + 1).trim() };
     if (rawLines.length < 3) return { date: 'Phase ' + (i + 1), text: line };
@@ -303,7 +320,7 @@ function buildTimeline(slide: SlideInput, p: ColorPalette, hasImage = false): st
     // Description card BELOW the line — contained with max-height and overflow hidden
     const cardTop = lineY + 22;
     labelHtml += `<div style="position:absolute;left:${cx - cardW / 2}px;top:${cardTop}px;width:${cardW}px;height:${cardH}px;background:${hexToRgba(p.surface, 0.5)};border:1px solid ${hexToRgba(p.border, 0.3)};border-radius:10px;border-top:3px solid ${fill};overflow:hidden"></div>`;
-    labelHtml += `<div style="position:absolute;left:${cx - cardW / 2 + 10}px;top:${cardTop + 10}px;width:${cardW - 20}px;max-height:${cardH - 20}px;text-align:center;font-size:${textFontSz}px;line-height:1.4;color:${p.text};overflow:hidden">${escHtml(milestones[i].text)}</div>`;
+    labelHtml += `<div style="position:absolute;left:${cx - cardW / 2 + 10}px;top:${cardTop + 10}px;width:${cardW - 20}px;max-height:${cardH - 20}px;text-align:center;font-size:${textFontSz}px;line-height:1.4;color:${p.text};overflow:hidden"><span style="font-weight:600;color:${fill}">${escHtml(milestones[i].text.split(/\s+/).slice(0, 2).join(" "))}</span> ${escHtml(milestones[i].text.split(/\s+/).slice(2).join(" "))}</div>`;
   }
 
   return `${SCOPED_RESET}
@@ -480,7 +497,24 @@ interface ParsedTable {
 function parseMarkdownTable(body: string): ParsedTable | null {
   const lines = body.split('\n');
   const tableStartIdx = lines.findIndex((l) => /^\s*\|.+\|/.test(l));
-  if (tableStartIdx === -1) return null;
+  if (tableStartIdx === -1) {
+    // Fallback: detect em-dash separated tables (e.g., "Element — Annotation — Behavior")
+    // These arise when pipe tables get converted by parseBodyLines
+    const dashLines = lines.filter(l => (l.match(/ — /g) || []).length >= 2);
+    if (dashLines.length >= 3) {
+      const dashHeaders = dashLines[0].split(' — ').map(h => h.trim());
+      const dashRows = dashLines.slice(1).map(l => l.split(' — ').map(c => c.trim()));
+      const leadLines = lines.slice(0, lines.indexOf(dashLines[0])).filter(l => l.trim() && !/^#{1,3}\s/.test(l));
+      return {
+        headers: dashHeaders,
+        rows: dashRows,
+        leadText: leadLines.map(l => l.replace(/^[-\u2022*]\s*/, '').trim()).join(' ').trim(),
+        takeaway: '',
+        source: '',
+      };
+    }
+    return null;
+  }
 
   // Lead text = non-empty lines before the table (skip heading markers)
   const leadText = lines
@@ -915,8 +949,9 @@ function buildFeatureGrid(slide: SlideInput, p: ColorPalette, hasImage = false):
     lines = expanded;
   }
 
-  // Cap at 6 features max
-  lines = lines.slice(0, 6);
+  // Cap at title count or 6 features max
+  const fgCap = titleCountCap(slide.title);
+  lines = lines.slice(0, fgCap ? Math.min(fgCap, 6) : 6);
 
   const features = lines.map((line) => {
     const sep = line.indexOf(':');
@@ -968,7 +1003,7 @@ function buildFeatureGrid(slide: SlideInput, p: ColorPalette, hasImage = false):
     // Icon placeholder — uses card accent color
     html += `<div style="position:absolute;left:${cx + 20}px;top:${cy + 20}px;width:32px;height:32px;background:${cardColor};border-radius:8px;opacity:0.8"></div>`;
     // Title (allow 2-line wrap)
-    html += `<div style="position:absolute;left:${cx + 20}px;top:${cy + 64}px;width:${cardW - 40}px;font-size:${titleFontSz}px;font-weight:bold;color:${p.text};overflow:hidden;max-height:40px;line-height:1.3">${escHtml(features[i].title)}</div>`;
+    html += `<div style="position:absolute;left:${cx + 20}px;top:${cy + 64}px;width:${cardW - 40}px;font-size:${titleFontSz}px;font-weight:bold;color:${cardColor};overflow:hidden;max-height:40px;line-height:1.3">${escHtml(features[i].title)}</div>`;
     // Description
     if (features[i].desc) {
       html += `<div style="position:absolute;left:${cx + 20}px;top:${cy + 100}px;width:${cardW - 40}px;font-size:${descFontSz}px;line-height:1.4;color:${p.text};opacity:0.8;overflow:hidden;max-height:${descMaxH}px">${escHtml(features[i].desc)}</div>`;
@@ -1009,7 +1044,9 @@ function buildProcess(slide: SlideInput, p: ColorPalette, hasImage = false): str
     return { num: i + 1, title: stripMarkdown(cleaned), desc: '' };
   });
   // Filter out steps with empty titles after processing
-  const steps = rawSteps.filter((s) => s.title.length > 0).map((s, i) => ({ ...s, num: i + 1 }));
+  const unfilteredSteps = rawSteps.filter((s) => s.title.length > 0).map((s, i) => ({ ...s, num: i + 1 }));
+  const stepCap = titleCountCap(slide.title);
+  const steps = stepCap ? unfilteredSteps.slice(0, stepCap) : unfilteredSteps;
 
   if (steps.length === 0) {
     return `${SCOPED_RESET}
@@ -1046,7 +1083,7 @@ function buildProcess(slide: SlideInput, p: ColorPalette, hasImage = false): str
     // Step number circle — uses step accent color
     cardsHtml += `<div style="position:absolute;left:${cx + cardW / 2 - 20}px;top:${cy + 16}px;width:40px;height:40px;border-radius:50%;background:${stepColor};display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:bold;color:#FFFFFF;text-align:center;line-height:40px">${String(steps[i].num).padStart(2, '0')}</div>`;
     // Title
-    cardsHtml += `<div style="position:absolute;left:${cx + 16}px;top:${cy + 66}px;width:${cardW - 32}px;text-align:center;font-size:15px;font-weight:bold;color:${p.text};overflow:hidden;max-height:40px">${escHtml(steps[i].title)}</div>`;
+    cardsHtml += `<div style="position:absolute;left:${cx + 16}px;top:${cy + 66}px;width:${cardW - 32}px;text-align:center;font-size:15px;font-weight:bold;color:${stepColor};overflow:hidden;max-height:40px">${escHtml(steps[i].title)}</div>`;
     // Description
     if (steps[i].desc) {
       cardsHtml += `<div style="position:absolute;left:${cx + 16}px;top:${cy + 100}px;width:${cardW - 32}px;text-align:center;font-size:13px;line-height:1.4;color:${p.text};opacity:0.8;overflow:hidden;max-height:${cardH - 120}px">${escHtml(steps[i].desc)}</div>`;
@@ -1084,7 +1121,8 @@ function buildProblem(slide: SlideInput, p: ColorPalette, hasImage = false): str
   // Detect if first line looks like a table header (short, no numbers/dollar signs)
   const isHeader = lines.length > 2 && !/\d/.test(lines[0]) && !/[$€£¥]/.test(lines[0]) && lines[0].length < 60;
   const headerLine = isHeader ? lines[0] : null;
-  const dataLines = isHeader ? lines.slice(1, 7) : lines.slice(0, 6);
+  const probCap = titleCountCap(slide.title);
+  const dataLines = isHeader ? lines.slice(1, probCap ? probCap + 1 : 7) : lines.slice(0, probCap || 6);
 
   // Dynamic spacing: fit all items within available vertical space
   const startY = PAD + 100 + (headerLine ? 32 : 0);
@@ -1105,7 +1143,7 @@ function buildProblem(slide: SlideInput, p: ColorPalette, hasImage = false): str
 
   for (let pi = 0; pi < dataLines.length; pi++) {
     const itemColor = probAccents[pi % probAccents.length];
-    bodyHtml += `<div style="position:absolute;left:${PAD + 32}px;top:${ty}px;width:${cW - PAD * 2 - 80}px;max-height:${itemMaxH}px;font-size:${itemFontSz}px;line-height:1.5;color:${p.text};opacity:0.85;padding-left:12px;border-left:3px solid ${hexToRgba(itemColor, 0.6)};overflow:hidden">${escHtml(stripMarkdown(dataLines[pi]))}</div>`;
+    bodyHtml += `<div style="position:absolute;left:${PAD + 32}px;top:${ty}px;width:${cW - PAD * 2 - 80}px;max-height:${itemMaxH}px;font-size:${itemFontSz}px;line-height:1.5;color:${p.text};opacity:0.9;padding-left:12px;border-left:3px solid ${hexToRgba(itemColor, 0.7)};overflow:hidden"><span style=\"font-weight:600;color:${itemColor}\">${escHtml(stripMarkdown(dataLines[pi]).split(/\s+/).slice(0, 2).join(" "))}</span> ${escHtml(stripMarkdown(dataLines[pi]).split(/\s+/).slice(2).join(" "))}</div>`;
     ty += itemSpacing;
   }
 
@@ -1131,7 +1169,8 @@ function buildSolution(slide: SlideInput, p: ColorPalette, hasImage = false): st
   const lines = parseBodyLines(slide.body);
   const barColor = p.success || p.accent;
 
-  const solutionItems = lines.slice(0, 6);
+  const solCap = titleCountCap(slide.title);
+  const solutionItems = lines.slice(0, solCap || 6);
   const solStartY = PAD + 100;
   const solAvailH = H - solStartY - PAD - 10;
   const solSpacing = Math.min(76, Math.round(solAvailH / solutionItems.length));
@@ -1143,7 +1182,7 @@ function buildSolution(slide: SlideInput, p: ColorPalette, hasImage = false): st
   let ty = solStartY;
   for (let si = 0; si < solutionItems.length; si++) {
     const solItemColor = solAccents[si % solAccents.length];
-    bodyHtml += `<div style="position:absolute;left:${PAD + 32}px;top:${ty}px;width:${cW - PAD * 2 - 80}px;max-height:${solMaxH}px;font-size:${solFontSz}px;line-height:1.5;color:${p.text};opacity:0.85;padding-left:12px;border-left:3px solid ${hexToRgba(solItemColor, 0.6)};overflow:hidden">${escHtml(stripMarkdown(solutionItems[si]))}</div>`;
+    bodyHtml += `<div style="position:absolute;left:${PAD + 32}px;top:${ty}px;width:${cW - PAD * 2 - 80}px;max-height:${solMaxH}px;font-size:${solFontSz}px;line-height:1.5;color:${p.text};opacity:0.9;padding-left:12px;border-left:3px solid ${hexToRgba(solItemColor, 0.7)};overflow:hidden"><span style=\"font-weight:600;color:${solItemColor}\">${escHtml(stripMarkdown(solutionItems[si]).split(/\s+/).slice(0, 2).join(" "))}</span> ${escHtml(stripMarkdown(solutionItems[si]).split(/\s+/).slice(2).join(" "))}</div>`;
     ty += solSpacing;
   }
 
@@ -1208,7 +1247,8 @@ function buildCta(slide: SlideInput, p: ColorPalette, hasImage = false): string 
 function buildContent(slide: SlideInput, p: ColorPalette, hasImage = false): string {
   const cW = hasImage ? CONTENT_W_IMG : W;
   const lines = parseBodyLines(slide.body);
-  const items = lines.slice(0, 8);
+  const contCap = titleCountCap(slide.title);
+  const items = lines.slice(0, contCap || 8);
 
   // Dynamic card sizing — fit all items vertically
   const contentStartY = PAD + 100;
@@ -1226,7 +1266,7 @@ function buildContent(slide: SlideInput, p: ColorPalette, hasImage = false): str
   for (let ci = 0; ci < items.length; ci++) {
     const rowColor = contAccents[ci % contAccents.length];
     bodyHtml += `<div style="position:absolute;left:${PAD + 32}px;top:${ty}px;width:${cardW}px;height:${cardH}px;background:${hexToRgba(p.surface, 0.5)};border:1px solid ${hexToRgba(p.border, 0.3)};border-radius:10px;border-left:4px solid ${hexToRgba(rowColor, 0.7)};overflow:hidden"></div>`;
-    bodyHtml += `<div style="position:absolute;left:${PAD + 32 + cardPad}px;top:${ty + Math.round((cardH - fontSize * 1.45) / 2)}px;width:${cardW - cardPad * 2}px;max-height:${cardH - 12}px;font-size:${fontSize}px;line-height:1.45;color:${p.text};opacity:0.85;overflow:hidden">${escHtml(stripMarkdown(items[ci]))}</div>`;
+    bodyHtml += `<div style="position:absolute;left:${PAD + 32 + cardPad}px;top:${ty + Math.round((cardH - fontSize * 1.45) / 2)}px;width:${cardW - cardPad * 2}px;max-height:${cardH - 12}px;font-size:${fontSize}px;line-height:1.45;color:${p.text};opacity:0.9;overflow:hidden"><span style="font-weight:600;color:${rowColor}">${escHtml(stripMarkdown(items[ci]).split(/\s+/).slice(0, 2).join(" "))}</span> ${escHtml(stripMarkdown(items[ci]).split(/\s+/).slice(2).join(" "))}</div>`;
     ty += cardH + cardGap;
   }
 
@@ -1278,7 +1318,8 @@ function buildQuote(slide: SlideInput, p: ColorPalette, hasImage = false): strin
 function buildArchitecture(slide: SlideInput, p: ColorPalette, hasImage = false): string {
   const cW = hasImage ? CONTENT_W_IMG : W;
   const lines = parseBodyLines(slide.body);
-  const nodes = lines.slice(0, 6);
+  const archCap = titleCountCap(slide.title);
+  const nodes = lines.slice(0, archCap || 6);
 
   if (nodes.length === 0) {
     return `${SCOPED_RESET}
