@@ -106,7 +106,7 @@ function hexToRgba(hex: string, alpha: number): string {
 const SCOPED_RESET = `<style scoped>
 section { padding: 0 !important; display: block !important; overflow: visible !important; position: relative !important; }
 section > * { flex-shrink: unset; }
-section::after { position: absolute !important; bottom: 16px !important; right: 24px !important; font-size: 14px !important; opacity: 0.5; z-index: 10; }
+section::after { position: absolute !important; bottom: 14px !important; right: 20px !important; font-size: 12px !important; z-index: 50 !important; padding: 2px 8px !important; border-radius: 4px !important; }
 </style>`;
 
 // ── Image overlay for Figma-grade slides ─────────────────────

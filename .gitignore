@@ -39,3 +39,4 @@ check-slide-body.js
 *.log
 npm-debug.log*
 pnpm-debug.log*
+.gitnexus

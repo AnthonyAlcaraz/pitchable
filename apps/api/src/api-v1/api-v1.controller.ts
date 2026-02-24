@@ -83,7 +83,14 @@ export class ApiV1Controller {
   @RequireScopes('generation')
   @HttpCode(HttpStatus.CREATED)
   async generate(@CurrentUser() user: RequestUser, @Body() dto: GenerateDto) {
-    return this.syncGeneration.generate(user.userId, dto);
+    const result = await this.syncGeneration.generate(user.userId, dto);
+
+    // Auto-trigger preview rendering (non-blocking) so slides appear immediately in UI
+    if (result?.id) {
+      this.exportsService.generatePreviewsForPresentation(result.id).catch(() => {});
+    }
+
+    return result;
   }
 
   // -- Export ---------------------------------------------------------

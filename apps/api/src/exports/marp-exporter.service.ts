@@ -444,10 +444,15 @@ export class MarpExporterService {
       }
     }
 
+    const isDark = isDarkBackground(bg);
     frontmatter.push(
       '  section::after {',
-      `    color: ${isConsulting ? '#A0A0A0' : palette.border};`,
-      '    font-size: 0.6em;',
+      `    color: ${isDark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.45)'};`,
+      '    font-size: 12px;',
+      `    background: ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'};`,
+      '    padding: 2px 8px;',
+      '    border-radius: 4px;',
+      '    z-index: 50;',
       '  }',
       '  ul, ol { margin-top: 0.2em; margin-bottom: 0.2em; padding-left: 1.2em; }',
       '  ul { list-style-type: disc; }',

@@ -1335,6 +1335,7 @@ export class ExportsService {
     figmaBackgrounds?: Map<number, string>,
   ): Promise<void> {
     if (!theme) return;
+    const tPreview = Date.now();
 
     const sortedSlides = [...slides].sort((a, b) => a.slideNumber - b.slideNumber);
 
@@ -1349,6 +1350,7 @@ export class ExportsService {
     }
 
     // ── Phase A: Text-only previews (renders while images download) ──
+    const tPhaseA = Date.now();
     this.events.emitSlideUpdated({
       presentationId: presentation.id,
       slideId: sortedSlides[0]?.id ?? '',
@@ -1373,10 +1375,15 @@ export class ExportsService {
     if (textOnlyBuffers.length > 0) {
       await this.uploadAndEmitPreviews(presentation, sortedSlides, textOnlyBuffers);
     }
+    this.logger.log(`[TIMING] Preview Phase A (text-only render + upload): ${((Date.now() - tPhaseA) / 1000).toFixed(1)}s — ${sortedSlides.length} slides`);
 
     // ── Phase B: Full previews with images (downloads likely already complete) ──
-    if (!hasImages) return;
+    if (!hasImages) {
+      this.logger.log(`[TIMING] Preview total: ${((Date.now() - tPreview) / 1000).toFixed(1)}s (no images)`);
+      return;
+    }
 
+    const tPhaseB = Date.now();
     this.events.emitSlideUpdated({
       presentationId: presentation.id,
       slideId: sortedSlides[0]?.id ?? '',
@@ -1401,5 +1408,7 @@ export class ExportsService {
     }
 
     await this.cleanupSlideImages(previewTempDir);
+    this.logger.log(`[TIMING] Preview Phase B (image render + upload): ${((Date.now() - tPhaseB) / 1000).toFixed(1)}s`);
+    this.logger.log(`[TIMING] Preview total: ${((Date.now() - tPreview) / 1000).toFixed(1)}s — ${sortedSlides.length} slides, hasImages=${hasImages}`);
   }
 }
