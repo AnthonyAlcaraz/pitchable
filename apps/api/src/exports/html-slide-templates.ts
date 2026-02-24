@@ -242,10 +242,9 @@ function buildTimeline(slide: SlideInput, p: ColorPalette, hasImage = false): st
   const cW = hasImage ? CONTENT_W_IMG : W;
   const rawLines = parseBodyLines(slide.body);
   const expanded = splitProseToItems(rawLines, 3);
-  const milestones = expanded.map((line, i) => {
+  const milestones = expanded.slice(0, 5).map((line, i) => {
     const sep = line.indexOf(':');
-    if (sep > -1) return { date: line.slice(0, sep).trim(), text: line.slice(sep + 1).trim() };
-    // If no date found and we expanded prose, use index-based labels
+    if (sep > -1 && sep < 40) return { date: line.slice(0, sep).trim(), text: line.slice(sep + 1).trim() };
     if (rawLines.length < 3) return { date: 'Phase ' + (i + 1), text: line };
     return { date: '', text: line };
   });
@@ -257,30 +256,41 @@ function buildTimeline(slide: SlideInput, p: ColorPalette, hasImage = false): st
 </div>`;
   }
 
-  const visibleW = hasImage ? Math.round(W * 0.7) : W;  // 896 when image present
-  const lineY = Math.round(H * 0.55);  // 396
-  const lineStartX = PAD + 53;         // ~106
-  const lineEndX = visibleW - PAD - 53;  // 790 when image vs 1174
   const count = milestones.length;
+  const visibleW = hasImage ? Math.round(W * 0.7) : W;
+  const lineY = Math.round(H * 0.42);
+  const lineStartX = PAD + 40;
+  const lineEndX = visibleW - PAD - 40;
   const spacing = (lineEndX - lineStartX) / (count - 1 || 1);
-  const nodeR = 8;
+  const nodeR = 10;
+
+  // Card dimensions — fill available space
+  const cardW = Math.min(220, Math.round((lineEndX - lineStartX) / count - 8));
+  const cardH = Math.round(H - lineY - 40 - PAD);
+  const dateFontSz = count <= 3 ? 13 : 11;
+  const textFontSz = count <= 3 ? 14 : 12;
 
   let nodesSvg = '';
   let labelHtml = '';
 
   for (let i = 0; i < count; i++) {
-    const cx = count === 1 ? cW / 2 : lineStartX + i * spacing;
+    const cx = count === 1 ? Math.round(cW / 2) : Math.round(lineStartX + i * spacing);
     const isLast = i === count - 1;
     const fill = isLast ? p.accent : p.primary;
 
-    nodesSvg += `<circle cx="${Math.round(cx)}" cy="${lineY}" r="${nodeR}" fill="${fill}" />`;
+    // Outer ring + filled center
+    nodesSvg += `<circle cx="${cx}" cy="${lineY}" r="${nodeR + 4}" fill="${hexToRgba(fill, 0.15)}" />`;
+    nodesSvg += `<circle cx="${cx}" cy="${lineY}" r="${nodeR}" fill="${fill}" />`;
 
-    const dateW = hasImage ? 120 : 160;
-    const textW = hasImage ? 140 : 180;
+    // Date label ABOVE the line
     if (milestones[i].date) {
-      labelHtml += `<div style="position:absolute;left:${Math.round(cx - dateW / 2)}px;top:${lineY - 50}px;width:${dateW}px;text-align:center;font-size:${hasImage ? 12 : 14}px;font-weight:bold;color:${p.primary};letter-spacing:1px">${escHtml(milestones[i].date)}</div>`;
+      labelHtml += `<div style="position:absolute;left:${cx - cardW / 2}px;top:${lineY - 36}px;width:${cardW}px;text-align:center;font-size:${dateFontSz}px;font-weight:bold;color:${p.primary};letter-spacing:0.5px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${escHtml(milestones[i].date)}</div>`;
     }
-    labelHtml += `<div style="position:absolute;left:${Math.round(cx - textW / 2)}px;top:${lineY + 24}px;width:${textW}px;text-align:center;font-size:${hasImage ? 12 : 14}px;line-height:1.4;color:${p.text};opacity:0.8">${escHtml(milestones[i].text)}</div>`;
+
+    // Description card BELOW the line — contained with max-height and overflow hidden
+    const cardTop = lineY + 22;
+    labelHtml += `<div style="position:absolute;left:${cx - cardW / 2}px;top:${cardTop}px;width:${cardW}px;height:${cardH}px;background:${hexToRgba(p.surface, 0.5)};border:1px solid ${hexToRgba(p.border, 0.3)};border-radius:10px;border-top:3px solid ${fill};overflow:hidden"></div>`;
+    labelHtml += `<div style="position:absolute;left:${cx - cardW / 2 + 10}px;top:${cardTop + 10}px;width:${cardW - 20}px;max-height:${cardH - 20}px;text-align:center;font-size:${textFontSz}px;line-height:1.4;color:${p.text};overflow:hidden">${escHtml(milestones[i].text)}</div>`;
   }
 
   return `${SCOPED_RESET}
@@ -937,6 +947,13 @@ function buildProblem(slide: SlideInput, p: ColorPalette, hasImage = false): str
   const headerLine = isHeader ? lines[0] : null;
   const dataLines = isHeader ? lines.slice(1, 7) : lines.slice(0, 6);
 
+  // Dynamic spacing: fit all items within available vertical space
+  const startY = PAD + 100 + (headerLine ? 32 : 0);
+  const availH = H - startY - PAD - 10;
+  const itemSpacing = Math.min(76, Math.round(availH / dataLines.length));
+  const itemMaxH = itemSpacing - 8;
+  const itemFontSz = dataLines.length > 4 ? 14 : 16;
+
   let bodyHtml = '';
   let ty = PAD + 100;
 
@@ -947,8 +964,8 @@ function buildProblem(slide: SlideInput, p: ColorPalette, hasImage = false): str
   }
 
   for (const line of dataLines) {
-    bodyHtml += `<div style="position:absolute;left:${PAD + 32}px;top:${ty}px;width:${cW - PAD * 2 - 80}px;font-size:16px;line-height:1.6;color:${p.text};opacity:0.85;padding-left:12px;border-left:2px solid ${hexToRgba(barColor, 0.3)}">${escHtml(stripMarkdown(line))}</div>`;
-    ty += 76;
+    bodyHtml += `<div style="position:absolute;left:${PAD + 32}px;top:${ty}px;width:${cW - PAD * 2 - 80}px;max-height:${itemMaxH}px;font-size:${itemFontSz}px;line-height:1.5;color:${p.text};opacity:0.85;padding-left:12px;border-left:2px solid ${hexToRgba(barColor, 0.3)};overflow:hidden">${escHtml(stripMarkdown(line))}</div>`;
+    ty += itemSpacing;
   }
 
   return `${SCOPED_RESET}
@@ -972,11 +989,18 @@ function buildSolution(slide: SlideInput, p: ColorPalette, hasImage = false): st
   const lines = parseBodyLines(slide.body);
   const barColor = p.success || p.accent;
 
+  const solutionItems = lines.slice(0, 6);
+  const solStartY = PAD + 100;
+  const solAvailH = H - solStartY - PAD - 10;
+  const solSpacing = Math.min(76, Math.round(solAvailH / solutionItems.length));
+  const solMaxH = solSpacing - 8;
+  const solFontSz = solutionItems.length > 4 ? 14 : 16;
+
   let bodyHtml = '';
-  let ty = PAD + 100;
-  for (const line of lines.slice(0, 6)) {
-    bodyHtml += `<div style="position:absolute;left:${PAD + 32}px;top:${ty}px;width:${cW - PAD * 2 - 80}px;font-size:16px;line-height:1.6;color:${p.text};opacity:0.85;padding-left:12px;border-left:2px solid ${hexToRgba(barColor, 0.3)}">${escHtml(stripMarkdown(line))}</div>`;
-    ty += 76;
+  let ty = solStartY;
+  for (const line of solutionItems) {
+    bodyHtml += `<div style="position:absolute;left:${PAD + 32}px;top:${ty}px;width:${cW - PAD * 2 - 80}px;max-height:${solMaxH}px;font-size:${solFontSz}px;line-height:1.5;color:${p.text};opacity:0.85;padding-left:12px;border-left:2px solid ${hexToRgba(barColor, 0.3)};overflow:hidden">${escHtml(stripMarkdown(line))}</div>`;
+    ty += solSpacing;
   }
 
   return `${SCOPED_RESET}
@@ -1107,34 +1131,52 @@ function buildArchitecture(slide: SlideInput, p: ColorPalette, hasImage = false)
   }
 
   const count = nodes.length;
-  const boxW = 180;
-  const boxH = 80;
-  const gapX = 32;
-  const totalW = count * boxW + (count - 1) * gapX;
+  // 2-row grid for 5+ nodes; single row for 1-4
+  const useRows = count >= 5;
+  const cols = useRows ? Math.ceil(count / 2) : count;
+  const rowCount = useRows ? 2 : 1;
+  const gapX = 28;
+  const gapY = 24;
+  // Dynamic box width — fill available horizontal space
+  const boxW = Math.min(280, Math.round((cW - PAD * 2 - (cols - 1) * gapX) / cols));
+  const boxH = useRows ? 120 : (count <= 3 ? 160 : 120);
+  const totalW = cols * boxW + (cols - 1) * gapX;
+  const totalH = rowCount * boxH + (rowCount - 1) * gapY;
   const startX = Math.round((cW - totalW) / 2);
-  const boxY = Math.round(H * 0.4);
+  const startY = Math.round(PAD + 90 + (H - PAD * 2 - 90 - totalH) / 2);
 
   let boxesHtml = '';
   let connectorsSvg = '';
 
   for (let i = 0; i < count; i++) {
-    const cx = startX + i * (boxW + gapX);
-    // Parse "title: description" format
+    const col = useRows ? (i % cols) : i;
+    const row = useRows ? Math.floor(i / cols) : 0;
+    const cx = startX + col * (boxW + gapX);
+    const cy = startY + row * (boxH + gapY);
     const sep = nodes[i].indexOf(':');
-    const title = sep > -1 ? stripMarkdown(nodes[i].slice(0, sep).trim()) : stripMarkdown(nodes[i]);
-    const desc = sep > -1 ? stripMarkdown(nodes[i].slice(sep + 1).trim()) : '';
+    const title = sep > -1 && sep < 50 ? stripMarkdown(nodes[i].slice(0, sep).trim()) : stripMarkdown(nodes[i]);
+    const desc = sep > -1 && sep < 50 ? stripMarkdown(nodes[i].slice(sep + 1).trim()) : '';
+    const descMaxH = boxH - 56;
+    const titleFSz = boxH >= 140 ? 16 : 14;
+    const descFSz = boxH >= 140 ? 14 : 12;
 
-    boxesHtml += `<div style="position:absolute;left:${cx}px;top:${boxY}px;width:${boxW}px;height:${boxH}px;background:${p.surface};border:1px solid ${p.border};border-radius:12px;border-top:4px solid ${p.accent}"></div>`;
-    boxesHtml += `<div style="position:absolute;left:${cx + 12}px;top:${boxY + (desc ? 12 : 24)}px;width:${boxW - 24}px;text-align:center;font-size:15px;font-weight:bold;color:${p.text}">${escHtml(title)}</div>`;
+    boxesHtml += `<div style="position:absolute;left:${cx}px;top:${cy}px;width:${boxW}px;height:${boxH}px;background:${p.surface};border:1px solid ${p.border};border-radius:12px;border-top:4px solid ${p.accent};box-shadow:0 2px 8px rgba(0,0,0,0.08);overflow:hidden"></div>`;
+    boxesHtml += `<div style="position:absolute;left:${cx + 14}px;top:${cy + (desc ? 14 : Math.round(boxH / 2 - 10))}px;width:${boxW - 28}px;text-align:center;font-size:${titleFSz}px;font-weight:bold;color:${p.text};overflow:hidden;max-height:38px;line-height:1.3">${escHtml(title)}</div>`;
     if (desc) {
-      boxesHtml += `<div style="position:absolute;left:${cx + 12}px;top:${boxY + 36}px;width:${boxW - 24}px;text-align:center;font-size:13px;color:${p.text};opacity:0.7;line-height:1.4">${escHtml(desc)}</div>`;
+      boxesHtml += `<div style="position:absolute;left:${cx + 14}px;top:${cy + 42}px;width:${boxW - 28}px;text-align:center;font-size:${descFSz}px;color:${p.text};opacity:0.7;line-height:1.4;overflow:hidden;max-height:${descMaxH}px">${escHtml(desc)}</div>`;
     }
 
-    // Connector arrow
-    if (i < count - 1) {
+    // Horizontal connector arrows within same row
+    if (!useRows && i < count - 1) {
       const x1 = cx + boxW + 2;
       const x2 = cx + boxW + gapX - 2;
-      const ay = boxY + boxH / 2;
+      const ay = cy + boxH / 2;
+      connectorsSvg += `<line x1="${x1}" y1="${ay}" x2="${x2}" y2="${ay}" stroke="${p.border}" stroke-width="2" marker-end="url(#arch-arrow)" />`;
+    }
+    if (useRows && col < cols - 1 && i + 1 < count && Math.floor((i + 1) / cols) === row) {
+      const x1 = cx + boxW + 2;
+      const x2 = cx + boxW + gapX - 2;
+      const ay = cy + boxH / 2;
       connectorsSvg += `<line x1="${x1}" y1="${ay}" x2="${x2}" y2="${ay}" stroke="${p.border}" stroke-width="2" marker-end="url(#arch-arrow)" />`;
     }
   }
