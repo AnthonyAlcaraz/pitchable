@@ -60,8 +60,8 @@ function parseBodyLines(body: string): string[] {
       if (/^\s*\|/.test(cleaned)) {
         cleaned = cleaned.replace(/^\s*\|/, '').replace(/\|\s*$/, '').replace(/\|/g, ' — ').trim();
       }
-      // Strip HTML tags, bullet markers, markdown formatting
-      cleaned = cleaned.replace(/^[-•*]\s*/, '').replace(/<[^>]*>/g, '').trim();
+      // Strip HTML tags, bullet markers, arrow prefixes, markdown formatting
+      cleaned = cleaned.replace(/^[-•*→►▸➜]\s*/, '').replace(/<[^>]*>/g, '').trim();
       return stripMarkdown(cleaned);
     })
     .filter(Boolean)
@@ -100,6 +100,11 @@ function hexToRgba(hex: string, alpha: number): string {
   const g = parseInt(c.slice(2, 4), 16);
   const b = parseInt(c.slice(4, 6), 16);
   return `rgba(${r},${g},${b},${alpha})`;
+}
+
+// Subtle radial gradient overlay — adds depth and polish to slide backgrounds
+function bgGradientOverlay(w: number, h: number, color: string, alpha = 0.05, posY = '35%'): string {
+  return `<div style="position:absolute;left:0;top:0;width:${w}px;height:${h}px;background:radial-gradient(ellipse 80% 70% at 50% ${posY},${hexToRgba(color, alpha)} 0%,transparent 70%);pointer-events:none"></div>`;
 }
 
 // ── Scoped reset injected into every Figma-grade slide ──────
@@ -225,6 +230,7 @@ function buildMarketSizing(slide: SlideInput, p: ColorPalette, hasImage = false)
 
   return `${SCOPED_RESET}
 <div style="position:relative;width:${W}px;height:${H}px;background:${p.background};">
+  ${bgGradientOverlay(cW, H, p.primary, 0.04, '50%')}
   <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${Math.round(cW * 0.45)}px;font-size:${titleFontSize(slide.title)}px;font-weight:bold;overflow-wrap:break-word;word-wrap:break-word;color:${p.text};line-height:1.2">${escHtml(slide.title)}</div>
   <div style="position:absolute;left:${PAD}px;top:${PAD + 56}px;width:50px;height:3px;background:${p.accent};border-radius:2px"></div>
   ${bodyHtml}
@@ -242,7 +248,7 @@ function buildTimeline(slide: SlideInput, p: ColorPalette, hasImage = false): st
   const cW = hasImage ? CONTENT_W_IMG : W;
   const rawLines = parseBodyLines(slide.body);
   const expanded = splitProseToItems(rawLines, 3)
-    .filter((l) => !/^[→►▸➜]/.test(l.trim()))
+    .map((l) => l.trim().replace(/^[→►▸➜]\s*/, ''))
     .filter((l) => l.trim().length >= 10);
   const milestones = expanded.slice(0, 5).map((line, i) => {
     const sep = line.indexOf(':');
@@ -297,6 +303,7 @@ function buildTimeline(slide: SlideInput, p: ColorPalette, hasImage = false): st
 
   return `${SCOPED_RESET}
 <div style="position:relative;width:${W}px;height:${H}px;background:${p.background};">
+  ${bgGradientOverlay(cW, H, p.primary, 0.04, '50%')}
   <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;text-align:center;font-size:${titleFontSize(slide.title)}px;font-weight:bold;overflow-wrap:break-word;word-wrap:break-word;color:${p.text};line-height:1.2">${escHtml(slide.title)}</div>
   <div style="position:absolute;left:${Math.round((cW - 60) / 2)}px;top:${PAD + 56}px;width:60px;height:3px;background:${p.accent};border-radius:2px"></div>
   <svg style="position:absolute;left:0;top:0" width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg">
@@ -594,6 +601,7 @@ function buildComparison(slide: SlideInput, p: ColorPalette, hasImage = false): 
 
   return `${SCOPED_RESET}
 <div style="position:relative;width:${W}px;height:${H}px;background:${p.background};">
+  ${bgGradientOverlay(cW, H, p.accent, 0.04, '40%')}
   <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;text-align:center;font-size:${titleFontSize(slide.title)}px;font-weight:bold;overflow-wrap:break-word;word-wrap:break-word;color:${p.text};line-height:1.2">${escHtml(slide.title)}</div>
   <div style="position:absolute;left:${Math.round((cW - 60) / 2)}px;top:${PAD + 56}px;width:60px;height:3px;background:${p.accent};border-radius:2px"></div>
   <div style="position:absolute;left:${PAD}px;top:${cardY}px;width:${colW}px;height:${cardH}px;background:${p.surface};border:1px solid ${p.border};border-radius:16px;box-shadow:0 2px 8px rgba(0,0,0,0.08)"></div>
@@ -689,6 +697,7 @@ function buildComparisonTable(slide: SlideInput, p: ColorPalette, table: ParsedT
 
   return `${SCOPED_RESET}
 <div style="position:relative;width:${W}px;height:${H}px;background:${p.background};">
+  ${bgGradientOverlay(cW, H, p.primary, 0.03)}
   ${html}
 </div>`;
 }
@@ -849,6 +858,7 @@ function buildFeatureGrid(slide: SlideInput, p: ColorPalette, hasImage = false):
 
   return `${SCOPED_RESET}
 <div style="position:relative;width:${W}px;height:${H}px;background:${p.background};">
+  ${bgGradientOverlay(cW, H, p.accent, 0.04)}
   <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;text-align:center;font-size:${titleFontSize(slide.title)}px;font-weight:bold;overflow-wrap:break-word;word-wrap:break-word;color:${p.text};line-height:1.2">${escHtml(slide.title)}</div>
   <div style="position:absolute;left:${Math.round((cW - 60) / 2)}px;top:${PAD + 56}px;width:60px;height:3px;background:${p.accent};border-radius:2px"></div>
   ${html}
@@ -862,9 +872,10 @@ function buildProcess(slide: SlideInput, p: ColorPalette, hasImage = false): str
   const cW = hasImage ? CONTENT_W_IMG : W;
   const rawLines = parseBodyLines(slide.body);
   const lines = splitProseToItems(rawLines, 3)
-    // Filter out CTA-style lines, trailing fragments, and arrow markers
-    .filter((l) => !/^[→►▸➜]/.test(l.trim()))
-    .filter((l) => !/^(get started|start |learn more|contact|sign up|next step)/i.test(l.trim()))
+    // Strip arrow prefixes (→/►/▸/➜) from step lines — they're content, not CTA
+    .map((l) => l.trim().replace(/^[→►▸➜]\s*/, ''))
+    // Filter out short CTA-style lines only
+    .filter((l) => !/^(get started|start sprint|learn more|contact us|sign up|next step)/i.test(l.trim()))
     .filter((l) => l.trim().length >= 10);  // skip very short fragments
   const rawSteps = lines.map((line, i) => {
     const numMatch = line.match(/^\d+\.\s*/);
@@ -930,6 +941,7 @@ function buildProcess(slide: SlideInput, p: ColorPalette, hasImage = false): str
 
   return `${SCOPED_RESET}
 <div style="position:relative;width:${W}px;height:${H}px;background:${p.background};">
+  ${bgGradientOverlay(cW, H, p.primary, 0.04)}
   <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;text-align:center;font-size:${titleFontSize(slide.title)}px;font-weight:bold;overflow-wrap:break-word;word-wrap:break-word;color:${p.text};line-height:1.2">${escHtml(slide.title)}</div>
   <div style="position:absolute;left:${Math.round((cW - 60) / 2)}px;top:${PAD + 56}px;width:60px;height:3px;background:${p.accent};border-radius:2px"></div>
   ${cardsHtml}
@@ -976,6 +988,7 @@ function buildProblem(slide: SlideInput, p: ColorPalette, hasImage = false): str
 
   return `${SCOPED_RESET}
 <div style="position:relative;width:${W}px;height:${H}px;background:${p.background};">
+  ${bgGradientOverlay(cW, H, barColor, 0.04, '30%')}
   <div style="position:absolute;left:0;top:0;width:6px;height:${H}px;background:${barColor}"></div>
   <svg style="position:absolute;left:${PAD + 4}px;top:${PAD}px" width="32" height="32" xmlns="http://www.w3.org/2000/svg">
     <polygon points="16,2 30,28 2,28" fill="none" stroke="${barColor}" stroke-width="2"/>
@@ -1011,6 +1024,7 @@ function buildSolution(slide: SlideInput, p: ColorPalette, hasImage = false): st
 
   return `${SCOPED_RESET}
 <div style="position:relative;width:${W}px;height:${H}px;background:${p.background};">
+  ${bgGradientOverlay(cW, H, barColor, 0.04, '30%')}
   <div style="position:absolute;left:0;top:0;width:6px;height:${H}px;background:${barColor}"></div>
   <svg style="position:absolute;left:${PAD + 4}px;top:${PAD}px" width="32" height="32" xmlns="http://www.w3.org/2000/svg">
     <circle cx="16" cy="16" r="14" fill="none" stroke="${barColor}" stroke-width="2"/>
@@ -1091,6 +1105,7 @@ function buildContent(slide: SlideInput, p: ColorPalette, hasImage = false): str
 
   return `${SCOPED_RESET}
 <div style="position:relative;width:${W}px;height:${H}px;background:${p.background};">
+  ${bgGradientOverlay(cW, H, p.accent, 0.04, '40%')}
   <div style="position:absolute;left:${PAD}px;top:0;width:4px;height:${H}px;background:${p.accent}"></div>
   <div style="position:absolute;left:${PAD + 20}px;top:${PAD}px;font-size:${titleFontSize(slide.title)}px;font-weight:bold;overflow-wrap:break-word;word-wrap:break-word;color:${p.text};line-height:1.2">${escHtml(slide.title)}</div>
   <div style="position:absolute;left:${PAD + 20}px;top:${PAD + 48}px;width:60px;height:3px;background:${p.accent};border-radius:2px"></div>
@@ -1122,6 +1137,7 @@ function buildQuote(slide: SlideInput, p: ColorPalette, hasImage = false): strin
 
   return `${SCOPED_RESET}
 <div style="position:relative;width:${W}px;height:${H}px;background:${p.background};">
+  ${bgGradientOverlay(cW, H, p.accent, 0.05, '50%')}
   <div style="position:absolute;left:${PAD + 40}px;top:${quoteY - 80}px;font-size:160px;font-family:Georgia,serif;color:${p.accent};opacity:0.2;line-height:1">\u201C</div>
   <div style="position:absolute;left:${PAD + 80}px;top:${quoteY}px;width:${cW - PAD * 2 - 160}px;font-size:${fontSize}px;font-style:italic;line-height:1.5;color:${p.text};text-align:center">${escHtml(quoteText)}</div>
   ${attribution ? `<div style="position:absolute;left:${PAD + 80}px;bottom:${PAD + 60}px;width:${cW - PAD * 2 - 160}px;font-size:14px;color:${p.text};opacity:0.6;text-align:center;letter-spacing:0.04em">\u2014 ${escHtml(attribution)}</div>` : ''}
@@ -1197,6 +1213,7 @@ function buildArchitecture(slide: SlideInput, p: ColorPalette, hasImage = false)
 
   return `${SCOPED_RESET}
 <div style="position:relative;width:${W}px;height:${H}px;background:${p.background};">
+  ${bgGradientOverlay(cW, H, p.primary, 0.04, '45%')}
   <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;text-align:center;font-size:${titleFontSize(slide.title)}px;font-weight:bold;overflow-wrap:break-word;word-wrap:break-word;color:${p.text};line-height:1.2">${escHtml(slide.title)}</div>
   <div style="position:absolute;left:${Math.round((cW - 60) / 2)}px;top:${PAD + 56}px;width:60px;height:3px;background:${p.accent};border-radius:2px"></div>
   ${boxesHtml}
