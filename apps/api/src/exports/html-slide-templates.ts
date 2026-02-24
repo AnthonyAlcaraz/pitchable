@@ -149,7 +149,7 @@ function buildMarketSizing(slide: SlideInput, p: ColorPalette): string {
   let bodyHtml = '';
   let ty = PAD + 80;
   for (const line of lines) {
-    bodyHtml += `<div style="position:absolute;left:${PAD}px;top:${ty}px;width:${Math.round(W * 0.4)}px;font-size:13px;line-height:1.5;opacity:0.85;color:${p.text}">${escHtml(line)}</div>`;
+    bodyHtml += `<div style="position:absolute;left:${PAD}px;top:${ty}px;width:${Math.round(W * 0.4)}px;font-size:15px;line-height:1.5;opacity:0.85;color:${p.text}">${escHtml(line)}</div>`;
     ty += 38;
   }
 
@@ -212,9 +212,9 @@ function buildTimeline(slide: SlideInput, p: ColorPalette, hasImage = false): st
     const dateW = hasImage ? 120 : 160;
     const textW = hasImage ? 140 : 180;
     if (milestones[i].date) {
-      labelHtml += `<div style="position:absolute;left:${Math.round(cx - dateW / 2)}px;top:${lineY - 50}px;width:${dateW}px;text-align:center;font-size:${hasImage ? 11 : 12}px;font-weight:bold;color:${p.primary};letter-spacing:1px">${escHtml(milestones[i].date)}</div>`;
+      labelHtml += `<div style="position:absolute;left:${Math.round(cx - dateW / 2)}px;top:${lineY - 50}px;width:${dateW}px;text-align:center;font-size:${hasImage ? 12 : 14}px;font-weight:bold;color:${p.primary};letter-spacing:1px">${escHtml(milestones[i].date)}</div>`;
     }
-    labelHtml += `<div style="position:absolute;left:${Math.round(cx - textW / 2)}px;top:${lineY + 24}px;width:${textW}px;text-align:center;font-size:${hasImage ? 10 : 11}px;line-height:1.4;color:${p.text};opacity:0.8">${escHtml(milestones[i].text)}</div>`;
+    labelHtml += `<div style="position:absolute;left:${Math.round(cx - textW / 2)}px;top:${lineY + 24}px;width:${textW}px;text-align:center;font-size:${hasImage ? 12 : 14}px;line-height:1.4;color:${p.text};opacity:0.8">${escHtml(milestones[i].text)}</div>`;
   }
 
   return `${SCOPED_RESET}
@@ -375,7 +375,7 @@ function buildComparison(slide: SlideInput, p: ColorPalette): string {
     let y = cardY + 68;
     const limited = items.slice(0, maxItems);
     for (const item of limited) {
-      html += `<div style="position:absolute;left:${x + 24}px;top:${y}px;width:${colW - 48}px;font-size:13px;line-height:1.5;color:${p.text};opacity:0.85;overflow:hidden;text-overflow:ellipsis;word-wrap:break-word;max-height:36px">${bullet} ${escHtml(stripMarkdown(item))}</div>`;
+      html += `<div style="position:absolute;left:${x + 24}px;top:${y}px;width:${colW - 48}px;font-size:15px;line-height:1.5;color:${p.text};opacity:0.85;overflow:hidden;text-overflow:ellipsis;word-wrap:break-word;max-height:36px">${bullet} ${escHtml(stripMarkdown(item))}</div>`;
       y += 40;
     }
     return html;
@@ -454,7 +454,7 @@ function buildTeam(slide: SlideInput, p: ColorPalette): string {
     // Name + role
     cardsHtml += `<div style="position:absolute;left:${cx + 12}px;top:${cy + 100}px;width:${cardW - 24}px;text-align:center;font-size:16px;font-weight:bold;color:${p.text}">${escHtml(members[i].name)}</div>`;
     if (members[i].role) {
-      cardsHtml += `<div style="position:absolute;left:${cx + 12}px;top:${cy + 124}px;width:${cardW - 24}px;text-align:center;font-size:11px;color:${p.text};opacity:0.6">${escHtml(members[i].role)}</div>`;
+      cardsHtml += `<div style="position:absolute;left:${cx + 12}px;top:${cy + 124}px;width:${cardW - 24}px;text-align:center;font-size:13px;color:${p.text};opacity:0.6">${escHtml(members[i].role)}</div>`;
     }
 
     // Avatar circle + initials (SVG)
@@ -656,7 +656,7 @@ function buildProblem(slide: SlideInput, p: ColorPalette): string {
 
   for (const line of dataLines) {
     bodyHtml += `<div style="position:absolute;left:${PAD + 32}px;top:${ty}px;width:${W - PAD * 2 - 40}px;font-size:16px;line-height:1.6;color:${p.text};opacity:0.85;padding-left:12px;border-left:2px solid ${hexToRgba(barColor, 0.3)}">${escHtml(stripMarkdown(line))}</div>`;
-    ty += 48;
+    ty += 56;
   }
 
   return `${SCOPED_RESET}
@@ -683,7 +683,7 @@ function buildSolution(slide: SlideInput, p: ColorPalette): string {
   let ty = PAD + 100;
   for (const line of lines.slice(0, 6)) {
     bodyHtml += `<div style="position:absolute;left:${PAD + 32}px;top:${ty}px;width:${W - PAD * 2 - 40}px;font-size:16px;line-height:1.6;color:${p.text};opacity:0.85;padding-left:12px;border-left:2px solid ${hexToRgba(barColor, 0.3)}">${escHtml(stripMarkdown(line))}</div>`;
-    ty += 48;
+    ty += 56;
   }
 
   return `${SCOPED_RESET}
@@ -747,9 +747,9 @@ function buildContent(slide: SlideInput, p: ColorPalette): string {
   const cardW = W - PAD * 2 - 40;
 
   for (const line of lines.slice(0, 8)) {
-    bodyHtml += `<div style="position:absolute;left:${PAD + 32}px;top:${ty}px;width:${cardW}px;height:48px;background:${hexToRgba(p.surface, 0.5)};border:1px solid ${hexToRgba(p.border, 0.3)};border-radius:10px;border-left:4px solid ${hexToRgba(p.accent, 0.6)}"></div>`;
-    bodyHtml += `<div style="position:absolute;left:${PAD + 32 + cardPad}px;top:${ty + 12}px;width:${cardW - cardPad * 2}px;font-size:13px;line-height:1.5;color:${p.text};opacity:0.85">${escHtml(stripMarkdown(line))}</div>`;
-    ty += 60;
+    bodyHtml += `<div style="position:absolute;left:${PAD + 32}px;top:${ty}px;width:${cardW}px;height:58px;background:${hexToRgba(p.surface, 0.5)};border:1px solid ${hexToRgba(p.border, 0.3)};border-radius:10px;border-left:4px solid ${hexToRgba(p.accent, 0.6)}"></div>`;
+    bodyHtml += `<div style="position:absolute;left:${PAD + 32 + cardPad}px;top:${ty + 16}px;width:${cardW - cardPad * 2}px;font-size:16px;line-height:1.5;color:${p.text};opacity:0.85">${escHtml(stripMarkdown(line))}</div>`;
+    ty += 68;
   }
 
   return `${SCOPED_RESET}
@@ -826,7 +826,7 @@ function buildArchitecture(slide: SlideInput, p: ColorPalette): string {
     boxesHtml += `<div style="position:absolute;left:${cx}px;top:${boxY}px;width:${boxW}px;height:${boxH}px;background:${p.surface};border:1px solid ${p.border};border-radius:12px;border-top:4px solid ${p.accent}"></div>`;
     boxesHtml += `<div style="position:absolute;left:${cx + 12}px;top:${boxY + (desc ? 12 : 24)}px;width:${boxW - 24}px;text-align:center;font-size:15px;font-weight:bold;color:${p.text}">${escHtml(title)}</div>`;
     if (desc) {
-      boxesHtml += `<div style="position:absolute;left:${cx + 12}px;top:${boxY + 36}px;width:${boxW - 24}px;text-align:center;font-size:10px;color:${p.text};opacity:0.7;line-height:1.4">${escHtml(desc)}</div>`;
+      boxesHtml += `<div style="position:absolute;left:${cx + 12}px;top:${boxY + 36}px;width:${boxW - 24}px;text-align:center;font-size:13px;color:${p.text};opacity:0.7;line-height:1.4">${escHtml(desc)}</div>`;
     }
 
     // Connector arrow
