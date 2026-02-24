@@ -564,6 +564,12 @@ export class MarpExporterService {
         const heroBg = getHeroBackground(palette);
         lines.push(`<!-- _backgroundColor: ${heroBg} -->`);
         lines.push('<!-- _color: #FFFFFF -->');
+      } else {
+        // Defensive fallback: TITLE/CTA must always have explicit contrast
+        // Without this, edge-case bg variants can produce invisible text
+        const fallbackBg = palette ? getHeroBackground(palette) : '#1E293B';
+        lines.push(`<!-- _backgroundColor: ${fallbackBg} -->`);
+        lines.push('<!-- _color: #FFFFFF -->');
       }
       lines.push('');
     } else if (type === 'METRICS_HIGHLIGHT') {
@@ -657,8 +663,8 @@ export class MarpExporterService {
         // Full-screen background at high visibility Ã¢ÂÂ image IS the slide
         lines.push(`![bg brightness:0.7](${slide.imageUrl})`);
       } else if (type === 'TITLE' || type === 'CTA') {
-        // Always background for hero slides regardless of setting
-        lines.push(`![bg opacity:0.15](${slide.imageUrl})`);
+        // Background for hero slides — 25% opacity balances visibility with text readability
+        lines.push(`![bg opacity:0.25](${slide.imageUrl})`);
       } else if (type === 'QUOTE' && slideLayout !== 'BACKGROUND') {
         // Blurred background for cinematic testimonial feel
         lines.push(`![bg blur:12px brightness:0.3](${slide.imageUrl})`);

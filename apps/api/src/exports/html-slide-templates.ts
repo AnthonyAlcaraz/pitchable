@@ -371,7 +371,35 @@ function buildMetricsHighlight(slide: SlideInput, p: ColorPalette, hasImage = fa
 
   // Center reference: use content width (accounts for image overlay)
   const centerX = Math.round(cW / 2);
-  const circleR = Math.round(Math.min(heroFontSize * 1.2, 100));
+
+  // Progress ring for percentage values (e.g. "97%" → 97% filled arc)
+  const pctMatch = bigValue.match(/^(\d+(?:\.\d+)?)\s*%$/);
+  const pctValue = pctMatch ? Math.min(parseFloat(pctMatch[1]), 100) : null;
+  const ringR = 110; // ring radius
+  const ringStroke = 8;
+  const ringCx = ringR + ringStroke;
+  const ringCy = ringCx;
+  const ringSize = (ringR + ringStroke) * 2;
+  const ringCircumference = Math.round(2 * Math.PI * ringR);
+
+  let circleSvg = '';
+  if (pctValue !== null) {
+    // Progress ring: background track + filled arc
+    const dashOffset = Math.round(ringCircumference * (1 - pctValue / 100));
+    circleSvg = `<svg style="position:absolute;left:${centerX - ringCx}px;top:${Math.round(heroY - ringR * 0.15)}px" width="${ringSize}" height="${ringSize}" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="${ringCx}" cy="${ringCy}" r="${ringR}" fill="none" stroke="${hexToRgba(p.border, 0.15)}" stroke-width="${ringStroke}" />
+      <circle cx="${ringCx}" cy="${ringCy}" r="${ringR}" fill="none" stroke="${p.accent}" stroke-width="${ringStroke}" stroke-linecap="round" stroke-dasharray="${ringCircumference}" stroke-dashoffset="${dashOffset}" transform="rotate(-90 ${ringCx} ${ringCy})" opacity="0.7" />
+      <circle cx="${ringCx}" cy="${ringCy}" r="${ringR - 20}" fill="${hexToRgba(p.accent, 0.04)}" stroke="none" />
+    </svg>`;
+  } else {
+    // Decorative concentric circles for non-percentage metrics
+    const decR = Math.round(Math.min(heroFontSize * 1.3, 110));
+    circleSvg = `<svg style="position:absolute;left:${centerX - decR}px;top:${Math.round(heroY - decR * 0.25)}px" width="${decR * 2}" height="${decR * 2}" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="${decR}" cy="${decR}" r="${Math.round(decR * 0.95)}" fill="none" stroke="${p.accent}" stroke-width="2" opacity="0.12" />
+      <circle cx="${decR}" cy="${decR}" r="${Math.round(decR * 0.75)}" fill="none" stroke="${p.primary}" stroke-width="1.5" opacity="0.10" />
+      <circle cx="${decR}" cy="${decR}" r="${Math.round(decR * 0.55)}" fill="${hexToRgba(p.accent, 0.04)}" stroke="none" />
+    </svg>`;
+  }
 
   // Dynamic vertical layout: hero → label → accent line → support text
   const heroH = heroFontSize >= 56 ? heroFontSize + 8 : heroFontSize + 4;
@@ -388,11 +416,8 @@ function buildMetricsHighlight(slide: SlideInput, p: ColorPalette, hasImage = fa
 
   return `${SCOPED_RESET}
 <div style="position:relative;width:${W}px;height:${H}px;">
-  <div style="position:absolute;left:0;top:0;width:${cW}px;height:${H}px;background:radial-gradient(ellipse 800px 600px at 50% 40%,${hexToRgba(p.primary, 0.08)} 0%,transparent 70%)"></div>
-  <svg style="position:absolute;left:${centerX - circleR}px;top:${Math.round(heroY - circleR * 0.3)}px" width="${circleR * 2}" height="${circleR * 2}" xmlns="http://www.w3.org/2000/svg">
-    <circle cx="${circleR}" cy="${circleR}" r="${Math.round(circleR * 0.9)}" fill="none" stroke="${p.accent}" stroke-width="2" opacity="0.08" />
-    <circle cx="${circleR}" cy="${circleR}" r="${Math.round(circleR * 0.7)}" fill="none" stroke="${p.primary}" stroke-width="1.5" opacity="0.06" />
-  </svg>
+  <div style="position:absolute;left:0;top:0;width:${cW}px;height:${H}px;background:radial-gradient(ellipse 800px 600px at 50% 40%,${hexToRgba(p.primary, 0.06)} 0%,transparent 70%)"></div>
+  ${circleSvg}
   <div style="position:absolute;left:${PAD}px;top:${heroY}px;width:${cW - PAD * 2}px;text-align:center;font-size:${heroFontSize}px;font-weight:bold;color:${p.primary};line-height:1.1">${escHtml(bigValue)}</div>
   ${showLabel ? `<div style="position:absolute;left:${PAD + 100}px;top:${labelY}px;width:${labelW}px;text-align:center;font-size:24px;font-weight:bold;color:${p.text};line-height:1.3;overflow:hidden;max-height:${labelH}px">${escHtml(labelText)}</div>` : ''}
   <div style="position:absolute;left:${Math.round((cW - 80) / 2)}px;top:${accentY}px;width:80px;height:3px;background:${p.accent};border-radius:2px"></div>
