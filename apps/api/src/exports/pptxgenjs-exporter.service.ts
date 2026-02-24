@@ -38,6 +38,55 @@ function hex(color: string): string {
   return color.replace(/^#/, '');
 }
 
+/** Parse pipe-delimited markdown table from body text */
+function parsePptxMarkdownTable(body: string): {
+  headers: string[];
+  rows: string[][];
+  leadText: string;
+  takeaway: string;
+  source: string;
+} | null {
+  const lines = body.split('\n');
+  const tableStartIdx = lines.findIndex((l) => /^\s*\|.+\|/.test(l));
+  if (tableStartIdx === -1) return null;
+
+  const leadText = lines
+    .slice(0, tableStartIdx)
+    .filter((l) => l.trim() && !/^#{1,3}\s/.test(l) && !/^\*\*/.test(l.trim()))
+    .map((l) => l.replace(/^[-•*]\s*/, '').replace(/\*\*(.+?)\*\*/g, '$1').trim())
+    .join(' ')
+    .trim();
+
+  const tableLines = lines.slice(tableStartIdx).filter(
+    (l) => /^\s*\|.+\|/.test(l) && !/^\s*\|[-:\s|]+\|\s*$/.test(l),
+  );
+  if (tableLines.length < 2) return null;
+
+  const parseCells = (line: string): string[] =>
+    line.replace(/^\s*\|/, '').replace(/\|\s*$/, '').split('|').map((c) => c.replace(/\*\*(.+?)\*\*/g, '$1').trim());
+
+  const headers = parseCells(tableLines[0]);
+  const rows = tableLines.slice(1).map(parseCells);
+
+  const afterTable = lines.slice(tableStartIdx);
+  let takeaway = '';
+  let source = '';
+  for (const l of afterTable) {
+    if (/^#{1,3}\s/.test(l)) takeaway = l.replace(/^#{1,3}\s+/, '').replace(/\*\*(.+?)\*\*/g, '$1').trim();
+    else if (/^sources?:/i.test(l.trim())) source = l.trim();
+  }
+
+  return { headers, rows, leadText, takeaway, source };
+}
+
+function isPptxDarkBackground(bg: string): boolean {
+  const c = bg.replace('#', '');
+  const r = parseInt(c.slice(0, 2), 16);
+  const g = parseInt(c.slice(2, 4), 16);
+  const b = parseInt(c.slice(4, 6), 16);
+  return (r * 299 + g * 587 + b * 114) / 1000 < 128;
+}
+
 /** Darken a hex color by a percentage (0-1) */
 function darken(color: string, amount: number): string {
   const c = hex(color);
@@ -915,6 +964,14 @@ export class PptxGenJsExporterService {
     theme: ThemeModel,
     totalSlides: number,
   ): void {
+    // ── McKinsey table path: detect pipe-delimited table in body ──
+    const tableData = parsePptxMarkdownTable(slide.body ?? '');
+    if (tableData) {
+      this.addComparisonTableSlide(pres, slide, palette, theme, totalSlides, tableData);
+      return;
+    }
+
+    // ── Card path: two-column layout ──
     const s = pres.addSlide({ masterName: 'PITCHABLE_DARK' });
 
     this.applyGradientBackground(s, palette, slide.slideNumber);
@@ -1073,7 +1130,160 @@ export class PptxGenJsExporterService {
     if (slide.speakerNotes) s.addNotes(slide.speakerNotes);
   }
 
-  // ── DATA_METRICS Slide ───────────────────────────────────
+  // ── McKinsey-style comparison table (PPTX) ──────────────
+
+  private addComparisonTableSlide(
+    pres: PptxGenJS,
+    slide: SlideModel,
+    palette: ColorPalette,
+    theme: ThemeModel,
+    totalSlides: number,
+    tableData: { headers: string[]; rows: string[][]; leadText: string; takeaway: string; source: string },
+  ): void {
+    const s = pres.addSlide({ masterName: 'PITCHABLE_DARK' });
+
+    this.applyGradientBackground(s, palette, slide.slideNumber);
+    this.applyBackgroundDecoration(s, slide, palette);
+    this.addSectionLabel(s, slide, palette, theme);
+
+    const dark = isPptxDarkBackground(palette.background);
+    const evenRowBg = dark ? '333333' : 'F5F5F5';
+    const oddRowBg = dark ? '2A2A2A' : 'FFFFFF';
+    const rowBorderColor = dark ? '444444' : 'E5E5E5';
+
+    // Accent line above title
+    s.addShape('rect', {
+      x: 0.5,
+      y: 0.25,
+      w: 1.5,
+      h: 0.04,
+      fill: { color: hex(palette.primary) },
+    });
+
+    // Title
+    let yPos = 0.4;
+    if (slide.title) {
+      s.addText(slide.title, {
+        x: 0.5,
+        y: yPos,
+        w: '92%',
+        h: 0.5,
+        fontSize: 28,
+        fontFace: theme.headingFont,
+        color: hex(palette.text),
+        bold: true,
+      });
+      yPos += 0.55;
+    }
+
+    // Lead text
+    if (tableData.leadText) {
+      s.addText(tableData.leadText, {
+        x: 0.5,
+        y: yPos,
+        w: '90%',
+        h: 0.35,
+        fontSize: 14,
+        fontFace: theme.bodyFont,
+        color: hex(palette.text),
+      });
+      yPos += 0.4;
+    }
+
+    // Build table rows for PptxGenJS
+    const colCount = tableData.headers.length;
+
+    // Header row
+    const headerRow = tableData.headers.map((h) => ({
+      text: h,
+      options: {
+        bold: true,
+        fontSize: 14,
+        fontFace: theme.headingFont,
+        color: 'FFFFFF',
+        fill: { color: hex(palette.primary) },
+        border: [
+          { type: 'solid', pt: 0, color: hex(palette.primary) },
+          { type: 'solid', pt: 0, color: hex(palette.primary) },
+          { type: 'solid', pt: 2, color: hex(palette.primary) },
+          { type: 'solid', pt: 0, color: hex(palette.primary) },
+        ] as [{ type: 'solid'; pt: number; color: string }, { type: 'solid'; pt: number; color: string }, { type: 'solid'; pt: number; color: string }, { type: 'solid'; pt: number; color: string }],
+        margin: [6, 10, 6, 10] as [number, number, number, number],
+        valign: 'middle' as const,
+      },
+    }));
+
+    // Data rows
+    const dataRows = tableData.rows.map((row, rowIdx) => {
+      const bg = rowIdx % 2 === 0 ? evenRowBg : oddRowBg;
+      return row.slice(0, colCount).map((cell, colIdx) => ({
+        text: cell,
+        options: {
+          bold: colIdx === 0,
+          fontSize: 14,
+          fontFace: theme.bodyFont,
+          color: hex(palette.text),
+          fill: { color: bg },
+          border: [
+            { type: 'solid', pt: 0, color: bg },
+            { type: 'solid', pt: 0, color: bg },
+            { type: 'solid', pt: 1, color: rowBorderColor },
+            { type: 'solid', pt: 0, color: bg },
+          ] as [{ type: 'solid'; pt: number; color: string }, { type: 'solid'; pt: number; color: string }, { type: 'solid'; pt: number; color: string }, { type: 'solid'; pt: number; color: string }],
+          margin: [6, 10, 6, 10] as [number, number, number, number],
+          valign: 'middle' as const,
+        },
+      }));
+    });
+
+    const tableRows = [headerRow, ...dataRows];
+    const tableW = 12.0;
+
+    s.addTable(tableRows, {
+      x: 0.5,
+      y: yPos,
+      w: tableW,
+      colW: Array(colCount).fill(tableW / colCount),
+      rowH: 0.45,
+      autoPage: false,
+    });
+
+    // Estimate table end position
+    const tableEndY = yPos + (tableRows.length * 0.45) + 0.15;
+
+    // Takeaway
+    if (tableData.takeaway) {
+      s.addText(tableData.takeaway, {
+        x: 0.5,
+        y: tableEndY,
+        w: '90%',
+        h: 0.35,
+        fontSize: 14,
+        fontFace: theme.headingFont,
+        color: hex(palette.accent),
+        bold: true,
+      });
+    }
+
+    // Source
+    if (tableData.source) {
+      s.addText(tableData.source, {
+        x: 0.5,
+        y: 6.8,
+        w: '90%',
+        h: 0.25,
+        fontSize: 10,
+        fontFace: theme.bodyFont,
+        color: hex(palette.text),
+        transparency: 50,
+      });
+    }
+
+    this.addFooter(s, slide.slideNumber, totalSlides, palette, theme);
+    if (slide.speakerNotes) s.addNotes(slide.speakerNotes);
+  }
+
+    // ── DATA_METRICS Slide ───────────────────────────────────
 
   private addDataMetricsSlide(
     pres: PptxGenJS,

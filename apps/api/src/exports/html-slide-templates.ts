@@ -318,10 +318,76 @@ function buildMetricsHighlight(slide: SlideInput, p: ColorPalette): string {
 </div>`;
 }
 
+// ── Table parser for McKinsey-style comparison tables ────────
+
+interface ParsedTable {
+  headers: string[];
+  rows: string[][];
+  leadText: string;
+  takeaway: string;
+  source: string;
+}
+
+function parseMarkdownTable(body: string): ParsedTable | null {
+  const lines = body.split('\n');
+  const tableStartIdx = lines.findIndex((l) => /^\s*\|.+\|/.test(l));
+  if (tableStartIdx === -1) return null;
+
+  // Lead text = non-empty lines before the table (skip heading markers)
+  const leadText = lines
+    .slice(0, tableStartIdx)
+    .filter((l) => l.trim() && !/^#{1,3}\s/.test(l))
+    .map((l) => l.replace(/^[-•*]\s*/, '').trim())
+    .join(' ')
+    .trim();
+
+  // Collect table rows (skip separator rows like |---|---|)
+  const tableLines = lines.slice(tableStartIdx).filter(
+    (l) => /^\s*\|.+\|/.test(l) && !/^\s*\|[-:\s|]+\|\s*$/.test(l),
+  );
+  if (tableLines.length < 2) return null; // need header + at least 1 data row
+
+  const parseCells = (line: string): string[] =>
+    line
+      .replace(/^\s*\|/, '')
+      .replace(/\|\s*$/, '')
+      .split('|')
+      .map((c) => c.trim());
+
+  const headers = parseCells(tableLines[0]);
+  const rows = tableLines.slice(1).map(parseCells);
+
+  // Extract takeaway (### heading after table) and source
+  const afterTable = lines.slice(tableStartIdx);
+  let takeaway = '';
+  let source = '';
+  for (const l of afterTable) {
+    if (/^#{1,3}\s/.test(l)) takeaway = l.replace(/^#{1,3}\s+/, '').trim();
+    else if (/^sources?:/i.test(l.trim())) source = l.trim();
+  }
+
+  return { headers, rows, leadText, takeaway, source };
+}
+
+function isDarkBackground(bg: string): boolean {
+  const c = bg.replace('#', '');
+  const r = parseInt(c.slice(0, 2), 16);
+  const g = parseInt(c.slice(2, 4), 16);
+  const b = parseInt(c.slice(4, 6), 16);
+  return (r * 299 + g * 587 + b * 114) / 1000 < 128;
+}
+
 // ── COMPARISON ───────────────────────────────────────────────
-// Two cards + floating VS circle badge
+// McKinsey table for pipe-delimited data, two cards + VS badge for column format
 
 function buildComparison(slide: SlideInput, p: ColorPalette): string {
+  // ── McKinsey table path: detect pipe-delimited table in body ──
+  const table = parseMarkdownTable(slide.body);
+  if (table) {
+    return buildComparisonTable(slide, p, table);
+  }
+
+  // ── Card path: two-column layout with VS badge ──
   const lines = parseBodyLines(slide.body);
   let leftLines: string[] = [];
   let rightLines: string[] = [];
@@ -406,6 +472,81 @@ function buildComparison(slide: SlideInput, p: ColorPalette): string {
     <circle cx="${W / 2}" cy="${Math.round(vsCy)}" r="22" fill="${hexToRgba(p.accent, 0.1)}" stroke="none" />
     <text x="${W / 2}" y="${Math.round(vsCy + 5)}" text-anchor="middle" fill="${p.accent}" font-size="13" font-weight="bold" letter-spacing="1">VS</text>
   </svg>
+</div>`;
+}
+
+// ── McKinsey-style comparison table (HTML+SVG) ──────────────
+
+function buildComparisonTable(slide: SlideInput, p: ColorPalette, table: ParsedTable): string {
+  const dark = isDarkBackground(p.background);
+  const headerBg = p.primary;
+  const headerColor = '#FFFFFF';
+  const evenRowBg = dark ? 'rgba(255,255,255,0.04)' : '#F5F5F5';
+  const oddRowBg = dark ? 'transparent' : '#FFFFFF';
+  const rowBorder = dark ? 'rgba(255,255,255,0.08)' : '#E5E5E5';
+  const colCount = table.headers.length;
+  const tableW = W - PAD * 2;
+
+  // Title + accent underline
+  let y = PAD;
+  let html = `<div style="position:absolute;left:${PAD}px;top:${y}px;width:${tableW}px;font-size:27px;font-weight:bold;color:${p.text};line-height:1.2">${escHtml(slide.title)}</div>`;
+  y += 42;
+  html += `<div style="position:absolute;left:${PAD}px;top:${y}px;width:60px;height:3px;background:${p.accent};border-radius:2px"></div>`;
+  y += 16;
+
+  // Lead text
+  if (table.leadText) {
+    html += `<div style="position:absolute;left:${PAD}px;top:${y}px;width:${tableW}px;font-size:17px;line-height:1.4;color:${p.text};opacity:0.8">${escHtml(table.leadText)}</div>`;
+    y += 32;
+  }
+
+  // Table
+  y += 10;
+  const cellPad = 'padding:10px 16px';
+  const thStyle = `background:${headerBg};color:${headerColor};font-weight:bold;font-size:16px;text-align:left;${cellPad};border-bottom:2px solid ${headerBg}`;
+  const tableTop = y;
+
+  let tableHtml = '<table style="border-collapse:collapse;width:100%;table-layout:fixed">';
+  // Header
+  tableHtml += '<thead><tr>';
+  for (const h of table.headers) {
+    tableHtml += `<th style="${thStyle}">${escHtml(h)}</th>`;
+  }
+  tableHtml += '</tr></thead>';
+  // Body rows
+  tableHtml += '<tbody>';
+  for (let i = 0; i < table.rows.length; i++) {
+    const bg = i % 2 === 0 ? evenRowBg : oddRowBg;
+    tableHtml += `<tr style="background:${bg}">`;
+    for (let c = 0; c < colCount; c++) {
+      const val = table.rows[i]?.[c] ?? '';
+      const bold = c === 0 ? 'font-weight:bold;' : '';
+      tableHtml += `<td style="${bold}font-size:18px;color:${p.text};${cellPad};border-bottom:1px solid ${rowBorder}">${escHtml(val)}</td>`;
+    }
+    tableHtml += '</tr>';
+  }
+  tableHtml += '</tbody></table>';
+
+  // Estimate table height: header(40) + rows(42 each)
+  const tableHeight = 40 + table.rows.length * 42;
+  html += `<div style="position:absolute;left:${PAD}px;top:${tableTop}px;width:${tableW}px">${tableHtml}</div>`;
+  y = tableTop + tableHeight + 16;
+
+  // Takeaway
+  if (table.takeaway) {
+    html += `<div style="position:absolute;left:${PAD}px;top:${y}px;width:${tableW}px;font-size:17px;font-weight:bold;color:${p.accent};line-height:1.4">${escHtml(table.takeaway)}</div>`;
+    y += 30;
+  }
+
+  // Source
+  if (table.source) {
+    const srcY = Math.max(y + 8, H - PAD - 20);
+    html += `<div style="position:absolute;left:${PAD}px;top:${srcY}px;width:${tableW}px;font-size:12px;color:${p.text};opacity:0.5">${escHtml(table.source)}</div>`;
+  }
+
+  return `${SCOPED_RESET}
+<div style="position:relative;width:${W}px;height:${H}px;">
+  ${html}
 </div>`;
 }
 
