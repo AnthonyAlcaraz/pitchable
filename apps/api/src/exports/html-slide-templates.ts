@@ -107,6 +107,11 @@ function bgGradientOverlay(w: number, h: number, color: string, alpha = 0.05, po
   return `<div style="position:absolute;left:0;top:0;width:${w}px;height:${h}px;background:radial-gradient(ellipse 80% 70% at 50% ${posY},${hexToRgba(color, alpha)} 0%,transparent 70%);pointer-events:none"></div>`;
 }
 
+// Per-card accent color rotation — uses palette diversity for visual variety
+function cardAccentColors(p: ColorPalette): string[] {
+  return [p.accent, p.primary, p.secondary, p.success, p.warning, p.error].filter(Boolean);
+}
+
 // ── Scoped reset injected into every Figma-grade slide ──────
 
 const SCOPED_RESET = `<style scoped>
@@ -278,13 +283,13 @@ function buildTimeline(slide: SlideInput, p: ColorPalette, hasImage = false): st
   const dateFontSz = count <= 3 ? 13 : 11;
   const textFontSz = count <= 3 ? 14 : 12;
 
+  const tlAccents = cardAccentColors(p);
   let nodesSvg = '';
   let labelHtml = '';
 
   for (let i = 0; i < count; i++) {
     const cx = count === 1 ? Math.round(cW / 2) : Math.round(lineStartX + i * spacing);
-    const isLast = i === count - 1;
-    const fill = isLast ? p.accent : p.primary;
+    const fill = tlAccents[i % tlAccents.length];
 
     // Outer ring + filled center
     nodesSvg += `<circle cx="${cx}" cy="${lineY}" r="${nodeR + 4}" fill="${hexToRgba(fill, 0.15)}" />`;
@@ -292,7 +297,7 @@ function buildTimeline(slide: SlideInput, p: ColorPalette, hasImage = false): st
 
     // Date label ABOVE the line
     if (milestones[i].date) {
-      labelHtml += `<div style="position:absolute;left:${cx - cardW / 2}px;top:${lineY - 36}px;width:${cardW}px;text-align:center;font-size:${dateFontSz}px;font-weight:bold;color:${p.primary};letter-spacing:0.5px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${escHtml(milestones[i].date)}</div>`;
+      labelHtml += `<div style="position:absolute;left:${cx - cardW / 2}px;top:${lineY - 36}px;width:${cardW}px;text-align:center;font-size:${dateFontSz}px;font-weight:bold;color:${fill};letter-spacing:0.5px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${escHtml(milestones[i].date)}</div>`;
     }
 
     // Description card BELOW the line — contained with max-height and overflow hidden
@@ -608,9 +613,9 @@ function buildComparison(slide: SlideInput, p: ColorPalette, hasImage = false): 
   <div style="position:absolute;left:${PAD}px;top:${cardY}px;width:${colW}px;height:52px;background:${hexToRgba(p.primary, 0.1)};border-radius:16px 16px 0 0"></div>
   <div style="position:absolute;left:${PAD + 24}px;top:${cardY + 14}px;font-size:15px;font-weight:bold;color:${p.primary};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(stripMarkdown(leftTitle))}</div>
   ${renderItems(leftLines, PAD, '\u2022')}
-  <div style="position:absolute;left:${rightX}px;top:${cardY}px;width:${colW}px;height:${cardH}px;background:${p.surface};border:2px solid ${p.primary};border-radius:16px;box-shadow:0 2px 12px rgba(0,0,0,0.10)"></div>
-  <div style="position:absolute;left:${rightX}px;top:${cardY}px;width:${colW}px;height:52px;background:${hexToRgba(p.primary, 0.15)};border-radius:16px 16px 0 0"></div>
-  <div style="position:absolute;left:${rightX + 24}px;top:${cardY + 14}px;font-size:15px;font-weight:bold;color:${p.primary};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(stripMarkdown(rightTitle))}</div>
+  <div style="position:absolute;left:${rightX}px;top:${cardY}px;width:${colW}px;height:${cardH}px;background:${p.surface};border:2px solid ${p.accent};border-radius:16px;box-shadow:0 2px 12px rgba(0,0,0,0.10)"></div>
+  <div style="position:absolute;left:${rightX}px;top:${cardY}px;width:${colW}px;height:52px;background:${hexToRgba(p.accent, 0.15)};border-radius:16px 16px 0 0"></div>
+  <div style="position:absolute;left:${rightX + 24}px;top:${cardY + 14}px;font-size:15px;font-weight:bold;color:${p.accent};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(stripMarkdown(rightTitle))}</div>
   ${renderItems(rightLines, rightX, '\u2713')}
   <svg style="position:absolute;left:0;top:0" width="${cW}" height="${H}" xmlns="http://www.w3.org/2000/svg">
     <defs>
@@ -837,6 +842,7 @@ function buildFeatureGrid(slide: SlideInput, p: ColorPalette, hasImage = false):
   const titleFontSz = cardH >= 220 ? 16 : 14;
   const descFontSz = cardH >= 220 ? 14 : 13;
   const descMaxH = cardH - 110;
+  const accents = cardAccentColors(p);
 
   let html = '';
   for (let i = 0; i < count; i++) {
@@ -844,10 +850,11 @@ function buildFeatureGrid(slide: SlideInput, p: ColorPalette, hasImage = false):
     const row = Math.floor(i / cols);
     const cx = PAD + col * (cardW + gapX);
     const cy = startY + row * (cardH + gapY);
+    const cardColor = accents[i % accents.length];
 
-    html += `<div style="position:absolute;left:${cx}px;top:${cy}px;width:${cardW}px;height:${cardH}px;background:${p.surface};border:1px solid ${p.border};border-radius:16px;box-shadow:0 2px 8px rgba(0,0,0,0.08);border-top:4px solid ${p.accent}"></div>`;
-    // Icon placeholder
-    html += `<div style="position:absolute;left:${cx + 20}px;top:${cy + 20}px;width:32px;height:32px;background:${p.primary};border-radius:8px;opacity:0.8"></div>`;
+    html += `<div style="position:absolute;left:${cx}px;top:${cy}px;width:${cardW}px;height:${cardH}px;background:${p.surface};border:1px solid ${p.border};border-radius:16px;box-shadow:0 2px 8px rgba(0,0,0,0.08);border-top:4px solid ${cardColor}"></div>`;
+    // Icon placeholder — uses card accent color
+    html += `<div style="position:absolute;left:${cx + 20}px;top:${cy + 20}px;width:32px;height:32px;background:${cardColor};border-radius:8px;opacity:0.8"></div>`;
     // Title (allow 2-line wrap)
     html += `<div style="position:absolute;left:${cx + 20}px;top:${cy + 64}px;width:${cardW - 40}px;font-size:${titleFontSz}px;font-weight:bold;color:${p.text};overflow:hidden;max-height:40px;line-height:1.3">${escHtml(features[i].title)}</div>`;
     // Description
@@ -912,6 +919,7 @@ function buildProcess(slide: SlideInput, p: ColorPalette, hasImage = false): str
   const startX = Math.round((cW - totalW) / 2);
   const cardY = Math.round(PAD + 90);
 
+  const procAccents = cardAccentColors(p);
   let cardsHtml = '';
   let connectorsSvg = '';
 
@@ -920,10 +928,11 @@ function buildProcess(slide: SlideInput, p: ColorPalette, hasImage = false): str
     const row = useRows ? Math.floor(i / cols) : 0;
     const cx = startX + col * (cardW + gapX);
     const cy = cardY + row * (cardH + gapY);
+    const stepColor = procAccents[i % procAccents.length];
     // Card background
-    cardsHtml += `<div style="position:absolute;left:${cx}px;top:${cy}px;width:${cardW}px;height:${cardH}px;background:${p.surface};border:1px solid ${p.border};border-radius:16px;box-shadow:0 2px 8px rgba(0,0,0,0.08);border-top:4px solid ${p.accent}"></div>`;
-    // Step number circle
-    cardsHtml += `<div style="position:absolute;left:${cx + cardW / 2 - 20}px;top:${cy + 16}px;width:40px;height:40px;border-radius:50%;background:${p.accent};display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:bold;color:#FFFFFF;text-align:center;line-height:40px">${String(steps[i].num).padStart(2, '0')}</div>`;
+    cardsHtml += `<div style="position:absolute;left:${cx}px;top:${cy}px;width:${cardW}px;height:${cardH}px;background:${p.surface};border:1px solid ${p.border};border-radius:16px;box-shadow:0 2px 8px rgba(0,0,0,0.08);border-top:4px solid ${stepColor}"></div>`;
+    // Step number circle — uses step accent color
+    cardsHtml += `<div style="position:absolute;left:${cx + cardW / 2 - 20}px;top:${cy + 16}px;width:40px;height:40px;border-radius:50%;background:${stepColor};display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:bold;color:#FFFFFF;text-align:center;line-height:40px">${String(steps[i].num).padStart(2, '0')}</div>`;
     // Title
     cardsHtml += `<div style="position:absolute;left:${cx + 16}px;top:${cy + 66}px;width:${cardW - 32}px;text-align:center;font-size:15px;font-weight:bold;color:${p.text};overflow:hidden;max-height:40px">${escHtml(steps[i].title)}</div>`;
     // Description
@@ -972,6 +981,7 @@ function buildProblem(slide: SlideInput, p: ColorPalette, hasImage = false): str
   const itemMaxH = itemSpacing - 8;
   const itemFontSz = dataLines.length > 4 ? 14 : 16;
 
+  const probAccents = cardAccentColors(p);
   let bodyHtml = '';
   let ty = PAD + 100;
 
@@ -981,8 +991,9 @@ function buildProblem(slide: SlideInput, p: ColorPalette, hasImage = false): str
     ty += 32;
   }
 
-  for (const line of dataLines) {
-    bodyHtml += `<div style="position:absolute;left:${PAD + 32}px;top:${ty}px;width:${cW - PAD * 2 - 80}px;max-height:${itemMaxH}px;font-size:${itemFontSz}px;line-height:1.5;color:${p.text};opacity:0.85;padding-left:12px;border-left:2px solid ${hexToRgba(barColor, 0.3)};overflow:hidden">${escHtml(stripMarkdown(line))}</div>`;
+  for (let pi = 0; pi < dataLines.length; pi++) {
+    const itemColor = probAccents[pi % probAccents.length];
+    bodyHtml += `<div style="position:absolute;left:${PAD + 32}px;top:${ty}px;width:${cW - PAD * 2 - 80}px;max-height:${itemMaxH}px;font-size:${itemFontSz}px;line-height:1.5;color:${p.text};opacity:0.85;padding-left:12px;border-left:3px solid ${hexToRgba(itemColor, 0.6)};overflow:hidden">${escHtml(stripMarkdown(dataLines[pi]))}</div>`;
     ty += itemSpacing;
   }
 
@@ -1015,10 +1026,12 @@ function buildSolution(slide: SlideInput, p: ColorPalette, hasImage = false): st
   const solMaxH = solSpacing - 8;
   const solFontSz = solutionItems.length > 4 ? 14 : 16;
 
+  const solAccents = cardAccentColors(p);
   let bodyHtml = '';
   let ty = solStartY;
-  for (const line of solutionItems) {
-    bodyHtml += `<div style="position:absolute;left:${PAD + 32}px;top:${ty}px;width:${cW - PAD * 2 - 80}px;max-height:${solMaxH}px;font-size:${solFontSz}px;line-height:1.5;color:${p.text};opacity:0.85;padding-left:12px;border-left:2px solid ${hexToRgba(barColor, 0.3)};overflow:hidden">${escHtml(stripMarkdown(line))}</div>`;
+  for (let si = 0; si < solutionItems.length; si++) {
+    const solItemColor = solAccents[si % solAccents.length];
+    bodyHtml += `<div style="position:absolute;left:${PAD + 32}px;top:${ty}px;width:${cW - PAD * 2 - 80}px;max-height:${solMaxH}px;font-size:${solFontSz}px;line-height:1.5;color:${p.text};opacity:0.85;padding-left:12px;border-left:3px solid ${hexToRgba(solItemColor, 0.6)};overflow:hidden">${escHtml(stripMarkdown(solutionItems[si]))}</div>`;
     ty += solSpacing;
   }
 
@@ -1094,12 +1107,14 @@ function buildContent(slide: SlideInput, p: ColorPalette, hasImage = false): str
   const cardW = cW - PAD * 2 - 40;
   const fontSize = cardH >= 70 ? 19 : cardH >= 55 ? 16 : 14;
 
+  const contAccents = cardAccentColors(p);
   let bodyHtml = '';
   let ty = contentStartY;
 
-  for (const line of items) {
-    bodyHtml += `<div style="position:absolute;left:${PAD + 32}px;top:${ty}px;width:${cardW}px;height:${cardH}px;background:${hexToRgba(p.surface, 0.5)};border:1px solid ${hexToRgba(p.border, 0.3)};border-radius:10px;border-left:4px solid ${hexToRgba(p.accent, 0.6)};overflow:hidden"></div>`;
-    bodyHtml += `<div style="position:absolute;left:${PAD + 32 + cardPad}px;top:${ty + Math.round((cardH - fontSize * 1.45) / 2)}px;width:${cardW - cardPad * 2}px;max-height:${cardH - 12}px;font-size:${fontSize}px;line-height:1.45;color:${p.text};opacity:0.85;overflow:hidden">${escHtml(stripMarkdown(line))}</div>`;
+  for (let ci = 0; ci < items.length; ci++) {
+    const rowColor = contAccents[ci % contAccents.length];
+    bodyHtml += `<div style="position:absolute;left:${PAD + 32}px;top:${ty}px;width:${cardW}px;height:${cardH}px;background:${hexToRgba(p.surface, 0.5)};border:1px solid ${hexToRgba(p.border, 0.3)};border-radius:10px;border-left:4px solid ${hexToRgba(rowColor, 0.7)};overflow:hidden"></div>`;
+    bodyHtml += `<div style="position:absolute;left:${PAD + 32 + cardPad}px;top:${ty + Math.round((cardH - fontSize * 1.45) / 2)}px;width:${cardW - cardPad * 2}px;max-height:${cardH - 12}px;font-size:${fontSize}px;line-height:1.45;color:${p.text};opacity:0.85;overflow:hidden">${escHtml(stripMarkdown(items[ci]))}</div>`;
     ty += cardH + cardGap;
   }
 
@@ -1175,6 +1190,7 @@ function buildArchitecture(slide: SlideInput, p: ColorPalette, hasImage = false)
   const startX = Math.round((cW - totalW) / 2);
   const startY = Math.round(PAD + 90 + (H - PAD * 2 - 90 - totalH) / 2);
 
+  const archAccents = cardAccentColors(p);
   let boxesHtml = '';
   let connectorsSvg = '';
 
@@ -1189,9 +1205,10 @@ function buildArchitecture(slide: SlideInput, p: ColorPalette, hasImage = false)
     const descMaxH = boxH - 56;
     const titleFSz = boxH >= 140 ? 16 : 14;
     const descFSz = boxH >= 140 ? 14 : 12;
+    const nodeColor = archAccents[i % archAccents.length];
 
-    boxesHtml += `<div style="position:absolute;left:${cx}px;top:${cy}px;width:${boxW}px;height:${boxH}px;background:${p.surface};border:1px solid ${p.border};border-radius:12px;border-top:4px solid ${p.accent};box-shadow:0 2px 8px rgba(0,0,0,0.08);overflow:hidden"></div>`;
-    boxesHtml += `<div style="position:absolute;left:${cx + 14}px;top:${cy + (desc ? 14 : Math.round(boxH / 2 - 10))}px;width:${boxW - 28}px;text-align:center;font-size:${titleFSz}px;font-weight:bold;color:${p.text};overflow:hidden;max-height:38px;line-height:1.3">${escHtml(title)}</div>`;
+    boxesHtml += `<div style="position:absolute;left:${cx}px;top:${cy}px;width:${boxW}px;height:${boxH}px;background:${p.surface};border:1px solid ${p.border};border-radius:12px;border-top:4px solid ${nodeColor};box-shadow:0 2px 8px rgba(0,0,0,0.08);overflow:hidden"></div>`;
+    boxesHtml += `<div style="position:absolute;left:${cx + 14}px;top:${cy + (desc ? 14 : Math.round(boxH / 2 - 10))}px;width:${boxW - 28}px;text-align:center;font-size:${titleFSz}px;font-weight:bold;color:${nodeColor};overflow:hidden;max-height:38px;line-height:1.3">${escHtml(title)}</div>`;
     if (desc) {
       boxesHtml += `<div style="position:absolute;left:${cx + 14}px;top:${cy + 42}px;width:${boxW - 28}px;text-align:center;font-size:${descFSz}px;color:${p.text};opacity:0.7;line-height:1.4;overflow:hidden;max-height:${descMaxH}px">${escHtml(desc)}</div>`;
     }
