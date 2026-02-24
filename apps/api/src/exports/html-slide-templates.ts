@@ -149,8 +149,8 @@ function buildMarketSizing(slide: SlideInput, p: ColorPalette): string {
   let bodyHtml = '';
   let ty = PAD + 80;
   for (const line of lines) {
-    bodyHtml += `<div style="position:absolute;left:${PAD}px;top:${ty}px;width:${Math.round(W * 0.4)}px;font-size:18px;line-height:1.5;opacity:0.85;color:${p.text}">${escHtml(line)}</div>`;
-    ty += 38;
+    bodyHtml += `<div style="position:absolute;left:${PAD}px;top:${ty}px;width:${Math.round(W * 0.4)}px;font-size:22px;line-height:1.4;opacity:0.85;color:${p.text}">${escHtml(line)}</div>`;
+    ty += 48;
   }
 
   const circlesSvg = circles.map((c) =>
@@ -375,8 +375,8 @@ function buildComparison(slide: SlideInput, p: ColorPalette): string {
     let y = cardY + 68;
     const limited = items.slice(0, maxItems);
     for (const item of limited) {
-      html += `<div style="position:absolute;left:${x + 24}px;top:${y}px;width:${colW - 48}px;font-size:18px;line-height:1.5;color:${p.text};opacity:0.85;overflow:hidden;text-overflow:ellipsis;word-wrap:break-word;max-height:36px">${bullet} ${escHtml(stripMarkdown(item))}</div>`;
-      y += 40;
+      html += `<div style="position:absolute;left:${x + 24}px;top:${y}px;width:${colW - 48}px;font-size:22px;line-height:1.4;color:${p.text};opacity:0.85;overflow:hidden;text-overflow:ellipsis;word-wrap:break-word;max-height:48px">${bullet} ${escHtml(stripMarkdown(item))}</div>`;
+      y += 50;
     }
     return html;
   }
@@ -656,7 +656,7 @@ function buildProblem(slide: SlideInput, p: ColorPalette): string {
 
   for (const line of dataLines) {
     bodyHtml += `<div style="position:absolute;left:${PAD + 32}px;top:${ty}px;width:${W - PAD * 2 - 40}px;font-size:16px;line-height:1.6;color:${p.text};opacity:0.85;padding-left:12px;border-left:2px solid ${hexToRgba(barColor, 0.3)}">${escHtml(stripMarkdown(line))}</div>`;
-    ty += 56;
+    ty += 64;
   }
 
   return `${SCOPED_RESET}
@@ -683,7 +683,7 @@ function buildSolution(slide: SlideInput, p: ColorPalette): string {
   let ty = PAD + 100;
   for (const line of lines.slice(0, 6)) {
     bodyHtml += `<div style="position:absolute;left:${PAD + 32}px;top:${ty}px;width:${W - PAD * 2 - 40}px;font-size:16px;line-height:1.6;color:${p.text};opacity:0.85;padding-left:12px;border-left:2px solid ${hexToRgba(barColor, 0.3)}">${escHtml(stripMarkdown(line))}</div>`;
-    ty += 56;
+    ty += 64;
   }
 
   return `${SCOPED_RESET}
@@ -747,9 +747,9 @@ function buildContent(slide: SlideInput, p: ColorPalette): string {
   const cardW = W - PAD * 2 - 40;
 
   for (const line of lines.slice(0, 8)) {
-    bodyHtml += `<div style="position:absolute;left:${PAD + 32}px;top:${ty}px;width:${cardW}px;height:64px;background:${hexToRgba(p.surface, 0.5)};border:1px solid ${hexToRgba(p.border, 0.3)};border-radius:10px;border-left:4px solid ${hexToRgba(p.accent, 0.6)}"></div>`;
-    bodyHtml += `<div style="position:absolute;left:${PAD + 32 + cardPad}px;top:${ty + 18}px;width:${cardW - cardPad * 2}px;font-size:19px;line-height:1.5;color:${p.text};opacity:0.85">${escHtml(stripMarkdown(line))}</div>`;
-    ty += 76;
+    bodyHtml += `<div style="position:absolute;left:${PAD + 32}px;top:${ty}px;width:${cardW}px;height:74px;background:${hexToRgba(p.surface, 0.5)};border:1px solid ${hexToRgba(p.border, 0.3)};border-radius:10px;border-left:4px solid ${hexToRgba(p.accent, 0.6)}"></div>`;
+    bodyHtml += `<div style="position:absolute;left:${PAD + 32 + cardPad}px;top:${ty + 22}px;width:${cardW - cardPad * 2}px;font-size:24px;line-height:1.4;color:${p.text};opacity:0.85">${escHtml(stripMarkdown(line))}</div>`;
+    ty += 86;
   }
 
   return `${SCOPED_RESET}
