@@ -107,6 +107,43 @@ function bgGradientOverlay(w: number, h: number, color: string, alpha = 0.05, po
   return `<div style="position:absolute;left:0;top:0;width:${w}px;height:${h}px;background:radial-gradient(ellipse 80% 70% at 50% ${posY},${hexToRgba(color, alpha)} 0%,transparent 70%);pointer-events:none"></div>`;
 }
 
+
+// Glass card with backdrop blur — for dark theme frosted glass effects
+function glassCard(w: number, h: number, x: number, y: number, bg: string, blur = 12): string {
+  return `<div style="position:absolute;left:${x}px;top:${y}px;width:${w}px;height:${h}px;` +
+    `background:${bg};backdrop-filter:blur(${blur}px);-webkit-backdrop-filter:blur(${blur}px);` +
+    `border:1px solid rgba(255,255,255,0.15);border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,0.12)">`;
+}
+
+// Subtle text glow for dark themes — lifts titles off backgrounds
+function textGlow(color: string, intensity = 0.3): string {
+  return `text-shadow:0 0 20px ${hexToRgba(color, intensity)},0 0 40px ${hexToRgba(color, intensity * 0.5)}`;
+}
+
+// Diagonal accent stripe overlay for card headers
+function accentStripe(w: number, h: number, color: string, alpha = 0.08): string {
+  return `<div style="position:absolute;left:0;top:0;width:${w}px;height:${h}px;` +
+    `background:linear-gradient(135deg,${hexToRgba(color, alpha)} 0%,transparent 50%);pointer-events:none"></div>`;
+}
+
+// 3-tier shadow depth system — replaces uniform box-shadow
+function cardShadow(level: 1 | 2 | 3, dark: boolean): string {
+  if (dark) {
+    const shadows = [
+      '0 2px 8px rgba(0,0,0,0.3)',
+      '0 8px 24px rgba(0,0,0,0.25),0 2px 8px rgba(0,0,0,0.2)',
+      '0 16px 48px rgba(0,0,0,0.3),0 4px 12px rgba(0,0,0,0.2)',
+    ];
+    return shadows[level - 1];
+  }
+  const shadows = [
+    '0 1px 3px rgba(0,0,0,0.08)',
+    '0 4px 16px rgba(0,0,0,0.08),0 1px 4px rgba(0,0,0,0.04)',
+    '0 12px 40px rgba(0,0,0,0.1),0 4px 12px rgba(0,0,0,0.06)',
+  ];
+  return shadows[level - 1];
+}
+
 // Per-card accent color rotation — uses palette diversity for visual variety
 function cardAccentColors(p: ColorPalette): string[] {
   return [p.accent, p.primary, p.secondary, p.success, p.warning, p.error].filter(Boolean);
@@ -298,6 +335,72 @@ function buildTimeline(slide: SlideInput, p: ColorPalette, hasImage = false): st
   }
 
   const count = milestones.length;
+  const tlVariant = layoutVariant(slide.title, slide.body, 2);
+
+  // Variant 1: Staggered zigzag — milestones alternate above/below center line
+  if (tlVariant === 1 && count >= 3) {
+    const dark = isDarkBackground(p.background);
+    const zigLineY = Math.round(H * 0.48);
+    const zigStartX = PAD + 60;
+    const zigEndX = (hasImage ? Math.round(W * 0.7) : W) - PAD - 60;
+    const zigSpacing = (zigEndX - zigStartX) / (count - 1 || 1);
+    const zigCardW = Math.min(200, Math.round(zigSpacing - 16));
+    const zigCardH = 130;
+    const zigAccents = cardAccentColors(p);
+    let zigHtml = '';
+    let zigSvg = '';
+
+    // Central horizontal line
+    zigSvg += `<line x1="${zigStartX}" y1="${zigLineY}" x2="${zigEndX}" y2="${zigLineY}" stroke="${p.border}" stroke-width="2" opacity="0.4" />`;
+
+    for (let i = 0; i < count; i++) {
+      const cx = count === 1 ? Math.round(cW / 2) : Math.round(zigStartX + i * zigSpacing);
+      const fill = zigAccents[i % zigAccents.length];
+      const above = i % 2 === 0;
+      const cardTop = above ? zigLineY - zigCardH - 24 : zigLineY + 24;
+      const connY1 = above ? zigLineY - 24 : zigLineY;
+      const connY2 = above ? zigLineY : zigLineY + 24;
+
+      // Connector line from center to card
+      zigSvg += `<line x1="${cx}" y1="${connY1}" x2="${cx}" y2="${connY2}" stroke="${fill}" stroke-width="2" opacity="0.5" />`;
+      // Node circle on center line
+      zigSvg += `<circle cx="${cx}" cy="${zigLineY}" r="8" fill="${fill}" />`;
+      zigSvg += `<circle cx="${cx}" cy="${zigLineY}" r="12" fill="${hexToRgba(fill, 0.15)}" />`;
+
+      // Card
+      const cardBg = dark ? hexToRgba(p.surface, 0.6) : p.surface;
+      const cardBorder = dark
+        ? `backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,0.12)`
+        : `border:1px solid ${p.border}`;
+      zigHtml += `<div style="position:absolute;left:${cx - zigCardW / 2}px;top:${cardTop}px;width:${zigCardW}px;height:${zigCardH}px;background:${cardBg};${cardBorder};border-radius:12px;box-shadow:${cardShadow(2, dark)};overflow:hidden"></div>`;
+      // Colored top/bottom edge
+      if (above) {
+        zigHtml += `<div style="position:absolute;left:${cx - zigCardW / 2}px;top:${cardTop + zigCardH - 3}px;width:${zigCardW}px;height:3px;background:${fill};border-radius:0 0 12px 12px"></div>`;
+      } else {
+        zigHtml += `<div style="position:absolute;left:${cx - zigCardW / 2}px;top:${cardTop}px;width:${zigCardW}px;height:3px;background:${fill};border-radius:12px 12px 0 0"></div>`;
+      }
+      // Date label
+      if (milestones[i].date) {
+        zigHtml += `<div style="position:absolute;left:${cx - zigCardW / 2 + 10}px;top:${cardTop + (above ? 10 : 12)}px;width:${zigCardW - 20}px;font-size:11px;font-weight:bold;color:${fill};letter-spacing:0.5px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${escHtml(milestones[i].date)}</div>`;
+      }
+      // Text content
+      const textTop = cardTop + (milestones[i].date ? 28 : 12);
+      zigHtml += `<div style="position:absolute;left:${cx - zigCardW / 2 + 10}px;top:${textTop}px;width:${zigCardW - 20}px;max-height:${zigCardH - (milestones[i].date ? 40 : 24)}px;font-size:12px;line-height:1.4;color:${p.text};overflow:hidden"><span style="font-weight:600;color:${fill}">${escHtml(milestones[i].text.split(/\s+/).slice(0, 2).join(" "))}</span> ${escHtml(milestones[i].text.split(/\s+/).slice(2).join(" "))}</div>`;
+    }
+
+    const titleGlowCss = dark ? `;${textGlow(p.accent, 0.25)}` : '';
+    return `${SCOPED_RESET}
+<div style="position:relative;width:${W}px;height:${H}px;background:${p.background};">
+  ${bgGradientOverlay(cW, H, p.primary, 0.04, '50%')}
+  <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;text-align:center;font-size:${titleFontSize(slide.title)}px;font-weight:bold;overflow-wrap:break-word;word-wrap:break-word;color:${p.text};line-height:1.2${titleGlowCss}">${escHtml(slide.title)}</div>
+  <div style="position:absolute;left:${Math.round((cW - 60) / 2)}px;top:${PAD + 56}px;width:60px;height:3px;background:${p.accent};border-radius:2px"></div>
+  <svg style="position:absolute;left:0;top:0" width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg">
+    ${zigSvg}
+  </svg>
+  ${zigHtml}
+</div>`;
+  }
+
   const visibleW = hasImage ? Math.round(W * 0.7) : W;
   const lineY = Math.round(H * 0.42);
   const lineStartX = PAD + 40;
@@ -487,7 +590,7 @@ function buildMetricsHighlight(slide: SlideInput, p: ColorPalette, hasImage = fa
 <div style="position:relative;width:${W}px;height:${H}px;background:${p.background};">
   <div style="position:absolute;left:0;top:0;width:${cW}px;height:${H}px;background:radial-gradient(ellipse 800px 600px at ${Math.round(cW / 2)}px 40%,${hexToRgba(p.primary, 0.06)} 0%,transparent 70%)"></div>
   ${circleSvg}
-  <div style="position:absolute;left:${PAD}px;top:${heroY}px;width:${cW - PAD * 2}px;text-align:center;font-size:${heroFontSize}px;font-weight:bold;color:${p.primary};line-height:1.1;z-index:2">${escHtml(bigValue)}</div>
+  <div style="position:absolute;left:${PAD}px;top:${heroY}px;width:${cW - PAD * 2}px;text-align:center;font-size:${heroFontSize}px;font-weight:bold;color:${p.primary};line-height:1.1;z-index:2${isDarkBackground(p.background) ? `;${textGlow(p.primary, 0.4)}` : ''}">${escHtml(bigValue)}</div>
   ${showLabel ? `<div style="position:absolute;left:${PAD + 60}px;top:${labelY}px;width:${labelW}px;text-align:center;font-size:${labelFontSize}px;font-weight:bold;color:${p.text};line-height:1.3;overflow:hidden;max-height:${labelH}px">${escHtml(labelText)}</div>` : ''}
   <div style="position:absolute;left:${Math.round((cW - 80) / 2)}px;top:${accentY}px;width:80px;height:3px;background:${p.accent};border-radius:2px"></div>
   ${displaySupport && maxSupportH > 30 ? `<div style="position:absolute;left:${PAD + 60}px;top:${supportY}px;width:${cW - PAD * 2 - 120}px;text-align:center;font-size:16px;line-height:1.5;color:${p.text};opacity:0.75;overflow:hidden;max-height:${maxSupportH}px">${escHtml(displaySupport)}</div>` : ''}
@@ -766,11 +869,11 @@ function buildComparison(slide: SlideInput, p: ColorPalette, hasImage = false): 
   ${bgGradientOverlay(cW, H, p.accent, 0.04, '40%')}
   <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;text-align:center;font-size:${titleFontSize(slide.title)}px;font-weight:bold;overflow-wrap:break-word;word-wrap:break-word;color:${p.text};line-height:1.2">${escHtml(slide.title)}</div>
   <div style="position:absolute;left:${Math.round((cW - 60) / 2)}px;top:${PAD + 56}px;width:60px;height:3px;background:${p.accent};border-radius:2px"></div>
-  <div style="position:absolute;left:${PAD}px;top:${cardY}px;width:${colW}px;height:${cardH}px;background:${p.surface};border:1px solid ${p.border};border-radius:16px;box-shadow:0 2px 8px rgba(0,0,0,0.08)"></div>
+  <div style="position:absolute;left:${PAD}px;top:${cardY}px;width:${colW}px;height:${cardH}px;background:${p.surface};border:1px solid ${p.border};border-radius:16px;box-shadow:${cardShadow(2, isDarkBackground(p.background))}"></div>
   <div style="position:absolute;left:${PAD}px;top:${cardY}px;width:${colW}px;height:52px;background:${hexToRgba(p.primary, 0.1)};border-radius:16px 16px 0 0"></div>
   <div style="position:absolute;left:${PAD + 24}px;top:${cardY + 14}px;font-size:15px;font-weight:bold;color:${p.primary};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(stripMarkdown(leftTitle))}</div>
   ${renderItems(leftLines, PAD, '\u2022')}
-  <div style="position:absolute;left:${rightX}px;top:${cardY}px;width:${colW}px;height:${cardH}px;background:${p.surface};border:2px solid ${p.accent};border-radius:16px;box-shadow:0 2px 12px rgba(0,0,0,0.10)"></div>
+  <div style="position:absolute;left:${rightX}px;top:${cardY}px;width:${colW}px;height:${cardH}px;background:${p.surface};border:2px solid ${p.accent};border-radius:16px;box-shadow:${cardShadow(3, isDarkBackground(p.background))}"></div>
   <div style="position:absolute;left:${rightX}px;top:${cardY}px;width:${colW}px;height:52px;background:${hexToRgba(p.accent, 0.15)};border-radius:16px 16px 0 0"></div>
   <div style="position:absolute;left:${rightX + 24}px;top:${cardY + 14}px;font-size:15px;font-weight:bold;color:${p.accent};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(stripMarkdown(rightTitle))}</div>
   ${renderItems(rightLines, rightX, '\u2713')}
@@ -906,7 +1009,7 @@ function buildTeam(slide: SlideInput, p: ColorPalette, hasImage = false): string
     const cy = startY + row * (cardH + gapY);
 
     // Card
-    cardsHtml += `<div style="position:absolute;left:${cx}px;top:${cy}px;width:${cardW}px;height:${cardH}px;background:${p.surface};border:1px solid ${p.border};border-radius:16px;box-shadow:0 2px 8px rgba(0,0,0,0.08)"></div>`;
+    cardsHtml += `<div style="position:absolute;left:${cx}px;top:${cy}px;width:${cardW}px;height:${cardH}px;background:${p.surface};border:1px solid ${p.border};border-radius:16px;box-shadow:${cardShadow(2, isDarkBackground(p.background))}"></div>`;
 
     // Name + role
     cardsHtml += `<div style="position:absolute;left:${cx + 12}px;top:${cy + 100}px;width:${cardW - 24}px;text-align:center;font-size:16px;font-weight:bold;color:${p.text}">${escHtml(members[i].name)}</div>`;
@@ -986,7 +1089,7 @@ function buildFeatureGrid(slide: SlideInput, p: ColorPalette, hasImage = false):
   }
 
   const count = features.length;
-  const fgVariant = layoutVariant(slide.title, slide.body, 2);
+  const fgVariant = layoutVariant(slide.title, slide.body, 3);
 
   // Variant 1: Horizontal row layout (alternates with grid)
   if (fgVariant === 1 && count >= 3) {
@@ -1016,6 +1119,66 @@ function buildFeatureGrid(slide: SlideInput, p: ColorPalette, hasImage = false):
       rowHtml +
       '</div>';
   }
+  // Variant 2: Bento grid (asymmetric) — first item large, rest in 2-column grid
+  if (fgVariant === 2 && count >= 3) {
+    const dark = isDarkBackground(p.background);
+    const bentoAccents = cardAccentColors(p);
+    const bentoGap = 16;
+    const bentoStartY = PAD + 82;
+    const bentoAvailW = cW - PAD * 2;
+    const bentoAvailH = H - bentoStartY - PAD;
+    let bentoHtml = '';
+
+    // Hero card — full width, taller
+    const heroH = Math.round(bentoAvailH * 0.42);
+    const heroColor = bentoAccents[0];
+    const heroBg = dark ? hexToRgba(p.surface, 0.6) : p.surface;
+    const heroStyle = dark
+      ? `backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,0.1);box-shadow:${cardShadow(3, true)}`
+      : `border:1px solid ${p.border};box-shadow:${cardShadow(3, false)}`;
+    bentoHtml += `<div style="position:absolute;left:${PAD}px;top:${bentoStartY}px;width:${bentoAvailW}px;height:${heroH}px;background:${heroBg};${heroStyle};border-radius:16px;overflow:hidden"></div>`;
+    // Diagonal clip accent on hero
+    bentoHtml += `<div style="position:absolute;left:${PAD}px;top:${bentoStartY}px;width:${bentoAvailW}px;height:${heroH}px;background:linear-gradient(135deg,${hexToRgba(heroColor, 0.08)} 0%,transparent 40%);border-radius:16px;pointer-events:none"></div>`;
+    // Hero icon
+    bentoHtml += `<div style="position:absolute;left:${PAD + 24}px;top:${bentoStartY + 20}px;width:40px;height:40px;background:${heroColor};border-radius:10px;opacity:0.85"></div>`;
+    // Hero title
+    bentoHtml += `<div style="position:absolute;left:${PAD + 24}px;top:${bentoStartY + 72}px;width:${bentoAvailW - 48}px;font-size:20px;font-weight:bold;color:${heroColor};overflow:hidden;max-height:30px;line-height:1.3">${escHtml(features[0].title)}</div>`;
+    if (features[0].desc) {
+      bentoHtml += `<div style="position:absolute;left:${PAD + 24}px;top:${bentoStartY + 104}px;width:${bentoAvailW - 48}px;font-size:15px;line-height:1.5;color:${p.text};opacity:0.8;overflow:hidden;max-height:${heroH - 120}px">${escHtml(features[0].desc)}</div>`;
+    }
+
+    // Remaining items in 2-column grid
+    const gridTop = bentoStartY + heroH + bentoGap;
+    const gridAvailH = H - gridTop - PAD;
+    const gridCols = 2;
+    const gridCardW = Math.round((bentoAvailW - bentoGap) / gridCols);
+    const remaining = features.slice(1);
+    const gridRows = Math.ceil(remaining.length / gridCols);
+    const gridCardH = Math.min(160, Math.round((gridAvailH - (gridRows - 1) * bentoGap) / gridRows));
+
+    for (let gi = 0; gi < remaining.length; gi++) {
+      const gc = gi % gridCols;
+      const gr = Math.floor(gi / gridCols);
+      const gx = PAD + gc * (gridCardW + bentoGap);
+      const gy = gridTop + gr * (gridCardH + bentoGap);
+      const gColor = bentoAccents[(gi + 1) % bentoAccents.length];
+      bentoHtml += `<div style="position:absolute;left:${gx}px;top:${gy}px;width:${gridCardW}px;height:${gridCardH}px;background:${p.surface};border:1px solid ${p.border};border-radius:12px;box-shadow:${cardShadow(2, dark)};border-left:4px solid ${gColor};overflow:hidden"></div>`;
+      bentoHtml += `<div style="position:absolute;left:${gx + 18}px;top:${gy + 14}px;width:${gridCardW - 36}px;font-size:14px;font-weight:bold;color:${gColor};overflow:hidden;max-height:22px">${escHtml(remaining[gi].title)}</div>`;
+      if (remaining[gi].desc) {
+        bentoHtml += `<div style="position:absolute;left:${gx + 18}px;top:${gy + 40}px;width:${gridCardW - 36}px;font-size:13px;line-height:1.4;color:${p.text};opacity:0.8;overflow:hidden;max-height:${gridCardH - 52}px">${escHtml(remaining[gi].desc)}</div>`;
+      }
+    }
+
+    const titleGlow = dark ? `;${textGlow(p.accent, 0.25)}` : '';
+    return `${SCOPED_RESET}
+<div style="position:relative;width:${W}px;height:${H}px;background:${p.background};">
+  ${bgGradientOverlay(cW, H, p.accent, 0.04)}
+  <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;text-align:center;font-size:${titleFontSize(slide.title)}px;font-weight:bold;overflow-wrap:break-word;word-wrap:break-word;color:${p.text};line-height:1.2${titleGlow}">${escHtml(slide.title)}</div>
+  <div style="position:absolute;left:${Math.round((cW - 60) / 2)}px;top:${PAD + 56}px;width:60px;height:3px;background:${p.accent};border-radius:2px"></div>
+  ${bentoHtml}
+</div>`;
+  }
+
   const cols = count <= 3 ? count : count <= 4 ? 2 : 3;
   const rows = Math.ceil(count / cols);
   const gapX = 24;
@@ -1040,7 +1203,7 @@ function buildFeatureGrid(slide: SlideInput, p: ColorPalette, hasImage = false):
     const cy = startY + row * (cardH + gapY);
     const cardColor = accents[i % accents.length];
 
-    html += `<div style="position:absolute;left:${cx}px;top:${cy}px;width:${cardW}px;height:${cardH}px;background:${p.surface};border:1px solid ${p.border};border-radius:16px;box-shadow:0 2px 8px rgba(0,0,0,0.08);border-top:4px solid ${cardColor}"></div>`;
+    html += `<div style="position:absolute;left:${cx}px;top:${cy}px;width:${cardW}px;height:${cardH}px;background:${p.surface};border:1px solid ${p.border};border-radius:16px;box-shadow:${cardShadow(2, isDarkBackground(p.background))};border-top:4px solid ${cardColor}"></div>`;
     // Icon placeholder — uses card accent color
     html += `<div style="position:absolute;left:${cx + 20}px;top:${cy + 20}px;width:32px;height:32px;background:${cardColor};border-radius:8px;opacity:0.8"></div>`;
     // Title (allow 2-line wrap)
@@ -1089,7 +1252,7 @@ function buildProcess(slide: SlideInput, p: ColorPalette, hasImage = false): str
   const stepCap = titleCountCap(slide.title);
   const steps = stepCap ? unfilteredSteps.slice(0, stepCap) : unfilteredSteps;
 
-  const procVariant = layoutVariant(slide.title, slide.body, 2);
+  const procVariant = layoutVariant(slide.title, slide.body, 3);
 
   // Variant 1: Vertical timeline layout (alternates with card grid)
   if (procVariant === 1 && steps.length >= 3 && steps.length <= 6) {
@@ -1118,6 +1281,55 @@ function buildProcess(slide: SlideInput, p: ColorPalette, hasImage = false): str
       '<div style="position:absolute;left:' + PAD + 'px;top:' + (PAD + 48) + 'px;width:60px;height:3px;background:' + p.accent + ';border-radius:2px"></div>' +
       vtHtml +
       '</div>';
+  }
+
+  // Variant 2: Numbered circle chain — circles connected by horizontal line
+  if (procVariant === 2 && steps.length >= 3 && steps.length <= 6) {
+    const dark = isDarkBackground(p.background);
+    const circCount = Math.min(steps.length, 5);
+    const circR = 30;
+    const circLineY = Math.round(H * 0.38);
+    const circStartX = PAD + 80;
+    const circEndX = (hasImage ? CONTENT_W_IMG : W) - PAD - 80;
+    const circSpacing = (circEndX - circStartX) / (circCount - 1 || 1);
+    const circAccents = cardAccentColors(p);
+    let circSvg = '';
+    let circHtml = '';
+
+    // Connecting line
+    circSvg += `<line x1="${circStartX}" y1="${circLineY}" x2="${circEndX}" y2="${circLineY}" stroke="${p.border}" stroke-width="3" opacity="0.25" />`;
+
+    for (let ci = 0; ci < circCount; ci++) {
+      const cx = circCount === 1 ? Math.round(cW / 2) : Math.round(circStartX + ci * circSpacing);
+      const color = circAccents[ci % circAccents.length];
+
+      // Outer decorative ring with conic gradient effect (approximated with two half-circles)
+      circSvg += `<circle cx="${cx}" cy="${circLineY}" r="${circR + 6}" fill="none" stroke="${hexToRgba(color, 0.15)}" stroke-width="3" />`;
+      // Main circle
+      circSvg += `<circle cx="${cx}" cy="${circLineY}" r="${circR}" fill="${color}" />`;
+      // Number inside circle
+      circSvg += `<text x="${cx}" y="${circLineY + 6}" text-anchor="middle" fill="#FFFFFF" font-size="18" font-weight="bold">${steps[ci].num}</text>`;
+
+      // Step title below circle
+      const titleW = Math.round(circSpacing - 20);
+      circHtml += `<div style="position:absolute;left:${cx - titleW / 2}px;top:${circLineY + circR + 16}px;width:${titleW}px;text-align:center;font-size:14px;font-weight:bold;color:${color};overflow:hidden;max-height:40px;line-height:1.3">${escHtml(steps[ci].title)}</div>`;
+      // Description below title
+      if (steps[ci].desc) {
+        circHtml += `<div style="position:absolute;left:${cx - titleW / 2}px;top:${circLineY + circR + 56}px;width:${titleW}px;text-align:center;font-size:12px;line-height:1.4;color:${p.text};opacity:0.75;overflow:hidden;max-height:80px">${escHtml(steps[ci].desc)}</div>`;
+      }
+    }
+
+    const titleGlow = dark ? `;${textGlow(p.accent, 0.25)}` : '';
+    return `${SCOPED_RESET}
+<div style="position:relative;width:${W}px;height:${H}px;background:${p.background};">
+  ${bgGradientOverlay(cW, H, p.primary, 0.04)}
+  <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;text-align:center;font-size:${titleFontSize(slide.title)}px;font-weight:bold;overflow-wrap:break-word;word-wrap:break-word;color:${p.text};line-height:1.2${titleGlow}">${escHtml(slide.title)}</div>
+  <div style="position:absolute;left:${Math.round((cW - 60) / 2)}px;top:${PAD + 56}px;width:60px;height:3px;background:${p.accent};border-radius:2px"></div>
+  <svg style="position:absolute;left:0;top:0" width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg">
+    ${circSvg}
+  </svg>
+  ${circHtml}
+</div>`;
   }
 
   if (steps.length === 0) {
@@ -1151,7 +1363,7 @@ function buildProcess(slide: SlideInput, p: ColorPalette, hasImage = false): str
     const cy = cardY + row * (cardH + gapY);
     const stepColor = procAccents[i % procAccents.length];
     // Card background
-    cardsHtml += `<div style="position:absolute;left:${cx}px;top:${cy}px;width:${cardW}px;height:${cardH}px;background:${p.surface};border:1px solid ${p.border};border-radius:16px;box-shadow:0 2px 8px rgba(0,0,0,0.08);border-top:4px solid ${stepColor}"></div>`;
+    cardsHtml += `<div style="position:absolute;left:${cx}px;top:${cy}px;width:${cardW}px;height:${cardH}px;background:${p.surface};border:1px solid ${p.border};border-radius:16px;box-shadow:${cardShadow(2, isDarkBackground(p.background))};border-top:4px solid ${stepColor}"></div>`;
     // Step number circle — uses step accent color
     cardsHtml += `<div style="position:absolute;left:${cx + cardW / 2 - 20}px;top:${cy + 16}px;width:40px;height:40px;border-radius:50%;background:${stepColor};display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:bold;color:#FFFFFF;text-align:center;line-height:40px">${String(steps[i].num).padStart(2, '0')}</div>`;
     // Title
@@ -1263,6 +1475,48 @@ function buildProblem(slide: SlideInput, p: ColorPalette, hasImage = false): str
 
   const lines = parseBodyLines(slide.body);
   const barColor = p.error || p.accent;
+  const probVariant = layoutVariant(slide.title, slide.body, 2);
+
+  // Variant 1: Split diagonal — colored triangle zone + 2-column items
+  if (probVariant === 1 && lines.length >= 3) {
+    const dark = isDarkBackground(p.background);
+    const probCap2 = titleCountCap(slide.title);
+    const items = lines.slice(0, probCap2 || 6);
+    const col1 = items.slice(0, Math.ceil(items.length / 2));
+    const col2 = items.slice(Math.ceil(items.length / 2));
+    const colW = Math.round((cW - PAD * 2 - 40) / 2);
+    const itemStartY = PAD + 110;
+    const itemSpacing = Math.min(72, Math.round((H - itemStartY - PAD) / Math.max(col1.length, col2.length)));
+    const pAccents = cardAccentColors(p);
+    let itemsHtml = '';
+
+    // Render column items
+    const renderCol = (col: string[], startX: number) => {
+      let y = itemStartY;
+      for (let i = 0; i < col.length; i++) {
+        const ic = pAccents[i % pAccents.length];
+        itemsHtml += `<div style="position:absolute;left:${startX}px;top:${y}px;width:${colW}px;max-height:${itemSpacing - 10}px;font-size:15px;line-height:1.45;color:${p.text};opacity:0.9;overflow:hidden;padding-left:12px;border-left:3px solid ${hexToRgba(ic, 0.7)}"><span style="font-weight:600;color:${ic}">${escHtml(stripMarkdown(col[i]).split(/\s+/).slice(0, 2).join(" "))}</span> ${escHtml(stripMarkdown(col[i]).split(/\s+/).slice(2).join(" "))}</div>`;
+        y += itemSpacing;
+      }
+    };
+    renderCol(col1, PAD + 20);
+    renderCol(col2, PAD + 20 + colW + 40);
+
+    const titleGlow = dark ? `;${textGlow(barColor, 0.3)}` : '';
+    return `${SCOPED_RESET}
+<div style="position:relative;width:${W}px;height:${H}px;background:${p.background};">
+  ${bgGradientOverlay(cW, H, barColor, 0.04, '30%')}
+  <div style="position:absolute;left:0;top:0;width:${Math.round(cW * 0.45)}px;height:${Math.round(H * 0.35)}px;background:linear-gradient(135deg,${hexToRgba(barColor, 0.08)} 0%,transparent 100%);pointer-events:none"></div>
+  <div style="position:absolute;left:0;top:0;width:6px;height:${H}px;background:${barColor}"></div>
+  <svg style="position:absolute;left:${PAD + 4}px;top:${PAD}px" width="32" height="32" xmlns="http://www.w3.org/2000/svg">
+    <polygon points="16,2 30,28 2,28" fill="none" stroke="${barColor}" stroke-width="2"/>
+    <text x="16" y="24" text-anchor="middle" fill="${barColor}" font-size="16" font-weight="bold">!</text>
+  </svg>
+  <div style="position:absolute;left:${PAD + 44}px;top:${PAD + 4}px;font-size:${titleFontSize(slide.title)}px;font-weight:bold;overflow-wrap:break-word;word-wrap:break-word;color:${p.text};line-height:1.2${titleGlow}">${escHtml(slide.title)}</div>
+  <div style="position:absolute;left:${PAD + 44}px;top:${PAD + 48}px;width:60px;height:3px;background:${barColor};border-radius:2px"></div>
+  ${itemsHtml}
+</div>`;
+  }
 
   // Detect if first line looks like a table header (short, no numbers/dollar signs)
   const isHeader = lines.length > 2 && !/\d/.test(lines[0]) && !/[$€£¥]/.test(lines[0]) && lines[0].length < 60;
@@ -1317,6 +1571,49 @@ function buildSolution(slide: SlideInput, p: ColorPalette, hasImage = false): st
 
   const solCap = titleCountCap(slide.title);
   const solutionItems = lines.slice(0, solCap || 6);
+  const solVariant = layoutVariant(slide.title, slide.body, 2);
+
+  // Variant 1: Checkmark cascade — SVG checkmark circles + staircase indent
+  if (solVariant === 1 && solutionItems.length >= 2) {
+    const dark = isDarkBackground(p.background);
+    const cascStartY = PAD + 100;
+    const cascAvailH = H - cascStartY - PAD - 10;
+    const cascSpacing = Math.min(76, Math.round(cascAvailH / solutionItems.length));
+    const cascFontSz = solutionItems.length > 4 ? 14 : 16;
+    const cascAccents = cardAccentColors(p);
+    let cascHtml = '';
+
+    for (let ci = 0; ci < solutionItems.length; ci++) {
+      const indent = ci * 10; // Staircase progression
+      const cx = PAD + 32 + indent;
+      const cy = cascStartY + ci * cascSpacing;
+      const ic = cascAccents[ci % cascAccents.length];
+
+      // Checkmark circle (SVG inline)
+      cascHtml += `<svg style="position:absolute;left:${cx}px;top:${cy}px" width="28" height="28" xmlns="http://www.w3.org/2000/svg">`;
+      cascHtml += `<circle cx="14" cy="14" r="13" fill="${hexToRgba(ic, 0.12)}" stroke="${ic}" stroke-width="1.5"/>`;
+      cascHtml += `<polyline points="8,14 12,19 20,9" fill="none" stroke="${ic}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>`;
+      cascHtml += `</svg>`;
+
+      // Text after checkmark
+      cascHtml += `<div style="position:absolute;left:${cx + 36}px;top:${cy + 2}px;width:${cW - cx - 36 - PAD - 20}px;max-height:${cascSpacing - 8}px;font-size:${cascFontSz}px;line-height:1.5;color:${p.text};opacity:0.9;overflow:hidden"><span style="font-weight:600;color:${ic}">${escHtml(stripMarkdown(solutionItems[ci]).split(/\s+/).slice(0, 2).join(" "))}</span> ${escHtml(stripMarkdown(solutionItems[ci]).split(/\s+/).slice(2).join(" "))}</div>`;
+    }
+
+    const titleGlow = dark ? `;${textGlow(barColor, 0.25)}` : '';
+    return `${SCOPED_RESET}
+<div style="position:relative;width:${W}px;height:${H}px;background:${p.background};">
+  ${bgGradientOverlay(cW, H, barColor, 0.04, '30%')}
+  <div style="position:absolute;left:0;top:0;width:6px;height:${H}px;background:${barColor}"></div>
+  <svg style="position:absolute;left:${PAD + 4}px;top:${PAD}px" width="32" height="32" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="16" cy="16" r="14" fill="none" stroke="${barColor}" stroke-width="2"/>
+    <polyline points="10,16 14,22 24,10" fill="none" stroke="${barColor}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+  <div style="position:absolute;left:${PAD + 44}px;top:${PAD + 4}px;font-size:${titleFontSize(slide.title)}px;font-weight:bold;overflow-wrap:break-word;word-wrap:break-word;color:${p.text};line-height:1.2${titleGlow}">${escHtml(slide.title)}</div>
+  <div style="position:absolute;left:${PAD + 44}px;top:${PAD + 48}px;width:60px;height:3px;background:${barColor};border-radius:2px"></div>
+  ${cascHtml}
+</div>`;
+  }
+
   const solStartY = PAD + 100;
   const solAvailH = H - solStartY - PAD - 10;
   const solSpacing = Math.min(76, Math.round(solAvailH / solutionItems.length));
@@ -1513,7 +1810,7 @@ function buildArchitecture(slide: SlideInput, p: ColorPalette, hasImage = false)
     const descFSz = boxH >= 140 ? 14 : 12;
     const nodeColor = archAccents[i % archAccents.length];
 
-    boxesHtml += `<div style="position:absolute;left:${cx}px;top:${cy}px;width:${boxW}px;height:${boxH}px;background:${p.surface};border:1px solid ${p.border};border-radius:12px;border-top:4px solid ${nodeColor};box-shadow:0 2px 8px rgba(0,0,0,0.08);overflow:hidden"></div>`;
+    boxesHtml += `<div style="position:absolute;left:${cx}px;top:${cy}px;width:${boxW}px;height:${boxH}px;background:${p.surface};border:1px solid ${p.border};border-radius:12px;border-top:4px solid ${nodeColor};box-shadow:${cardShadow(2, isDarkBackground(p.background))};overflow:hidden"></div>`;
     boxesHtml += `<div style="position:absolute;left:${cx + 14}px;top:${cy + (desc ? 14 : Math.round(boxH / 2 - 10))}px;width:${boxW - 28}px;text-align:center;font-size:${titleFSz}px;font-weight:bold;color:${nodeColor};overflow:hidden;max-height:38px;line-height:1.3">${escHtml(title)}</div>`;
     if (desc) {
       boxesHtml += `<div style="position:absolute;left:${cx + 14}px;top:${cy + 42}px;width:${boxW - 28}px;text-align:center;font-size:${descFSz}px;color:${p.text};opacity:0.7;line-height:1.4;overflow:hidden;max-height:${descMaxH}px">${escHtml(desc)}</div>`;
