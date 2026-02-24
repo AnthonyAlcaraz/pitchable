@@ -27,8 +27,8 @@ const H = 720;
 
 // Slide types that use Figma-grade HTML+SVG templates for superior visuals.
 export const FIGMA_GRADE_TYPES: Set<string> = new Set([
-  'COMPARISON', 'TIMELINE', 'METRICS_HIGHLIGHT', 'MARKET_SIZING', 'TEAM', 'FEATURE_GRID',
-  'PROCESS', 'PROBLEM', 'SOLUTION', 'CTA', 'CONTENT', 'QUOTE', 'ARCHITECTURE',
+  'COMPARISON', 'TIMELINE', 'METRICS_HIGHLIGHT', 'DATA_METRICS', 'MARKET_SIZING', 'TEAM',
+  'FEATURE_GRID', 'PROCESS', 'PROBLEM', 'SOLUTION', 'CTA', 'CONTENT', 'QUOTE', 'ARCHITECTURE',
 ]);
 
 // ── Helpers ──────────────────────────────────────────────────
@@ -149,6 +149,7 @@ export function buildHtmlSlideContent(
     case 'TIMELINE':
       html = buildTimeline(cleaned, palette, !!cleaned.imageUrl); break;
     case 'METRICS_HIGHLIGHT':
+    case 'DATA_METRICS':
       html = buildMetricsHighlight(cleaned, palette, !!cleaned.imageUrl); break;
     case 'COMPARISON':
       html = buildComparison(cleaned, palette, !!cleaned.imageUrl); break;
@@ -866,33 +867,41 @@ function buildProcess(slide: SlideInput, p: ColorPalette, hasImage = false): str
   }
 
   const count = Math.min(steps.length, 6);
-  const cardW = count <= 3 ? 280 : count <= 4 ? 240 : 190;
-  const cardH = count <= 3 ? 300 : count <= 4 ? 270 : 240;
+  // 2-row layout for 5+ steps; single row for 1-4
+  const useRows = count >= 5;
+  const cols = useRows ? Math.ceil(count / 2) : count;
+  const rows = useRows ? 2 : 1;
+  const cardW = cols <= 3 ? 300 : 260;
   const gapX = 24;
-  const totalW = count * cardW + (count - 1) * gapX;
+  const gapY = 20;
+  const cardH = useRows ? 220 : (count <= 3 ? 340 : 300);
+  const totalW = cols * cardW + (cols - 1) * gapX;
   const startX = Math.round((cW - totalW) / 2);
-  const cardY = Math.round(PAD + 100);
+  const cardY = Math.round(PAD + 90);
 
   let cardsHtml = '';
   let connectorsSvg = '';
 
   for (let i = 0; i < count; i++) {
-    const cx = startX + i * (cardW + gapX);
+    const col = useRows ? (i % cols) : i;
+    const row = useRows ? Math.floor(i / cols) : 0;
+    const cx = startX + col * (cardW + gapX);
+    const cy = cardY + row * (cardH + gapY);
     // Card background
-    cardsHtml += `<div style="position:absolute;left:${cx}px;top:${cardY}px;width:${cardW}px;height:${cardH}px;background:${p.surface};border:1px solid ${p.border};border-radius:16px;box-shadow:0 2px 8px rgba(0,0,0,0.08);border-top:4px solid ${p.accent}"></div>`;
+    cardsHtml += `<div style="position:absolute;left:${cx}px;top:${cy}px;width:${cardW}px;height:${cardH}px;background:${p.surface};border:1px solid ${p.border};border-radius:16px;box-shadow:0 2px 8px rgba(0,0,0,0.08);border-top:4px solid ${p.accent}"></div>`;
     // Step number circle
-    cardsHtml += `<div style="position:absolute;left:${cx + cardW / 2 - 20}px;top:${cardY + 20}px;width:40px;height:40px;border-radius:50%;background:${p.accent};display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:bold;color:#FFFFFF;text-align:center;line-height:40px">${String(steps[i].num).padStart(2, '0')}</div>`;
+    cardsHtml += `<div style="position:absolute;left:${cx + cardW / 2 - 20}px;top:${cy + 16}px;width:40px;height:40px;border-radius:50%;background:${p.accent};display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:bold;color:#FFFFFF;text-align:center;line-height:40px">${String(steps[i].num).padStart(2, '0')}</div>`;
     // Title
-    cardsHtml += `<div style="position:absolute;left:${cx + 16}px;top:${cardY + 76}px;width:${cardW - 32}px;text-align:center;font-size:15px;font-weight:bold;color:${p.text};overflow:hidden;max-height:40px">${escHtml(steps[i].title)}</div>`;
+    cardsHtml += `<div style="position:absolute;left:${cx + 16}px;top:${cy + 66}px;width:${cardW - 32}px;text-align:center;font-size:15px;font-weight:bold;color:${p.text};overflow:hidden;max-height:40px">${escHtml(steps[i].title)}</div>`;
     // Description
     if (steps[i].desc) {
-      cardsHtml += `<div style="position:absolute;left:${cx + 16}px;top:${cardY + 104}px;width:${cardW - 32}px;text-align:center;font-size:14px;line-height:1.4;color:${p.text};opacity:0.8;overflow:hidden;max-height:${cardH - 130}px">${escHtml(steps[i].desc)}</div>`;
+      cardsHtml += `<div style="position:absolute;left:${cx + 16}px;top:${cy + 100}px;width:${cardW - 32}px;text-align:center;font-size:13px;line-height:1.4;color:${p.text};opacity:0.8;overflow:hidden;max-height:${cardH - 120}px">${escHtml(steps[i].desc)}</div>`;
     }
-    // Connector arrow between cards
-    if (i < count - 1) {
+    // Connector arrow between cards (same row only)
+    if (!useRows && i < count - 1) {
       const arrowX1 = cx + cardW + 2;
       const arrowX2 = cx + cardW + gapX - 2;
-      const arrowY = cardY + cardH / 2;
+      const arrowY = cy + cardH / 2;
       connectorsSvg += `<line x1="${arrowX1}" y1="${arrowY}" x2="${arrowX2}" y2="${arrowY}" stroke="${p.border}" stroke-width="2" marker-end="url(#arrowhead)" />`;
     }
   }

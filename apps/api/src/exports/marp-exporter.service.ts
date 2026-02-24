@@ -533,6 +533,32 @@ export class MarpExporterService {
     const type = slide.slideType;
     const bgVariant = getSlideBackground(type, slide.slideNumber, bgColor);
 
+    // ── Figma-grade dispatch (BEFORE bg-class) ──────────────────
+    // Figma HTML templates fully control background, text colors, and layout
+    // via inline styles. Dispatching them BEFORE bg-class assignment prevents
+    // CSS !important rules from bg-class patterns interfering with inline colors.
+    const figmaType = (rendererOverride && FIGMA_GRADE_TYPES.has(rendererOverride))
+      ? rendererOverride
+      : (FIGMA_GRADE_TYPES.has(type) ? type : null);
+
+    if (figmaType && palette) {
+      lines.push(`<!-- _backgroundColor: ${palette.background} -->`);
+      lines.push(`<!-- _color: ${palette.text} -->`);
+      lines.push('');
+      lines.push(buildHtmlSlideContent(
+        { title: slide.title, body: slide.body || '', slideType: figmaType, imageUrl: slide.imageUrl ?? undefined },
+        palette,
+      ));
+      lines.push('');
+      if (slide.speakerNotes) {
+        lines.push('<!--');
+        lines.push(slide.speakerNotes);
+        lines.push('-->');
+      }
+      return lines.join('\n');
+    }
+
+    // ── Non-Figma slides: bg-class system ───────────────────────
     // Layout class by type
     const centerTypes = ['QUOTE', 'COMPARISON', 'MARKET_SIZING', 'LOGO_WALL'];
     const spreadTypes = ['DATA_METRICS', 'METRICS_HIGHLIGHT', 'ARCHITECTURE', 'PROCESS', 'FEATURE_GRID', 'TIMELINE', 'PRODUCT_SHOWCASE', 'SPLIT_STATEMENT'];
@@ -610,45 +636,6 @@ export class MarpExporterService {
         lines.push('<!-- _backgroundColor: transparent -->');
       }
       lines.push('');
-    }
-
-    // AI renderer override: upgrade slide to a visual template when content matches
-    if (rendererOverride && FIGMA_GRADE_TYPES.has(rendererOverride) && palette) {
-      lines.push(`<!-- _backgroundColor: ${palette.background} -->`);
-      lines.push(`<!-- _color: ${palette.text} -->`);
-      lines.push(buildHtmlSlideContent(
-        { title: slide.title, body: slide.body || '', slideType: rendererOverride, imageUrl: slide.imageUrl ?? undefined },
-        palette,
-      ));
-      lines.push('');
-      if (slide.speakerNotes) {
-        lines.push('<!--');
-        lines.push(slide.speakerNotes);
-        lines.push('-->');
-      }
-      return lines.join('\n');
-    }
-
-    // Figma-grade HTML+SVG dispatch for complex slide types
-    // Images are rendered INSIDE the HTML template (not via Marp ![bg right])
-    // to avoid the split-section conflict where absolute-positioned content
-    // gets hidden behind the Marp image area.
-    if (FIGMA_GRADE_TYPES.has(type) && palette) {
-      // Explicit background + text color: templates set own bg via palette,
-      // this ensures no CSS bleed from Marp bg-class patterns.
-      lines.push(`<!-- _backgroundColor: ${palette.background} -->`);
-      lines.push(`<!-- _color: ${palette.text} -->`);
-      lines.push(buildHtmlSlideContent(
-        { title: slide.title, body: slide.body || '', slideType: type, imageUrl: slide.imageUrl ?? undefined },
-        palette,
-      ));
-      lines.push('');
-      if (slide.speakerNotes) {
-        lines.push('<!--');
-        lines.push(slide.speakerNotes);
-        lines.push('-->');
-      }
-      return lines.join('\n');
     }
 
     // Section label (AMI Labs style - colored pill badge; disabled in consulting profile)
