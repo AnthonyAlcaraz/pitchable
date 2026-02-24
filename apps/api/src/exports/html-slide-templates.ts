@@ -116,6 +116,7 @@ section::after { position: absolute !important; bottom: 16px !important; right: 
 // with absolute-positioned HTML templates.
 
 const IMG_WIDTH_RATIO = 0.30;  // 30% of slide width for image
+const CONTENT_W_IMG = Math.round(W * 0.68);  // Available content width when image present (30% image + 2% gap)
 
 function buildImageOverlay(imageUrl: string, palette: ColorPalette): string {
   const imgX = Math.round(W * (1 - IMG_WIDTH_RATIO));
@@ -143,31 +144,31 @@ export function buildHtmlSlideContent(
   let html = '';
   switch (cleaned.slideType) {
     case 'MARKET_SIZING':
-      html = buildMarketSizing(cleaned, palette); break;
+      html = buildMarketSizing(cleaned, palette, !!cleaned.imageUrl); break;
     case 'TIMELINE':
       html = buildTimeline(cleaned, palette, !!cleaned.imageUrl); break;
     case 'METRICS_HIGHLIGHT':
-      html = buildMetricsHighlight(cleaned, palette); break;
+      html = buildMetricsHighlight(cleaned, palette, !!cleaned.imageUrl); break;
     case 'COMPARISON':
-      html = buildComparison(cleaned, palette); break;
+      html = buildComparison(cleaned, palette, !!cleaned.imageUrl); break;
     case 'TEAM':
-      html = buildTeam(cleaned, palette); break;
+      html = buildTeam(cleaned, palette, !!cleaned.imageUrl); break;
     case 'FEATURE_GRID':
-      html = buildFeatureGrid(cleaned, palette); break;
+      html = buildFeatureGrid(cleaned, palette, !!cleaned.imageUrl); break;
     case 'PROCESS':
-      html = buildProcess(cleaned, palette); break;
+      html = buildProcess(cleaned, palette, !!cleaned.imageUrl); break;
     case 'PROBLEM':
-      html = buildProblem(cleaned, palette); break;
+      html = buildProblem(cleaned, palette, !!cleaned.imageUrl); break;
     case 'SOLUTION':
-      html = buildSolution(cleaned, palette); break;
+      html = buildSolution(cleaned, palette, !!cleaned.imageUrl); break;
     case 'CTA':
       html = buildCta(cleaned, palette, !!cleaned.imageUrl); break;
     case 'CONTENT':
-      html = buildContent(cleaned, palette); break;
+      html = buildContent(cleaned, palette, !!cleaned.imageUrl); break;
     case 'QUOTE':
-      html = buildQuote(cleaned, palette); break;
+      html = buildQuote(cleaned, palette, !!cleaned.imageUrl); break;
     case 'ARCHITECTURE':
-      html = buildArchitecture(cleaned, palette); break;
+      html = buildArchitecture(cleaned, palette, !!cleaned.imageUrl); break;
     default:
       return '';
   }
@@ -187,9 +188,10 @@ export function buildHtmlSlideContent(
 // ── MARKET_SIZING ────────────────────────────────────────────
 // Concentric TAM/SAM/SOM circles (right) + text column (left)
 
-function buildMarketSizing(slide: SlideInput, p: ColorPalette): string {
+function buildMarketSizing(slide: SlideInput, p: ColorPalette, hasImage = false): string {
   const lines = parseBodyLines(slide.body);
-  const cx = Math.round(W * 0.72);  // 922
+  const cW = hasImage ? CONTENT_W_IMG : W;
+  const cx = hasImage ? Math.round(cW * 0.65) : Math.round(W * 0.72);  // shift circles left when image
   const cy = Math.round(H * 0.5);   // 360
 
   const circles = [
@@ -207,7 +209,7 @@ function buildMarketSizing(slide: SlideInput, p: ColorPalette): string {
   let bodyHtml = '';
   let ty = PAD + 80;
   for (const line of lines) {
-    bodyHtml += `<div style="position:absolute;left:${PAD}px;top:${ty}px;width:${Math.round(W * 0.4)}px;font-size:22px;line-height:1.4;opacity:0.85;color:${p.text}">${escHtml(line)}</div>`;
+    bodyHtml += `<div style="position:absolute;left:${PAD}px;top:${ty}px;width:${Math.round(cW * 0.4)}px;font-size:22px;line-height:1.4;opacity:0.85;color:${p.text}">${escHtml(line)}</div>`;
     ty += 48;
   }
 
@@ -221,7 +223,7 @@ function buildMarketSizing(slide: SlideInput, p: ColorPalette): string {
 
   return `${SCOPED_RESET}
 <div style="position:relative;width:${W}px;height:${H}px;">
-  <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${Math.round(W * 0.45)}px;font-size:${titleFontSize(slide.title)}px;font-weight:bold;overflow-wrap:break-word;word-wrap:break-word;color:${p.text};line-height:1.2">${escHtml(slide.title)}</div>
+  <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${Math.round(cW * 0.45)}px;font-size:${titleFontSize(slide.title)}px;font-weight:bold;overflow-wrap:break-word;word-wrap:break-word;color:${p.text};line-height:1.2">${escHtml(slide.title)}</div>
   <div style="position:absolute;left:${PAD}px;top:${PAD + 56}px;width:50px;height:3px;background:${p.accent};border-radius:2px"></div>
   ${bodyHtml}
   <svg style="position:absolute;left:0;top:0" width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg">
@@ -293,8 +295,10 @@ function buildTimeline(slide: SlideInput, p: ColorPalette, hasImage = false): st
 // ── METRICS_HIGHLIGHT ────────────────────────────────────────
 // Big hero number + radial glow + secondary metrics row
 
-function buildMetricsHighlight(slide: SlideInput, p: ColorPalette): string {
+function buildMetricsHighlight(slide: SlideInput, p: ColorPalette, hasImage = false): string {
   const lines = parseBodyLines(slide.body);
+
+  const cW = hasImage ? CONTENT_W_IMG : W;
 
   // Try to extract a big number from the first line (e.g. "$4.2B" or "98%")
   let bigValue = slide.title;
@@ -347,7 +351,7 @@ function buildMetricsHighlight(slide: SlideInput, p: ColorPalette): string {
   if (metricLines.length >= 2) {
     const secY = Math.round(H * 0.72);
     const cols = Math.min(metricLines.length, 3);
-    const colW = Math.round((W - PAD * 2 - 200) / cols);
+    const colW = Math.round((cW - PAD * 2 - 200) / cols);
     for (let i = 0; i < cols; i++) {
       const cx = PAD + 100 + i * colW;
       const parts = metricLines[i].split(/[:\-–—]/);
@@ -370,10 +374,10 @@ function buildMetricsHighlight(slide: SlideInput, p: ColorPalette): string {
     <circle cx="${Math.round(Math.min(heroFontSize * 1.2, 100))}" cy="${Math.round(Math.min(heroFontSize * 1.2, 100))}" r="${Math.round(Math.min(heroFontSize * 1.2, 100) * 0.9)}" fill="none" stroke="${p.accent}" stroke-width="2" opacity="0.08" />
     <circle cx="${Math.round(Math.min(heroFontSize * 1.2, 100))}" cy="${Math.round(Math.min(heroFontSize * 1.2, 100))}" r="${Math.round(Math.min(heroFontSize * 1.2, 100) * 0.7)}" fill="none" stroke="${p.primary}" stroke-width="1.5" opacity="0.06" />
   </svg>
-    <div style="position:absolute;left:${PAD}px;top:${heroY}px;width:${W - PAD * 2}px;text-align:center;font-size:${heroFontSize}px;font-weight:bold;color:${p.primary};line-height:1.1">${escHtml(bigValue)}</div>
-  ${bigLabel || bigValue !== slide.title ? `<div style="position:absolute;left:${PAD + 100}px;top:${heroY + 100}px;width:${W - PAD * 2 - 200}px;text-align:center;font-size:24px;font-weight:bold;color:${p.text};line-height:1.3">${escHtml(bigLabel || slide.title)}</div>` : ''}
+    <div style="position:absolute;left:${PAD}px;top:${heroY}px;width:${cW - PAD * 2}px;text-align:center;font-size:${heroFontSize}px;font-weight:bold;color:${p.primary};line-height:1.1">${escHtml(bigValue)}</div>
+  ${bigLabel || bigValue !== slide.title ? `<div style="position:absolute;left:${PAD + 100}px;top:${heroY + 100}px;width:${cW - PAD * 2 - 200}px;text-align:center;font-size:24px;font-weight:bold;color:${p.text};line-height:1.3">${escHtml(bigLabel || slide.title)}</div>` : ''}
   <div style="position:absolute;left:${Math.round((W - 80) / 2)}px;top:${heroY + 140}px;width:80px;height:3px;background:${p.accent};border-radius:2px"></div>
-  ${displaySupport ? `<div style="position:absolute;left:${PAD + 160}px;top:${heroY + 164}px;width:${W - PAD * 2 - 320}px;text-align:center;font-size:17px;line-height:1.5;color:${p.text};opacity:0.75">${escHtml(displaySupport)}</div>` : ''}
+  ${displaySupport ? `<div style="position:absolute;left:${PAD + 160}px;top:${heroY + 164}px;width:${cW - PAD * 2 - 320}px;text-align:center;font-size:17px;line-height:1.5;color:${p.text};opacity:0.75">${escHtml(displaySupport)}</div>` : ''}
   ${secondaryHtml}
 </div>`;
 }
@@ -440,14 +444,15 @@ function isDarkBackground(bg: string): boolean {
 // ── COMPARISON ───────────────────────────────────────────────
 // McKinsey table for pipe-delimited data, two cards + VS badge for column format
 
-function buildComparison(slide: SlideInput, p: ColorPalette): string {
+function buildComparison(slide: SlideInput, p: ColorPalette, hasImage = false): string {
   // ── McKinsey table path: detect pipe-delimited table in body ──
   const table = parseMarkdownTable(slide.body);
   if (table) {
-    return buildComparisonTable(slide, p, table);
+    return buildComparisonTable(slide, p, table, hasImage);
   }
 
   // ── Card path: two-column layout with VS badge ──
+  const cW = hasImage ? CONTENT_W_IMG : W;
   const lines = parseBodyLines(slide.body);
   let leftLines: string[] = [];
   let rightLines: string[] = [];
@@ -492,7 +497,7 @@ function buildComparison(slide: SlideInput, p: ColorPalette): string {
     rightLines.push(rightTitle);
   }
 
-  const colW = Math.round((W - PAD * 2 - 40) / 2);  // ~574
+  const colW = Math.round((cW - PAD * 2 - 40) / 2);
   const cardY = PAD + 80;                             // 133
   const cardH = H - cardY - PAD;                      // 534
   const rightX = PAD + colW + 40;
@@ -538,7 +543,7 @@ function buildComparison(slide: SlideInput, p: ColorPalette): string {
 
 // ── McKinsey-style comparison table (HTML+SVG) ──────────────
 
-function buildComparisonTable(slide: SlideInput, p: ColorPalette, table: ParsedTable): string {
+function buildComparisonTable(slide: SlideInput, p: ColorPalette, table: ParsedTable, hasImage = false): string {
   const dark = isDarkBackground(p.background);
   const headerBg = p.primary;
   const headerColor = '#FFFFFF';
@@ -546,7 +551,8 @@ function buildComparisonTable(slide: SlideInput, p: ColorPalette, table: ParsedT
   const oddRowBg = dark ? 'transparent' : '#FFFFFF';
   const rowBorder = dark ? 'rgba(255,255,255,0.08)' : '#E5E5E5';
   const colCount = table.headers.length;
-  const tableW = W - PAD * 2;
+  const cW = hasImage ? CONTENT_W_IMG : W;
+  const tableW = cW - PAD * 2;
 
   // Title + accent underline
   let y = PAD;
@@ -563,8 +569,8 @@ function buildComparisonTable(slide: SlideInput, p: ColorPalette, table: ParsedT
 
   // Table
   y += 10;
-  const cellPad = 'padding:10px 16px';
-  const thStyle = `background:${headerBg};color:${headerColor};font-weight:bold;font-size:16px;text-align:left;${cellPad};border-bottom:2px solid ${headerBg}`;
+  const cellPad = hasImage ? 'padding:8px 12px' : 'padding:10px 16px';
+  const thStyle = `background:${headerBg};color:${headerColor};font-weight:bold;font-size:${hasImage ? 14 : 16}px;text-align:left;${cellPad};border-bottom:2px solid ${headerBg}`;
   const tableTop = y;
 
   let tableHtml = '<table style="border-collapse:collapse;width:100%;table-layout:fixed">';
@@ -582,14 +588,14 @@ function buildComparisonTable(slide: SlideInput, p: ColorPalette, table: ParsedT
     for (let c = 0; c < colCount; c++) {
       const val = table.rows[i]?.[c] ?? '';
       const bold = c === 0 ? 'font-weight:bold;' : '';
-      tableHtml += `<td style="${bold}font-size:18px;color:${p.text};${cellPad};border-bottom:1px solid ${rowBorder}">${escHtml(stripMarkdown(val))}</td>`;
+      tableHtml += `<td style="${bold}font-size:${hasImage ? 15 : 18}px;color:${p.text};${cellPad};border-bottom:1px solid ${rowBorder}">${escHtml(stripMarkdown(val))}</td>`;
     }
     tableHtml += '</tr>';
   }
   tableHtml += '</tbody></table>';
 
   // Estimate table height: header(44) + rows(48 each) — accounts for cell padding
-  const tableHeight = 44 + table.rows.length * 48;
+  const tableHeight = (hasImage ? 38 : 44) + table.rows.length * (hasImage ? 38 : 48);
   html += `<div style="position:absolute;left:${PAD}px;top:${tableTop}px;width:${tableW}px">${tableHtml}</div>`;
   y = tableTop + tableHeight + 16;
 
@@ -614,7 +620,8 @@ function buildComparisonTable(slide: SlideInput, p: ColorPalette, table: ParsedT
 // ── TEAM ─────────────────────────────────────────────────────
 // Grid of cards with avatar circles + computed initials
 
-function buildTeam(slide: SlideInput, p: ColorPalette): string {
+function buildTeam(slide: SlideInput, p: ColorPalette, hasImage = false): string {
+  const cW = hasImage ? CONTENT_W_IMG : W;
   const lines = parseBodyLines(slide.body);
   const members = lines.map((line) => {
     const sep = line.indexOf(' - ');
@@ -638,7 +645,7 @@ function buildTeam(slide: SlideInput, p: ColorPalette): string {
   const gapY = 24;
   const totalW = cols * cardW + (cols - 1) * gapX;
   const totalH = rows * cardH + (rows - 1) * gapY;
-  const startX = Math.round((W - totalW) / 2);
+  const startX = Math.round((cW - totalW) / 2);
   const startY = Math.round(PAD + 90 + (H - PAD * 2 - 90 - totalH) / 2);
   const avatarSize = 64;
 
@@ -688,7 +695,8 @@ function buildTeam(slide: SlideInput, p: ColorPalette): string {
 // ── FEATURE_GRID ─────────────────────────────────────────────
 // Auto-column grid with icon placeholder squares
 
-function buildFeatureGrid(slide: SlideInput, p: ColorPalette): string {
+function buildFeatureGrid(slide: SlideInput, p: ColorPalette, hasImage = false): string {
+  const cW = hasImage ? CONTENT_W_IMG : W;
   let lines = parseBodyLines(slide.body);
 
   // When body is a single blob paragraph, split on sentence boundaries (threshold: 120 chars)
@@ -734,7 +742,7 @@ function buildFeatureGrid(slide: SlideInput, p: ColorPalette): string {
   const rows = Math.ceil(count / cols);
   const gapX = 24;
   const gapY = 24;
-  const cardW = Math.round((W - PAD * 2 - (cols - 1) * gapX) / cols);
+  const cardW = Math.round((cW - PAD * 2 - (cols - 1) * gapX) / cols);
   const cardH = 160;
   const totalH = rows * cardH + (rows - 1) * gapY;
   const startY = Math.round(PAD + 80 + (H - PAD * 2 - 80 - totalH) / 2);
@@ -768,7 +776,8 @@ function buildFeatureGrid(slide: SlideInput, p: ColorPalette): string {
 // ── PROCESS ─────────────────────────────────────────────────
 // Numbered step cards with connectors
 
-function buildProcess(slide: SlideInput, p: ColorPalette): string {
+function buildProcess(slide: SlideInput, p: ColorPalette, hasImage = false): string {
+  const cW = hasImage ? CONTENT_W_IMG : W;
   const rawLines = parseBodyLines(slide.body);
   const lines = splitProseToItems(rawLines, 3);
   const rawSteps = lines.map((line, i) => {
@@ -798,7 +807,7 @@ function buildProcess(slide: SlideInput, p: ColorPalette): string {
   const cardH = count <= 3 ? 300 : count <= 4 ? 270 : 240;
   const gapX = 24;
   const totalW = count * cardW + (count - 1) * gapX;
-  const startX = Math.round((W - totalW) / 2);
+  const startX = Math.round((cW - totalW) / 2);
   const cardY = Math.round(PAD + 100);
 
   let cardsHtml = '';
@@ -840,7 +849,8 @@ function buildProcess(slide: SlideInput, p: ColorPalette): string {
 // ── PROBLEM ─────────────────────────────────────────────────
 // Left accent bar + warning-style icon
 
-function buildProblem(slide: SlideInput, p: ColorPalette): string {
+function buildProblem(slide: SlideInput, p: ColorPalette, hasImage = false): string {
+  const cW = hasImage ? CONTENT_W_IMG : W;
   const lines = parseBodyLines(slide.body);
   const barColor = p.error || p.accent;
 
@@ -854,12 +864,12 @@ function buildProblem(slide: SlideInput, p: ColorPalette): string {
 
   // Render header label if detected
   if (headerLine) {
-    bodyHtml += `<div style="position:absolute;left:${PAD + 32}px;top:${ty}px;width:${W - PAD * 2 - 80}px;font-size:11px;line-height:1.6;color:${p.text};opacity:0.6;padding-left:12px;text-transform:uppercase;letter-spacing:0.08em;font-weight:bold">${escHtml(stripMarkdown(headerLine))}</div>`;
+    bodyHtml += `<div style="position:absolute;left:${PAD + 32}px;top:${ty}px;width:${cW - PAD * 2 - 80}px;font-size:11px;line-height:1.6;color:${p.text};opacity:0.6;padding-left:12px;text-transform:uppercase;letter-spacing:0.08em;font-weight:bold">${escHtml(stripMarkdown(headerLine))}</div>`;
     ty += 32;
   }
 
   for (const line of dataLines) {
-    bodyHtml += `<div style="position:absolute;left:${PAD + 32}px;top:${ty}px;width:${W - PAD * 2 - 80}px;font-size:16px;line-height:1.6;color:${p.text};opacity:0.85;padding-left:12px;border-left:2px solid ${hexToRgba(barColor, 0.3)}">${escHtml(stripMarkdown(line))}</div>`;
+    bodyHtml += `<div style="position:absolute;left:${PAD + 32}px;top:${ty}px;width:${cW - PAD * 2 - 80}px;font-size:16px;line-height:1.6;color:${p.text};opacity:0.85;padding-left:12px;border-left:2px solid ${hexToRgba(barColor, 0.3)}">${escHtml(stripMarkdown(line))}</div>`;
     ty += 76;
   }
 
@@ -879,14 +889,15 @@ function buildProblem(slide: SlideInput, p: ColorPalette): string {
 // ── SOLUTION ────────────────────────────────────────────────
 // Left accent bar + checkmark icon
 
-function buildSolution(slide: SlideInput, p: ColorPalette): string {
+function buildSolution(slide: SlideInput, p: ColorPalette, hasImage = false): string {
+  const cW = hasImage ? CONTENT_W_IMG : W;
   const lines = parseBodyLines(slide.body);
   const barColor = p.success || p.accent;
 
   let bodyHtml = '';
   let ty = PAD + 100;
   for (const line of lines.slice(0, 6)) {
-    bodyHtml += `<div style="position:absolute;left:${PAD + 32}px;top:${ty}px;width:${W - PAD * 2 - 80}px;font-size:16px;line-height:1.6;color:${p.text};opacity:0.85;padding-left:12px;border-left:2px solid ${hexToRgba(barColor, 0.3)}">${escHtml(stripMarkdown(line))}</div>`;
+    bodyHtml += `<div style="position:absolute;left:${PAD + 32}px;top:${ty}px;width:${cW - PAD * 2 - 80}px;font-size:16px;line-height:1.6;color:${p.text};opacity:0.85;padding-left:12px;border-left:2px solid ${hexToRgba(barColor, 0.3)}">${escHtml(stripMarkdown(line))}</div>`;
     ty += 76;
   }
 
@@ -942,13 +953,14 @@ function buildCta(slide: SlideInput, p: ColorPalette, hasImage = false): string 
 // ── CONTENT ─────────────────────────────────────────────────
 // Left accent bar + card rows for body lines
 
-function buildContent(slide: SlideInput, p: ColorPalette): string {
+function buildContent(slide: SlideInput, p: ColorPalette, hasImage = false): string {
+  const cW = hasImage ? CONTENT_W_IMG : W;
   const lines = parseBodyLines(slide.body);
 
   let bodyHtml = '';
   let ty = PAD + 100;
   const cardPad = 16;
-  const cardW = W - PAD * 2 - 40;
+  const cardW = cW - PAD * 2 - 40;
 
   for (const line of lines.slice(0, 8)) {
     bodyHtml += `<div style="position:absolute;left:${PAD + 32}px;top:${ty}px;width:${cardW}px;height:66px;background:${hexToRgba(p.surface, 0.5)};border:1px solid ${hexToRgba(p.border, 0.3)};border-radius:10px;border-left:4px solid ${hexToRgba(p.accent, 0.6)}"></div>`;
@@ -968,7 +980,8 @@ function buildContent(slide: SlideInput, p: ColorPalette): string {
 // ── QUOTE ───────────────────────────────────────────────────
 // Large decorative quotation mark + centered quote text + attribution
 
-function buildQuote(slide: SlideInput, p: ColorPalette): string {
+function buildQuote(slide: SlideInput, p: ColorPalette, hasImage = false): string {
+  const cW = hasImage ? CONTENT_W_IMG : W;
   const lines = parseBodyLines(slide.body);
 
   // Last line that looks like an attribution (starts with - or em-dash, or contains title keywords)
@@ -989,8 +1002,8 @@ function buildQuote(slide: SlideInput, p: ColorPalette): string {
   return `${SCOPED_RESET}
 <div style="position:relative;width:${W}px;height:${H}px;">
   <div style="position:absolute;left:${PAD + 40}px;top:${quoteY - 80}px;font-size:160px;font-family:Georgia,serif;color:${p.accent};opacity:0.2;line-height:1">\u201C</div>
-  <div style="position:absolute;left:${PAD + 80}px;top:${quoteY}px;width:${W - PAD * 2 - 160}px;font-size:${fontSize}px;font-style:italic;line-height:1.5;color:${p.text};text-align:center">${escHtml(quoteText)}</div>
-  ${attribution ? `<div style="position:absolute;left:${PAD + 80}px;bottom:${PAD + 60}px;width:${W - PAD * 2 - 160}px;font-size:14px;color:${p.text};opacity:0.6;text-align:center;letter-spacing:0.04em">\u2014 ${escHtml(attribution)}</div>` : ''}
+  <div style="position:absolute;left:${PAD + 80}px;top:${quoteY}px;width:${cW - PAD * 2 - 160}px;font-size:${fontSize}px;font-style:italic;line-height:1.5;color:${p.text};text-align:center">${escHtml(quoteText)}</div>
+  ${attribution ? `<div style="position:absolute;left:${PAD + 80}px;bottom:${PAD + 60}px;width:${cW - PAD * 2 - 160}px;font-size:14px;color:${p.text};opacity:0.6;text-align:center;letter-spacing:0.04em">\u2014 ${escHtml(attribution)}</div>` : ''}
   <div style="position:absolute;left:${Math.round((W - 60) / 2)}px;bottom:${PAD + 30}px;width:60px;height:3px;background:${p.accent};border-radius:2px"></div>
 </div>`;
 }
@@ -998,7 +1011,8 @@ function buildQuote(slide: SlideInput, p: ColorPalette): string {
 // ── ARCHITECTURE ─────────────────────────────────────────────
 // Horizontal flow diagram: connected box nodes with SVG connectors
 
-function buildArchitecture(slide: SlideInput, p: ColorPalette): string {
+function buildArchitecture(slide: SlideInput, p: ColorPalette, hasImage = false): string {
+  const cW = hasImage ? CONTENT_W_IMG : W;
   const lines = parseBodyLines(slide.body);
   const nodes = lines.slice(0, 6);
 
@@ -1014,7 +1028,7 @@ function buildArchitecture(slide: SlideInput, p: ColorPalette): string {
   const boxH = 80;
   const gapX = 32;
   const totalW = count * boxW + (count - 1) * gapX;
-  const startX = Math.round((W - totalW) / 2);
+  const startX = Math.round((cW - totalW) / 2);
   const boxY = Math.round(H * 0.4);
 
   let boxesHtml = '';
