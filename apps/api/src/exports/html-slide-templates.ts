@@ -1063,16 +1063,24 @@ function buildCta(slide: SlideInput, p: ColorPalette, hasImage = false): string 
 function buildContent(slide: SlideInput, p: ColorPalette, hasImage = false): string {
   const cW = hasImage ? CONTENT_W_IMG : W;
   const lines = parseBodyLines(slide.body);
+  const items = lines.slice(0, 8);
+
+  // Dynamic card sizing — fit all items vertically
+  const contentStartY = PAD + 100;
+  const contentAvailH = H - contentStartY - PAD;
+  const cardGap = 10;
+  const cardH = Math.min(80, Math.round((contentAvailH - (items.length - 1) * cardGap) / items.length));
+  const cardPad = 14;
+  const cardW = cW - PAD * 2 - 40;
+  const fontSize = cardH >= 70 ? 19 : cardH >= 55 ? 16 : 14;
 
   let bodyHtml = '';
-  let ty = PAD + 100;
-  const cardPad = 16;
-  const cardW = cW - PAD * 2 - 40;
+  let ty = contentStartY;
 
-  for (const line of lines.slice(0, 8)) {
-    bodyHtml += `<div style="position:absolute;left:${PAD + 32}px;top:${ty}px;width:${cardW}px;height:66px;background:${hexToRgba(p.surface, 0.5)};border:1px solid ${hexToRgba(p.border, 0.3)};border-radius:10px;border-left:4px solid ${hexToRgba(p.accent, 0.6)}"></div>`;
-    bodyHtml += `<div style="position:absolute;left:${PAD + 32 + cardPad}px;top:${ty + 22}px;width:${cardW - cardPad * 2}px;font-size:21px;line-height:1.45;color:${p.text};opacity:0.85">${escHtml(stripMarkdown(line))}</div>`;
-    ty += 78;
+  for (const line of items) {
+    bodyHtml += `<div style="position:absolute;left:${PAD + 32}px;top:${ty}px;width:${cardW}px;height:${cardH}px;background:${hexToRgba(p.surface, 0.5)};border:1px solid ${hexToRgba(p.border, 0.3)};border-radius:10px;border-left:4px solid ${hexToRgba(p.accent, 0.6)};overflow:hidden"></div>`;
+    bodyHtml += `<div style="position:absolute;left:${PAD + 32 + cardPad}px;top:${ty + Math.round((cardH - fontSize * 1.45) / 2)}px;width:${cardW - cardPad * 2}px;max-height:${cardH - 12}px;font-size:${fontSize}px;line-height:1.45;color:${p.text};opacity:0.85;overflow:hidden">${escHtml(stripMarkdown(line))}</div>`;
+    ty += cardH + cardGap;
   }
 
   return `${SCOPED_RESET}
