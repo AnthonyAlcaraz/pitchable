@@ -527,7 +527,113 @@ function isDarkBackground(bg: string): boolean {
 }
 
 // ── COMPARISON ───────────────────────────────────────────────
-// McKinsey table for pipe-delimited data, two cards + VS badge for column format
+// McKinsey table for pipe-delimited data, multi-card for 3+ items, two cards + VS badge for 2 items
+
+/**
+ * Detect 3+ comparison groups in body lines.
+ * Returns null if fewer than 3 groups found — falls through to 2-card VS layout.
+ */
+function detectComparisonGroups(lines: string[]): { title: string; items: string[] }[] | null {
+  if (lines.length < 3) return null;
+
+  // Method 1: Multiple "vs" / "vs." separators
+  const vsIndices: number[] = [];
+  for (let i = 0; i < lines.length; i++) {
+    if (/^vs\.?$/i.test(lines[i].trim())) vsIndices.push(i);
+  }
+  if (vsIndices.length >= 2) {
+    const grps: { title: string; items: string[] }[] = [];
+    let start = 0;
+    for (const vi of vsIndices) {
+      const chunk = lines.slice(start, vi);
+      if (chunk.length > 0) grps.push({ title: chunk[0], items: chunk.slice(1) });
+      start = vi + 1;
+    }
+    const last = lines.slice(start);
+    if (last.length > 0) grps.push({ title: last[0], items: last.slice(1) });
+    if (grps.length >= 3) return grps.slice(0, 4);
+  }
+
+  // Method 2: Short header lines (< 35 chars, capitalized) alternating with content
+  const grps2: { title: string; items: string[] }[] = [];
+  let cur: { title: string; items: string[] } | null = null;
+  for (const line of lines) {
+    const isHdr = line.length <= 35 && /^[A-Z]/.test(line) && !/[,;]/.test(line);
+    if (isHdr && (cur === null || cur.items.length > 0)) {
+      if (cur) grps2.push(cur);
+      cur = { title: line, items: [] };
+    } else if (cur) {
+      cur.items.push(line);
+    } else {
+      cur = { title: line.slice(0, 25), items: [line] };
+    }
+  }
+  if (cur) grps2.push(cur);
+  if (grps2.length >= 3 && grps2.every(g => g.title.length >= 2)) return grps2.slice(0, 4);
+
+  // Method 3: 3-5 lines of similar length — each line is its own comparison item
+  if (lines.length >= 3 && lines.length <= 5) {
+    const avgLen = lines.reduce((s, l) => s + l.length, 0) / lines.length;
+    const allSimilar = lines.every(l => l.length > avgLen * 0.3 && l.length < avgLen * 2.5);
+    if (allSimilar) {
+      return lines.slice(0, 4).map(l => {
+        const nameMatch = l.match(/^([A-Z][\w]+(?:\s+[A-Z]?[\w]+)?)/);
+        const title = nameMatch ? nameMatch[1] : l.slice(0, 25);
+        const rest = nameMatch ? l.slice(nameMatch[0].length).replace(/^\s*[-\u2014:,]\s*/, '') : '';
+        return { title, items: rest ? [rest] : [l] };
+      });
+    }
+  }
+
+  return null;
+}
+
+function buildComparisonMultiCard(
+  slide: SlideInput, p: ColorPalette,
+  groups: { title: string; items: string[] }[],
+  hasImage: boolean,
+): string {
+  const cW = hasImage ? CONTENT_W_IMG : W;
+  const count = Math.min(groups.length, 4);
+  const gap = 16;
+  const cardW = Math.round((cW - PAD * 2 - (count - 1) * gap) / count);
+  const cardY = PAD + 80;
+  const cardH = H - cardY - PAD;
+  const accents = cardAccentColors(p);
+
+  let cards = '';
+  for (let i = 0; i < count; i++) {
+    const g = groups[i];
+    const x = PAD + i * (cardW + gap);
+    const color = accents[i % accents.length];
+
+    // Card background with colored top border
+    cards += '<div style="position:absolute;left:' + x + 'px;top:' + cardY + 'px;width:' + cardW + 'px;height:' + cardH + 'px;background:' + p.surface + ';border:1px solid ' + p.border + ';border-top:3px solid ' + color + ';border-radius:12px;overflow:hidden"></div>';
+    // Card header strip
+    cards += '<div style="position:absolute;left:' + x + 'px;top:' + cardY + 'px;width:' + cardW + 'px;height:46px;background:' + hexToRgba(color, 0.12) + ';border-radius:12px 12px 0 0"></div>';
+    // Card title
+    cards += '<div style="position:absolute;left:' + (x + 16) + 'px;top:' + (cardY + 12) + 'px;width:' + (cardW - 32) + 'px;font-size:15px;font-weight:bold;color:' + color + ';overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escHtml(stripMarkdown(g.title)) + '</div>';
+
+    // Card items
+    let itemY = cardY + 56;
+    const maxItemH = Math.max(28, Math.min(40, Math.round((cardH - 56 - 12) / Math.max(g.items.length, 1))));
+    const fontSize = cardW < 280 ? 13 : 15;
+    const maxVisible = Math.floor((cardH - 56 - 12) / maxItemH);
+    for (const item of g.items.slice(0, maxVisible)) {
+      cards += '<div style="position:absolute;left:' + (x + 16) + 'px;top:' + itemY + 'px;width:' + (cardW - 32) + 'px;font-size:' + fontSize + 'px;line-height:1.35;color:' + p.text + ';opacity:0.85;overflow:hidden;max-height:' + maxItemH + 'px;word-wrap:break-word">\u2022 ' + escHtml(stripMarkdown(item)) + '</div>';
+      itemY += maxItemH;
+    }
+  }
+
+  const midXBg = Math.round((cW - 60) / 2);
+  return SCOPED_RESET + '\n' +
+    '<div style="position:relative;width:' + W + 'px;height:' + H + 'px;background:' + p.background + ';">' + '\n' +
+    '  ' + bgGradientOverlay(cW, H, p.accent, 0.04, '40%') + '\n' +
+    '  <div style="position:absolute;left:' + PAD + 'px;top:' + PAD + 'px;width:' + (cW - PAD * 2) + 'px;text-align:center;font-size:' + titleFontSize(slide.title) + 'px;font-weight:bold;overflow-wrap:break-word;word-wrap:break-word;color:' + p.text + ';line-height:1.2">' + escHtml(slide.title) + '</div>' + '\n' +
+    '  <div style="position:absolute;left:' + midXBg + 'px;top:' + (PAD + 56) + 'px;width:60px;height:3px;background:' + p.accent + ';border-radius:2px"></div>' + '\n' +
+    '  ' + cards + '\n' +
+    '</div>';
+}
 
 function buildComparison(slide: SlideInput, p: ColorPalette, hasImage = false): string {
   // ── McKinsey table path: detect pipe-delimited table in body ──
@@ -536,9 +642,15 @@ function buildComparison(slide: SlideInput, p: ColorPalette, hasImage = false): 
     return buildComparisonTable(slide, p, table, hasImage);
   }
 
-  // ── Card path: two-column layout with VS badge ──
+  // ── Multi-card path: 3+ items get individual cards ──
   const cW = hasImage ? CONTENT_W_IMG : W;
   const lines = parseBodyLines(slide.body);
+  const multiGroups = detectComparisonGroups(lines);
+  if (multiGroups && multiGroups.length >= 3) {
+    return buildComparisonMultiCard(slide, p, multiGroups, hasImage);
+  }
+
+  // ── Card path: two-column layout with VS badge ──
   let leftLines: string[] = [];
   let rightLines: string[] = [];
   let leftTitle = 'Before';
