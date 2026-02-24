@@ -1330,7 +1330,23 @@ export class ExportsService {
 
     const sortedSlides = [...slides].sort((a, b) => a.slideNumber - b.slideNumber);
 
-    // ── Phase A: Text-only previews (skip image downloads) ──
+    // Start image downloads in parallel with Phase A rendering (overlap I/O)
+    const hasImages = slides.some((s) => s.imageUrl?.startsWith('http'));
+    let downloadPromise: Promise<SlideModel[] | null> = Promise.resolve(null);
+    let previewTempDir = '';
+    if (hasImages) {
+      previewTempDir = join(this.tempDir, `preview-dl-${Date.now()}`);
+      downloadPromise = mkdir(previewTempDir, { recursive: true })
+        .then(() => this.downloadSlideImages(slides, previewTempDir));
+    }
+
+    // ── Phase A: Text-only previews (renders while images download) ──
+    this.events.emitSlideUpdated({
+      presentationId: presentation.id,
+      slideId: sortedSlides[0]?.id ?? '',
+      data: { previewPhase: 'text', total: sortedSlides.length },
+    });
+
     const textOnlySlides = sortedSlides.map((slide) => ({
       ...slide,
       imageUrl: null,
@@ -1350,13 +1366,17 @@ export class ExportsService {
       await this.uploadAndEmitPreviews(presentation, sortedSlides, textOnlyBuffers);
     }
 
-    // ── Phase B: Full previews with images (downloads in parallel via Fix C) ──
-    const hasImages = slides.some((s) => s.imageUrl?.startsWith('http'));
-    if (!hasImages) return; // No images to download, Phase A was final
+    // ── Phase B: Full previews with images (downloads likely already complete) ──
+    if (!hasImages) return;
 
-    const previewTempDir = join(this.tempDir, `preview-dl-${Date.now()}`);
-    await mkdir(previewTempDir, { recursive: true });
-    const localPreviewSlides = await this.downloadSlideImages(slides, previewTempDir);
+    this.events.emitSlideUpdated({
+      presentationId: presentation.id,
+      slideId: sortedSlides[0]?.id ?? '',
+      data: { previewPhase: 'images', total: sortedSlides.length },
+    });
+
+    const localPreviewSlides = await downloadPromise;
+    if (!localPreviewSlides) return;
 
     const fullMarkdown = this.marpExporter.generateMarpMarkdown(
       presentation,
