@@ -67,7 +67,8 @@ function parseBodyLines(body: string): string[] {
     .filter(Boolean)
     .filter((l) => !/^---+$/.test(l))
     .filter((l) => !/^sources?:/i.test(l.trim()))
-    .filter((l) => !/^#{1,3}\s/.test(l));
+    .filter((l) => !/^#{1,3}\s/.test(l))
+    .slice(0, 8);
 }
 
 
@@ -103,7 +104,7 @@ function hexToRgba(hex: string, alpha: number): string {
 // ── Scoped reset injected into every Figma-grade slide ──────
 
 const SCOPED_RESET = `<style scoped>
-section { padding: 0 !important; display: block !important; overflow: visible !important; position: relative !important; }
+section { padding: 0 !important; display: block !important; overflow: hidden !important; position: relative !important; }
 section > * { flex-shrink: unset; }
 section::after { position: absolute !important; bottom: 16px !important; right: 24px !important; font-size: 14px !important; opacity: 0.5; z-index: 10; }
 </style>`;
