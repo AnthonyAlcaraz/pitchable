@@ -437,9 +437,12 @@ export class MarpExporterService {
       '  ul ul { list-style-type: circle; }',
       '  li { margin-bottom: 0.15em; line-height: 1.3; }',
       '  li::marker { color: var(--accent); }',
+      '  section.content-spread ul, section.content-center ul { list-style: none; padding-left: 0; }',
+      '  section.content-spread li, section.content-center li { margin-bottom: 0.3em; line-height: 1.5; }',
+      '  section.content-spread li::before, section.content-center li::before { content: "40"; color: var(--accent); font-weight: bold; }',
       // Layout classes for content centering/spreading
       '  section.content-center { justify-content: center; text-align: center; align-items: center; }',
-      '  section.content-spread { justify-content: space-between; }',
+      '  section.content-spread { justify-content: space-between; text-align: center; align-items: center; }',
       // Glass card effect (controlled by layout profile)
       '  .glass-card {',
       ...(profile.glassCards ? [
@@ -736,7 +739,9 @@ h3 { margin-top: 10px; font-size: 0.8em; }
 .evidence hr { border: none; border-top: 1px solid rgba(255,255,255,0.15); margin: 10px 0; }
 p, li { font-size: 0.95em; line-height: 1.55; text-align: center; }
 strong { font-size: 1.1em; }
-section { text-align: center; align-items: center; }
+section { text-align: center !important; align-items: center !important; }
+ul { list-style: none !important; padding-left: 0 !important; margin: 0 auto; max-width: 90%; }
+li { margin-bottom: 0.4em; }
 </style>`,
     };
     if (scopedCSS[type]) {
