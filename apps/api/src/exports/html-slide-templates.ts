@@ -241,7 +241,9 @@ function buildMarketSizing(slide: SlideInput, p: ColorPalette, hasImage = false)
 function buildTimeline(slide: SlideInput, p: ColorPalette, hasImage = false): string {
   const cW = hasImage ? CONTENT_W_IMG : W;
   const rawLines = parseBodyLines(slide.body);
-  const expanded = splitProseToItems(rawLines, 3);
+  const expanded = splitProseToItems(rawLines, 3)
+    .filter((l) => !/^[→►▸➜]/.test(l.trim()))
+    .filter((l) => l.trim().length >= 10);
   const milestones = expanded.slice(0, 5).map((line, i) => {
     const sep = line.indexOf(':');
     if (sep > -1 && sep < 40) return { date: line.slice(0, sep).trim(), text: line.slice(sep + 1).trim() };
@@ -859,7 +861,11 @@ function buildFeatureGrid(slide: SlideInput, p: ColorPalette, hasImage = false):
 function buildProcess(slide: SlideInput, p: ColorPalette, hasImage = false): string {
   const cW = hasImage ? CONTENT_W_IMG : W;
   const rawLines = parseBodyLines(slide.body);
-  const lines = splitProseToItems(rawLines, 3);
+  const lines = splitProseToItems(rawLines, 3)
+    // Filter out CTA-style lines, trailing fragments, and arrow markers
+    .filter((l) => !/^[→►▸➜]/.test(l.trim()))
+    .filter((l) => !/^(get started|start |learn more|contact|sign up|next step)/i.test(l.trim()))
+    .filter((l) => l.trim().length >= 10);  // skip very short fragments
   const rawSteps = lines.map((line, i) => {
     const numMatch = line.match(/^\d+\.\s*/);
     const cleaned = numMatch ? line.slice(numMatch[0].length) : line;
