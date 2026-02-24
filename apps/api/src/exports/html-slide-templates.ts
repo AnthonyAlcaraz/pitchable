@@ -28,7 +28,7 @@ const H = 720;
 // Slide types that use Figma-grade HTML+SVG templates for superior visuals.
 export const FIGMA_GRADE_TYPES: Set<string> = new Set([
   'COMPARISON', 'TIMELINE', 'METRICS_HIGHLIGHT', 'MARKET_SIZING', 'TEAM', 'FEATURE_GRID',
-  'PROCESS', 'PROBLEM', 'SOLUTION', 'CTA', 'CONTENT', 'QUOTE', 'ARCHITECTURE',
+  'PROCESS', 'PROBLEM', 'SOLUTION', 'CTA', 'QUOTE', 'ARCHITECTURE',
 ]);
 
 // ── Helpers ──────────────────────────────────────────────────

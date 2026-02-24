@@ -756,13 +756,6 @@ li { margin-bottom: 0.4em; }
         .replace(/\[([A-Z][a-z]+ ?(needed|statement|here|example|data|TBD))\]/gi, '')
         .replace(/\n{3,}/g, '\n\n')
         .split('\n')
-        .filter((ln) => !/^\s*\|[-:\s|]+\|\s*$/.test(ln))       // Remove table separator rows
-        .map((ln) => {
-          if (/^\s*\|/.test(ln)) {                                // Strip pipe-delimited table rows
-            return ln.replace(/^\s*\|/, '').replace(/\|\s*$/, '').replace(/\|/g, ' \u2014 ').trim();
-          }
-          return ln;
-        })
         .join('\n');
 
       // Escape standalone --- that Marp interprets as slide breaks

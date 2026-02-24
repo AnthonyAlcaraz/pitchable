@@ -119,7 +119,9 @@ SLIDE TYPE DIVERSITY (CRITICAL — vary visual layouts):
   - Team bios → TEAM
   - Bold claim + evidence → SPLIT_STATEMENT
   - Customer quote → QUOTE
+  - Tabular structured data (2+ columns with headers) → CONTENT with markdown table
   - General information → CONTENT (last resort)
+- CONTENT is the ONLY type that renders markdown tables (| col | col |). If data needs a table, use CONTENT.
 
 UNIVERSAL FORMATTING RULES:
 - Max ${maxWords} words body. 1 key concept per slide. Less text = more impact.
