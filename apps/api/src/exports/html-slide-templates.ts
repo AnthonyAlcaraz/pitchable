@@ -72,10 +72,11 @@ function parseBodyLines(body: string): string[] {
 }
 
 
-function titleFontSize(title: string, maxFontSize = 27): number {
-  if (title.length <= 40) return maxFontSize;
-  if (title.length <= 60) return 24;
-  if (title.length <= 80) return 20;
+function titleFontSize(title: string, maxFontSize = 32): number {
+  if (title.length <= 30) return maxFontSize;
+  if (title.length <= 50) return 28;
+  if (title.length <= 70) return 24;
+  if (title.length <= 90) return 20;
   return 18;
 }
 
@@ -367,17 +368,34 @@ function buildMetricsHighlight(slide: SlideInput, p: ColorPalette, hasImage = fa
 
   const displaySupport = nonMetricLines.length > 0 ? nonMetricLines.join(' ') : (metricLines.length < 2 ? supportText : '');
 
+  // Center reference: use content width (accounts for image overlay)
+  const centerX = Math.round(cW / 2);
+  const circleR = Math.round(Math.min(heroFontSize * 1.2, 100));
+
+  // Dynamic vertical layout: hero → label → accent line → support text
+  const heroH = heroFontSize >= 56 ? heroFontSize + 8 : heroFontSize + 4;
+  const showLabel = !!(bigLabel || bigValue !== slide.title);
+  const labelText = bigLabel || slide.title;
+  // Estimate label lines: ~chars per line based on available width
+  const labelW = cW - PAD * 2 - 200;
+  const labelCharsPerLine = Math.max(1, Math.floor(labelW / 13));
+  const labelLines = showLabel ? Math.max(1, Math.ceil(labelText.length / labelCharsPerLine)) : 0;
+  const labelH = labelLines * 31 + 8; // 24px font * 1.3 line-height
+  const labelY = heroY + heroH + 8;
+  const accentY = showLabel ? labelY + labelH + 4 : heroY + heroH + 12;
+  const supportY = accentY + 16;
+
   return `${SCOPED_RESET}
 <div style="position:relative;width:${W}px;height:${H}px;">
-  <div style="position:absolute;left:0;top:0;width:${W}px;height:${H}px;background:radial-gradient(ellipse 800px 600px at 50% 40%,${hexToRgba(p.primary, 0.08)} 0%,transparent 70%)"></div>
-  <svg style="position:absolute;left:${Math.round(W / 2 - Math.min(heroFontSize * 1.2, 100))}px;top:${Math.round(heroY - Math.min(heroFontSize * 1.2, 100) * 0.3)}px" width="${Math.round(Math.min(heroFontSize * 1.2, 100) * 2)}" height="${Math.round(Math.min(heroFontSize * 1.2, 100) * 2)}" xmlns="http://www.w3.org/2000/svg">
-    <circle cx="${Math.round(Math.min(heroFontSize * 1.2, 100))}" cy="${Math.round(Math.min(heroFontSize * 1.2, 100))}" r="${Math.round(Math.min(heroFontSize * 1.2, 100) * 0.9)}" fill="none" stroke="${p.accent}" stroke-width="2" opacity="0.08" />
-    <circle cx="${Math.round(Math.min(heroFontSize * 1.2, 100))}" cy="${Math.round(Math.min(heroFontSize * 1.2, 100))}" r="${Math.round(Math.min(heroFontSize * 1.2, 100) * 0.7)}" fill="none" stroke="${p.primary}" stroke-width="1.5" opacity="0.06" />
+  <div style="position:absolute;left:0;top:0;width:${cW}px;height:${H}px;background:radial-gradient(ellipse 800px 600px at 50% 40%,${hexToRgba(p.primary, 0.08)} 0%,transparent 70%)"></div>
+  <svg style="position:absolute;left:${centerX - circleR}px;top:${Math.round(heroY - circleR * 0.3)}px" width="${circleR * 2}" height="${circleR * 2}" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="${circleR}" cy="${circleR}" r="${Math.round(circleR * 0.9)}" fill="none" stroke="${p.accent}" stroke-width="2" opacity="0.08" />
+    <circle cx="${circleR}" cy="${circleR}" r="${Math.round(circleR * 0.7)}" fill="none" stroke="${p.primary}" stroke-width="1.5" opacity="0.06" />
   </svg>
-    <div style="position:absolute;left:${PAD}px;top:${heroY}px;width:${cW - PAD * 2}px;text-align:center;font-size:${heroFontSize}px;font-weight:bold;color:${p.primary};line-height:1.1">${escHtml(bigValue)}</div>
-  ${bigLabel || bigValue !== slide.title ? `<div style="position:absolute;left:${PAD + 100}px;top:${heroY + 100}px;width:${cW - PAD * 2 - 200}px;text-align:center;font-size:24px;font-weight:bold;color:${p.text};line-height:1.3">${escHtml(bigLabel || slide.title)}</div>` : ''}
-  <div style="position:absolute;left:${Math.round((W - 80) / 2)}px;top:${heroY + 140}px;width:80px;height:3px;background:${p.accent};border-radius:2px"></div>
-  ${displaySupport ? `<div style="position:absolute;left:${PAD + 160}px;top:${heroY + 164}px;width:${cW - PAD * 2 - 320}px;text-align:center;font-size:17px;line-height:1.5;color:${p.text};opacity:0.75">${escHtml(displaySupport)}</div>` : ''}
+  <div style="position:absolute;left:${PAD}px;top:${heroY}px;width:${cW - PAD * 2}px;text-align:center;font-size:${heroFontSize}px;font-weight:bold;color:${p.primary};line-height:1.1">${escHtml(bigValue)}</div>
+  ${showLabel ? `<div style="position:absolute;left:${PAD + 100}px;top:${labelY}px;width:${labelW}px;text-align:center;font-size:24px;font-weight:bold;color:${p.text};line-height:1.3;overflow:hidden;max-height:${labelH}px">${escHtml(labelText)}</div>` : ''}
+  <div style="position:absolute;left:${Math.round((cW - 80) / 2)}px;top:${accentY}px;width:80px;height:3px;background:${p.accent};border-radius:2px"></div>
+  ${displaySupport ? `<div style="position:absolute;left:${PAD + 80}px;top:${supportY}px;width:${cW - PAD * 2 - 160}px;text-align:center;font-size:16px;line-height:1.5;color:${p.text};opacity:0.75;overflow:hidden;max-height:${Math.round(H * 0.72 - supportY)}px">${escHtml(displaySupport)}</div>` : ''}
   ${secondaryHtml}
 </div>`;
 }
