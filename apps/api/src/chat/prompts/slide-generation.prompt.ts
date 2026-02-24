@@ -141,7 +141,7 @@ UNIVERSAL FORMATTING RULES:
 - NEVER output placeholder text in brackets like [example], [data needed], [principle needed]. If you lack specific data, write a generic but complete statement instead.
 - NEVER use markdown formatting (bold **text**, italic *text*) in slide titles. Titles must be plain text only.
 - NEVER include HTML tags (<div>, <span>, <style>, etc.) or CSS classes in slide body content for TEAM, METRICS_HIGHLIGHT, FEATURE_GRID, MARKET_SIZING, COMPARISON, PROCESS, PROBLEM, SOLUTION, or CTA types. Output plain text only — the visual layout is handled automatically by the renderer.
-- NEVER use markdown table syntax (| pipes and dashes) in body text for METRICS_HIGHLIGHT, TEAM, FEATURE_GRID, MARKET_SIZING, COMPARISON, PROCESS, PROBLEM, SOLUTION, or CTA types. Use plain text with line breaks instead — the visual renderer handles layout.
+- NEVER use markdown table syntax (| pipes and dashes) in body text for METRICS_HIGHLIGHT, TEAM, FEATURE_GRID, MARKET_SIZING, PROCESS, PROBLEM, SOLUTION, or CTA types. Use plain text with line breaks instead — the visual renderer handles layout. EXCEPTION: COMPARISON slides MUST use markdown table syntax for structured before/after data.
 
 PHILLIPS' VISUAL HIERARCHY (enforce strictly):
 - Max 6 visual objects per slide (title + table = 2; title + 4 bullets = 5). Count every element.
@@ -160,7 +160,7 @@ TOTAL body must stay under ${maxWords} words. Move details to speaker notes.
 
 SELF-VALIDATION CHECKLIST (verify ALL before responding):
 □ Body starts with a lead sentence containing **bold** on the key figure
-□ Body contains EITHER a table (| col | col |) OR bullet list — never both
+□ Body contains EITHER a table (| col | col |) OR bullet list — never both. COMPARISON slides MUST use a table.
 □ Body ends with ### takeaway line (MANDATORY for all types except TITLE, CTA, VISUAL_HUMOR, QUOTE, SECTION_DIVIDER, LOGO_WALL, SPLIT_STATEMENT, PRODUCT_SHOWCASE)
 □ Sources: line present at the very end (MANDATORY for DATA_METRICS, CONTENT, PROBLEM, SOLUTION, COMPARISON, PROCESS, MARKET_SIZING — skip for TEAM, TIMELINE, SECTION_DIVIDER, METRICS_HIGHLIGHT, FEATURE_GRID, LOGO_WALL, SPLIT_STATEMENT, PRODUCT_SHOWCASE)
 □ Total word count ≤ ${maxWords}
@@ -202,12 +202,9 @@ PROCESS: Numbered steps with LARGE visual anchors. Format step numbers as promin
   "Four-stage pipeline from raw data to insights.\\n\\n1. **Ingest** from 40+ connectors via CDC\\n2. **Transform** with domain-specific NLP\\n3. **Validate** against compliance rules\\n4. **Deploy** with one-click rollback\\n\\n### Each stage independently scalable\\nSources: Architecture docs v3.2"
   Note: The exporter will render step numbers as large visual anchors (01, 02, 03, 04) — keep step text SHORT.
 
-COMPARISON: Table with Before/After columns preferred. Or two bullet groups separated by blank line. Max 4 rows.
-  Example body (table):
+COMPARISON: MUST use markdown table with | pipes. This is the ONLY slide type that uses table syntax. Lead sentence + table + takeaway. Max 4 data rows. NEVER use bullet points for COMPARISON — always use a table.
+  Example body:
   "**89% cost reduction** with automation.\\n\\n| Dimension | Before | After |\\n|---|---|---|\\n| **Cycle time** | 4-6 weeks | Real-time |\\n| **Headcount** | 3 analysts | 1 oversight |\\n| **Error rate** | 23% | 0.3% |\\n\\n### Automation: faster, cheaper, more accurate\\nSources: Internal ROI study"
-
-  Example body (columns):
-  "**Before: Manual**\\n- 4-6 week cycles\\n- 3 analysts full-time\\n- 23% error rate\\n\\n**After: Automated**\\n- Real-time analysis\\n- 1 oversight role\\n- 0.3% error rate"
 
 QUOTE: Blockquote syntax for the quote. Attribution with bold. One supporting sentence max.
   Example body:
