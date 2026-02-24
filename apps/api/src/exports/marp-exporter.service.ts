@@ -614,6 +614,8 @@ export class MarpExporterService {
 
     // AI renderer override: upgrade slide to a visual template when content matches
     if (rendererOverride && FIGMA_GRADE_TYPES.has(rendererOverride) && palette) {
+      lines.push(`<!-- _backgroundColor: ${palette.background} -->`);
+      lines.push(`<!-- _color: ${palette.text} -->`);
       lines.push(buildHtmlSlideContent(
         { title: slide.title, body: slide.body || '', slideType: rendererOverride, imageUrl: slide.imageUrl ?? undefined },
         palette,
@@ -632,6 +634,10 @@ export class MarpExporterService {
     // to avoid the split-section conflict where absolute-positioned content
     // gets hidden behind the Marp image area.
     if (FIGMA_GRADE_TYPES.has(type) && palette) {
+      // Explicit background + text color: templates set own bg via palette,
+      // this ensures no CSS bleed from Marp bg-class patterns.
+      lines.push(`<!-- _backgroundColor: ${palette.background} -->`);
+      lines.push(`<!-- _color: ${palette.text} -->`);
       lines.push(buildHtmlSlideContent(
         { title: slide.title, body: slide.body || '', slideType: type, imageUrl: slide.imageUrl ?? undefined },
         palette,

@@ -223,7 +223,7 @@ function buildMarketSizing(slide: SlideInput, p: ColorPalette, hasImage = false)
   ).join('');
 
   return `${SCOPED_RESET}
-<div style="position:relative;width:${W}px;height:${H}px;">
+<div style="position:relative;width:${W}px;height:${H}px;background:${p.background};">
   <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${Math.round(cW * 0.45)}px;font-size:${titleFontSize(slide.title)}px;font-weight:bold;overflow-wrap:break-word;word-wrap:break-word;color:${p.text};line-height:1.2">${escHtml(slide.title)}</div>
   <div style="position:absolute;left:${PAD}px;top:${PAD + 56}px;width:50px;height:3px;background:${p.accent};border-radius:2px"></div>
   ${bodyHtml}
@@ -251,7 +251,7 @@ function buildTimeline(slide: SlideInput, p: ColorPalette, hasImage = false): st
 
   if (milestones.length === 0) {
     return `${SCOPED_RESET}
-<div style="position:relative;width:${W}px;height:${H}px;">
+<div style="position:relative;width:${W}px;height:${H}px;background:${p.background};">
   <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;text-align:center;font-size:${titleFontSize(slide.title)}px;font-weight:bold;overflow-wrap:break-word;word-wrap:break-word;color:${p.text}">${escHtml(slide.title)}</div>
 </div>`;
   }
@@ -283,7 +283,7 @@ function buildTimeline(slide: SlideInput, p: ColorPalette, hasImage = false): st
   }
 
   return `${SCOPED_RESET}
-<div style="position:relative;width:${W}px;height:${H}px;">
+<div style="position:relative;width:${W}px;height:${H}px;background:${p.background};">
   <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;text-align:center;font-size:${titleFontSize(slide.title)}px;font-weight:bold;overflow-wrap:break-word;word-wrap:break-word;color:${p.text};line-height:1.2">${escHtml(slide.title)}</div>
   <div style="position:absolute;left:${Math.round((cW - 60) / 2)}px;top:${PAD + 56}px;width:60px;height:3px;background:${p.accent};border-radius:2px"></div>
   <svg style="position:absolute;left:0;top:0" width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg">
@@ -431,7 +431,7 @@ function buildMetricsHighlight(slide: SlideInput, p: ColorPalette, hasImage = fa
   const maxSupportH = Math.round(Math.max(0, (metricLines.length >= 2 ? H * 0.72 : H - PAD * 2) - supportY - 20));
 
   return `${SCOPED_RESET}
-<div style="position:relative;width:${W}px;height:${H}px;">
+<div style="position:relative;width:${W}px;height:${H}px;background:${p.background};">
   <div style="position:absolute;left:0;top:0;width:${cW}px;height:${H}px;background:radial-gradient(ellipse 800px 600px at ${Math.round(cW / 2)}px 40%,${hexToRgba(p.primary, 0.06)} 0%,transparent 70%)"></div>
   ${circleSvg}
   <div style="position:absolute;left:${PAD}px;top:${heroY}px;width:${cW - PAD * 2}px;text-align:center;font-size:${heroFontSize}px;font-weight:bold;color:${p.primary};line-height:1.1;z-index:2">${escHtml(bigValue)}</div>
@@ -580,16 +580,16 @@ function buildComparison(slide: SlideInput, p: ColorPalette, hasImage = false): 
   const midX = Math.round(cW / 2);
 
   return `${SCOPED_RESET}
-<div style="position:relative;width:${W}px;height:${H}px;">
+<div style="position:relative;width:${W}px;height:${H}px;background:${p.background};">
   <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;text-align:center;font-size:${titleFontSize(slide.title)}px;font-weight:bold;overflow-wrap:break-word;word-wrap:break-word;color:${p.text};line-height:1.2">${escHtml(slide.title)}</div>
   <div style="position:absolute;left:${Math.round((cW - 60) / 2)}px;top:${PAD + 56}px;width:60px;height:3px;background:${p.accent};border-radius:2px"></div>
-  <div style="position:absolute;left:${PAD}px;top:${cardY}px;width:${colW}px;height:${cardH}px;background:${p.surface};border:1px solid ${p.border};border-radius:16px"></div>
+  <div style="position:absolute;left:${PAD}px;top:${cardY}px;width:${colW}px;height:${cardH}px;background:${p.surface};border:1px solid ${p.border};border-radius:16px;box-shadow:0 2px 8px rgba(0,0,0,0.08)"></div>
   <div style="position:absolute;left:${PAD}px;top:${cardY}px;width:${colW}px;height:52px;background:${hexToRgba(p.primary, 0.1)};border-radius:16px 16px 0 0"></div>
-  <div style="position:absolute;left:${PAD + 24}px;top:${cardY + 14}px;font-size:16px;font-weight:bold;color:${p.primary}">${escHtml(stripMarkdown(leftTitle))}</div>
+  <div style="position:absolute;left:${PAD + 24}px;top:${cardY + 14}px;font-size:15px;font-weight:bold;color:${p.primary};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(stripMarkdown(leftTitle))}</div>
   ${renderItems(leftLines, PAD, '\u2022')}
-  <div style="position:absolute;left:${rightX}px;top:${cardY}px;width:${colW}px;height:${cardH}px;background:${p.surface};border:2px solid ${p.primary};border-radius:16px"></div>
+  <div style="position:absolute;left:${rightX}px;top:${cardY}px;width:${colW}px;height:${cardH}px;background:${p.surface};border:2px solid ${p.primary};border-radius:16px;box-shadow:0 2px 12px rgba(0,0,0,0.10)"></div>
   <div style="position:absolute;left:${rightX}px;top:${cardY}px;width:${colW}px;height:52px;background:${hexToRgba(p.primary, 0.15)};border-radius:16px 16px 0 0"></div>
-  <div style="position:absolute;left:${rightX + 24}px;top:${cardY + 14}px;font-size:16px;font-weight:bold;color:${p.primary}">${escHtml(stripMarkdown(rightTitle))}</div>
+  <div style="position:absolute;left:${rightX + 24}px;top:${cardY + 14}px;font-size:15px;font-weight:bold;color:${p.primary};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(stripMarkdown(rightTitle))}</div>
   ${renderItems(rightLines, rightX, '\u2713')}
   <svg style="position:absolute;left:0;top:0" width="${cW}" height="${H}" xmlns="http://www.w3.org/2000/svg">
     <defs>
@@ -675,7 +675,7 @@ function buildComparisonTable(slide: SlideInput, p: ColorPalette, table: ParsedT
   }
 
   return `${SCOPED_RESET}
-<div style="position:relative;width:${W}px;height:${H}px;">
+<div style="position:relative;width:${W}px;height:${H}px;background:${p.background};">
   ${html}
 </div>`;
 }
@@ -694,7 +694,7 @@ function buildTeam(slide: SlideInput, p: ColorPalette, hasImage = false): string
 
   if (members.length === 0) {
     return `${SCOPED_RESET}
-<div style="position:relative;width:${W}px;height:${H}px;">
+<div style="position:relative;width:${W}px;height:${H}px;background:${p.background};">
   <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;text-align:center;font-size:${titleFontSize(slide.title)}px;font-weight:bold;overflow-wrap:break-word;word-wrap:break-word;color:${p.text}">${escHtml(slide.title)}</div>
 </div>`;
   }
@@ -722,7 +722,7 @@ function buildTeam(slide: SlideInput, p: ColorPalette, hasImage = false): string
     const cy = startY + row * (cardH + gapY);
 
     // Card
-    cardsHtml += `<div style="position:absolute;left:${cx}px;top:${cy}px;width:${cardW}px;height:${cardH}px;background:${p.surface};border:1px solid ${p.border};border-radius:16px"></div>`;
+    cardsHtml += `<div style="position:absolute;left:${cx}px;top:${cy}px;width:${cardW}px;height:${cardH}px;background:${p.surface};border:1px solid ${p.border};border-radius:16px;box-shadow:0 2px 8px rgba(0,0,0,0.08)"></div>`;
 
     // Name + role
     cardsHtml += `<div style="position:absolute;left:${cx + 12}px;top:${cy + 100}px;width:${cardW - 24}px;text-align:center;font-size:16px;font-weight:bold;color:${p.text}">${escHtml(members[i].name)}</div>`;
@@ -745,7 +745,7 @@ function buildTeam(slide: SlideInput, p: ColorPalette, hasImage = false): string
   }
 
   return `${SCOPED_RESET}
-<div style="position:relative;width:${W}px;height:${H}px;">
+<div style="position:relative;width:${W}px;height:${H}px;background:${p.background};">
   <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;text-align:center;font-size:${titleFontSize(slide.title)}px;font-weight:bold;overflow-wrap:break-word;word-wrap:break-word;color:${p.text};line-height:1.2">${escHtml(slide.title)}</div>
   <div style="position:absolute;left:${Math.round((cW - 60) / 2)}px;top:${PAD + 56}px;width:60px;height:3px;background:${p.accent};border-radius:2px"></div>
   ${cardsHtml}
@@ -795,7 +795,7 @@ function buildFeatureGrid(slide: SlideInput, p: ColorPalette, hasImage = false):
 
   if (features.length === 0) {
     return `${SCOPED_RESET}
-<div style="position:relative;width:${W}px;height:${H}px;">
+<div style="position:relative;width:${W}px;height:${H}px;background:${p.background};">
   <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;text-align:center;font-size:${titleFontSize(slide.title)}px;font-weight:bold;overflow-wrap:break-word;word-wrap:break-word;color:${p.text}">${escHtml(slide.title)}</div>
 </div>`;
   }
@@ -817,7 +817,7 @@ function buildFeatureGrid(slide: SlideInput, p: ColorPalette, hasImage = false):
     const cx = PAD + col * (cardW + gapX);
     const cy = startY + row * (cardH + gapY);
 
-    html += `<div style="position:absolute;left:${cx}px;top:${cy}px;width:${cardW}px;height:${cardH}px;background:${p.surface};border:1px solid ${p.border};border-radius:16px;border-top:4px solid ${p.accent}"></div>`;
+    html += `<div style="position:absolute;left:${cx}px;top:${cy}px;width:${cardW}px;height:${cardH}px;background:${p.surface};border:1px solid ${p.border};border-radius:16px;box-shadow:0 2px 8px rgba(0,0,0,0.08);border-top:4px solid ${p.accent}"></div>`;
     // Icon placeholder
     html += `<div style="position:absolute;left:${cx + 24}px;top:${cy + 24}px;width:36px;height:36px;background:${p.primary};border-radius:8px;opacity:0.8"></div>`;
     // Title
@@ -829,7 +829,7 @@ function buildFeatureGrid(slide: SlideInput, p: ColorPalette, hasImage = false):
   }
 
   return `${SCOPED_RESET}
-<div style="position:relative;width:${W}px;height:${H}px;">
+<div style="position:relative;width:${W}px;height:${H}px;background:${p.background};">
   <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;text-align:center;font-size:${titleFontSize(slide.title)}px;font-weight:bold;overflow-wrap:break-word;word-wrap:break-word;color:${p.text};line-height:1.2">${escHtml(slide.title)}</div>
   <div style="position:absolute;left:${Math.round((cW - 60) / 2)}px;top:${PAD + 56}px;width:60px;height:3px;background:${p.accent};border-radius:2px"></div>
   ${html}
@@ -860,7 +860,7 @@ function buildProcess(slide: SlideInput, p: ColorPalette, hasImage = false): str
 
   if (steps.length === 0) {
     return `${SCOPED_RESET}
-<div style="position:relative;width:${W}px;height:${H}px;">
+<div style="position:relative;width:${W}px;height:${H}px;background:${p.background};">
   <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;text-align:center;font-size:${titleFontSize(slide.title)}px;font-weight:bold;overflow-wrap:break-word;word-wrap:break-word;color:${p.text}">${escHtml(slide.title)}</div>
 </div>`;
   }
@@ -879,7 +879,7 @@ function buildProcess(slide: SlideInput, p: ColorPalette, hasImage = false): str
   for (let i = 0; i < count; i++) {
     const cx = startX + i * (cardW + gapX);
     // Card background
-    cardsHtml += `<div style="position:absolute;left:${cx}px;top:${cardY}px;width:${cardW}px;height:${cardH}px;background:${p.surface};border:1px solid ${p.border};border-radius:16px;border-top:4px solid ${p.accent}"></div>`;
+    cardsHtml += `<div style="position:absolute;left:${cx}px;top:${cardY}px;width:${cardW}px;height:${cardH}px;background:${p.surface};border:1px solid ${p.border};border-radius:16px;box-shadow:0 2px 8px rgba(0,0,0,0.08);border-top:4px solid ${p.accent}"></div>`;
     // Step number circle
     cardsHtml += `<div style="position:absolute;left:${cx + cardW / 2 - 20}px;top:${cardY + 20}px;width:40px;height:40px;border-radius:50%;background:${p.accent};display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:bold;color:#FFFFFF;text-align:center;line-height:40px">${String(steps[i].num).padStart(2, '0')}</div>`;
     // Title
@@ -898,7 +898,7 @@ function buildProcess(slide: SlideInput, p: ColorPalette, hasImage = false): str
   }
 
   return `${SCOPED_RESET}
-<div style="position:relative;width:${W}px;height:${H}px;">
+<div style="position:relative;width:${W}px;height:${H}px;background:${p.background};">
   <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;text-align:center;font-size:${titleFontSize(slide.title)}px;font-weight:bold;overflow-wrap:break-word;word-wrap:break-word;color:${p.text};line-height:1.2">${escHtml(slide.title)}</div>
   <div style="position:absolute;left:${Math.round((cW - 60) / 2)}px;top:${PAD + 56}px;width:60px;height:3px;background:${p.accent};border-radius:2px"></div>
   ${cardsHtml}
@@ -937,7 +937,7 @@ function buildProblem(slide: SlideInput, p: ColorPalette, hasImage = false): str
   }
 
   return `${SCOPED_RESET}
-<div style="position:relative;width:${W}px;height:${H}px;">
+<div style="position:relative;width:${W}px;height:${H}px;background:${p.background};">
   <div style="position:absolute;left:0;top:0;width:6px;height:${H}px;background:${barColor}"></div>
   <svg style="position:absolute;left:${PAD + 4}px;top:${PAD}px" width="32" height="32" xmlns="http://www.w3.org/2000/svg">
     <polygon points="16,2 30,28 2,28" fill="none" stroke="${barColor}" stroke-width="2"/>
@@ -965,7 +965,7 @@ function buildSolution(slide: SlideInput, p: ColorPalette, hasImage = false): st
   }
 
   return `${SCOPED_RESET}
-<div style="position:relative;width:${W}px;height:${H}px;">
+<div style="position:relative;width:${W}px;height:${H}px;background:${p.background};">
   <div style="position:absolute;left:0;top:0;width:6px;height:${H}px;background:${barColor}"></div>
   <svg style="position:absolute;left:${PAD + 4}px;top:${PAD}px" width="32" height="32" xmlns="http://www.w3.org/2000/svg">
     <circle cx="16" cy="16" r="14" fill="none" stroke="${barColor}" stroke-width="2"/>
@@ -1006,9 +1006,9 @@ function buildCta(slide: SlideInput, p: ColorPalette, hasImage = false): string 
   const btnHtml = `<div style="position:absolute;left:${Math.round(cardX + (cardW - btnW) / 2)}px;top:${btnY}px;width:${btnW}px;height:40px;background:${p.accent};border-radius:8px;text-align:center;line-height:40px;font-size:14px;font-weight:bold;color:#FFFFFF;letter-spacing:0.04em">Get Started &rarr;</div>`;
 
   return `${SCOPED_RESET}
-<div style="position:relative;width:${W}px;height:${H}px;">
+<div style="position:relative;width:${W}px;height:${H}px;background:${p.background};">
   <div style="position:absolute;left:0;top:0;width:${W}px;height:${H}px;background:radial-gradient(ellipse 900px 700px at 50% 50%,${hexToRgba(p.accent, 0.10)} 0%,transparent 70%)"></div>
-  <div style="position:absolute;left:${cardX}px;top:${cardY}px;width:${cardW}px;height:${cardH}px;background:${p.surface};border:2px solid ${p.accent};border-radius:20px;box-shadow:0 12px 48px ${hexToRgba(p.accent, 0.15)}"></div>
+  <div style="position:absolute;left:${cardX}px;top:${cardY}px;width:${cardW}px;height:${cardH}px;background:${p.surface};border:2px solid ${p.accent};border-radius:20px;box-shadow:0 4px 16px rgba(0,0,0,0.10),0 12px 48px ${hexToRgba(p.accent, 0.15)}"></div>
   <div style="position:absolute;left:${cardX}px;top:${cardY}px;width:${cardW}px;height:5px;background:linear-gradient(90deg,${p.accent},${p.primary});border-radius:20px 20px 0 0"></div>
   <div style="position:absolute;left:${cardX}px;top:${cardY + 32}px;width:${cardW}px;text-align:center;font-size:28px;font-weight:bold;color:${p.text};line-height:1.2">${escHtml(slide.title)}</div>
   <div style="position:absolute;left:${Math.round(visibleW / 2 - 30)}px;top:${cardY + titleH + 8}px;width:60px;height:3px;background:${p.accent};border-radius:2px"></div>
@@ -1037,7 +1037,7 @@ function buildContent(slide: SlideInput, p: ColorPalette, hasImage = false): str
   }
 
   return `${SCOPED_RESET}
-<div style="position:relative;width:${W}px;height:${H}px;">
+<div style="position:relative;width:${W}px;height:${H}px;background:${p.background};">
   <div style="position:absolute;left:${PAD}px;top:0;width:4px;height:${H}px;background:${p.accent}"></div>
   <div style="position:absolute;left:${PAD + 20}px;top:${PAD}px;font-size:${titleFontSize(slide.title)}px;font-weight:bold;overflow-wrap:break-word;word-wrap:break-word;color:${p.text};line-height:1.2">${escHtml(slide.title)}</div>
   <div style="position:absolute;left:${PAD + 20}px;top:${PAD + 48}px;width:60px;height:3px;background:${p.accent};border-radius:2px"></div>
@@ -1068,7 +1068,7 @@ function buildQuote(slide: SlideInput, p: ColorPalette, hasImage = false): strin
   const quoteY = Math.round(H * 0.3);
 
   return `${SCOPED_RESET}
-<div style="position:relative;width:${W}px;height:${H}px;">
+<div style="position:relative;width:${W}px;height:${H}px;background:${p.background};">
   <div style="position:absolute;left:${PAD + 40}px;top:${quoteY - 80}px;font-size:160px;font-family:Georgia,serif;color:${p.accent};opacity:0.2;line-height:1">\u201C</div>
   <div style="position:absolute;left:${PAD + 80}px;top:${quoteY}px;width:${cW - PAD * 2 - 160}px;font-size:${fontSize}px;font-style:italic;line-height:1.5;color:${p.text};text-align:center">${escHtml(quoteText)}</div>
   ${attribution ? `<div style="position:absolute;left:${PAD + 80}px;bottom:${PAD + 60}px;width:${cW - PAD * 2 - 160}px;font-size:14px;color:${p.text};opacity:0.6;text-align:center;letter-spacing:0.04em">\u2014 ${escHtml(attribution)}</div>` : ''}
@@ -1086,7 +1086,7 @@ function buildArchitecture(slide: SlideInput, p: ColorPalette, hasImage = false)
 
   if (nodes.length === 0) {
     return `${SCOPED_RESET}
-<div style="position:relative;width:${W}px;height:${H}px;">
+<div style="position:relative;width:${W}px;height:${H}px;background:${p.background};">
   <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;text-align:center;font-size:${titleFontSize(slide.title)}px;font-weight:bold;overflow-wrap:break-word;word-wrap:break-word;color:${p.text}">${escHtml(slide.title)}</div>
 </div>`;
   }
@@ -1125,7 +1125,7 @@ function buildArchitecture(slide: SlideInput, p: ColorPalette, hasImage = false)
   }
 
   return `${SCOPED_RESET}
-<div style="position:relative;width:${W}px;height:${H}px;">
+<div style="position:relative;width:${W}px;height:${H}px;background:${p.background};">
   <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;text-align:center;font-size:${titleFontSize(slide.title)}px;font-weight:bold;overflow-wrap:break-word;word-wrap:break-word;color:${p.text};line-height:1.2">${escHtml(slide.title)}</div>
   <div style="position:absolute;left:${Math.round((cW - 60) / 2)}px;top:${PAD + 56}px;width:60px;height:3px;background:${p.accent};border-radius:2px"></div>
   ${boxesHtml}
