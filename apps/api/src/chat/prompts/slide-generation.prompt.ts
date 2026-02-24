@@ -233,6 +233,7 @@ VISUAL_HUMOR: Title IS the punchline — max 8 words, dry wit preferred over sla
   imagePromptHint: "A single thread being pulled from an elaborate knitted sweater that is visibly unraveling, soft studio lighting, macro photography, photorealistic"
 
 TEAM: Plain text, one person per line. Format: Name - Role - Credential. Max 6 people. Never generate imagePromptHint (AI can't make good headshots). Title should describe the team strength. NEVER include HTML tags, CSS classes, or div wrappers — the visual layout is handled automatically by the renderer.
+  CRITICAL: ONLY use real team members from the knowledge base or pitch brief. NEVER fabricate team members, names, or credentials. If no team data is available in the context, write a generic team description like "Experienced team of engineers and operators" instead of inventing people.
   Example body:
   "Jane Smith - CEO - Ex-Google, Stanford
 John Doe - CTO - Ex-Meta, MIT
