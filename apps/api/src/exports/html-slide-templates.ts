@@ -128,6 +128,17 @@ function titleCountCap(title: string): number | undefined {
   return undefined;
 }
 
+// Deterministic variant selector: produces consistent 0-based index from content.
+// Same slide content always gets the same variant, but different slides vary.
+function layoutVariant(title: string, body: string, maxVariants: number): number {
+  let h = 0;
+  const s = title + body.slice(0, 100);
+  for (let i = 0; i < s.length; i++) {
+    h = ((h << 5) - h + s.charCodeAt(i)) | 0;
+  }
+  return Math.abs(h) % maxVariants;
+}
+
 // ── Scoped reset injected into every Figma-grade slide ──────
 
 const SCOPED_RESET = `<style scoped>
@@ -975,6 +986,36 @@ function buildFeatureGrid(slide: SlideInput, p: ColorPalette, hasImage = false):
   }
 
   const count = features.length;
+  const fgVariant = layoutVariant(slide.title, slide.body, 2);
+
+  // Variant 1: Horizontal row layout (alternates with grid)
+  if (fgVariant === 1 && count >= 3) {
+    const rowH = Math.min(80, Math.round((H - PAD * 2 - 90) / count));
+    const rowW = cW - PAD * 2 - 20;
+    const rowStartY = PAD + 85;
+    const fgAccV = cardAccentColors(p);
+    let rowHtml = '';
+    for (let ri = 0; ri < count; ri++) {
+      const ry = rowStartY + ri * (rowH + 8);
+      const rc = fgAccV[ri % fgAccV.length];
+      // Left accent bar
+      rowHtml += '<div style="position:absolute;left:' + PAD + 'px;top:' + ry + 'px;width:4px;height:' + rowH + 'px;background:' + rc + ';border-radius:2px"></div>';
+      // Number badge
+      rowHtml += '<div style="position:absolute;left:' + (PAD + 16) + 'px;top:' + (ry + Math.round((rowH - 28) / 2)) + 'px;width:28px;height:28px;border-radius:50%;background:' + hexToRgba(rc, 0.15) + ';text-align:center;line-height:28px;font-size:13px;font-weight:bold;color:' + rc + '">' + (ri + 1) + '</div>';
+      // Title (bold, accent colored)
+      rowHtml += '<div style="position:absolute;left:' + (PAD + 56) + 'px;top:' + (ry + 6) + 'px;width:' + Math.round(rowW * 0.3) + 'px;font-size:15px;font-weight:bold;color:' + rc + ';overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escHtml(features[ri].title) + '</div>';
+      // Description (lighter)
+      if (features[ri].desc) {
+        rowHtml += '<div style="position:absolute;left:' + (PAD + 56 + Math.round(rowW * 0.32)) + 'px;top:' + (ry + 6) + 'px;width:' + Math.round(rowW * 0.62) + 'px;font-size:14px;line-height:1.4;color:' + p.text + ';opacity:0.8;overflow:hidden;max-height:' + (rowH - 12) + 'px">' + escHtml(features[ri].desc) + '</div>';
+      }
+    }
+    return SCOPED_RESET + '\n<div style="position:relative;width:' + W + 'px;height:' + H + 'px;background:' + p.background + ';">' +
+      bgGradientOverlay(cW, H, p.accent, 0.04) +
+      '<div style="position:absolute;left:' + PAD + 'px;top:' + PAD + 'px;width:' + (cW - PAD * 2) + 'px;font-size:' + titleFontSize(slide.title) + 'px;font-weight:bold;overflow-wrap:break-word;word-wrap:break-word;color:' + p.text + ';line-height:1.2">' + escHtml(slide.title) + '</div>' +
+      '<div style="position:absolute;left:' + PAD + 'px;top:' + (PAD + 48) + 'px;width:60px;height:3px;background:' + p.accent + ';border-radius:2px"></div>' +
+      rowHtml +
+      '</div>';
+  }
   const cols = count <= 3 ? count : count <= 4 ? 2 : 3;
   const rows = Math.ceil(count / cols);
   const gapX = 24;
@@ -1047,6 +1088,37 @@ function buildProcess(slide: SlideInput, p: ColorPalette, hasImage = false): str
   const unfilteredSteps = rawSteps.filter((s) => s.title.length > 0).map((s, i) => ({ ...s, num: i + 1 }));
   const stepCap = titleCountCap(slide.title);
   const steps = stepCap ? unfilteredSteps.slice(0, stepCap) : unfilteredSteps;
+
+  const procVariant = layoutVariant(slide.title, slide.body, 2);
+
+  // Variant 1: Vertical timeline layout (alternates with card grid)
+  if (procVariant === 1 && steps.length >= 3 && steps.length <= 6) {
+    const vtStartY = PAD + 80;
+    const vtStepH = Math.min(90, Math.round((H - vtStartY - PAD) / steps.length));
+    const vtAccents = cardAccentColors(p);
+    const vtLineX = PAD + 40;
+    let vtHtml = '';
+    // Vertical line
+    vtHtml += '<div style="position:absolute;left:' + vtLineX + 'px;top:' + vtStartY + 'px;width:2px;height:' + (steps.length * vtStepH - 10) + 'px;background:' + hexToRgba(p.border, 0.4) + '"></div>';
+    for (let vi = 0; vi < steps.length; vi++) {
+      const vy = vtStartY + vi * vtStepH;
+      const vc = vtAccents[vi % vtAccents.length];
+      // Circle node on line
+      vtHtml += '<div style="position:absolute;left:' + (vtLineX - 14) + 'px;top:' + (vy + 4) + 'px;width:30px;height:30px;border-radius:50%;background:' + vc + ';text-align:center;line-height:30px;font-size:14px;font-weight:bold;color:#fff">' + steps[vi].num + '</div>';
+      // Title
+      vtHtml += '<div style="position:absolute;left:' + (vtLineX + 30) + 'px;top:' + (vy + 2) + 'px;width:' + (cW - vtLineX - 30 - PAD) + 'px;font-size:16px;font-weight:bold;color:' + vc + ';overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escHtml(steps[vi].title) + '</div>';
+      // Description
+      if (steps[vi].desc) {
+        vtHtml += '<div style="position:absolute;left:' + (vtLineX + 30) + 'px;top:' + (vy + 24) + 'px;width:' + (cW - vtLineX - 30 - PAD) + 'px;font-size:13px;line-height:1.4;color:' + p.text + ';opacity:0.8;overflow:hidden;max-height:' + (vtStepH - 32) + 'px">' + escHtml(steps[vi].desc) + '</div>';
+      }
+    }
+    return SCOPED_RESET + '\n<div style="position:relative;width:' + W + 'px;height:' + H + 'px;background:' + p.background + ';">' +
+      bgGradientOverlay(cW, H, p.primary, 0.04) +
+      '<div style="position:absolute;left:' + PAD + 'px;top:' + PAD + 'px;width:' + (cW - PAD * 2) + 'px;font-size:' + titleFontSize(slide.title) + 'px;font-weight:bold;overflow-wrap:break-word;word-wrap:break-word;color:' + p.text + ';line-height:1.2">' + escHtml(slide.title) + '</div>' +
+      '<div style="position:absolute;left:' + PAD + 'px;top:' + (PAD + 48) + 'px;width:60px;height:3px;background:' + p.accent + ';border-radius:2px"></div>' +
+      vtHtml +
+      '</div>';
+  }
 
   if (steps.length === 0) {
     return `${SCOPED_RESET}
