@@ -49,6 +49,11 @@ import { truncateToLimits, passesDensityCheck } from '../constraints/density-tru
 import type { GeneratedSlideContent } from './validators.js';
 import { FigmaImageSyncService, type FigmaBatchItem } from '../figma/figma-image-sync.service.js';
 import { FigmaTemplateService } from '../figma/figma-template.service.js';
+
+/** Strip HTML tags that the LLM may include despite prompt instructions. */
+function stripBodyHtml(body: string): string {
+  return body.replace(/<[^>]*>/g, '').replace(/\n{3,}/g, '\n\n').trim();
+}
 import { ExportsService } from '../exports/exports.service.js';
 
 // ── Interfaces ──────────────────────────────────────────────
@@ -1029,7 +1034,7 @@ OUTPUT: Valid JSON matching this schema (no markdown fences):
                   presentationId,
                   slideNumber: splitNum,
                   title: splitData.title,
-                  body: splitData.body,
+                  body: stripBodyHtml(splitData.body),
                   speakerNotes: validated.speakerNotes,
                   slideType: prep.outlineSlide.slideType as SlideType,
                   imagePrompt: validated.imagePromptHint,
@@ -1612,7 +1617,7 @@ OUTPUT: Valid JSON matching this schema (no markdown fences):
     if (outlineSlide.slideType === 'VISUAL_HUMOR' || outlineSlide.slideType === 'SECTION_DIVIDER') {
       return {
         title: content.title || outlineSlide.title,
-        body: content.body || '',
+        body: stripBodyHtml(content.body || ''),
         speakerNotes: content.speakerNotes || `Key topic: ${outlineSlide.title}.`,
         imagePromptHint: content.imagePromptHint || `Vivid photorealistic scene for humor slide: ${outlineSlide.title}`,
       };
@@ -1620,7 +1625,7 @@ OUTPUT: Valid JSON matching this schema (no markdown fences):
 
     const slideContent: SlideContent = {
       title: content.title || outlineSlide.title,
-      body: content.body || outlineSlide.bulletPoints.map((b) => `- ${b}`).join('\n'),
+      body: stripBodyHtml(content.body || outlineSlide.bulletPoints.map((b) => `- ${b}`).join('\n')),
     };
 
     const densityResult = this.constraints.validateDensity(slideContent);
@@ -1643,7 +1648,7 @@ OUTPUT: Valid JSON matching this schema (no markdown fences):
         // Use the first fixed slide (splitting handled at a higher level later)
         return {
           title: fixResult.slides[0].title,
-          body: fixResult.slides[0].body,
+          body: stripBodyHtml(fixResult.slides[0].body),
           speakerNotes: content.speakerNotes || `Key topic: ${outlineSlide.title}.`,
           imagePromptHint: content.imagePromptHint || `Professional slide about ${outlineSlide.title}`,
         };

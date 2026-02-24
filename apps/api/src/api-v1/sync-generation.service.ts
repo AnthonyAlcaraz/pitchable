@@ -42,6 +42,11 @@ import type { GeneratedSlideContent } from '../chat/validators.js';
 import { validateSlideContent, suggestSplit, DENSITY_LIMITS } from '../constraints/density-validator.js';
 import { truncateToLimits, passesDensityCheck } from '../constraints/density-truncator.js';
 import { computeSlideHash } from '../common/content-hash.js';
+
+/** Strip HTML tags that the LLM may include despite prompt instructions. */
+function stripBodyHtml(body: string): string {
+  return body.replace(/<[^>]*>/g, '').replace(/\n{3,}/g, '\n\n').trim();
+}
 import type { DensityLimits } from '../constraints/density-validator.js';
 import type { SlideSpecDto } from './dto/generate.dto.js';
 
@@ -478,7 +483,7 @@ export class SyncGenerationService {
               presentationId: presentation.id,
               slideNumber: globalIdx + 1,
               title: finalTitle,
-              body: finalBody,
+              body: stripBodyHtml(finalBody),
               speakerNotes: slideContent.speakerNotes ?? null,
               slideType: (outlineSlide.slideType as SlideType) ?? SlideType.CONTENT,
               imagePrompt: slideContent.imagePromptHint ?? null,
