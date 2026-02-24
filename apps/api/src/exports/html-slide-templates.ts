@@ -64,7 +64,24 @@ function parseBodyLines(body: string): string[] {
       cleaned = cleaned.replace(/^[-•*]\s*/, '').replace(/<[^>]*>/g, '').trim();
       return stripMarkdown(cleaned);
     })
-    .filter(Boolean);
+    .filter(Boolean)
+    .filter((l) => !/^---+$/.test(l))
+    .filter((l) => !/^sources?:/i.test(l.trim()))
+    .filter((l) => !/^#{1,3}\s/.test(l));
+}
+
+function splitProseToItems(lines: string[], minItems: number): string[] {
+  if (lines.length >= minItems) return lines;
+  const expanded: string[] = [];
+  for (const line of lines) {
+    if (line.length > 80) {
+      const sentences = line.split(/(?<=\.)\s+/).filter(Boolean);
+      expanded.push(...sentences);
+    } else {
+      expanded.push(line);
+    }
+  }
+  return expanded.length >= minItems ? expanded : lines;
 }
 
 function hexToRgba(hex: string, alpha: number): string {
@@ -89,11 +106,12 @@ export function buildHtmlSlideContent(
   slide: SlideInput,
   palette: ColorPalette,
 ): string {
-  // Strip markdown bold/italic from title and body at entry point
+  // Strip markdown from title at entry point; body is passed raw so
+  // builders like parseMarkdownTable() can detect **bold** markers.
   const cleaned: SlideInput = {
     ...slide,
     title: stripMarkdown(slide.title),
-    body: stripMarkdown(slide.body),
+    body: slide.body,
   };
   switch (cleaned.slideType) {
     case 'MARKET_SIZING':
@@ -178,10 +196,13 @@ function buildMarketSizing(slide: SlideInput, p: ColorPalette): string {
 // Horizontal connector line + circle nodes at computed positions
 
 function buildTimeline(slide: SlideInput, p: ColorPalette, hasImage = false): string {
-  const lines = parseBodyLines(slide.body);
-  const milestones = lines.map((line) => {
+  const rawLines = parseBodyLines(slide.body);
+  const expanded = splitProseToItems(rawLines, 3);
+  const milestones = expanded.map((line, i) => {
     const sep = line.indexOf(':');
     if (sep > -1) return { date: line.slice(0, sep).trim(), text: line.slice(sep + 1).trim() };
+    // If no date found and we expanded prose, use index-based labels
+    if (rawLines.length < 3) return { date: 'Phase ' + (i + 1), text: line };
     return { date: '', text: line };
   });
 
@@ -708,7 +729,8 @@ function buildFeatureGrid(slide: SlideInput, p: ColorPalette): string {
 // Numbered step cards with connectors
 
 function buildProcess(slide: SlideInput, p: ColorPalette): string {
-  const lines = parseBodyLines(slide.body);
+  const rawLines = parseBodyLines(slide.body);
+  const lines = splitProseToItems(rawLines, 3);
   const rawSteps = lines.map((line, i) => {
     const numMatch = line.match(/^\d+\.\s*/);
     const cleaned = numMatch ? line.slice(numMatch[0].length) : line;
