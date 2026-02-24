@@ -274,7 +274,7 @@ export class SyncGenerationService {
       //     Slides in the same wave share priorSlides context; LLM calls fire concurrently.
       //     After each wave, results accumulate into priorSlides for narrative coherence.
       const priorSlides: Array<{ title: string; body: string }> = [];
-      const WAVE_SIZE = 4;
+      const WAVE_SIZE = 6;
 
       // Combined effective frequency from both background + side panel frequencies
       let syncImgFreq: string | undefined;
@@ -526,8 +526,16 @@ export class SyncGenerationService {
       const syncThemeCategory = getThemeCategoryByName(theme?.name ?? '');
 
       const tQuality = Date.now();
-      try {
-        const qualityResult = await this.qualityAgents.reviewPresentation(syncSlidesForReview, {
+
+      // Run quality agents and visual critic in parallel (saves 3-8s)
+      const finalSlides = await this.prisma.slide.findMany({
+        where: { presentationId: presentation.id },
+        orderBy: { slideNumber: 'asc' },
+      });
+      const marpMd = this.marpExporter.generateMarpMarkdown(presentation, finalSlides, theme!);
+
+      const [qualitySettled, criticSettled] = await Promise.allSettled([
+        this.qualityAgents.reviewPresentation(syncSlidesForReview, {
           themeCategory: syncThemeCategory,
           themeName,
           presentationType: presType,
@@ -535,9 +543,13 @@ export class SyncGenerationService {
           userId,
           presentationId: presentation.id,
           archetypeId: pitchLens?.deckArchetype ?? undefined,
-        });
+        }),
+        this.visualCritic.reviewPresentation(marpMd, finalSlides.length),
+      ]);
 
-        // Apply auto-fixes
+      // Process quality agents result
+      if (qualitySettled.status === 'fulfilled') {
+        const qualityResult = qualitySettled.value;
         for (const fix of qualityResult.fixes) {
           const slideToFix = allSyncSlides.find((s) => s.slideNumber === fix.slideNumber);
           if (slideToFix) {
@@ -547,34 +559,26 @@ export class SyncGenerationService {
             });
           }
         }
-
         timings['quality_agents'] = Date.now() - tQuality;
         this.logger.log(
           `[TIMING] Quality agents: ${((Date.now() - tQuality) / 1000).toFixed(1)}s — style=${qualityResult.metrics.avgStyleScore.toFixed(2)} narrative=${qualityResult.metrics.narrativeScore.toFixed(2)} facts=${qualityResult.metrics.avgFactScore.toFixed(2)} fixes=${qualityResult.fixes.length}`,
         );
-      } catch (qualityErr) {
+      } else {
         timings['quality_agents'] = Date.now() - tQuality;
-        this.logger.warn(`Sync quality review failed (non-fatal) after ${((Date.now() - tQuality) / 1000).toFixed(1)}s: ${qualityErr}`);
+        this.logger.warn(`Sync quality review failed (non-fatal) after ${((Date.now() - tQuality) / 1000).toFixed(1)}s: ${qualitySettled.reason}`);
       }
 
-      // 12c. Visual critic (non-blocking)
-      try {
-        const tCritic = Date.now();
-        
-        const finalSlides = await this.prisma.slide.findMany({
-          where: { presentationId: presentation.id },
-          orderBy: { slideNumber: 'asc' },
-        });
-        const marpMd = this.marpExporter.generateMarpMarkdown(presentation, finalSlides, theme!);
-        const criticResult = await this.visualCritic.reviewPresentation(marpMd, finalSlides.length);
+      // Process visual critic result
+      if (criticSettled.status === 'fulfilled') {
+        const criticResult = criticSettled.value;
         this.logger.log(
-          `[TIMING] Visual critic: ${((Date.now() - tCritic) / 1000).toFixed(1)}s — ` +
+          `[TIMING] Visual critic: ${((Date.now() - tQuality) / 1000).toFixed(1)}s — ` +
           `score=${criticResult.overallScore.toFixed(2)} aesthetic=${criticResult.aestheticScore.toFixed(2)} diversity=${criticResult.diversityScore.toFixed(2)} ` +
           `issues=${criticResult.issues.length}`,
         );
-        timings['visual_critic'] = Date.now() - tCritic;
-      } catch (criticErr) {
-        this.logger.warn(`Visual critic failed (non-fatal): ${criticErr}`);
+        timings['visual_critic'] = Date.now() - tQuality;
+      } else {
+        this.logger.warn(`Visual critic failed (non-fatal): ${criticSettled.reason}`);
       }
 
       // 13. Mark complete + deduct credits
