@@ -176,6 +176,120 @@ function layoutVariant(title: string, body: string, maxVariants: number): number
   return Math.abs(h) % maxVariants;
 }
 
+
+// ── Content Mood Detection ──────────────────────────────────
+// Lightweight keyword detection on title+body → mood category → decorative CSS overlays.
+// All treatments use existing palette colors at low opacity (0.03-0.08).
+
+type ContentMood = 'GROWTH' | 'RISK' | 'TECH' | 'PEOPLE' | 'STRATEGY' | 'NEUTRAL';
+
+const MOOD_KEYWORDS: { mood: ContentMood; re: RegExp }[] = [
+  { mood: 'GROWTH', re: /\b(grow(?:th|ing)?|scal(?:e|ing|able)|expand|increas(?:e|ing)|revenue|profit|market|opportunit|accelerat|momentum|traction|adoption|compound|multipl|gain(?:s|ed|ing)?|rais(?:e|ing))\b/gi },
+  { mood: 'RISK', re: /\b(risk|threat|challeng|declin(?:e|ing)|loss|crisis|vulnerabilit|bottleneck|gap(?:s)?|debt|churn|friction|obstacle|barrier|failur|problem|pain|waste)\b/gi },
+  { mood: 'TECH', re: /\b(AI|ML|algorithm|platform|architecture|API|cloud|data|neural|automat(?:ion|ed)|digital|infrastructure|stack|framework|pipeline|integrat(?:ion|ed)|system|model|deploy)\b/gi },
+  { mood: 'PEOPLE', re: /\b(team|culture|people|talent|hir(?:e|ing)|leadership|collaborat|communit|diversit|employee|mentor|customer|user|experience|engagement)\b/gi },
+  { mood: 'STRATEGY', re: /\b(strateg|vision|roadmap|future|transform|mission|pivot|initiativ|north\s*star|alignment|objectiv|milestone|goal|plan(?:s|ning)?|next)\b/gi },
+];
+
+function detectContentMood(title: string, body: string): ContentMood {
+  const text = (title + ' ' + body.slice(0, 500)).toLowerCase();
+  let best: ContentMood = 'NEUTRAL';
+  let bestCount = 0;
+  for (const { mood, re } of MOOD_KEYWORDS) {
+    re.lastIndex = 0;
+    const matches = text.match(re);
+    const count = matches ? matches.length : 0;
+    if (count >= 2 && count > bestCount) {
+      best = mood;
+      bestCount = count;
+    }
+  }
+  return best;
+}
+
+function moodOverlay(mood: ContentMood, p: ColorPalette, cW: number, isDark: boolean): string {
+  if (mood === 'NEUTRAL') return '';
+  const colors: Record<ContentMood, string> = {
+    GROWTH: p.success || p.primary,
+    RISK: p.error || p.primary,
+    TECH: p.primary,
+    PEOPLE: p.warning || p.primary,
+    STRATEGY: p.accent,
+    NEUTRAL: '',
+  };
+  const c = colors[mood];
+  switch (mood) {
+    case 'GROWTH':
+      return `<div style="position:absolute;left:0;top:0;width:${cW}px;height:${H}px;background:linear-gradient(to top right,${hexToRgba(c, 0.06)} 0%,transparent 60%);pointer-events:none;z-index:0"></div>` +
+        `<svg style="position:absolute;left:0;top:0;width:${cW}px;height:${H}px;pointer-events:none;z-index:0" viewBox="0 0 ${cW} ${H}">` +
+        `<line x1="${cW * 0.1}" y1="${H * 0.9}" x2="${cW * 0.3}" y2="${H * 0.4}" stroke="${hexToRgba(c, 0.04)}" stroke-width="2"/>` +
+        `<line x1="${cW * 0.35}" y1="${H * 0.85}" x2="${cW * 0.55}" y2="${H * 0.35}" stroke="${hexToRgba(c, 0.05)}" stroke-width="1.5"/>` +
+        `<line x1="${cW * 0.6}" y1="${H * 0.8}" x2="${cW * 0.8}" y2="${H * 0.3}" stroke="${hexToRgba(c, 0.06)}" stroke-width="1"/>` +
+        `</svg>`;
+    case 'RISK':
+      return `<div style="position:absolute;left:0;top:0;width:${cW}px;height:${H}px;clip-path:polygon(0 0,100% 0,100% 70%,0 100%);background:${hexToRgba(c, 0.04)};pointer-events:none;z-index:0"></div>` +
+        `<svg style="position:absolute;left:0;top:0;width:${cW}px;height:${H}px;pointer-events:none;z-index:0" viewBox="0 0 ${cW} ${H}">` +
+        `<line x1="0" y1="${H * 0.3}" x2="${cW}" y2="${H * 0.7}" stroke="${hexToRgba(c, 0.03)}" stroke-width="1.5"/>` +
+        `<line x1="0" y1="${H * 0.5}" x2="${cW}" y2="${H * 0.9}" stroke="${hexToRgba(c, 0.05)}" stroke-width="1"/>` +
+        `</svg>`;
+    case 'TECH': {
+      const dotColor = isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.05)';
+      return `<svg style="position:absolute;left:0;top:0;width:${cW}px;height:${H}px;pointer-events:none;z-index:0" viewBox="0 0 ${cW} ${H}">` +
+        `<defs><pattern id="mood-dots" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">` +
+        `<circle cx="20" cy="20" r="1" fill="${dotColor}"/></pattern></defs>` +
+        `<rect width="${cW}" height="${H}" fill="url(#mood-dots)"/>` +
+        `<path d="M${PAD},${PAD} L${PAD + 20},${PAD} M${PAD},${PAD} L${PAD},${PAD + 20}" stroke="${hexToRgba(c, 0.08)}" stroke-width="2" fill="none"/>` +
+        `<path d="M${cW - PAD},${H - PAD} L${cW - PAD - 20},${H - PAD} M${cW - PAD},${H - PAD} L${cW - PAD},${H - PAD - 20}" stroke="${hexToRgba(c, 0.08)}" stroke-width="2" fill="none"/>` +
+        `</svg>`;
+    }
+    case 'PEOPLE':
+      return `<div style="position:absolute;left:0;top:0;width:${cW}px;height:${H}px;background:radial-gradient(70% 60% at 70% 65%,${hexToRgba(c, 0.05)} 0%,transparent 70%);pointer-events:none;z-index:0"></div>` +
+        `<svg style="position:absolute;left:0;top:0;width:${cW}px;height:${H}px;pointer-events:none;z-index:0" viewBox="0 0 ${cW} ${H}">` +
+        `<path d="M${cW * 0.1},${H * 0.8} Q${cW * 0.4},${H * 0.2} ${cW * 0.9},${H * 0.6}" stroke="${hexToRgba(c, 0.06)}" stroke-width="2" fill="none"/>` +
+        `</svg>`;
+    case 'STRATEGY':
+      return `<div style="position:absolute;left:0;top:0;width:${cW}px;height:${H}px;background:linear-gradient(to right,${hexToRgba(c, 0.05)} 0%,transparent 50%);pointer-events:none;z-index:0"></div>` +
+        `<svg style="position:absolute;left:0;top:0;width:${cW}px;height:${H}px;pointer-events:none;z-index:0" viewBox="0 0 ${cW} ${H}">` +
+        `<line x1="${cW * 0.1}" y1="${H * 0.5}" x2="${cW * 0.85}" y2="${H * 0.5}" stroke="${hexToRgba(c, 0.07)}" stroke-width="1.5"/>` +
+        `<polyline points="${cW * 0.82},${H * 0.45} ${cW * 0.88},${H * 0.5} ${cW * 0.82},${H * 0.55}" stroke="${hexToRgba(c, 0.07)}" stroke-width="1.5" fill="none"/>` +
+        `</svg>`;
+    default:
+      return '';
+  }
+}
+
+function moodAccentBar(mood: ContentMood, color: string, width: number, left: number, top: number): string {
+  const base = `position:absolute;left:${left}px;top:${top}px`;
+  switch (mood) {
+    case 'GROWTH':
+      return `<div style="${base};width:${width}px;height:3px;background:${color};border-radius:2px;transform:rotate(-2deg)"></div>`;
+    case 'RISK':
+      return `<div style="${base};width:${width}px;height:2px;background:${color};border-radius:2px"></div>` +
+        `<div style="position:absolute;left:${left + Math.round(width * 0.15)}px;top:${top + 5}px;width:${Math.round(width * 0.7)}px;height:2px;background:${color};border-radius:2px;opacity:0.5"></div>`;
+    case 'TECH':
+      return `<div style="${base};width:${width}px;height:3px;border-radius:2px;background:repeating-linear-gradient(to right,${color} 0px,${color} 8px,transparent 8px,transparent 14px)"></div>`;
+    case 'PEOPLE':
+      return `<div style="${base};width:${Math.round(width * 1.2)}px;height:4px;background:${color};border-radius:6px"></div>`;
+    case 'STRATEGY':
+      return `<div style="${base};width:${width}px;height:3px;background:${color};clip-path:polygon(0 0,92% 0,100% 50%,92% 100%,0 100%);border-radius:2px"></div>`;
+    default:
+      return `<div style="${base};width:${width}px;height:3px;background:${color};border-radius:2px"></div>`;
+  }
+}
+
+function moodCardTint(mood: ContentMood, p: ColorPalette): string {
+  const colors: Record<ContentMood, string> = {
+    GROWTH: p.success || p.primary,
+    RISK: p.error || p.primary,
+    TECH: p.primary,
+    PEOPLE: p.warning || p.primary,
+    STRATEGY: p.accent,
+    NEUTRAL: 'transparent',
+  };
+  if (mood === 'NEUTRAL') return 'transparent';
+  return hexToRgba(colors[mood], 0.02);
+}
+
 // ── Scoped reset injected into every Figma-grade slide ──────
 
 const SCOPED_RESET = `<style scoped>
@@ -247,6 +361,38 @@ export function buildHtmlSlideContent(
       html = buildArchitecture(cleaned, palette, !!cleaned.imageUrl); break;
     default:
       return '';
+  }
+
+  // ── Mood detection + visual adaptation ──
+  const mood = detectContentMood(cleaned.title, cleaned.body);
+  const cW = cleaned.imageUrl ? CONTENT_W_IMG : W;
+  const dark = isDarkBackground(palette.background);
+
+  if (mood !== 'NEUTRAL' && html) {
+    // Inject mood overlay after bgGradientOverlay div
+    const bgMarker = 'pointer-events:none"></div>';
+    const bgIdx = html.indexOf(bgMarker);
+    if (bgIdx > -1) {
+      const insertAt = bgIdx + bgMarker.length;
+      html = html.slice(0, insertAt) + '\n  ' + moodOverlay(mood, palette, cW, dark) + html.slice(insertAt);
+    } else {
+      // Fallback: insert after wrapper div opening tag
+      const wrapOpen = html.indexOf('>');
+      if (wrapOpen > -1) {
+        html = html.slice(0, wrapOpen + 1) + '\n  ' + moodOverlay(mood, palette, cW, dark) + html.slice(wrapOpen + 1);
+      }
+    }
+
+    // Replace first accent bar with mood-specific version
+    const barRe = /<div style="position:absolute;left:(\d+)px;top:(\d+)px;width:(\d+)px;height:3px;background:([^;]+);border-radius:2px"><\/div>/;
+    const barMatch = html.match(barRe);
+    if (barMatch) {
+      const left = parseInt(barMatch[1], 10);
+      const top = parseInt(barMatch[2], 10);
+      const width = parseInt(barMatch[3], 10);
+      const color = barMatch[4];
+      html = html.replace(barMatch[0], moodAccentBar(mood, color, width, left, top));
+    }
   }
 
   // Inject image overlay if the slide has an image
