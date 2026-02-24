@@ -109,6 +109,23 @@ section > * { flex-shrink: unset; }
 section::after { position: absolute !important; bottom: 16px !important; right: 24px !important; font-size: 14px !important; opacity: 0.5; z-index: 10; }
 </style>`;
 
+// ── Image overlay for Figma-grade slides ─────────────────────
+// Renders the slide image as an absolute-positioned element on the right
+// side of the slide, with a gradient fade into the content area.
+// This replaces the old Marp ![bg right:30%] approach which conflicted
+// with absolute-positioned HTML templates.
+
+const IMG_WIDTH_RATIO = 0.30;  // 30% of slide width for image
+
+function buildImageOverlay(imageUrl: string, palette: ColorPalette): string {
+  const imgX = Math.round(W * (1 - IMG_WIDTH_RATIO));
+  const imgW = Math.round(W * IMG_WIDTH_RATIO);
+  return `<div style="position:absolute;right:0;top:0;width:${imgW}px;height:${H}px;z-index:1;overflow:hidden">` +
+    `<img src="${imageUrl}" style="width:100%;height:100%;object-fit:cover;opacity:0.85" />` +
+    `<div style="position:absolute;left:0;top:0;width:60px;height:100%;background:linear-gradient(to right,${palette.background},transparent)"></div>` +
+    `</div>`;
+}
+
 // ── Public API ───────────────────────────────────────────────
 
 export function buildHtmlSlideContent(
@@ -122,36 +139,49 @@ export function buildHtmlSlideContent(
     title: stripMarkdown(slide.title),
     body: slide.body,
   };
+
+  let html = '';
   switch (cleaned.slideType) {
     case 'MARKET_SIZING':
-      return buildMarketSizing(cleaned, palette);
+      html = buildMarketSizing(cleaned, palette); break;
     case 'TIMELINE':
-      return buildTimeline(cleaned, palette, !!cleaned.imageUrl);
+      html = buildTimeline(cleaned, palette, !!cleaned.imageUrl); break;
     case 'METRICS_HIGHLIGHT':
-      return buildMetricsHighlight(cleaned, palette);
+      html = buildMetricsHighlight(cleaned, palette); break;
     case 'COMPARISON':
-      return buildComparison(cleaned, palette);
+      html = buildComparison(cleaned, palette); break;
     case 'TEAM':
-      return buildTeam(cleaned, palette);
+      html = buildTeam(cleaned, palette); break;
     case 'FEATURE_GRID':
-      return buildFeatureGrid(cleaned, palette);
+      html = buildFeatureGrid(cleaned, palette); break;
     case 'PROCESS':
-      return buildProcess(cleaned, palette);
+      html = buildProcess(cleaned, palette); break;
     case 'PROBLEM':
-      return buildProblem(cleaned, palette);
+      html = buildProblem(cleaned, palette); break;
     case 'SOLUTION':
-      return buildSolution(cleaned, palette);
+      html = buildSolution(cleaned, palette); break;
     case 'CTA':
-      return buildCta(cleaned, palette, !!cleaned.imageUrl);
+      html = buildCta(cleaned, palette, !!cleaned.imageUrl); break;
     case 'CONTENT':
-      return buildContent(cleaned, palette);
+      html = buildContent(cleaned, palette); break;
     case 'QUOTE':
-      return buildQuote(cleaned, palette);
+      html = buildQuote(cleaned, palette); break;
     case 'ARCHITECTURE':
-      return buildArchitecture(cleaned, palette);
+      html = buildArchitecture(cleaned, palette); break;
     default:
       return '';
   }
+
+  // Inject image overlay if the slide has an image
+  if (cleaned.imageUrl && html) {
+    // Insert the image overlay just before the closing </div> of the wrapper
+    const closingIdx = html.lastIndexOf('</div>');
+    if (closingIdx > -1) {
+      html = html.slice(0, closingIdx) + buildImageOverlay(cleaned.imageUrl, palette) + html.slice(closingIdx);
+    }
+  }
+
+  return html;
 }
 
 // ── MARKET_SIZING ────────────────────────────────────────────
@@ -527,7 +557,7 @@ function buildComparisonTable(slide: SlideInput, p: ColorPalette, table: ParsedT
 
   // Lead text
   if (table.leadText) {
-    html += `<div style="position:absolute;left:${PAD}px;top:${y}px;width:${tableW}px;font-size:17px;line-height:1.4;color:${p.text};opacity:0.8">${escHtml(table.leadText)}</div>`;
+    html += `<div style="position:absolute;left:${PAD}px;top:${y}px;width:${tableW}px;font-size:17px;line-height:1.4;color:${p.text};opacity:0.8">${escHtml(stripMarkdown(table.leadText))}</div>`;
     y += 32;
   }
 
@@ -541,7 +571,7 @@ function buildComparisonTable(slide: SlideInput, p: ColorPalette, table: ParsedT
   // Header
   tableHtml += '<thead><tr>';
   for (const h of table.headers) {
-    tableHtml += `<th style="${thStyle}">${escHtml(h)}</th>`;
+    tableHtml += `<th style="${thStyle}">${escHtml(stripMarkdown(h))}</th>`;
   }
   tableHtml += '</tr></thead>';
   // Body rows
@@ -552,14 +582,14 @@ function buildComparisonTable(slide: SlideInput, p: ColorPalette, table: ParsedT
     for (let c = 0; c < colCount; c++) {
       const val = table.rows[i]?.[c] ?? '';
       const bold = c === 0 ? 'font-weight:bold;' : '';
-      tableHtml += `<td style="${bold}font-size:18px;color:${p.text};${cellPad};border-bottom:1px solid ${rowBorder}">${escHtml(val)}</td>`;
+      tableHtml += `<td style="${bold}font-size:18px;color:${p.text};${cellPad};border-bottom:1px solid ${rowBorder}">${escHtml(stripMarkdown(val))}</td>`;
     }
     tableHtml += '</tr>';
   }
   tableHtml += '</tbody></table>';
 
-  // Estimate table height: header(40) + rows(42 each)
-  const tableHeight = 40 + table.rows.length * 42;
+  // Estimate table height: header(44) + rows(48 each) — accounts for cell padding
+  const tableHeight = 44 + table.rows.length * 48;
   html += `<div style="position:absolute;left:${PAD}px;top:${tableTop}px;width:${tableW}px">${tableHtml}</div>`;
   y = tableTop + tableHeight + 16;
 

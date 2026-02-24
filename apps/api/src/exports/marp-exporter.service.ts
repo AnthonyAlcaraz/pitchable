@@ -578,11 +578,6 @@ export class MarpExporterService {
 
     // AI renderer override: upgrade slide to a visual template when content matches
     if (rendererOverride && FIGMA_GRADE_TYPES.has(rendererOverride) && palette) {
-      if (slide.imageUrl) {
-        const imgW = rendererOverride === 'TIMELINE' ? '25%' : '30%';
-        lines.push(`![bg right:${imgW} opacity:0.9](${slide.imageUrl})`);
-        lines.push('');
-      }
       lines.push(buildHtmlSlideContent(
         { title: slide.title, body: slide.body || '', slideType: rendererOverride, imageUrl: slide.imageUrl ?? undefined },
         palette,
@@ -597,13 +592,10 @@ export class MarpExporterService {
     }
 
     // Figma-grade HTML+SVG dispatch for complex slide types
+    // Images are rendered INSIDE the HTML template (not via Marp ![bg right])
+    // to avoid the split-section conflict where absolute-positioned content
+    // gets hidden behind the Marp image area.
     if (FIGMA_GRADE_TYPES.has(type) && palette) {
-      // Add image BEFORE the HTML content for FIGMA_GRADE slides
-      if (slide.imageUrl) {
-        const imgW = type === 'TIMELINE' ? '25%' : '30%';
-        lines.push(`![bg right:${imgW} opacity:0.9](${slide.imageUrl})`);
-        lines.push('');
-      }
       lines.push(buildHtmlSlideContent(
         { title: slide.title, body: slide.body || '', slideType: type, imageUrl: slide.imageUrl ?? undefined },
         palette,
