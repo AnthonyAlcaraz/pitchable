@@ -810,7 +810,7 @@ li { margin-bottom: 0.3em; }
         const moodCssLines: string[] = [];
         const moodColor = mc.titleColor;
         // Title + heading colors
-        if (moodColor !== palette.text && moodColor !== (primaryColor || palette.primary)) {
+        if (moodColor !== palette.text) {
           moodCssLines.push(`h1, h2, h3 { color: ${moodColor} !important; }`);
           moodCssLines.push(`h1::after { background: ${moodColor} !important; }`);
         }

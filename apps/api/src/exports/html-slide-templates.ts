@@ -203,14 +203,22 @@ export function detectContentMood(title: string, body: string): ContentMood {
   const text = (title + ' ' + body.slice(0, 500)).toLowerCase();
   let best: ContentMood = 'NEUTRAL';
   let bestCount = 0;
+  let techCount = 0;
   for (const { mood, re } of MOOD_KEYWORDS) {
     re.lastIndex = 0;
     const matches = text.match(re);
     const count = matches ? matches.length : 0;
+    // TECH keywords (AI, data, platform…) appear in nearly every slide of a tech deck.
+    // Defer TECH — only use it as fallback when no other mood matches.
+    if (mood === 'TECH') { techCount = count; continue; }
     if (count >= 1 && count > bestCount) {
       best = mood;
       bestCount = count;
     }
+  }
+  // TECH only when nothing else matched and has 2+ tech keywords
+  if (best === 'NEUTRAL' && techCount >= 2) {
+    best = 'TECH';
   }
   return best;
 }
@@ -309,24 +317,22 @@ export function moodTextColors(mood: ContentMood, p: ColorPalette, dark: boolean
     return { titleColor: p.text, emphasisColor: p.accent, metricColor: p.primary };
   }
 
-  const moodColorMap: Record<Exclude<ContentMood, 'NEUTRAL'>, string> = {
-    GROWTH: p.success || p.primary,
-    RISK: p.error || p.primary,
-    TECH: p.primary,
-    PEOPLE: p.warning || p.primary,
-    STRATEGY: p.accent,
+  // Custom mood-specific colors — NOT derived from palette.
+  // Palette-derived colors (e.g., TECH→p.primary) looked identical to defaults.
+  // These fixed colors create VISIBLE per-slide contrast.
+  const moodColorMap: Record<Exclude<ContentMood, 'NEUTRAL'>, { dark: string; light: string }> = {
+    GROWTH:   { dark: '#34d399', light: '#059669' },  // emerald — fresh, upward
+    RISK:     { dark: '#fb7185', light: '#e11d48' },   // rose — urgent, attention
+    TECH:     { dark: '#a78bfa', light: '#7c3aed' },   // violet — distinct, modern
+    PEOPLE:   { dark: '#fbbf24', light: '#d97706' },   // amber — warm, human
+    STRATEGY: { dark: '#38bdf8', light: '#0284c7' },   // sky — forward, clear
   };
-  const mc = moodColorMap[mood as Exclude<ContentMood, 'NEUTRAL'>];
-
-  // Contrast safety: if mood color is too close to background, fall back to defaults
-  const bgLum = colorLuminance(p.background);
-  const mcLum = colorLuminance(mc);
-  const safe = Math.abs(bgLum - mcLum) >= 40;
+  const mc = moodColorMap[mood as Exclude<ContentMood, 'NEUTRAL'>][dark ? 'dark' : 'light'];
 
   return {
-    titleColor: safe ? mc : p.text,
-    emphasisColor: safe ? mc : p.accent,
-    metricColor: safe ? mc : p.primary,
+    titleColor: mc,
+    emphasisColor: mc,
+    metricColor: mc,
   };
 }
 
