@@ -523,16 +523,17 @@ export class MarpExporterService {
       (a, b) => a.slideNumber - b.slideNumber,
     );
 
+    const totalSlides = sortedSlides.length;
     for (const slide of sortedSlides) {
       const rendererOverride = rendererOverrides?.get(slide.slideNumber);
       const figmaBg = figmaBackgrounds?.get(slide.slideNumber);
-      slideSections.push(this.buildSlideMarkdown(slide, bg, safePrimary, profile, palette, rendererOverride, figmaBg, figmaContrastOverrides?.get(slide.slideNumber)));
+      slideSections.push(this.buildSlideMarkdown(slide, bg, safePrimary, profile, palette, rendererOverride, figmaBg, figmaContrastOverrides?.get(slide.slideNumber), totalSlides));
     }
 
     return frontmatter.join('\n') + '\n\n' + slideSections.join('\n\n---\n\n');
   }
 
-  private buildSlideMarkdown(slide: SlideModel, bgColor?: string, primaryColor?: string, profile?: LayoutProfileConfig, palette?: ColorPalette, rendererOverride?: string, figmaBackground?: string, figmaContrast?: { isDark: boolean; textColor: string }): string {
+  private buildSlideMarkdown(slide: SlideModel, bgColor?: string, primaryColor?: string, profile?: LayoutProfileConfig, palette?: ColorPalette, rendererOverride?: string, figmaBackground?: string, figmaContrast?: { isDark: boolean; textColor: string }, totalSlides?: number): string {
     const lines: string[] = [];
     const type = slide.slideType;
     const bgVariant = getSlideBackground(type, slide.slideNumber, bgColor);
@@ -571,10 +572,22 @@ export class MarpExporterService {
           lines.push('');
         }
       }
-      lines.push(buildHtmlSlideContent(
+      let figmaHtml = buildHtmlSlideContent(
         { title: slide.title, body: slide.body || '', slideType: figmaType, imageUrl: slide.imageUrl ?? undefined },
         palette,
-      ));
+      );
+      // Inject page number into Figma-grade HTML (Marp pagination is hidden behind full-bleed HTML)
+      if (totalSlides) {
+        const isDark = palette.background ? isDarkBackground(palette.background) : true;
+        const pnColor = isDark ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.3)';
+        const pageNum = `<div style="position:absolute;right:32px;bottom:18px;font-size:11px;color:${pnColor};font-family:system-ui,sans-serif;pointer-events:none">${slide.slideNumber} / ${totalSlides}</div>`;
+        // Insert before closing </div> of the wrapper
+        const lastClose = figmaHtml.lastIndexOf('</div>');
+        if (lastClose > -1) {
+          figmaHtml = figmaHtml.slice(0, lastClose) + pageNum + figmaHtml.slice(lastClose);
+        }
+      }
+      lines.push(figmaHtml);
       lines.push('');
       if (slide.speakerNotes) {
         lines.push('<!--');
@@ -594,9 +607,9 @@ export class MarpExporterService {
 
     // Per-slide background + type-specific Marp directives
     if (type === 'SECTION_DIVIDER') {
-      // Full-bleed accent background, centered text, no pagination
+      // Full-bleed accent background, centered text
       lines.push('<!-- _class: lead -->');
-      lines.push('<!-- _paginate: skip -->');
+      lines.push('<!-- _paginate: false -->');
       lines.push(`<!-- _backgroundColor: ${primaryColor || '#1e3a5f'} -->`);
       lines.push('<!-- _color: #FFFFFF -->');
       lines.push('');
@@ -882,6 +895,14 @@ li { margin-bottom: 0.3em; }
         lines.push('');
         lines.push('</div>');
       }
+      lines.push('');
+    }
+
+    // Page number for non-Figma slides (Marp pagination is suppressed on most slide types)
+    if (totalSlides && palette) {
+      const isDark = palette.background ? isDarkBackground(palette.background) : true;
+      const pnColor = isDark ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.3)';
+      lines.push(`<div style="position:fixed;right:32px;bottom:18px;font-size:11px;color:${pnColor};font-family:system-ui,sans-serif;pointer-events:none;z-index:99">${slide.slideNumber} / ${totalSlides}</div>`);
       lines.push('');
     }
 
