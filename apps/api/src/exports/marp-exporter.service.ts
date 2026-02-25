@@ -586,7 +586,7 @@ export class MarpExporterService {
         const pnColor = isDark ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.3)';
         const pnDiv = `\n<div style="position:absolute;right:32px;bottom:18px;font-size:11px;color:${pnColor};font-family:system-ui,sans-serif;pointer-events:none">${slide.slideNumber} / ${totalSlides}</div>`;
         let result = lines.join('\n');
-        const sections = result.split('\n\n---\n\n');
+        const sections = result.split(/\n\n-{3,}\s*\n\n/);
         return sections.map(s => s + pnDiv).join('\n\n---\n\n');
       }
       return lines.join('\n');
@@ -868,8 +868,8 @@ li { margin-bottom: 0.3em; }
           .join('\n');
       }
 
-      // Escape standalone --- that Marp interprets as slide breaks
-      const safeMarpBody = cleanedBody.replace(/^---$/gm, '***');
+      // Escape standalone --- (with optional trailing whitespace) that Marp interprets as slide breaks
+      const safeMarpBody = cleanedBody.replace(/^-{3,}\s*$/gm, '***');
 
       // Types that handle their own layout (scoped CSS grids, lead class, etc.) skip glass-card
       const skipGlassCard = ['TITLE', 'CTA', 'VISUAL_HUMOR', 'TEAM', 'TIMELINE', 'METRICS_HIGHLIGHT', 'FEATURE_GRID', 'PRODUCT_SHOWCASE', 'LOGO_WALL', 'MARKET_SIZING', 'SPLIT_STATEMENT'];
@@ -910,7 +910,7 @@ li { margin-bottom: 0.3em; }
       const pnColor = effectiveDark ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.3)';
       const pnDiv = `\n<div style="position:absolute;right:32px;bottom:18px;font-size:11px;color:${pnColor};font-family:system-ui,sans-serif;pointer-events:none">${slide.slideNumber} / ${totalSlides}</div>`;
       let result = lines.join('\n');
-      const sections = result.split('\n\n---\n\n');
+      const sections = result.split(/\n\n-{3,}\s*\n\n/);
       return sections.map(s => s + pnDiv).join('\n\n---\n\n');
     }
 
