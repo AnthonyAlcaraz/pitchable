@@ -1342,10 +1342,10 @@ function buildFeatureGrid(slide: SlideInput, p: ColorPalette, hasImage = false):
       // Number badge
       rowHtml += '<div style="position:absolute;left:' + (PAD + 16) + 'px;top:' + (ry + Math.round((rowH - 28) / 2)) + 'px;width:28px;height:28px;border-radius:50%;background:' + hexToRgba(rc, 0.15) + ';text-align:center;line-height:28px;font-size:13px;font-weight:bold;color:' + rc + '">' + (ri + 1) + '</div>';
       // Title (bold, accent colored)
-      rowHtml += '<div style="position:absolute;left:' + (PAD + 56) + 'px;top:' + (ry + 6) + 'px;width:' + Math.round(rowW * 0.3) + 'px;font-size:15px;font-weight:bold;color:' + rc + ';overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escHtml(features[ri].title) + '</div>';
+      rowHtml += '<div style="position:absolute;left:' + (PAD + 56) + 'px;top:' + (ry + 6) + 'px;width:' + Math.round(rowW * 0.3) + 'px;font-size:19px;font-weight:bold;color:' + rc + ';overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escHtml(features[ri].title) + '</div>';
       // Description (lighter)
       if (features[ri].desc) {
-        rowHtml += '<div style="position:absolute;left:' + (PAD + 56 + Math.round(rowW * 0.32)) + 'px;top:' + (ry + 6) + 'px;width:' + Math.round(rowW * 0.62) + 'px;font-size:14px;line-height:1.4;color:' + p.text + ';opacity:0.8;overflow:hidden;max-height:' + (rowH - 12) + 'px">' + escHtml(features[ri].desc) + '</div>';
+        rowHtml += '<div style="position:absolute;left:' + (PAD + 56 + Math.round(rowW * 0.32)) + 'px;top:' + (ry + 6) + 'px;width:' + Math.round(rowW * 0.62) + 'px;font-size:17px;line-height:1.35;color:' + p.text + ';opacity:0.8;overflow:hidden;max-height:' + (rowH - 12) + 'px">' + escHtml(features[ri].desc) + '</div>';
       }
     }
     return SCOPED_RESET + '\n<div style="position:relative;width:' + W + 'px;height:' + H + 'px;background:' + p.background + ';">' +
@@ -1366,7 +1366,7 @@ function buildFeatureGrid(slide: SlideInput, p: ColorPalette, hasImage = false):
     let bentoHtml = '';
 
     // Hero card — full width, taller
-    const heroH = Math.round(bentoAvailH * 0.42);
+    const heroH = Math.round(bentoAvailH * 0.33);
     const heroColor = bentoAccents[0];
     const heroBg = dark ? hexToRgba(p.surface, 0.6) : p.surface;
     const heroStyle = dark
@@ -1378,9 +1378,9 @@ function buildFeatureGrid(slide: SlideInput, p: ColorPalette, hasImage = false):
     // Hero icon
     bentoHtml += `<div style="position:absolute;left:${PAD + 24}px;top:${bentoStartY + 20}px;width:40px;height:40px;background:${heroColor};border-radius:10px;opacity:0.85"></div>`;
     // Hero title
-    bentoHtml += `<div style="position:absolute;left:${PAD + 24}px;top:${bentoStartY + 72}px;width:${bentoAvailW - 48}px;font-size:20px;font-weight:bold;color:${heroColor};overflow:hidden;max-height:30px;line-height:1.3">${escHtml(features[0].title)}</div>`;
+    bentoHtml += `<div style="position:absolute;left:${PAD + 24}px;top:${bentoStartY + 72}px;width:${bentoAvailW - 48}px;font-size:26px;font-weight:bold;color:${heroColor};overflow:hidden;max-height:36px;line-height:1.3">${escHtml(features[0].title)}</div>`;
     if (features[0].desc) {
-      bentoHtml += `<div style="position:absolute;left:${PAD + 24}px;top:${bentoStartY + 104}px;width:${bentoAvailW - 48}px;font-size:15px;line-height:1.5;color:${p.text};opacity:0.8;overflow:hidden;max-height:${heroH - 120}px">${escHtml(features[0].desc)}</div>`;
+      bentoHtml += `<div style="position:absolute;left:${PAD + 24}px;top:${bentoStartY + 104}px;width:${bentoAvailW - 48}px;font-size:18px;line-height:1.4;color:${p.text};opacity:0.8;overflow:hidden;max-height:${heroH - 120}px">${escHtml(features[0].desc)}</div>`;
     }
 
     // Remaining items in 2-column grid
@@ -1399,9 +1399,9 @@ function buildFeatureGrid(slide: SlideInput, p: ColorPalette, hasImage = false):
       const gy = gridTop + gr * (gridCardH + bentoGap);
       const gColor = bentoAccents[(gi + 1) % bentoAccents.length];
       bentoHtml += `<div style="position:absolute;left:${gx}px;top:${gy}px;width:${gridCardW}px;height:${gridCardH}px;background:${p.surface};border:1px solid ${p.border};border-radius:12px;box-shadow:${cardShadow(2, dark)};border-left:4px solid ${gColor};overflow:hidden"></div>`;
-      bentoHtml += `<div style="position:absolute;left:${gx + 18}px;top:${gy + 14}px;width:${gridCardW - 36}px;font-size:14px;font-weight:bold;color:${gColor};overflow:hidden;max-height:22px">${escHtml(remaining[gi].title)}</div>`;
+      bentoHtml += `<div style="position:absolute;left:${gx + 18}px;top:${gy + 14}px;width:${gridCardW - 36}px;font-size:18px;font-weight:bold;color:${gColor};overflow:hidden;max-height:30px">${escHtml(remaining[gi].title)}</div>`;
       if (remaining[gi].desc) {
-        bentoHtml += `<div style="position:absolute;left:${gx + 18}px;top:${gy + 40}px;width:${gridCardW - 36}px;font-size:13px;line-height:1.4;color:${p.text};opacity:0.8;overflow:hidden;max-height:${gridCardH - 52}px">${escHtml(remaining[gi].desc)}</div>`;
+        bentoHtml += `<div style="position:absolute;left:${gx + 18}px;top:${gy + 40}px;width:${gridCardW - 36}px;font-size:16px;line-height:1.35;color:${p.text};opacity:0.8;overflow:hidden;max-height:${gridCardH - 48}px">${escHtml(remaining[gi].desc)}</div>`;
       }
     }
 
@@ -1426,8 +1426,8 @@ function buildFeatureGrid(slide: SlideInput, p: ColorPalette, hasImage = false):
   const totalH = rows * cardH + (rows - 1) * gapY;
   const startY = Math.round(PAD + 80 + (H - PAD * 2 - 80 - totalH) / 2);
   // Scale font sizes based on card height
-  const titleFontSz = cardH >= 220 ? 18 : 16;
-  const descFontSz = cardH >= 220 ? 15 : 14;
+  const titleFontSz = cardH >= 220 ? 22 : 20;
+  const descFontSz = cardH >= 220 ? 18 : 16;
   const descMaxH = Math.max(20, cardH - 100);
   const accents = cardAccentColors(p);
 
@@ -1722,7 +1722,7 @@ function buildProblem(slide: SlideInput, p: ColorPalette, hasImage = false): str
     const col2 = items.slice(Math.ceil(items.length / 2));
     const colW = Math.round((cW - PAD * 2 - 40) / 2);
     const itemStartY = PAD + 110;
-    const itemSpacing = Math.min(82, Math.round((H - itemStartY - PAD) / Math.max(col1.length, col2.length)));
+    const itemSpacing = Math.min(130, Math.round((H - itemStartY - PAD) / Math.max(col1.length, col2.length)));
     const pAccents = cardAccentColors(p);
     let itemsHtml = '';
 
@@ -1731,7 +1731,7 @@ function buildProblem(slide: SlideInput, p: ColorPalette, hasImage = false): str
       let y = itemStartY;
       for (let i = 0; i < col.length; i++) {
         const ic = pAccents[i % pAccents.length];
-        itemsHtml += `<div style="position:absolute;left:${startX}px;top:${y}px;width:${colW}px;max-height:${itemSpacing - 10}px;font-size:17px;line-height:1.4;color:${p.text};opacity:0.9;overflow:hidden;padding-left:12px;border-left:3px solid ${hexToRgba(ic, 0.7)}"><span style="font-weight:600;color:${ic}">${escHtml(stripMarkdown(col[i]).split(/\s+/).slice(0, 2).join(" "))}</span> ${escHtml(stripMarkdown(col[i]).split(/\s+/).slice(2).join(" "))}</div>`;
+        itemsHtml += `<div style="position:absolute;left:${startX}px;top:${y}px;width:${colW}px;max-height:${itemSpacing - 10}px;font-size:21px;line-height:1.35;color:${p.text};opacity:0.9;overflow:hidden;padding-left:12px;border-left:3px solid ${hexToRgba(ic, 0.7)}"><span style="font-weight:600;color:${ic}">${escHtml(stripMarkdown(col[i]).split(/\s+/).slice(0, 2).join(" "))}</span> ${escHtml(stripMarkdown(col[i]).split(/\s+/).slice(2).join(" "))}</div>`;
         y += itemSpacing;
       }
     };
@@ -1763,9 +1763,9 @@ function buildProblem(slide: SlideInput, p: ColorPalette, hasImage = false): str
   // Dynamic spacing: fit all items within available vertical space
   const startY = PAD + 100 + (headerLine ? 32 : 0);
   const availH = H - startY - PAD - 10;
-  const itemSpacing = Math.min(86, Math.round(availH / dataLines.length));
+  const itemSpacing = Math.min(130, Math.round(availH / dataLines.length));
   const itemMaxH = itemSpacing - 8;
-  const itemFontSz = dataLines.length > 4 ? 16 : 18;
+  const itemFontSz = dataLines.length > 4 ? 22 : 26;
 
   const probAccents = cardAccentColors(p);
   let bodyHtml = '';
@@ -1940,10 +1940,10 @@ function buildContent(slide: SlideInput, p: ColorPalette, hasImage = false): str
   const contentStartY = PAD + 100;
   const contentAvailH = H - contentStartY - PAD;
   const cardGap = 10;
-  const cardH = Math.min(100, Math.round((contentAvailH - (items.length - 1) * cardGap) / items.length));
+  const cardH = Math.min(150, Math.round((contentAvailH - (items.length - 1) * cardGap) / items.length));
   const cardPad = 14;
   const cardW = cW - PAD * 2 - 40;
-  const fontSize = cardH >= 70 ? 21 : cardH >= 55 ? 18 : 16;
+  const fontSize = cardH >= 70 ? 26 : cardH >= 55 ? 22 : 18;
 
   const contAccents = cardAccentColors(p);
   let bodyHtml = '';
@@ -2023,7 +2023,7 @@ function buildArchitecture(slide: SlideInput, p: ColorPalette, hasImage = false)
   const gapY = 24;
   // Dynamic box width — fill available horizontal space
   const boxW = Math.min(280, Math.round((cW - PAD * 2 - (cols - 1) * gapX) / cols));
-  const boxH = useRows ? 140 : (count <= 3 ? 180 : 140);
+  const boxH = useRows ? 180 : (count <= 3 ? 260 : 180);
   const totalW = cols * boxW + (cols - 1) * gapX;
   const totalH = rowCount * boxH + (rowCount - 1) * gapY;
   const startX = Math.round((cW - totalW) / 2);
@@ -2042,8 +2042,8 @@ function buildArchitecture(slide: SlideInput, p: ColorPalette, hasImage = false)
     const title = sep > -1 && sep < 50 ? stripMarkdown(nodes[i].slice(0, sep).trim()) : stripMarkdown(nodes[i]);
     const desc = sep > -1 && sep < 50 ? stripMarkdown(nodes[i].slice(sep + 1).trim()) : '';
     const descMaxH = boxH - 56;
-    const titleFSz = boxH >= 140 ? 18 : 16;
-    const descFSz = boxH >= 140 ? 15 : 13;
+    const titleFSz = boxH >= 140 ? 24 : 20;
+    const descFSz = boxH >= 140 ? 18 : 16;
     const nodeColor = archAccents[i % archAccents.length];
 
     boxesHtml += `<div style="position:absolute;left:${cx}px;top:${cy}px;width:${boxW}px;height:${boxH}px;background:${p.surface};border:1px solid ${p.border};border-radius:12px;border-top:4px solid ${nodeColor};box-shadow:${cardShadow(2, isDarkBackground(p.background))};overflow:hidden"></div>`;

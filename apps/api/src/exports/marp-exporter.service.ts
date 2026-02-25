@@ -779,16 +779,16 @@ h3 { margin-top: 10px; font-size: 0.8em; }
 .revenue-chain { margin-top: 16px; font-size: 0.7em; text-align: center; opacity: 0.8; }
 </style>`,
       SPLIT_STATEMENT: `<style scoped>
-.split-statement { display: grid; grid-template-columns: 30% 1fr; gap: 32px; align-items: center; min-height: 280px; }
-.statement { font-size: 1.6em; font-weight: 800; line-height: 1.15; }
-.evidence { font-size: 0.85em; }
-.evidence strong { display: block; font-size: 1.15em; margin-bottom: 4px; margin-top: 14px; }
-.evidence hr { border: none; border-top: 1px solid rgba(255,255,255,0.15); margin: 10px 0; }
-p, li { font-size: 0.95em; line-height: 1.55; text-align: center; }
-strong { font-size: 1.1em; }
-section { text-align: center !important; align-items: center !important; }
+.split-statement { display: grid; grid-template-columns: 30% 1fr; gap: 24px; align-items: start; max-height: 100%; overflow: hidden; }
+.statement { font-size: 1.3em; font-weight: 800; line-height: 1.15; }
+.evidence { font-size: 0.75em; overflow: hidden; }
+.evidence strong { display: block; font-size: 1.1em; margin-bottom: 3px; margin-top: 10px; }
+.evidence hr { border: none; border-top: 1px solid rgba(255,255,255,0.15); margin: 6px 0; }
+p, li { font-size: 0.85em; line-height: 1.4; text-align: center; }
+strong { font-size: 1.05em; }
+section { text-align: center !important; align-items: center !important; overflow: hidden !important; }
 ul { list-style: none !important; padding-left: 0 !important; margin: 0 auto; max-width: 90%; }
-li { margin-bottom: 0.4em; }
+li { margin-bottom: 0.3em; }
 </style>`,
     };
     if (scopedCSS[type]) {
