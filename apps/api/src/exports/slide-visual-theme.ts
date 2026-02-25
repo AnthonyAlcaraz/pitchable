@@ -424,23 +424,17 @@ export function generateMarpBackgroundCSS(
   lines.push(`  }`);
 
   // 7. bg-noise-texture — SVG turbulence filter + gradient base + radial overlay
+  // NOTE: Both decorative overlays use ::before only (::after is reserved for Marp pagination)
   lines.push(`  section.bg-noise-texture {`);
   lines.push(`    background: ${baseGrad};`);
   lines.push(`    position: relative;`);
-  lines.push(`  }`);
-  lines.push(`  section.bg-noise-texture::after {`);
-  lines.push(`    content: '';`);
-  lines.push(`    position: absolute;`);
-  lines.push(`    inset: 0;`);
-  lines.push(`    background: radial-gradient(ellipse 600px 400px at 60% 40%, ${hexToRgba(palette.primary, 0.06)} 0%, transparent 70%);`);
-  lines.push(`    mix-blend-mode: overlay;`);
-  lines.push(`    pointer-events: none;`);
   lines.push(`  }`);
   lines.push(`  section.bg-noise-texture::before {`);
   lines.push(`    content: '';`);
   lines.push(`    position: absolute;`);
   lines.push(`    inset: 0;`);
-  lines.push(`    background: url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(#n)' opacity='0.03'/></svg>`)}");`);
+  lines.push(`    background: radial-gradient(ellipse 600px 400px at 60% 40%, ${hexToRgba(palette.primary, 0.06)} 0%, transparent 70%), url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(#n)' opacity='0.03'/></svg>`)}");`);
+  lines.push(`    mix-blend-mode: overlay;`);
   lines.push(`    pointer-events: none;`);
   lines.push(`  }`);
 

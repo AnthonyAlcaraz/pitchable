@@ -430,11 +430,10 @@ export class MarpExporterService {
       if (isDarkBackground(bg)) {
         frontmatter.push(generateMarpDarkTierCSS(palette));
       }
-      // Tone down radial-glow by overriding its opacity
+      // Tone down radial-glow by overriding its opacity (::before only — ::after is reserved for Marp pagination)
       if (profile.bgDecorationOpacity < 1.0) {
         frontmatter.push(
           `  section.bg-radial-glow::before { opacity: ${(0.15 * profile.bgDecorationOpacity).toFixed(2)} !important; }`,
-          `  section.bg-radial-glow::after { opacity: ${(0.10 * profile.bgDecorationOpacity).toFixed(2)} !important; }`,
         );
       }
     } else {
