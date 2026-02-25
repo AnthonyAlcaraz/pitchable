@@ -263,7 +263,7 @@ export class MarpExporterService {
       '---',
       'marp: true',
       'theme: default',
-      'paginate: true',
+      'paginate: false',
       `backgroundColor: ${bg}`,
       `color: ${safeText}`,
       'style: |',
@@ -448,18 +448,11 @@ export class MarpExporterService {
     }
 
     const isDark = isDarkBackground(bg);
+    // Hide Marp's native pagination pseudo-element entirely —
+    // page numbers are now rendered as inline HTML for reliability
     frontmatter.push(
       '  section::after {',
-      '    position: absolute !important;',
-      '    right: 32px;',
-      '    bottom: 18px;',
-      '    left: auto !important;',
-      `    color: ${isDark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.45)'};`,
-      '    font-size: 12px;',
-      `    background: ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'};`,
-      '    padding: 2px 8px;',
-      '    border-radius: 4px;',
-      '    z-index: 50;',
+      '    display: none !important;',
       '  }',
       '  ul, ol { margin-top: 0.2em; margin-bottom: 0.2em; padding-left: 1.2em; }',
       '  ul { list-style-type: disc; }',
@@ -696,8 +689,12 @@ export class MarpExporterService {
       lines.push('');
     }
 
-    // SECTION_DIVIDER: title only, no body/image/notes (Marp paginate handles page numbers)
+    // SECTION_DIVIDER: title only, no body/image/notes
     if (type === 'SECTION_DIVIDER') {
+      if (totalSlides) {
+        // SECTION_DIVIDER always has white text on colored bg
+        lines.push(`<div style="position:absolute;right:32px;bottom:18px;font-size:11px;color:rgba(255,255,255,0.35);font-family:system-ui,sans-serif;pointer-events:none">${slide.slideNumber} / ${totalSlides}</div>`);
+      }
       return lines.join('\n');
     }
 
@@ -897,6 +894,16 @@ li { margin-bottom: 0.3em; }
         lines.push('</div>');
       }
       lines.push('');
+    }
+
+    // Inline page number (replaces Marp native pagination for reliability)
+    if (totalSlides) {
+      const heroTypes = ['TITLE', 'CTA', 'VISUAL_HUMOR'];
+      const effectiveDark = heroTypes.includes(type)
+        ? true
+        : (bgColor ? isDarkBackground(bgColor) : true);
+      const pnColor = effectiveDark ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.3)';
+      lines.push(`<div style="position:absolute;right:32px;bottom:18px;font-size:11px;color:${pnColor};font-family:system-ui,sans-serif;pointer-events:none">${slide.slideNumber} / ${totalSlides}</div>`);
     }
 
     // Speaker notes
