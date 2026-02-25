@@ -19,6 +19,8 @@ import {
   BookMarked,
   Briefcase,
   FlaskConical,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import { PeachLogo } from '@/components/icons/PeachLogo';
 
@@ -59,6 +61,21 @@ function useCountUp(target: number, duration = 2000) {
   return { count, ref };
 }
 
+
+// ── Featured Showcase Data ──────────────────────────────────
+const SHOWCASE_SLIDES = [
+  { id: '4c80eb95-46fe-4372-9aea-94f456af4411', title: 'AI Meets Enterprise Challenges' },
+  { id: '84f40c5d-019b-4e2f-b1e6-755f4c510a1f', title: 'Terabytes Generated, Insights Lost' },
+  { id: 'c3854e20-0d9f-4633-971f-c692c18d10e1', title: 'Terabytes In, Zero Frames Out' },
+  { id: '59d96b66-25f8-4740-91b1-54949d47df89', title: 'Days to Minutes: Four Barriers' },
+  { id: '0fa68066-8c18-4ecc-bad1-e9ce55c0bc8e', title: 'Two-Phase Strategy: Build, Then Scale' },
+  { id: '7da57066-6703-4c77-b740-026beeddfbbe', title: 'Graph DB Replaced Vector Search' },
+  { id: '0cbebc88-96d8-41b9-912b-b99ef8f9975f', title: 'Partnerships Accelerate Time-to-Value 3x' },
+  { id: '2af4f932-f214-4975-8df5-3e20f8c59efb', title: 'Quantified Results Across the Stack' },
+  { id: '9c7614b2-768d-42ce-b4cd-1f9267a2e4b8', title: 'Stay a Boat, Not an Anchor' },
+  { id: '9b547ab8-7a95-4cfa-9709-30434b3444b6', title: 'Start Your 2-Week AI Assessment' },
+];
+
 // ── Landing Page ─────────────────────────────────────────────
 
 export function LandingPage() {
@@ -66,6 +83,26 @@ export function LandingPage() {
   const SOCIAL_PROOF_MIN = { totalPresentations: 2847, totalUsers: 1203, totalSlides: 34520 };
   const [stats, setStats] = useState(SOCIAL_PROOF_MIN);
   const [gallery, setGallery] = useState<GalleryPresentation[]>([]);
+
+  // ── Showcase carousel state ──
+  const [activeSlide, setActiveSlide] = useState(0);
+  const isPaused = useRef(false);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      if (!isPaused.current) {
+        setActiveSlide((prev) => (prev + 1) % SHOWCASE_SLIDES.length);
+      }
+    }, 4000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const pauseAutoPlay = () => { isPaused.current = true; };
+  const resumeAutoPlay = () => { isPaused.current = false; };
+  const prev = () => setActiveSlide((s) => (s - 1 + SHOWCASE_SLIDES.length) % SHOWCASE_SLIDES.length);
+  const next = () => setActiveSlide((s) => (s + 1) % SHOWCASE_SLIDES.length);
+
+
 
   useEffect(() => {
     fetch('/gallery/stats')
@@ -223,6 +260,71 @@ export function LandingPage() {
             >
               {t('landing.hero.cta_secondary')}
             </a>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Featured Showcase ────────────────────── */}
+      <section className="relative overflow-hidden py-16 sm:py-24">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_40%_at_50%_0%,rgba(249,115,22,0.08),transparent)]" />
+        <div className="relative mx-auto max-w-5xl px-6">
+          <div className="mb-8 text-center">
+            <h2 className="mb-2 text-2xl font-bold text-foreground sm:text-3xl">
+              See What Pitchable Creates
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              10-slide pitch deck — generated in under 2 minutes
+            </p>
+          </div>
+
+          {/* Main slide viewer */}
+          <div
+            className="group relative overflow-hidden rounded-xl border border-border bg-black shadow-2xl shadow-orange-500/5"
+            style={{ aspectRatio: '16/9' }}
+            onMouseEnter={pauseAutoPlay}
+            onMouseLeave={resumeAutoPlay}
+          >
+            <img
+              key={SHOWCASE_SLIDES[activeSlide].id}
+              src={`/slides/${SHOWCASE_SLIDES[activeSlide].id}/preview`}
+              alt={SHOWCASE_SLIDES[activeSlide].title}
+              className="h-full w-full object-contain"
+              style={{ animation: 'fadeSlideIn 0.3s ease-out' }}
+            />
+            {/* Nav arrows — visible on hover */}
+            <button onClick={prev} className="absolute left-3 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-2 opacity-0 transition-opacity group-hover:opacity-100 hover:bg-black/70">
+              <ChevronLeft className="h-5 w-5 text-white" />
+            </button>
+            <button onClick={next} className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-2 opacity-0 transition-opacity group-hover:opacity-100 hover:bg-black/70">
+              <ChevronRight className="h-5 w-5 text-white" />
+            </button>
+            {/* Slide counter */}
+            <div className="absolute bottom-3 right-3 rounded-full bg-black/60 px-3 py-1 text-xs text-white/70">
+              {activeSlide + 1} / {SHOWCASE_SLIDES.length}
+            </div>
+          </div>
+
+          {/* Thumbnail strip */}
+          <div className="mt-3 flex justify-center gap-1.5 overflow-x-auto pb-1">
+            {SHOWCASE_SLIDES.map((slide, i) => (
+              <button
+                key={slide.id}
+                onClick={() => setActiveSlide(i)}
+                className={`flex-shrink-0 overflow-hidden rounded border transition-all ${
+                  i === activeSlide
+                    ? 'border-orange-500 ring-1 ring-orange-500/30'
+                    : 'border-border/50 opacity-50 hover:opacity-80'
+                }`}
+                style={{ width: 72, aspectRatio: '16/9' }}
+              >
+                <img
+                  src={`/slides/${slide.id}/preview`}
+                  alt={slide.title}
+                  className="h-full w-full object-contain bg-black"
+                  loading="lazy"
+                />
+              </button>
+            ))}
           </div>
         </div>
       </section>
