@@ -870,7 +870,12 @@ li { margin-bottom: 0.3em; }
 
       // Escape standalone --- (with optional trailing whitespace) that Marp interprets as slide breaks.
       // Must use <hr> not *** — Marp treats ALL thematic breaks (---, ***, ___) as slide separators.
-      const safeMarpBody = cleanedBody.replace(/^-{3,}\s*$/gm, '<hr>');
+      const escapedBreaks = cleanedBody.replace(/^-{3,}\s*$/gm, '<hr>');
+
+      // Escape bare < followed by digits/symbols that Marp's markdown-it parser
+      // would interpret as invalid HTML custom elements (e.g. "<24hrs" → "&lt;24hrs").
+      // Valid HTML tags start with <letter or </, so only escape < before non-letter/non-slash.
+      const safeMarpBody = escapedBreaks.replace(/<(?=[^a-zA-Z/!])/g, '&lt;');
 
       // Types that handle their own layout (scoped CSS grids, lead class, etc.) skip glass-card
       const skipGlassCard = ['TITLE', 'CTA', 'VISUAL_HUMOR', 'TEAM', 'TIMELINE', 'METRICS_HIGHLIGHT', 'FEATURE_GRID', 'PRODUCT_SHOWCASE', 'LOGO_WALL', 'MARKET_SIZING', 'SPLIT_STATEMENT'];
