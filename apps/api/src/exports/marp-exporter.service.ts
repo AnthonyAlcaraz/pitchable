@@ -450,8 +450,11 @@ export class MarpExporterService {
 
     const isDark = isDarkBackground(bg);
     frontmatter.push(
-      '  section { overflow: visible !important; }',
       '  section::after {',
+      '    position: absolute !important;',
+      '    right: 32px;',
+      '    bottom: 18px;',
+      '    left: auto !important;',
       `    color: ${isDark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.45)'};`,
       '    font-size: 12px;',
       `    background: ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'};`,
@@ -694,13 +697,8 @@ export class MarpExporterService {
       lines.push('');
     }
 
-    // SECTION_DIVIDER: title only, no body/image/notes — but include page number
+    // SECTION_DIVIDER: title only, no body/image/notes (Marp paginate handles page numbers)
     if (type === 'SECTION_DIVIDER') {
-      if (totalSlides && palette) {
-        const isDark = palette.background ? isDarkBackground(palette.background) : true;
-        const pnColor = isDark ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.3)';
-        lines.push(`<div style="position:absolute;right:32px;bottom:18px;font-size:11px;color:${pnColor};font-family:system-ui,sans-serif;pointer-events:none;z-index:100">${slide.slideNumber} / ${totalSlides}</div>`);
-      }
       return lines.join('\n');
     }
 
@@ -900,13 +898,6 @@ li { margin-bottom: 0.3em; }
         lines.push('</div>');
       }
       lines.push('');
-    }
-
-    // Page number — inline HTML (matches Figma-grade approach)
-    if (totalSlides && palette) {
-      const isDark = palette.background ? isDarkBackground(palette.background) : true;
-      const pnColor = isDark ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.3)';
-      lines.push(`<div style="position:absolute;right:32px;bottom:18px;font-size:11px;color:${pnColor};font-family:system-ui,sans-serif;pointer-events:none;z-index:100">${slide.slideNumber} / ${totalSlides}</div>`);
     }
 
     // Speaker notes

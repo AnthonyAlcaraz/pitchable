@@ -559,13 +559,14 @@ export function generateLeadEnhancementCSS(safeAccent: string, safeText: string)
     `    color: ${safeAccent};`,
     `  }`,
     `  section.lead h1::after { margin: 6px auto 0; }`,
-    `  section.lead::after {`,
+    `  section.lead::before {`,
     `    content: '';`,
     `    position: absolute;`,
     `    bottom: 0; left: 0; right: 0;`,
     `    height: 100px;`,
     `    background: linear-gradient(to top, rgba(0,0,0,0.12), transparent);`,
     `    pointer-events: none;`,
+    `    z-index: 0;`,
     `  }`,
   ].join('\n');
 }
