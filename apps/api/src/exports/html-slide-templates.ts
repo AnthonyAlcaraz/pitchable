@@ -72,12 +72,12 @@ function parseBodyLines(body: string): string[] {
 }
 
 
-function titleFontSize(title: string, maxFontSize = 32): number {
+function titleFontSize(title: string, maxFontSize = 40): number {
   if (title.length <= 30) return maxFontSize;
-  if (title.length <= 50) return 28;
-  if (title.length <= 70) return 24;
-  if (title.length <= 90) return 20;
-  return 18;
+  if (title.length <= 50) return 34;
+  if (title.length <= 70) return 30;
+  if (title.length <= 90) return 26;
+  return 22;
 }
 
 function splitProseToItems(lines: string[], minItems: number): string[] {
@@ -110,9 +110,33 @@ export function colorLuminance(hex: string): number {
   return (r * 299 + g * 587 + b * 114) / 1000;
 }
 
-// Subtle radial gradient overlay — adds depth and polish to slide backgrounds
-function bgGradientOverlay(w: number, h: number, color: string, alpha = 0.05, posY = '35%'): string {
-  return `<div style="position:absolute;left:0;top:0;width:${w}px;height:${h}px;background:radial-gradient(ellipse 80% 70% at 50% ${posY},${hexToRgba(color, alpha)} 0%,transparent 70%);pointer-events:none"></div>`;
+function hexToHue(hex: string): number {
+  const c = hex.replace('#', '');
+  const r = parseInt(c.slice(0, 2), 16) / 255;
+  const g = parseInt(c.slice(2, 4), 16) / 255;
+  const b = parseInt(c.slice(4, 6), 16) / 255;
+  const max = Math.max(r, g, b), min = Math.min(r, g, b);
+  if (max === min) return 0;
+  const d = max - min;
+  let h = 0;
+  if (max === r) h = ((g - b) / d + (g < b ? 6 : 0)) * 60;
+  else if (max === g) h = ((b - r) / d + 2) * 60;
+  else h = ((r - g) / d + 4) * 60;
+  return h;
+}
+
+// AMI Labs-style ambient glow — 2-3 large soft radial gradient orbs for depth
+function bgGradientOverlay(w: number, h: number, color: string, _alpha = 0.05, posY = '35%'): string {
+  const posYNum = parseInt(posY) || 35;
+  const oppositeY = Math.min(100, Math.max(0, 100 - posYNum));
+  // Primary orb: strong glow at specified position (uses 0.15 alpha — in mood replacement list)
+  // Secondary orb: softer complementary glow at opposite position (0.08 alpha)
+  // Ambient fill: very subtle center glow (0.04 alpha)
+  return `<div style="position:absolute;left:0;top:0;width:${w}px;height:${h}px;pointer-events:none;background:` +
+    `radial-gradient(ellipse 70% 60% at 20% ${posYNum}%, ${hexToRgba(color, 0.15)} 0%, transparent 55%),` +
+    `radial-gradient(ellipse 60% 50% at 80% ${oppositeY}%, ${hexToRgba(color, 0.08)} 0%, transparent 50%),` +
+    `radial-gradient(ellipse 90% 80% at 50% 50%, ${hexToRgba(color, 0.04)} 0%, transparent 65%)` +
+    `"></div>`;
 }
 
 
@@ -323,11 +347,28 @@ export function moodTextColors(mood: ContentMood, p: ColorPalette, dark: boolean
   const moodColorMap: Record<Exclude<ContentMood, 'NEUTRAL'>, { dark: string; light: string }> = {
     GROWTH:   { dark: '#34d399', light: '#059669' },  // emerald — fresh, upward
     RISK:     { dark: '#fb7185', light: '#e11d48' },   // rose — urgent, attention
-    TECH:     { dark: '#a78bfa', light: '#7c3aed' },   // violet — distinct, modern
+    TECH:     { dark: '#e879f9', light: '#a21caf' },   // fuchsia — warm, distinct from blue bg
     PEOPLE:   { dark: '#fbbf24', light: '#d97706' },   // amber — warm, human
-    STRATEGY: { dark: '#38bdf8', light: '#0284c7' },   // sky — forward, clear
+    STRATEGY: { dark: '#2dd4bf', light: '#0d9488' },   // teal — cool but distinct from blue
   };
-  const mc = moodColorMap[mood as Exclude<ContentMood, 'NEUTRAL'>][dark ? 'dark' : 'light'];
+  let mc = moodColorMap[mood as Exclude<ContentMood, 'NEUTRAL'>][dark ? 'dark' : 'light'];
+
+  // Color incompatibility check: if mood hue is too close to background hue,
+  // the text becomes hard to read. Fall back to a warm complementary color.
+  const bgHue = hexToHue(p.background);
+  const mcHue = hexToHue(mc);
+  const hueDiff = Math.min(Math.abs(bgHue - mcHue), 360 - Math.abs(bgHue - mcHue));
+  if (hueDiff < 45) {
+    // Too similar hue — swap to a warm fallback that always contrasts with cool backgrounds
+    const warmFallbacks: Record<Exclude<ContentMood, 'NEUTRAL'>, { dark: string; light: string }> = {
+      GROWTH:   { dark: '#34d399', light: '#059669' },  // emerald (already warm-ish)
+      RISK:     { dark: '#fb7185', light: '#e11d48' },   // rose (already warm)
+      TECH:     { dark: '#f472b6', light: '#db2777' },   // pink — guaranteed contrast on blue
+      PEOPLE:   { dark: '#fbbf24', light: '#d97706' },   // amber (already warm)
+      STRATEGY: { dark: '#a3e635', light: '#65a30d' },   // lime — guaranteed contrast on blue
+    };
+    mc = warmFallbacks[mood as Exclude<ContentMood, 'NEUTRAL'>][dark ? 'dark' : 'light'];
+  }
 
   return {
     titleColor: mc,
