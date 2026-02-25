@@ -329,68 +329,6 @@ export function LandingPage() {
         </div>
       </section>
 
-      {/* -- Powered By ---------------------------------------- */}
-      <section className="py-12">
-        <p className="mb-6 text-center text-xs font-medium uppercase tracking-widest text-muted-foreground/60">
-          Powered by
-        </p>
-        <div className="group relative overflow-hidden rounded-lg bg-card/30 py-6">
-          {/* Fade edges */}
-          <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-16 bg-gradient-to-r from-background to-transparent sm:w-24" />
-          <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-16 bg-gradient-to-l from-background to-transparent sm:w-24" />
-
-          <div
-            className="flex w-max group-hover:[animation-play-state:paused]"
-            style={{ animation: 'marquee 30s linear infinite' }}
-          >
-            {[0, 1].map((setIdx) => (
-              <div key={setIdx} className="flex items-center">
-                {/* Anthropic */}
-                <div className="mx-8 flex items-center gap-2.5 opacity-[0.35] grayscale sm:mx-10">
-                  <svg className="h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z" /></svg>
-                  <span className="whitespace-nowrap text-sm font-medium text-muted-foreground">Anthropic</span>
-                </div>
-                {/* React */}
-                <div className="mx-8 flex items-center gap-2.5 opacity-[0.35] grayscale sm:mx-10">
-                  <svg className="h-5 w-5 shrink-0" viewBox="-11.5 -10.232 23 20.463" fill="currentColor"><circle r="2.05" /><g fill="none" stroke="currentColor" strokeWidth="1"><ellipse rx="11" ry="4.2" /><ellipse rx="11" ry="4.2" transform="rotate(60)" /><ellipse rx="11" ry="4.2" transform="rotate(120)" /></g></svg>
-                  <span className="whitespace-nowrap text-sm font-medium text-muted-foreground">React</span>
-                </div>
-                {/* TypeScript */}
-                <div className="mx-8 flex items-center gap-2.5 opacity-[0.35] grayscale sm:mx-10">
-                  <svg className="h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="currentColor"><rect width="24" height="24" rx="3" opacity="0.2" /><text x="12" y="17" textAnchor="middle" fontSize="11" fontWeight="700" fontFamily="system-ui">TS</text></svg>
-                  <span className="whitespace-nowrap text-sm font-medium text-muted-foreground">TypeScript</span>
-                </div>
-                {/* Marp */}
-                <div className="mx-8 flex items-center gap-2.5 opacity-[0.35] grayscale sm:mx-10">
-                  <svg className="h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="2" y="3" width="20" height="14" rx="2" /><path d="M8 21h8M12 17v4" /></svg>
-                  <span className="whitespace-nowrap text-sm font-medium text-muted-foreground">Marp</span>
-                </div>
-                {/* AWS */}
-                <div className="mx-8 flex items-center gap-2.5 opacity-[0.35] grayscale sm:mx-10">
-                  <svg className="h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M19.35 10.04A7.49 7.49 0 0 0 12 4C9.11 4 6.6 5.64 5.35 8.04A5.994 5.994 0 0 0 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96z" /></svg>
-                  <span className="whitespace-nowrap text-sm font-medium text-muted-foreground">AWS</span>
-                </div>
-                {/* Stripe */}
-                <div className="mx-8 flex items-center gap-2.5 opacity-[0.35] grayscale sm:mx-10">
-                  <svg className="h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="1" y="4" width="22" height="16" rx="2" /><line x1="1" y1="10" x2="23" y2="10" /></svg>
-                  <span className="whitespace-nowrap text-sm font-medium text-muted-foreground">Stripe</span>
-                </div>
-                {/* Vite */}
-                <div className="mx-8 flex items-center gap-2.5 opacity-[0.35] grayscale sm:mx-10">
-                  <svg className="h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L2 13h7l-2 9 12-14h-7l2-6z" /></svg>
-                  <span className="whitespace-nowrap text-sm font-medium text-muted-foreground">Vite</span>
-                </div>
-                {/* PostgreSQL */}
-                <div className="mx-8 flex items-center gap-2.5 opacity-[0.35] grayscale sm:mx-10">
-                  <svg className="h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><ellipse cx="12" cy="6" rx="8" ry="3" /><path d="M4 6v6c0 1.66 3.58 3 8 3s8-1.34 8-3V6" /><path d="M4 12v6c0 1.66 3.58 3 8 3s8-1.34 8-3v-6" /></svg>
-                  <span className="whitespace-nowrap text-sm font-medium text-muted-foreground">PostgreSQL</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* ── Stats ────────────────────────────────────── */}
       <section className="border-y border-border bg-card/50 py-16">
         <div className="mx-auto grid max-w-4xl gap-8 px-6 sm:grid-cols-3">
@@ -611,6 +549,58 @@ export function LandingPage() {
             {t('landing.cta.button')}
             <ArrowRight className="h-5 w-5" />
           </Link>
+        </div>
+      </section>
+
+
+      {/* -- Tech Logos Marquee -------------------------------- */}
+      <section className="pb-8">
+        <div className="group relative overflow-hidden py-6">
+          {/* Fade edges */}
+          <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-16 bg-gradient-to-r from-card to-transparent sm:w-24" />
+          <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-16 bg-gradient-to-l from-card to-transparent sm:w-24" />
+
+          <div
+            className="flex w-max group-hover:[animation-play-state:paused]"
+            style={{ animation: 'marquee 30s linear infinite' }}
+          >
+            {[0, 1].map((setIdx) => (
+              <div key={setIdx} className="flex items-center">
+                <div className="mx-8 flex items-center gap-2.5 opacity-[0.35] sm:mx-10">
+                  <img src="https://cdn.simpleicons.org/anthropic/a1a1a1" alt="Anthropic" className="h-5 w-auto" />
+                  <span className="whitespace-nowrap text-sm font-medium text-muted-foreground">Anthropic</span>
+                </div>
+                <div className="mx-8 flex items-center gap-2.5 opacity-[0.35] sm:mx-10">
+                  <img src="https://cdn.simpleicons.org/react/a1a1a1" alt="React" className="h-5 w-auto" />
+                  <span className="whitespace-nowrap text-sm font-medium text-muted-foreground">React</span>
+                </div>
+                <div className="mx-8 flex items-center gap-2.5 opacity-[0.35] sm:mx-10">
+                  <img src="https://cdn.simpleicons.org/typescript/a1a1a1" alt="TypeScript" className="h-5 w-auto" />
+                  <span className="whitespace-nowrap text-sm font-medium text-muted-foreground">TypeScript</span>
+                </div>
+                <div className="mx-8 flex items-center gap-2.5 opacity-[0.35] sm:mx-10">
+                  <img src="https://cdn.simpleicons.org/marp/a1a1a1" alt="Marp" className="h-5 w-auto" />
+                  <span className="whitespace-nowrap text-sm font-medium text-muted-foreground">Marp</span>
+                </div>
+                <div className="mx-8 flex items-center gap-2.5 opacity-[0.35] sm:mx-10">
+                  <img src="https://cdn.simpleicons.org/amazonaws/a1a1a1" alt="AWS" className="h-5 w-auto" />
+                  <span className="whitespace-nowrap text-sm font-medium text-muted-foreground">AWS</span>
+                </div>
+                <div className="mx-8 flex items-center gap-2.5 opacity-[0.35] sm:mx-10">
+                  <img src="https://cdn.simpleicons.org/stripe/a1a1a1" alt="Stripe" className="h-5 w-auto" />
+                  <span className="whitespace-nowrap text-sm font-medium text-muted-foreground">Stripe</span>
+                </div>
+                <div className="mx-8 flex items-center gap-2.5 opacity-[0.35] sm:mx-10">
+                  <img src="https://cdn.simpleicons.org/vite/a1a1a1" alt="Vite" className="h-5 w-auto" />
+                  <span className="whitespace-nowrap text-sm font-medium text-muted-foreground">Vite</span>
+                </div>
+                <div className="mx-8 flex items-center gap-2.5 opacity-[0.35] sm:mx-10">
+                  <img src="https://cdn.simpleicons.org/postgresql/a1a1a1" alt="PostgreSQL" className="h-5 w-auto" />
+                  <span className="whitespace-nowrap text-sm font-medium text-muted-foreground">PostgreSQL</span>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
