@@ -868,8 +868,9 @@ li { margin-bottom: 0.3em; }
           .join('\n');
       }
 
-      // Escape standalone --- (with optional trailing whitespace) that Marp interprets as slide breaks
-      const safeMarpBody = cleanedBody.replace(/^-{3,}\s*$/gm, '***');
+      // Escape standalone --- (with optional trailing whitespace) that Marp interprets as slide breaks.
+      // Must use <hr> not *** — Marp treats ALL thematic breaks (---, ***, ___) as slide separators.
+      const safeMarpBody = cleanedBody.replace(/^-{3,}\s*$/gm, '<hr>');
 
       // Types that handle their own layout (scoped CSS grids, lead class, etc.) skip glass-card
       const skipGlassCard = ['TITLE', 'CTA', 'VISUAL_HUMOR', 'TEAM', 'TIMELINE', 'METRICS_HIGHLIGHT', 'FEATURE_GRID', 'PRODUCT_SHOWCASE', 'LOGO_WALL', 'MARKET_SIZING', 'SPLIT_STATEMENT'];
