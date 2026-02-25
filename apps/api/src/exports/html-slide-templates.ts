@@ -469,6 +469,22 @@ export function buildHtmlSlideContent(
     }
   }
 
+  // ── Systematic visibility enforcement ──
+  // Final pass: any inline text color too close to background gets swapped to palette.text.
+  // This prevents invisible text regardless of mood, theme, or palette combination.
+  {
+    const bgLum = colorLuminance(palette.background);
+    html = html.replace(
+      /(?<=;|")color:(#[0-9a-fA-F]{6})/g,
+      (match, hex) => {
+        if (Math.abs(bgLum - colorLuminance(hex)) < 30) {
+          return `color:${palette.text}`;
+        }
+        return match;
+      },
+    );
+  }
+
   // Inject image overlay if the slide has an image
   if (cleaned.imageUrl && html) {
     // Insert the image overlay just before the closing </div> of the wrapper
@@ -1410,9 +1426,9 @@ function buildFeatureGrid(slide: SlideInput, p: ColorPalette, hasImage = false):
   const totalH = rows * cardH + (rows - 1) * gapY;
   const startY = Math.round(PAD + 80 + (H - PAD * 2 - 80 - totalH) / 2);
   // Scale font sizes based on card height
-  const titleFontSz = cardH >= 220 ? 16 : 14;
-  const descFontSz = cardH >= 220 ? 14 : 13;
-  const descMaxH = cardH - 110;
+  const titleFontSz = cardH >= 220 ? 18 : 16;
+  const descFontSz = cardH >= 220 ? 15 : 14;
+  const descMaxH = Math.max(20, cardH - 100);
   const accents = cardAccentColors(p);
 
   let html = '';
@@ -1706,7 +1722,7 @@ function buildProblem(slide: SlideInput, p: ColorPalette, hasImage = false): str
     const col2 = items.slice(Math.ceil(items.length / 2));
     const colW = Math.round((cW - PAD * 2 - 40) / 2);
     const itemStartY = PAD + 110;
-    const itemSpacing = Math.min(72, Math.round((H - itemStartY - PAD) / Math.max(col1.length, col2.length)));
+    const itemSpacing = Math.min(82, Math.round((H - itemStartY - PAD) / Math.max(col1.length, col2.length)));
     const pAccents = cardAccentColors(p);
     let itemsHtml = '';
 
@@ -1715,7 +1731,7 @@ function buildProblem(slide: SlideInput, p: ColorPalette, hasImage = false): str
       let y = itemStartY;
       for (let i = 0; i < col.length; i++) {
         const ic = pAccents[i % pAccents.length];
-        itemsHtml += `<div style="position:absolute;left:${startX}px;top:${y}px;width:${colW}px;max-height:${itemSpacing - 10}px;font-size:15px;line-height:1.45;color:${p.text};opacity:0.9;overflow:hidden;padding-left:12px;border-left:3px solid ${hexToRgba(ic, 0.7)}"><span style="font-weight:600;color:${ic}">${escHtml(stripMarkdown(col[i]).split(/\s+/).slice(0, 2).join(" "))}</span> ${escHtml(stripMarkdown(col[i]).split(/\s+/).slice(2).join(" "))}</div>`;
+        itemsHtml += `<div style="position:absolute;left:${startX}px;top:${y}px;width:${colW}px;max-height:${itemSpacing - 10}px;font-size:17px;line-height:1.4;color:${p.text};opacity:0.9;overflow:hidden;padding-left:12px;border-left:3px solid ${hexToRgba(ic, 0.7)}"><span style="font-weight:600;color:${ic}">${escHtml(stripMarkdown(col[i]).split(/\s+/).slice(0, 2).join(" "))}</span> ${escHtml(stripMarkdown(col[i]).split(/\s+/).slice(2).join(" "))}</div>`;
         y += itemSpacing;
       }
     };
@@ -1747,9 +1763,9 @@ function buildProblem(slide: SlideInput, p: ColorPalette, hasImage = false): str
   // Dynamic spacing: fit all items within available vertical space
   const startY = PAD + 100 + (headerLine ? 32 : 0);
   const availH = H - startY - PAD - 10;
-  const itemSpacing = Math.min(76, Math.round(availH / dataLines.length));
+  const itemSpacing = Math.min(86, Math.round(availH / dataLines.length));
   const itemMaxH = itemSpacing - 8;
-  const itemFontSz = dataLines.length > 4 ? 14 : 16;
+  const itemFontSz = dataLines.length > 4 ? 16 : 18;
 
   const probAccents = cardAccentColors(p);
   let bodyHtml = '';
@@ -1763,7 +1779,7 @@ function buildProblem(slide: SlideInput, p: ColorPalette, hasImage = false): str
 
   for (let pi = 0; pi < dataLines.length; pi++) {
     const itemColor = probAccents[pi % probAccents.length];
-    bodyHtml += `<div style="position:absolute;left:${PAD + 32}px;top:${ty}px;width:${cW - PAD * 2 - 80}px;max-height:${itemMaxH}px;font-size:${itemFontSz}px;line-height:1.5;color:${p.text};opacity:0.9;padding-left:12px;border-left:3px solid ${hexToRgba(itemColor, 0.7)};overflow:hidden"><span style=\"font-weight:600;color:${itemColor}\">${escHtml(stripMarkdown(dataLines[pi]).split(/\s+/).slice(0, 2).join(" "))}</span> ${escHtml(stripMarkdown(dataLines[pi]).split(/\s+/).slice(2).join(" "))}</div>`;
+    bodyHtml += `<div style="position:absolute;left:${PAD + 32}px;top:${ty}px;width:${cW - PAD * 2 - 80}px;max-height:${itemMaxH}px;font-size:${itemFontSz}px;line-height:1.45;color:${p.text};opacity:0.9;padding-left:12px;border-left:3px solid ${hexToRgba(itemColor, 0.7)};overflow:hidden"><span style=\"font-weight:600;color:${itemColor}\">${escHtml(stripMarkdown(dataLines[pi]).split(/\s+/).slice(0, 2).join(" "))}</span> ${escHtml(stripMarkdown(dataLines[pi]).split(/\s+/).slice(2).join(" "))}</div>`;
     ty += itemSpacing;
   }
 
@@ -1924,10 +1940,10 @@ function buildContent(slide: SlideInput, p: ColorPalette, hasImage = false): str
   const contentStartY = PAD + 100;
   const contentAvailH = H - contentStartY - PAD;
   const cardGap = 10;
-  const cardH = Math.min(80, Math.round((contentAvailH - (items.length - 1) * cardGap) / items.length));
+  const cardH = Math.min(100, Math.round((contentAvailH - (items.length - 1) * cardGap) / items.length));
   const cardPad = 14;
   const cardW = cW - PAD * 2 - 40;
-  const fontSize = cardH >= 70 ? 19 : cardH >= 55 ? 16 : 14;
+  const fontSize = cardH >= 70 ? 21 : cardH >= 55 ? 18 : 16;
 
   const contAccents = cardAccentColors(p);
   let bodyHtml = '';
@@ -2007,7 +2023,7 @@ function buildArchitecture(slide: SlideInput, p: ColorPalette, hasImage = false)
   const gapY = 24;
   // Dynamic box width — fill available horizontal space
   const boxW = Math.min(280, Math.round((cW - PAD * 2 - (cols - 1) * gapX) / cols));
-  const boxH = useRows ? 120 : (count <= 3 ? 160 : 120);
+  const boxH = useRows ? 140 : (count <= 3 ? 180 : 140);
   const totalW = cols * boxW + (cols - 1) * gapX;
   const totalH = rowCount * boxH + (rowCount - 1) * gapY;
   const startX = Math.round((cW - totalW) / 2);
@@ -2026,8 +2042,8 @@ function buildArchitecture(slide: SlideInput, p: ColorPalette, hasImage = false)
     const title = sep > -1 && sep < 50 ? stripMarkdown(nodes[i].slice(0, sep).trim()) : stripMarkdown(nodes[i]);
     const desc = sep > -1 && sep < 50 ? stripMarkdown(nodes[i].slice(sep + 1).trim()) : '';
     const descMaxH = boxH - 56;
-    const titleFSz = boxH >= 140 ? 16 : 14;
-    const descFSz = boxH >= 140 ? 14 : 12;
+    const titleFSz = boxH >= 140 ? 18 : 16;
+    const descFSz = boxH >= 140 ? 15 : 13;
     const nodeColor = archAccents[i % archAccents.length];
 
     boxesHtml += `<div style="position:absolute;left:${cx}px;top:${cy}px;width:${boxW}px;height:${boxH}px;background:${p.surface};border:1px solid ${p.border};border-radius:12px;border-top:4px solid ${nodeColor};box-shadow:${cardShadow(2, isDarkBackground(p.background))};overflow:hidden"></div>`;
