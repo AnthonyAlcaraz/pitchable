@@ -573,23 +573,21 @@ export class MarpExporterService {
         { title: slide.title, body: slide.body || '', slideType: figmaType, imageUrl: slide.imageUrl ?? undefined },
         palette,
       );
-      // Inject page number into Figma-grade HTML (Marp pagination is hidden behind full-bleed HTML)
-      if (totalSlides) {
-        const isDark = palette.background ? isDarkBackground(palette.background) : true;
-        const pnColor = isDark ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.3)';
-        const pageNum = `<div style="position:absolute;right:32px;bottom:18px;font-size:11px;color:${pnColor};font-family:system-ui,sans-serif;pointer-events:none">${slide.slideNumber} / ${totalSlides}</div>`;
-        // Insert before closing </div> of the wrapper
-        const lastClose = figmaHtml.lastIndexOf('</div>');
-        if (lastClose > -1) {
-          figmaHtml = figmaHtml.slice(0, lastClose) + pageNum + figmaHtml.slice(lastClose);
-        }
-      }
       lines.push(figmaHtml);
       lines.push('');
       if (slide.speakerNotes) {
         lines.push('<!--');
         lines.push(slide.speakerNotes);
         lines.push('-->');
+      }
+      // Inject page number into EVERY sub-section (Figma templates may contain --- separators)
+      if (totalSlides) {
+        const isDark = palette.background ? isDarkBackground(palette.background) : true;
+        const pnColor = isDark ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.3)';
+        const pnDiv = `\n<div style="position:absolute;right:32px;bottom:18px;font-size:11px;color:${pnColor};font-family:system-ui,sans-serif;pointer-events:none">${slide.slideNumber} / ${totalSlides}</div>`;
+        let result = lines.join('\n');
+        const sections = result.split('\n\n---\n\n');
+        return sections.map(s => s + pnDiv).join('\n\n---\n\n');
       }
       return lines.join('\n');
     }
@@ -896,21 +894,24 @@ li { margin-bottom: 0.3em; }
       lines.push('');
     }
 
-    // Inline page number (replaces Marp native pagination for reliability)
+    // Speaker notes
+    if (slide.speakerNotes) {
+      lines.push('<!--');
+      lines.push(slide.speakerNotes);
+      lines.push('-->');
+    }
+
+    // Inject page number into EVERY sub-section (body may contain --- separators)
     if (totalSlides) {
       const heroTypes = ['TITLE', 'CTA', 'VISUAL_HUMOR'];
       const effectiveDark = heroTypes.includes(type)
         ? true
         : (bgColor ? isDarkBackground(bgColor) : true);
       const pnColor = effectiveDark ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.3)';
-      lines.push(`<div style="position:absolute;right:32px;bottom:18px;font-size:11px;color:${pnColor};font-family:system-ui,sans-serif;pointer-events:none">${slide.slideNumber} / ${totalSlides}</div>`);
-    }
-
-    // Speaker notes
-    if (slide.speakerNotes) {
-      lines.push('<!--');
-      lines.push(slide.speakerNotes);
-      lines.push('-->');
+      const pnDiv = `\n<div style="position:absolute;right:32px;bottom:18px;font-size:11px;color:${pnColor};font-family:system-ui,sans-serif;pointer-events:none">${slide.slideNumber} / ${totalSlides}</div>`;
+      let result = lines.join('\n');
+      const sections = result.split('\n\n---\n\n');
+      return sections.map(s => s + pnDiv).join('\n\n---\n\n');
     }
 
     return lines.join('\n');
