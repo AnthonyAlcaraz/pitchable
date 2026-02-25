@@ -102,6 +102,14 @@ function hexToRgba(hex: string, alpha: number): string {
   return `rgba(${r},${g},${b},${alpha})`;
 }
 
+function colorLuminance(hex: string): number {
+  const c = hex.replace('#', '');
+  const r = parseInt(c.slice(0, 2), 16);
+  const g = parseInt(c.slice(2, 4), 16);
+  const b = parseInt(c.slice(4, 6), 16);
+  return (r * 299 + g * 587 + b * 114) / 1000;
+}
+
 // Subtle radial gradient overlay — adds depth and polish to slide backgrounds
 function bgGradientOverlay(w: number, h: number, color: string, alpha = 0.05, posY = '35%'): string {
   return `<div style="position:absolute;left:0;top:0;width:${w}px;height:${h}px;background:radial-gradient(ellipse 80% 70% at 50% ${posY},${hexToRgba(color, alpha)} 0%,transparent 70%);pointer-events:none"></div>`;
@@ -290,6 +298,38 @@ function moodCardTint(mood: ContentMood, p: ColorPalette): string {
   return hexToRgba(colors[mood], 0.02);
 }
 
+interface MoodTextColors {
+  titleColor: string;
+  emphasisColor: string;
+  metricColor: string;
+}
+
+function moodTextColors(mood: ContentMood, p: ColorPalette, dark: boolean): MoodTextColors {
+  if (mood === 'NEUTRAL') {
+    return { titleColor: p.text, emphasisColor: p.accent, metricColor: p.primary };
+  }
+
+  const moodColorMap: Record<Exclude<ContentMood, 'NEUTRAL'>, string> = {
+    GROWTH: p.success || p.primary,
+    RISK: p.error || p.primary,
+    TECH: p.primary,
+    PEOPLE: p.warning || p.primary,
+    STRATEGY: p.accent,
+  };
+  const mc = moodColorMap[mood as Exclude<ContentMood, 'NEUTRAL'>];
+
+  // Contrast safety: if mood color is too close to background, fall back to defaults
+  const bgLum = colorLuminance(p.background);
+  const mcLum = colorLuminance(mc);
+  const safe = Math.abs(bgLum - mcLum) >= 40;
+
+  return {
+    titleColor: safe ? mc : p.text,
+    emphasisColor: safe ? mc : p.accent,
+    metricColor: safe ? mc : p.primary,
+  };
+}
+
 // ── Scoped reset injected into every Figma-grade slide ──────
 
 const SCOPED_RESET = `<style scoped>
@@ -363,6 +403,12 @@ export function buildHtmlSlideContent(
       return '';
   }
 
+  // Text stacking prevention: ensure body text divs have overflow:hidden
+  html = html.replace(
+    /opacity:0\.8[5-9](?!.*overflow:hidden)/g,
+    (match) => match + ';overflow:hidden',
+  );
+
   // ── Mood detection + visual adaptation ──
   const mood = detectContentMood(cleaned.title, cleaned.body);
   const cW = cleaned.imageUrl ? CONTENT_W_IMG : W;
@@ -392,6 +438,34 @@ export function buildHtmlSlideContent(
       const width = parseInt(barMatch[3], 10);
       const color = barMatch[4];
       html = html.replace(barMatch[0], moodAccentBar(mood, color, width, left, top));
+    }
+
+    // ── Mood-based font coloring ──
+    const mColors = moodTextColors(mood, palette, dark);
+
+    // Title: replace p.text on bold titles with mood color
+    if (mColors.titleColor !== palette.text) {
+      html = html.replaceAll(
+        `font-weight:bold;overflow-wrap:break-word;word-wrap:break-word;color:${palette.text}`,
+        `font-weight:bold;overflow-wrap:break-word;word-wrap:break-word;color:${mColors.titleColor}`,
+      );
+    }
+
+    // Emphasis: replace font-weight:600 accent colors with mood color
+    if (mColors.emphasisColor !== palette.accent) {
+      const accents = new Set(cardAccentColors(palette));
+      html = html.replace(
+        /font-weight:600;color:([^"]+?)"/g,
+        (match, colorVal) => accents.has(colorVal) ? `font-weight:600;color:${mColors.emphasisColor}"` : match,
+      );
+    }
+
+    // Metrics: replace p.primary on large bold text (28px+)
+    if (mColors.metricColor !== palette.primary) {
+      html = html.replace(
+        new RegExp(`font-weight:bold;color:${palette.primary.replace('#', '\\#')}`, 'g'),
+        () => `font-weight:bold;color:${mColors.metricColor}`,
+      );
     }
   }
 
