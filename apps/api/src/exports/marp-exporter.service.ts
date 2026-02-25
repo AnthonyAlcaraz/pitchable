@@ -549,6 +549,7 @@ export class MarpExporterService {
     if (figmaType && palette) {
       lines.push(`<!-- _backgroundColor: ${palette.background} -->`);
       lines.push(`<!-- _color: ${palette.text} -->`);
+      lines.push('<!-- _paginate: false -->');
       lines.push('');
       // Mood-based font coloring for Figma-grade slides (belt-and-suspenders with inline styles)
       const fMood = detectContentMood(slide.title || '', slide.body || '');
@@ -609,18 +610,15 @@ export class MarpExporterService {
     if (type === 'SECTION_DIVIDER') {
       // Full-bleed accent background, centered text
       lines.push('<!-- _class: lead -->');
-      lines.push('<!-- _paginate: false -->');
       lines.push(`<!-- _backgroundColor: ${primaryColor || '#1e3a5f'} -->`);
       lines.push('<!-- _color: #FFFFFF -->');
       lines.push('');
     } else if (type === 'VISUAL_HUMOR') {
       // Image-forward humor slide: full-screen image, centered text overlay
       lines.push('<!-- _class: lead -->');
-      lines.push('<!-- _paginate: false -->');
       lines.push('');
     } else if (type === 'TITLE' || type === 'CTA') {
       lines.push(`<!-- _class: lead ${bgVariant.className} -->`);
-      lines.push('<!-- _paginate: false -->');
       // Override Marp's global backgroundColor for divider slides
       if (bgVariant.className === 'bg-section-divider') {
         lines.push('<!-- _backgroundColor: #051C2C -->');
@@ -895,14 +893,6 @@ li { margin-bottom: 0.3em; }
         lines.push('');
         lines.push('</div>');
       }
-      lines.push('');
-    }
-
-    // Page number for non-Figma slides (Marp pagination is suppressed on most slide types)
-    if (totalSlides && palette) {
-      const isDark = palette.background ? isDarkBackground(palette.background) : true;
-      const pnColor = isDark ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.3)';
-      lines.push(`<div style="position:fixed;right:32px;bottom:18px;font-size:11px;color:${pnColor};font-family:system-ui,sans-serif;pointer-events:none;z-index:99">${slide.slideNumber} / ${totalSlides}</div>`);
       lines.push('');
     }
 
