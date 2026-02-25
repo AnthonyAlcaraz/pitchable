@@ -207,7 +207,7 @@ export function detectContentMood(title: string, body: string): ContentMood {
     re.lastIndex = 0;
     const matches = text.match(re);
     const count = matches ? matches.length : 0;
-    if (count >= 2 && count > bestCount) {
+    if (count >= 1 && count > bestCount) {
       best = mood;
       bestCount = count;
     }
@@ -440,8 +440,12 @@ export function buildHtmlSlideContent(
       html = html.replace(barMatch[0], moodAccentBar(mood, color, width, left, top));
     }
 
-    // ── Mood-based font coloring ──
+    // ── Mood-based visual unification ──
+    // Replace ALL rotating card accent colors with single mood color.
+    // This unifies borders, icons, badges, text, and card tops — making
+    // each slide's mood immediately obvious (green=growth, red=risk, etc.)
     const mColors = moodTextColors(mood, palette, dark);
+    const moodColor = mColors.titleColor; // primary mood color
 
     // Title: replace p.text on bold titles with mood color
     if (mColors.titleColor !== palette.text) {
@@ -451,13 +455,24 @@ export function buildHtmlSlideContent(
       );
     }
 
-    // Emphasis: replace font-weight:600 accent colors with mood color
-    if (mColors.emphasisColor !== palette.accent) {
-      const accents = new Set(cardAccentColors(palette));
-      html = html.replace(
-        /font-weight:600;color:([^"]+?)"/g,
-        (match, colorVal) => accents.has(colorVal) ? `font-weight:600;color:${mColors.emphasisColor}"` : match,
-      );
+    // Unify ALL card accent colors to mood color
+    // Covers: border-left, border-top, icon backgrounds, badge colors,
+    // bold keyword text, card title colors, number badges
+    const accentSet = cardAccentColors(palette);
+    for (const ac of accentSet) {
+      if (ac === moodColor) continue; // skip if already the mood color
+      // Solid color in style attributes (;color:X, solid X, background:X)
+      html = html.replaceAll(`;color:${ac}`, `;color:${moodColor}`);
+      html = html.replaceAll(` solid ${ac}`, ` solid ${moodColor}`);
+      html = html.replaceAll(`background:${ac}`, `background:${moodColor}`);
+      // RGBA variants used in borders, badge backgrounds, card tints
+      for (const alpha of [0.7, 0.6, 0.5, 0.3, 0.15, 0.1, 0.08, 0.04, 0.02]) {
+        const oldRgba = hexToRgba(ac, alpha);
+        const newRgba = hexToRgba(moodColor, alpha);
+        if (oldRgba !== newRgba) {
+          html = html.replaceAll(oldRgba, newRgba);
+        }
+      }
     }
 
     // Metrics: replace p.primary on large bold text (28px+)

@@ -808,15 +808,18 @@ li { margin-bottom: 0.3em; }
         const dark = isDarkBackground(palette.background);
         const mc = moodTextColors(mood, palette, dark);
         const moodCssLines: string[] = [];
-        // Title color (h1)
-        if (mc.titleColor !== palette.text && mc.titleColor !== (primaryColor || palette.primary)) {
-          moodCssLines.push(`h1 { color: ${mc.titleColor} !important; }`);
-          moodCssLines.push(`h1::after { background: ${mc.titleColor} !important; }`);
+        const moodColor = mc.titleColor;
+        // Title + heading colors
+        if (moodColor !== palette.text && moodColor !== (primaryColor || palette.primary)) {
+          moodCssLines.push(`h1, h2, h3 { color: ${moodColor} !important; }`);
+          moodCssLines.push(`h1::after { background: ${moodColor} !important; }`);
         }
-        // Bold/emphasis color (strong)
-        if (mc.emphasisColor !== palette.accent) {
-          moodCssLines.push(`strong { color: ${mc.emphasisColor} !important; }`);
-        }
+        // Bold/emphasis + list markers + links
+        moodCssLines.push(`strong { color: ${mc.emphasisColor} !important; }`);
+        moodCssLines.push(`li::marker { color: ${moodColor} !important; }`);
+        moodCssLines.push(`a { color: ${moodColor} !important; }`);
+        moodCssLines.push(`blockquote { border-left-color: ${moodColor} !important; }`);
+        moodCssLines.push(`hr { border-color: ${moodColor} !important; }`);
         // Metric numbers (.big-number, stat values)
         if (mc.metricColor !== palette.primary) {
           moodCssLines.push(`.big-number { color: ${mc.metricColor} !important; }`);
