@@ -102,7 +102,7 @@ function hexToRgba(hex: string, alpha: number): string {
   return `rgba(${r},${g},${b},${alpha})`;
 }
 
-function colorLuminance(hex: string): number {
+export function colorLuminance(hex: string): number {
   const c = hex.replace('#', '');
   const r = parseInt(c.slice(0, 2), 16);
   const g = parseInt(c.slice(2, 4), 16);
@@ -189,7 +189,7 @@ function layoutVariant(title: string, body: string, maxVariants: number): number
 // Lightweight keyword detection on title+body → mood category → decorative CSS overlays.
 // All treatments use existing palette colors at low opacity (0.03-0.08).
 
-type ContentMood = 'GROWTH' | 'RISK' | 'TECH' | 'PEOPLE' | 'STRATEGY' | 'NEUTRAL';
+export type ContentMood = 'GROWTH' | 'RISK' | 'TECH' | 'PEOPLE' | 'STRATEGY' | 'NEUTRAL';
 
 const MOOD_KEYWORDS: { mood: ContentMood; re: RegExp }[] = [
   { mood: 'GROWTH', re: /\b(grow(?:th|ing)?|scal(?:e|ing|able)|expand|increas(?:e|ing)|revenue|profit|market|opportunit|accelerat|momentum|traction|adoption|compound|multipl|gain(?:s|ed|ing)?|rais(?:e|ing))\b/gi },
@@ -199,7 +199,7 @@ const MOOD_KEYWORDS: { mood: ContentMood; re: RegExp }[] = [
   { mood: 'STRATEGY', re: /\b(strateg|vision|roadmap|future|transform|mission|pivot|initiativ|north\s*star|alignment|objectiv|milestone|goal|plan(?:s|ning)?|next)\b/gi },
 ];
 
-function detectContentMood(title: string, body: string): ContentMood {
+export function detectContentMood(title: string, body: string): ContentMood {
   const text = (title + ' ' + body.slice(0, 500)).toLowerCase();
   let best: ContentMood = 'NEUTRAL';
   let bestCount = 0;
@@ -298,13 +298,13 @@ function moodCardTint(mood: ContentMood, p: ColorPalette): string {
   return hexToRgba(colors[mood], 0.02);
 }
 
-interface MoodTextColors {
+export interface MoodTextColors {
   titleColor: string;
   emphasisColor: string;
   metricColor: string;
 }
 
-function moodTextColors(mood: ContentMood, p: ColorPalette, dark: boolean): MoodTextColors {
+export function moodTextColors(mood: ContentMood, p: ColorPalette, dark: boolean): MoodTextColors {
   if (mood === 'NEUTRAL') {
     return { titleColor: p.text, emphasisColor: p.accent, metricColor: p.primary };
   }

@@ -27,6 +27,10 @@ import {
 import {
   FIGMA_GRADE_TYPES,
   buildHtmlSlideContent,
+  detectContentMood,
+  moodTextColors,
+  type ContentMood,
+  type MoodTextColors,
 } from './html-slide-templates.js';
 
 
@@ -545,6 +549,28 @@ export class MarpExporterService {
       lines.push(`<!-- _backgroundColor: ${palette.background} -->`);
       lines.push(`<!-- _color: ${palette.text} -->`);
       lines.push('');
+      // Mood-based font coloring for Figma-grade slides (belt-and-suspenders with inline styles)
+      const fMood = detectContentMood(slide.title || '', slide.body || '');
+      if (fMood !== 'NEUTRAL') {
+        const fDark = isDarkBackground(palette.background);
+        const fmc = moodTextColors(fMood, palette, fDark);
+        const fCss: string[] = [];
+        if (fmc.titleColor !== palette.text) {
+          fCss.push(`h1 { color: ${fmc.titleColor} !important; }`);
+          fCss.push(`div[style*="font-weight:bold"] { color: ${fmc.titleColor} !important; }`);
+        }
+        if (fmc.emphasisColor !== palette.accent) {
+          fCss.push(`strong { color: ${fmc.emphasisColor} !important; }`);
+          fCss.push(`div[style*="font-weight:600"] { color: ${fmc.emphasisColor} !important; }`);
+        }
+        if (fmc.metricColor !== palette.primary) {
+          fCss.push(`.big-number { color: ${fmc.metricColor} !important; }`);
+        }
+        if (fCss.length > 0) {
+          lines.push(`<style scoped>${fCss.join(' ')}</style>`);
+          lines.push('');
+        }
+      }
       lines.push(buildHtmlSlideContent(
         { title: slide.title, body: slide.body || '', slideType: figmaType, imageUrl: slide.imageUrl ?? undefined },
         palette,
@@ -768,6 +794,35 @@ li { margin-bottom: 0.4em; }
     if (scopedCSS[type]) {
       lines.push(scopedCSS[type]);
       lines.push('');
+    }
+
+    // ── Per-slide mood-based font coloring ──
+    // Detect content mood and inject scoped CSS to color h1, strong, .big-number
+    if (palette) {
+      const mood = detectContentMood(slide.title || '', slide.body || '');
+      if (mood !== 'NEUTRAL') {
+        const dark = isDarkBackground(palette.background);
+        const mc = moodTextColors(mood, palette, dark);
+        const moodCssLines: string[] = [];
+        // Title color (h1)
+        if (mc.titleColor !== palette.text && mc.titleColor !== (primaryColor || palette.primary)) {
+          moodCssLines.push(`h1 { color: ${mc.titleColor} !important; }`);
+          moodCssLines.push(`h1::after { background: ${mc.titleColor} !important; }`);
+        }
+        // Bold/emphasis color (strong)
+        if (mc.emphasisColor !== palette.accent) {
+          moodCssLines.push(`strong { color: ${mc.emphasisColor} !important; }`);
+        }
+        // Metric numbers (.big-number, stat values)
+        if (mc.metricColor !== palette.primary) {
+          moodCssLines.push(`.big-number { color: ${mc.metricColor} !important; }`);
+          moodCssLines.push(`.stat-card .big-number { color: ${mc.metricColor} !important; }`);
+        }
+        if (moodCssLines.length > 0) {
+          lines.push(`<style scoped>${moodCssLines.join(' ')}</style>`);
+          lines.push('');
+        }
+      }
     }
 
     // Body content
