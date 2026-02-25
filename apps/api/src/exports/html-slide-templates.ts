@@ -335,7 +335,7 @@ export function moodTextColors(mood: ContentMood, p: ColorPalette, dark: boolean
 const SCOPED_RESET = `<style scoped>
 section { padding: 0 !important; display: block !important; overflow: visible !important; position: relative !important; }
 section > * { flex-shrink: unset; }
-section::after { position: absolute !important; bottom: 14px !important; right: 20px !important; font-size: 12px !important; z-index: 50 !important; padding: 2px 8px !important; border-radius: 4px !important; }
+section::after { position: absolute !important; bottom: 14px !important; right: 20px !important; font-size: 12px !important; z-index: 50 !important; padding: 2px 8px !important; border-radius: 4px !important; color: rgba(255,255,255,0.7) !important; background: rgba(255,255,255,0.08) !important; }
 </style>`;
 
 // ── Image overlay for Figma-grade slides ─────────────────────

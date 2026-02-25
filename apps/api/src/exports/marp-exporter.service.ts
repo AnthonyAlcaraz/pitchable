@@ -841,8 +841,26 @@ li { margin-bottom: 0.3em; }
         .split('\n')
         .join('\n');
 
+      // Strip meta-narrative phrases from TITLE/CTA slides (LLM artifacts)
+      let cleanedBody = bodyToRender;
+      if (type === 'TITLE' || type === 'CTA') {
+        cleanedBody = cleanedBody
+          .split('\n')
+          .filter((line: string) => {
+            const lower = line.toLowerCase().trim();
+            // Remove lines that reference narrative structure, framework labels, or meta commentary
+            return !(
+              /\b(narrative|framework|journey|arc|story|presentation|deck|slides?)\b.*\b(through|about|covering|exploring|overview|structure)\b/i.test(lower) ||
+              /\b(star|situation|task|action|result|mece|pyramid)[-\s]*(framework|principle|structure|method)/i.test(lower) ||
+              /\b(this (presentation|deck|slide)|in this|we (will|shall)|let('s| us)|agenda|outline|overview of)\b/i.test(lower) ||
+              /\b(table of contents|what we.*cover|here.*what)\b/i.test(lower)
+            );
+          })
+          .join('\n');
+      }
+
       // Escape standalone --- that Marp interprets as slide breaks
-      const safeMarpBody = bodyToRender.replace(/^---$/gm, '***');
+      const safeMarpBody = cleanedBody.replace(/^---$/gm, '***');
 
       // Types that handle their own layout (scoped CSS grids, lead class, etc.) skip glass-card
       const skipGlassCard = ['TITLE', 'CTA', 'VISUAL_HUMOR', 'TEAM', 'TIMELINE', 'METRICS_HIGHLIGHT', 'FEATURE_GRID', 'PRODUCT_SHOWCASE', 'LOGO_WALL', 'MARKET_SIZING', 'SPLIT_STATEMENT'];
