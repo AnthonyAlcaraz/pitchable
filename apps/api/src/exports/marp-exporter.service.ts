@@ -450,6 +450,18 @@ export class MarpExporterService {
 
     const isDark = isDarkBackground(bg);
     frontmatter.push(
+      '  footer {',
+      '    position: absolute;',
+      '    right: 32px;',
+      '    bottom: 18px;',
+      '    left: auto;',
+      '    font-size: 11px;',
+      `    color: ${isDark ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.3)'};`,
+      '    font-family: system-ui, sans-serif;',
+      '    pointer-events: none;',
+      '    text-align: right;',
+      '    width: auto;',
+      '  }',
       '  section::after {',
       `    color: ${isDark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.45)'};`,
       '    font-size: 12px;',
@@ -896,12 +908,9 @@ li { margin-bottom: 0.3em; }
       lines.push('');
     }
 
-    // Page number — inline HTML (Marp native pagination hidden by lead class and overflow)
-    if (totalSlides && palette) {
-      const isDark = palette.background ? isDarkBackground(palette.background) : true;
-      const pnColor = isDark ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.3)';
-      lines.push(`<div style="position:absolute;right:32px;bottom:18px;font-size:11px;color:${pnColor};font-family:system-ui,sans-serif;pointer-events:none;z-index:50">${slide.slideNumber} / ${totalSlides}</div>`);
-      lines.push('');
+    // Page number via Marp _footer directive (position:absolute doesn't work in Marp flex layout)
+    if (totalSlides) {
+      lines.push(`<!-- _footer: "${slide.slideNumber} / ${totalSlides}" -->`);
     }
 
     // Speaker notes
