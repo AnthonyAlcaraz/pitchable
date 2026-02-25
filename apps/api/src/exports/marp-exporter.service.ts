@@ -649,6 +649,10 @@ export class MarpExporterService {
       } else if (bgVariant.className === 'bg-accent-tint' && palette) {
         // Tinted background: ensure text contrasts with the tinted surface
         lines.push(`<!-- _color: ${palette.text} -->`);
+      } else if (palette) {
+        // Fallback: always set explicit text color from palette for contrast safety
+        lines.push(`<!-- _backgroundColor: ${palette.background} -->`);
+        lines.push(`<!-- _color: ${palette.text} -->`);
       }
       lines.push('');
     }

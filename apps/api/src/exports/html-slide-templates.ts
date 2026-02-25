@@ -1355,8 +1355,9 @@ function buildFeatureGrid(slide: SlideInput, p: ColorPalette, hasImage = false):
       rowHtml +
       '</div>';
   }
-  // Variant 2: Bento grid (asymmetric) — first item large, rest in 2-column grid
-  if (fgVariant === 2 && count >= 3) {
+  // Variant 2: Bento grid — DISABLED (broken in Marp PDF renderer, text invisible)
+  // Falls through to default grid variant which renders correctly
+  if (false && fgVariant === 2 && count >= 3) {
     const dark = isDarkBackground(p.background);
     const bentoAccents = cardAccentColors(p);
     const bentoGap = 16;
