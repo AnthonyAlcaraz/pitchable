@@ -77,7 +77,7 @@ Do NOT fabricate statistics. If KB has no relevant data for a point, write a qua
 ${kbContext}`
     : '';
 
-  const maxWords = densityOverrides?.maxWords ?? 50;
+  const maxWords = densityOverrides?.maxWords ?? 100;
   const maxBullets = densityOverrides?.maxBullets ?? 4;
   const maxTableRows = densityOverrides?.maxTableRows ?? 4;
 

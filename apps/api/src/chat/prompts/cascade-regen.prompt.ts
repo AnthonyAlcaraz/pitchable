@@ -64,7 +64,7 @@ RULES:
 - If the preceding narrative shifted topic, adjust references and transitions accordingly
 - Keep the same formatting pattern for the slide type
 - Use **bold** on key terms, product names, and metrics
-- Max 100 words body, max 6 bullet points, 1 key concept per slide
+- Max 120 words body, max 6 bullet points, 1 key concept per slide
 - Speaker notes: 2-4 sentences expanding on the slide content
 
 SLIDE TYPE FORMATTING GUIDE for "${currentSlide.slideType}":

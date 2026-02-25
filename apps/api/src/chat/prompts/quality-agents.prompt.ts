@@ -70,7 +70,7 @@ ${colorGuidance}
 ${archetypeBlock}
 UNIVERSAL STYLE RULES (apply to ALL themes):
 - Title must not be generic ("Overview", "Introduction", "Summary")
-- No walls of text — max 80 words in body
+- No walls of text — max 100 words in body
 - Bullet points must be parallel in grammatical structure
 - No redundancy between title and first bullet
 - imagePromptHint (if present) must match theme aesthetic

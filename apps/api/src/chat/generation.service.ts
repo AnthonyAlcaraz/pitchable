@@ -864,8 +864,8 @@ OUTPUT: Valid JSON matching this schema (no markdown fences):
 
         // Programmatic density truncation (runs before content reviewer)
         const truncLimits = {
-          maxBullets: densityOverrides?.maxBullets ?? 4,
-          maxWords: densityOverrides?.maxWords ?? 50,
+          maxBullets: densityOverrides?.maxBullets ?? 6,
+          maxWords: densityOverrides?.maxWords ?? 100,
           maxTableRows: densityOverrides?.maxTableRows ?? 4,
         };
         const truncResult = truncateToLimits(slideContent.body, truncLimits);

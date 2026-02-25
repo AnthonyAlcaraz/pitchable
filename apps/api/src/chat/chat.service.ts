@@ -492,7 +492,7 @@ export class ChatService {
       const msg = [
         '**Current configuration:**',
         `- **Bullets per slide**: ${lens.maxBulletsPerSlide ?? '4 (default)'}`,
-        `- **Words per slide**: ${lens.maxWordsPerSlide ?? '50 (default)'}`,
+        `- **Words per slide**: ${lens.maxWordsPerSlide ?? '100 (default)'}`,
         `- **Table rows**: ${lens.maxTableRows ?? '4 (default)'}`,
         `- **Background image frequency**: 1 per ${lens.backgroundImageFrequency || 'disabled'} slides`,
         `- **Side panel image frequency**: 1 per ${lens.sidePanelImageFrequency || 'disabled'} slides`,

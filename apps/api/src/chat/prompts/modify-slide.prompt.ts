@@ -31,7 +31,7 @@ ${kbContext}`
 
 UNIVERSAL RULES:
 - Use **bold** on key terms, product names, and metrics — bold text renders in the theme's accent color
-- Max 100 words body, max 6 bullet points, 1 key concept per slide
+- Max 120 words body, max 6 bullet points, 1 key concept per slide
 - Speaker notes: 2-4 sentences expanding on the slide content for the presenter
 - Preserve the slide's core message unless explicitly asked to change it
 - CRITICAL: Maintain the formatting pattern for the slide type (see guide below)
@@ -116,7 +116,7 @@ ${kbContext}`
 
 UNIVERSAL RULES:
 - Use **bold** on key terms, product names, and metrics — bold text renders in the theme's accent color
-- Max 100 words body, max 6 bullet points, 1 key concept per slide
+- Max 120 words body, max 6 bullet points, 1 key concept per slide
 - Speaker notes: 2-4 sentences expanding on the slide content for the presenter
 
 SLIDE TYPE: ${slideType}

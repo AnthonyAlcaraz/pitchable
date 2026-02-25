@@ -11,8 +11,8 @@ export interface TruncationLimits {
 }
 
 const DEFAULT_LIMITS: TruncationLimits = {
-  maxBullets: 4,
-  maxWords: 50,
+  maxBullets: 6,
+  maxWords: 100,
   maxTableRows: 4,
 };
 
