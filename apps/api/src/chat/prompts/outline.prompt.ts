@@ -96,6 +96,7 @@ SLIDE TYPE SELECTION RULES:
 - Use SPLIT_STATEMENT for bold provocative claims that need immediate evidence. Left = emotional hook (large text), right = supporting data. Great for problem slides, insight reveals, or thesis statements. Use instead of PROBLEM when the pain is more emotional than analytical.
 - NARRATIVE RHYTHM: Alternate between emotional slides (SPLIT_STATEMENT, QUOTE, PRODUCT_SHOWCASE) and analytical slides (DATA_METRICS, COMPARISON, MARKET_SIZING) to maintain audience engagement. Never place 3+ analytical slides in a row.
 - Use VISUAL_HUMOR sparingly (max 1-2 per deck) as a breather between dense slides — only when tone is conversational, bold, inspirational, or storytelling. Never use for formal or analytical presentations.
+- AI DEFENSIBILITY: When the topic involves AI, ML, or technology, include a FEATURE_GRID slide addressing AI resilience with 3 pillars: (1) Deep Workflow Integration — how the product embeds into complex processes vs. surface-level chatbot features, (2) Proprietary Data Loops — unique datasets or feedback loops competitors cannot replicate, (3) Trust Layer — human-in-the-loop verification, regulatory compliance, or brand trust moats. Title should be a defensibility claim like "Three moats competitors cannot replicate" — NOT "AI Defensibility". Place after SOLUTION slides and before COMPARISON.
 
 NARRATIVE ARC (CRITICAL):
 - The presentation MUST tell a coherent story from start to finish.
@@ -196,6 +197,7 @@ INVESTOR DECK PRINCIPLES:
 - Problem slides use urgency and specificity. Solution slides use ambition and clarity.
 - Evidence before ask. Never ask for money before proving you deserve it.
 - The competitive landscape slide positions by CATEGORY (how competitors think about the space), not by feature checklist.
+- For AI/tech companies: include a FEATURE_GRID slide showing AI defensibility — deep workflow integration, proprietary data loops, and trust layer. Investors in 2026 expect founders to proactively address "why won't a foundation model just replace you?" Place between solution proof and competitive landscape.
 
 PRE-SEED ALTERNATIVE (use when the archetype is PRE_SEED_PITCH or when the company has no revenue):
 1. TITLE — Bold one-line pitch. No subtitle clutter.
@@ -211,7 +213,8 @@ PRE-SEED ALTERNATIVE (use when the archetype is PRE_SEED_PITCH or when the compa
 11. COMPARISON — Competitive positioning by approach, not features.
 12. DATA_METRICS — The Ask: specific amount + milestones.
 13. CTA — Bold closing statement + contact info.
-Pre-seed decks can use 10-16 slides. Prioritize narrative over data density.`;
+Pre-seed decks can use 10-16 slides. Prioritize narrative over data density.
+For AI/tech startups: add a FEATURE_GRID slide after SOLUTION showing 3 defensibility pillars (workflow integration, proprietary data, trust layer). Investors expect this in 2026 — proactively addressing "why can't GPT-5 do this?" is a signal of strategic maturity.`;
 
     case 'TECHNICAL':
       return `Technical presentation structure:
