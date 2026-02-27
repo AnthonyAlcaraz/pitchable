@@ -146,13 +146,10 @@ const SHOWCASE_SLIDES = [
   // Corporate Blue (white bg, blue/gold)
   { id: '251aa36a-b414-43ed-a487-5ca685724bf8', title: 'Enterprise Cloud Migration Strategy', deck: 'Corporate Blue' },
   { id: 'bb1d266e-25e4-46be-86cf-b9dd93537529', title: '$46-55M annual cloud spend per account', deck: 'Corporate Blue' },
-  { id: '063fe903-b4ae-4086-b113-240ff234a17d', title: 'GPU scarcity cost us a $25M deal', deck: 'Corporate Blue' },
   { id: '8c9a25ec-f443-4813-bf8f-285501eb7521', title: 'Speed, pricing, and reliability gaps', deck: 'Corporate Blue' },
   { id: '05f31cfc-5e12-47ce-ad05-2e71af42cbb8', title: 'Recapture $30M+ in at-risk revenue', deck: 'Corporate Blue' },
   { id: '9c77c3d6-b8c5-4461-93af-7474f05f8713', title: 'Marketplace cuts friction by 60%', deck: 'Corporate Blue' },
   { id: 'c8cdb129-00f3-483c-9393-5fae4da4e942', title: 'Graph-based storage migration', deck: 'Corporate Blue' },
-  { id: 'df277f86-4131-4bc3-aa78-c0ad2d8d073b', title: 'Four phases to Q4 2026', deck: 'Corporate Blue' },
-  { id: 'bf22f0d1-214b-4423-81ac-608d5fd2cb6e', title: '$97M in protected and new revenue', deck: 'Corporate Blue' },
   { id: '5ace2d65-5f34-4bf6-a3ed-cfd776db1dcf', title: 'Three actions to win Q2 pipeline', deck: 'Corporate Blue' },
 ];
 
