@@ -19,8 +19,6 @@ import {
   BookMarked,
   Briefcase,
   FlaskConical,
-  ChevronLeft,
-  ChevronRight,
 } from 'lucide-react';
 import { PeachLogo } from '@/components/icons/PeachLogo';
 
@@ -62,18 +60,38 @@ function useCountUp(target: number, duration = 2000) {
 }
 
 
-// ── Featured Showcase Data ──────────────────────────────────
-const SHOWCASE_SLIDES = [
-  { id: '4c80eb95-46fe-4372-9aea-94f456af4411', title: 'AI Meets Enterprise Challenges' },
-  { id: '84f40c5d-019b-4e2f-b1e6-755f4c510a1f', title: 'Terabytes Generated, Insights Lost' },
-  { id: 'c3854e20-0d9f-4633-971f-c692c18d10e1', title: 'Terabytes In, Zero Frames Out' },
-  { id: '59d96b66-25f8-4740-91b1-54949d47df89', title: 'Days to Minutes: Four Barriers' },
-  { id: '0fa68066-8c18-4ecc-bad1-e9ce55c0bc8e', title: 'Two-Phase Strategy: Build, Then Scale' },
-  { id: '7da57066-6703-4c77-b740-026beeddfbbe', title: 'Graph DB Replaced Vector Search' },
-  { id: '0cbebc88-96d8-41b9-912b-b99ef8f9975f', title: 'Partnerships Accelerate Time-to-Value 3x' },
-  { id: '2af4f932-f214-4975-8df5-3e20f8c59efb', title: 'Quantified Results Across the Stack' },
-  { id: '9c7614b2-768d-42ce-b4cd-1f9267a2e4b8', title: 'Stay a Boat, Not an Anchor' },
-  { id: '9b547ab8-7a95-4cfa-9709-30434b3444b6', title: 'Start Your 2-Week AI Assessment' },
+// ── McKinsey Showcase Data ──────────────────────────────────────────────────────
+const SHOWCASE_DECKS = [
+  {
+    id: '4c5d1e38-c7c5-4a91-8260-202421af2ea6',
+    title: 'Digital Transformation Roadmap',
+    description: 'C-suite alignment strategy across 4 business units',
+    category: 'Strategy',
+    slides: [
+      { id: 'a6622e87-7cc0-4aef-9440-6b4425b3245b', label: 'Title' },
+      { id: '644572da-36c6-4e27-a711-ae78bc4ab0f3', label: 'Data insight' },
+    ],
+  },
+  {
+    id: '1606005a-c6bc-414a-9338-15db80bc2bd1',
+    title: 'Market Entry Strategy: Southeast Asia',
+    description: 'Board-level expansion analysis with regulatory landscape',
+    category: 'Growth',
+    slides: [
+      { id: 'ad8abfac-5e20-490c-be55-00ec7aedc4c0', label: 'Title' },
+      { id: '0d5e6071-7064-4117-82df-cfde593e45ea', label: 'Market sizing' },
+    ],
+  },
+  {
+    id: 'd103b72b-29b6-4ff3-b243-f485856b765f',
+    title: 'Operational Excellence Initiative',
+    description: 'Manufacturing transformation through automation and Lean Six Sigma',
+    category: 'Operations',
+    slides: [
+      { id: '6e0af7a6-e119-443e-aee2-5f4cd8ae7b63', label: 'Title' },
+      { id: 'd4df5777-be1c-4ef8-a499-99e36cd6b23a', label: 'Gap analysis' },
+    ],
+  },
 ];
 
 // ── Landing Page ─────────────────────────────────────────────
@@ -83,26 +101,6 @@ export function LandingPage() {
   const SOCIAL_PROOF_MIN = { totalPresentations: 2847, totalUsers: 1203, totalSlides: 34520 };
   const [stats, setStats] = useState(SOCIAL_PROOF_MIN);
   const [gallery, setGallery] = useState<GalleryPresentation[]>([]);
-
-  // ── Showcase carousel state ──
-  const [activeSlide, setActiveSlide] = useState(0);
-  const isPaused = useRef(false);
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      if (!isPaused.current) {
-        setActiveSlide((prev) => (prev + 1) % SHOWCASE_SLIDES.length);
-      }
-    }, 4000);
-    return () => clearInterval(timer);
-  }, []);
-
-  const pauseAutoPlay = () => { isPaused.current = true; };
-  const resumeAutoPlay = () => { isPaused.current = false; };
-  const prev = () => setActiveSlide((s) => (s - 1 + SHOWCASE_SLIDES.length) % SHOWCASE_SLIDES.length);
-  const next = () => setActiveSlide((s) => (s + 1) % SHOWCASE_SLIDES.length);
-
-
 
   useEffect(() => {
     fetch('/gallery/stats')
@@ -260,71 +258,6 @@ export function LandingPage() {
             >
               {t('landing.hero.cta_secondary')}
             </a>
-          </div>
-        </div>
-      </section>
-
-      {/* ── Featured Showcase ────────────────────── */}
-      <section className="relative overflow-hidden py-16 sm:py-24">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_40%_at_50%_0%,rgba(249,115,22,0.08),transparent)]" />
-        <div className="relative mx-auto max-w-5xl px-6">
-          <div className="mb-8 text-center">
-            <h2 className="mb-2 text-2xl font-bold text-foreground sm:text-3xl">
-              See What Pitchable Creates
-            </h2>
-            <p className="text-sm text-muted-foreground">
-              10-slide pitch deck — generated in under 2 minutes
-            </p>
-          </div>
-
-          {/* Main slide viewer */}
-          <div
-            className="group relative overflow-hidden rounded-xl border border-border bg-black shadow-2xl shadow-orange-500/5"
-            style={{ aspectRatio: '16/9' }}
-            onMouseEnter={pauseAutoPlay}
-            onMouseLeave={resumeAutoPlay}
-          >
-            <img
-              key={SHOWCASE_SLIDES[activeSlide].id}
-              src={`/slides/${SHOWCASE_SLIDES[activeSlide].id}/preview`}
-              alt={SHOWCASE_SLIDES[activeSlide].title}
-              className="h-full w-full object-contain"
-              style={{ animation: 'fadeSlideIn 0.3s ease-out' }}
-            />
-            {/* Nav arrows — visible on hover */}
-            <button onClick={prev} className="absolute left-3 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-2 opacity-0 transition-opacity group-hover:opacity-100 hover:bg-black/70">
-              <ChevronLeft className="h-5 w-5 text-white" />
-            </button>
-            <button onClick={next} className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-2 opacity-0 transition-opacity group-hover:opacity-100 hover:bg-black/70">
-              <ChevronRight className="h-5 w-5 text-white" />
-            </button>
-            {/* Slide counter */}
-            <div className="absolute bottom-3 right-3 rounded-full bg-black/60 px-3 py-1 text-xs text-white/70">
-              {activeSlide + 1} / {SHOWCASE_SLIDES.length}
-            </div>
-          </div>
-
-          {/* Thumbnail strip */}
-          <div className="mt-3 flex justify-center gap-1.5 overflow-x-auto pb-1">
-            {SHOWCASE_SLIDES.map((slide, i) => (
-              <button
-                key={slide.id}
-                onClick={() => setActiveSlide(i)}
-                className={`flex-shrink-0 overflow-hidden rounded border transition-all ${
-                  i === activeSlide
-                    ? 'border-orange-500 ring-1 ring-orange-500/30'
-                    : 'border-border/50 opacity-50 hover:opacity-80'
-                }`}
-                style={{ width: 72, aspectRatio: '16/9' }}
-              >
-                <img
-                  src={`/slides/${slide.id}/preview`}
-                  alt={slide.title}
-                  className="h-full w-full object-contain bg-black"
-                  loading="lazy"
-                />
-              </button>
-            ))}
           </div>
         </div>
       </section>
@@ -553,50 +486,63 @@ export function LandingPage() {
       </section>
 
 
-      {/* -- Tech Logos Marquee -------------------------------- */}
-      <section className="pb-8">
-        <div className="group relative overflow-hidden py-6">
-          {/* Fade edges */}
-          <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-16 bg-gradient-to-r from-card to-transparent sm:w-24" />
-          <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-16 bg-gradient-to-l from-card to-transparent sm:w-24" />
+      {/* ── McKinsey Showcase ────────────────────────────── */}
+      <section className="relative overflow-hidden py-24 sm:py-32">
+        <div className="absolute inset-0 bg-[#0a0a0a]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_100%,rgba(249,115,22,0.15),transparent)]" />
 
-          <div
-            className="flex w-max group-hover:[animation-play-state:paused]"
-            style={{ animation: 'marquee 30s linear infinite' }}
-          >
-            {[0, 1].map((setIdx) => (
-              <div key={setIdx} className="flex items-center">
-                <div className="mx-8 flex items-center gap-2.5 opacity-[0.35] sm:mx-10">
-                  <img src="https://cdn.simpleicons.org/anthropic/a1a1a1" alt="Anthropic" className="h-5 w-auto" />
-                  <span className="whitespace-nowrap text-sm font-medium text-muted-foreground">Anthropic</span>
+        <div className="relative mx-auto max-w-6xl px-6">
+          <div className="mb-16 text-center">
+            <h2 className="mb-3 text-3xl font-bold text-white sm:text-4xl">
+              Built for high-stakes presentations
+            </h2>
+            <p className="mx-auto max-w-xl text-[#a1a1a1]">
+              McKinsey-quality decks generated in under 2 minutes — with AI imagery, action titles, and structured frameworks.
+            </p>
+          </div>
+
+          <div className="space-y-20">
+            {SHOWCASE_DECKS.map((deck, i) => (
+              <div
+                key={deck.id}
+                className={`flex flex-col items-center gap-10 lg:flex-row ${
+                  i % 2 === 1 ? 'lg:flex-row-reverse' : ''
+                }`}
+              >
+                {/* Slide pair */}
+                <div className="flex w-full gap-3 lg:w-3/5">
+                  {deck.slides.map((slide) => (
+                    <div
+                      key={slide.id}
+                      className="flex-1 overflow-hidden rounded-lg border border-white/10 shadow-xl shadow-black/40"
+                    >
+                      <img
+                        src={`/slides/${slide.id}/preview`}
+                        alt={slide.label}
+                        className="h-full w-full object-cover"
+                        style={{ aspectRatio: '16/9' }}
+                        loading="lazy"
+                      />
+                    </div>
+                  ))}
                 </div>
-                <div className="mx-8 flex items-center gap-2.5 opacity-[0.35] sm:mx-10">
-                  <img src="https://cdn.simpleicons.org/react/a1a1a1" alt="React" className="h-5 w-auto" />
-                  <span className="whitespace-nowrap text-sm font-medium text-muted-foreground">React</span>
-                </div>
-                <div className="mx-8 flex items-center gap-2.5 opacity-[0.35] sm:mx-10">
-                  <img src="https://cdn.simpleicons.org/typescript/a1a1a1" alt="TypeScript" className="h-5 w-auto" />
-                  <span className="whitespace-nowrap text-sm font-medium text-muted-foreground">TypeScript</span>
-                </div>
-                <div className="mx-8 flex items-center gap-2.5 opacity-[0.35] sm:mx-10">
-                  <img src="https://cdn.simpleicons.org/marp/a1a1a1" alt="Marp" className="h-5 w-auto" />
-                  <span className="whitespace-nowrap text-sm font-medium text-muted-foreground">Marp</span>
-                </div>
-                <div className="mx-8 flex items-center gap-2.5 opacity-[0.35] sm:mx-10">
-                  <img src="https://cdn.simpleicons.org/amazonaws/a1a1a1" alt="AWS" className="h-5 w-auto" />
-                  <span className="whitespace-nowrap text-sm font-medium text-muted-foreground">AWS</span>
-                </div>
-                <div className="mx-8 flex items-center gap-2.5 opacity-[0.35] sm:mx-10">
-                  <img src="https://cdn.simpleicons.org/stripe/a1a1a1" alt="Stripe" className="h-5 w-auto" />
-                  <span className="whitespace-nowrap text-sm font-medium text-muted-foreground">Stripe</span>
-                </div>
-                <div className="mx-8 flex items-center gap-2.5 opacity-[0.35] sm:mx-10">
-                  <img src="https://cdn.simpleicons.org/vite/a1a1a1" alt="Vite" className="h-5 w-auto" />
-                  <span className="whitespace-nowrap text-sm font-medium text-muted-foreground">Vite</span>
-                </div>
-                <div className="mx-8 flex items-center gap-2.5 opacity-[0.35] sm:mx-10">
-                  <img src="https://cdn.simpleicons.org/postgresql/a1a1a1" alt="PostgreSQL" className="h-5 w-auto" />
-                  <span className="whitespace-nowrap text-sm font-medium text-muted-foreground">PostgreSQL</span>
+
+                {/* Text */}
+                <div className="w-full lg:w-2/5">
+                  <span className="mb-3 inline-block rounded-full bg-orange-500/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-orange-400">
+                    {deck.category}
+                  </span>
+                  <h3 className="mb-2 text-xl font-bold text-white sm:text-2xl">
+                    {deck.title}
+                  </h3>
+                  <p className="mb-4 text-[#a1a1a1]">{deck.description}</p>
+                  <a
+                    href={`/gallery/${deck.id}`}
+                    className="inline-flex items-center gap-1 text-sm font-medium text-orange-400 transition-colors hover:text-orange-300"
+                  >
+                    View full deck
+                    <ArrowRight className="h-3.5 w-3.5" />
+                  </a>
                 </div>
               </div>
             ))}
