@@ -688,11 +688,11 @@ function buildTimeline(slide: SlideInput, p: ColorPalette, hasImage = false): st
 
     const titleGlowCss = dark ? `;${textGlow(p.accent, 0.25)}` : '';
     return `${SCOPED_RESET}
-<div style="position:relative;width:${W}px;height:${H}px;background:${p.background};">
+<div style="position:relative;width:${W}px;height:${H}px;background:${p.background};overflow:hidden;">
   ${bgGradientOverlay(cW, H, p.primary, 0.04, '50%')}
   <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;text-align:center;font-size:${titleFontSize(slide.title)}px;font-weight:bold;overflow-wrap:break-word;word-wrap:break-word;color:${p.text};line-height:1.2${titleGlowCss}">${escHtml(slide.title)}</div>
   <div style="position:absolute;left:${Math.round((cW - 60) / 2)}px;top:${PAD + 56}px;width:60px;height:3px;background:${p.accent};border-radius:2px"></div>
-  <svg style="position:absolute;left:0;top:0" width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg">
+  <svg style="position:absolute;left:0;top:0" width="${cW}" height="${H}" xmlns="http://www.w3.org/2000/svg">
     ${zigSvg}
   </svg>
   ${zigHtml}
@@ -736,11 +736,11 @@ function buildTimeline(slide: SlideInput, p: ColorPalette, hasImage = false): st
   }
 
   return `${SCOPED_RESET}
-<div style="position:relative;width:${W}px;height:${H}px;background:${p.background};">
+<div style="position:relative;width:${W}px;height:${H}px;background:${p.background};overflow:hidden;">
   ${bgGradientOverlay(cW, H, p.primary, 0.04, '50%')}
   <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;text-align:center;font-size:${titleFontSize(slide.title)}px;font-weight:bold;overflow-wrap:break-word;word-wrap:break-word;color:${p.text};line-height:1.2">${escHtml(slide.title)}</div>
   <div style="position:absolute;left:${Math.round((cW - 60) / 2)}px;top:${PAD + 56}px;width:60px;height:3px;background:${p.accent};border-radius:2px"></div>
-  <svg style="position:absolute;left:0;top:0" width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg">
+  <svg style="position:absolute;left:0;top:0" width="${cW}" height="${H}" xmlns="http://www.w3.org/2000/svg">
     <line x1="${lineStartX}" y1="${lineY}" x2="${lineEndX}" y2="${lineY}" stroke="${p.border}" stroke-width="2" />
     ${nodesSvg}
   </svg>
@@ -771,12 +771,21 @@ function buildMetricsHighlight(slide: SlideInput, p: ColorPalette, hasImage = fa
       bigLabel = firstLine.substring(colonIdx + 1).trim();
       supportLines = lines.slice(1);
     } else {
-      bigValue = firstLine;
-      if (lines.length > 1) {
-        bigLabel = lines[1].trim();
-        supportLines = lines.slice(2);
+      // No colon — extract leading number as hero, rest as label
+      // Matches: "$4.2B", "1,000", "250,000", "98%", "€12M"
+      const numMatch = firstLine.match(/^([\d$€£¥][\d,.]*[BMKTbmkt%+×x]*)\s*(.*)/);
+      if (numMatch && numMatch[1].length >= 2) {
+        bigValue = numMatch[1];
+        bigLabel = numMatch[2] || '';
+        supportLines = lines.slice(1);
       } else {
-        supportLines = [];
+        bigValue = firstLine;
+        if (lines.length > 1) {
+          bigLabel = lines[1].trim();
+          supportLines = lines.slice(2);
+        } else {
+          supportLines = [];
+        }
       }
     }
   } else if (lines.length > 0) {
@@ -1829,7 +1838,7 @@ function buildProblem(slide: SlideInput, p: ColorPalette, hasImage = false): str
     <polygon points="16,2 30,28 2,28" fill="none" stroke="${barColor}" stroke-width="2"/>
     <text x="16" y="24" text-anchor="middle" fill="${barColor}" font-size="16" font-weight="bold">!</text>
   </svg>
-  <div style="position:absolute;left:${PAD + 44}px;top:${PAD + 4}px;font-size:${titleFontSize(slide.title)}px;font-weight:bold;overflow-wrap:break-word;word-wrap:break-word;color:${p.text};line-height:1.2${titleGlow}">${escHtml(slide.title)}</div>
+  <div style="position:absolute;left:${PAD + 44}px;top:${PAD + 4}px;width:${cW - PAD - 44 - 20}px;font-size:${titleFontSize(slide.title)}px;font-weight:bold;overflow-wrap:break-word;word-wrap:break-word;color:${p.text};line-height:1.2${titleGlow}">${escHtml(slide.title)}</div>
   <div style="position:absolute;left:${PAD + 44}px;top:${PAD + 48}px;width:60px;height:3px;background:${barColor};border-radius:2px"></div>
   ${itemsHtml}
 </div>`;
@@ -1872,7 +1881,7 @@ function buildProblem(slide: SlideInput, p: ColorPalette, hasImage = false): str
     <polygon points="16,2 30,28 2,28" fill="none" stroke="${barColor}" stroke-width="2"/>
     <text x="16" y="24" text-anchor="middle" fill="${barColor}" font-size="16" font-weight="bold">!</text>
   </svg>
-  <div style="position:absolute;left:${PAD + 44}px;top:${PAD + 4}px;font-size:${titleFontSize(slide.title)}px;font-weight:bold;overflow-wrap:break-word;word-wrap:break-word;color:${p.text};line-height:1.2">${escHtml(slide.title)}</div>
+  <div style="position:absolute;left:${PAD + 44}px;top:${PAD + 4}px;width:${cW - PAD - 44 - 20}px;font-size:${titleFontSize(slide.title)}px;font-weight:bold;overflow-wrap:break-word;word-wrap:break-word;color:${p.text};line-height:1.2">${escHtml(slide.title)}</div>
   <div style="position:absolute;left:${PAD + 44}px;top:${PAD + 48}px;width:60px;height:3px;background:${barColor};border-radius:2px"></div>
   ${bodyHtml}
 </div>`;
@@ -1954,7 +1963,7 @@ function buildSolution(slide: SlideInput, p: ColorPalette, hasImage = false): st
     <circle cx="16" cy="16" r="14" fill="none" stroke="${barColor}" stroke-width="2"/>
     <polyline points="10,16 14,22 24,10" fill="none" stroke="${barColor}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
   </svg>
-  <div style="position:absolute;left:${PAD + 44}px;top:${PAD + 4}px;font-size:${titleFontSize(slide.title)}px;font-weight:bold;overflow-wrap:break-word;word-wrap:break-word;color:${p.text};line-height:1.2">${escHtml(slide.title)}</div>
+  <div style="position:absolute;left:${PAD + 44}px;top:${PAD + 4}px;width:${cW - PAD - 44 - 20}px;font-size:${titleFontSize(slide.title)}px;font-weight:bold;overflow-wrap:break-word;word-wrap:break-word;color:${p.text};line-height:1.2">${escHtml(slide.title)}</div>
   <div style="position:absolute;left:${PAD + 44}px;top:${PAD + 48}px;width:60px;height:3px;background:${barColor};border-radius:2px"></div>
   ${bodyHtml}
 </div>`;
