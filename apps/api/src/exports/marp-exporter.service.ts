@@ -752,16 +752,16 @@ h3 { margin-top: 16px; font-size: 0.8em; }
 </style>`,
       METRICS_HIGHLIGHT: `<style scoped>
 .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-top: 12px; text-align: center; }
-.stat-card { padding: 12px; }
-.stat-card .big-number { font-size: 2.8em; line-height: 1; }
-.stat-card p { font-size: 0.6em; opacity: 0.8; margin-top: 4px; }
+.stat-card { padding: 12px; overflow: hidden; }
+.stat-card .big-number { font-size: 2.8em; line-height: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.stat-card p { font-size: 0.6em; opacity: 0.8; margin-top: 4px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
 h3 { margin-top: 12px; font-size: 0.8em; }
 </style>`,
       DATA_METRICS: `<style scoped>
 .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-top: 12px; text-align: center; }
-.stat-card { padding: 12px; }
-.stat-card .big-number { font-size: 2.8em; line-height: 1; }
-.stat-card p { font-size: 0.6em; opacity: 0.8; margin-top: 4px; }
+.stat-card { padding: 12px; overflow: hidden; }
+.stat-card .big-number { font-size: 2.8em; line-height: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.stat-card p { font-size: 0.6em; opacity: 0.8; margin-top: 4px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
 h3 { margin-top: 10px; font-size: 0.8em; }
 .source { font-size: 0.5em; }
 </style>`,

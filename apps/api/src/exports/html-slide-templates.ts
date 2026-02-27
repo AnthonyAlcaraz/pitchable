@@ -763,12 +763,21 @@ function buildMetricsHighlight(slide: SlideInput, p: ColorPalette, hasImage = fa
 
   // Check if first line looks like a metric value (starts with $, digit, or ends with %)
   if (lines.length > 0 && /^[\d$€£¥]|%$/.test(lines[0].trim())) {
-    bigValue = lines[0].trim();
-    if (lines.length > 1) {
-      bigLabel = lines[1].trim();
-      supportLines = lines.slice(2);
+    const firstLine = lines[0].trim();
+    // Split on colon to separate value from label (e.g. "250,000: hours saved")
+    const colonIdx = firstLine.indexOf(':');
+    if (colonIdx > 0 && colonIdx < 20) {
+      bigValue = firstLine.substring(0, colonIdx).trim();
+      bigLabel = firstLine.substring(colonIdx + 1).trim();
+      supportLines = lines.slice(1);
     } else {
-      supportLines = [];
+      bigValue = firstLine;
+      if (lines.length > 1) {
+        bigLabel = lines[1].trim();
+        supportLines = lines.slice(2);
+      } else {
+        supportLines = [];
+      }
     }
   } else if (lines.length > 0) {
     // Secondary extraction: find prominent numbers/percentages WITHIN prose text
@@ -805,18 +814,27 @@ function buildMetricsHighlight(slide: SlideInput, p: ColorPalette, hasImage = fa
   const nonMetricLines = supportLines.filter((l) => !metricLines.includes(l));
 
   if (metricLines.length >= 2) {
-    const secY = Math.round(H * 0.72);
-    const cols = Math.min(metricLines.length, 3);
-    const colW = Math.round((cW - PAD * 2 - 200) / cols);
-    for (let i = 0; i < cols; i++) {
-      const cx = PAD + 100 + i * colW;
+    const totalMetrics = Math.min(metricLines.length, 4);
+    // 2x2 grid for 4 metrics, single row for 2-3
+    const perRow = totalMetrics === 4 ? 2 : totalMetrics;
+    const rows = totalMetrics === 4 ? 2 : 1;
+    const secY = Math.round(H * (rows === 2 ? 0.62 : 0.72));
+    const rowGap = rows === 2 ? 80 : 0;
+    const colW = Math.round((cW - PAD * 2 - 120) / perRow);
+    const valFontSize = totalMetrics >= 4 ? 24 : 28;
+    const labelFontSize2 = totalMetrics >= 4 ? 12 : 13;
+    for (let i = 0; i < totalMetrics; i++) {
+      const row = Math.floor(i / perRow);
+      const col = i % perRow;
+      const cx = PAD + 60 + col * colW;
+      const cy = secY + row * rowGap;
       const parts = metricLines[i].split(/[:\-–—]/);
       const val = parts[0].trim();
       const label = parts.length > 1 ? parts.slice(1).join(':').trim() : '';
-      secondaryHtml += `<div style="position:absolute;left:${cx}px;top:${secY}px;width:${colW}px;text-align:center">
-        <div style="font-size:28px;font-weight:bold;color:${p.primary}">${escHtml(val)}</div>
-        ${label ? `<div style="font-size:13px;color:${p.text};opacity:0.65;margin-top:4px">${escHtml(label)}</div>` : ''}
-        <div style="width:${Math.round(colW * 0.6)}px;height:4px;background:${hexToRgba(p.border, 0.3)};border-radius:2px;margin:8px auto 0"><div style="width:60%;height:100%;background:${p.accent};border-radius:2px;opacity:0.7"></div></div>
+      secondaryHtml += `<div style="position:absolute;left:${cx}px;top:${cy}px;width:${colW}px;text-align:center">
+        <div style="font-size:${valFontSize}px;font-weight:bold;color:${p.primary};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(val)}</div>
+        ${label ? `<div style="font-size:${labelFontSize2}px;color:${p.text};opacity:0.65;margin-top:4px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">${escHtml(label)}</div>` : ''}
+        <div style="width:${Math.round(colW * 0.5)}px;height:3px;background:${hexToRgba(p.border, 0.3)};border-radius:2px;margin:6px auto 0"><div style="width:60%;height:100%;background:${p.accent};border-radius:2px;opacity:0.7"></div></div>
       </div>`;
     }
   }
