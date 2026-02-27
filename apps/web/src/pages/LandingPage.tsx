@@ -2,8 +2,6 @@ import { useEffect, useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { GalleryNav } from '@/components/gallery/GalleryNav';
-import { GalleryCard } from '@/components/gallery/GalleryCard';
-import type { GalleryPresentation } from '@/components/gallery/GalleryCard';
 import {
   BookOpen,
   Focus,
@@ -60,38 +58,18 @@ function useCountUp(target: number, duration = 2000) {
 }
 
 
-// ── McKinsey Showcase Data ──────────────────────────────────────────────────────
-const SHOWCASE_DECKS = [
-  {
-    id: '4c5d1e38-c7c5-4a91-8260-202421af2ea6',
-    title: 'Digital Transformation Roadmap',
-    description: 'C-suite alignment strategy across 4 business units',
-    category: 'Strategy',
-    slides: [
-      { id: 'a6622e87-7cc0-4aef-9440-6b4425b3245b', label: 'Title' },
-      { id: '644572da-36c6-4e27-a711-ae78bc4ab0f3', label: 'Data insight' },
-    ],
-  },
-  {
-    id: '1606005a-c6bc-414a-9338-15db80bc2bd1',
-    title: 'Market Entry Strategy: Southeast Asia',
-    description: 'Board-level expansion analysis with regulatory landscape',
-    category: 'Growth',
-    slides: [
-      { id: 'ad8abfac-5e20-490c-be55-00ec7aedc4c0', label: 'Title' },
-      { id: '0d5e6071-7064-4117-82df-cfde593e45ea', label: 'Market sizing' },
-    ],
-  },
-  {
-    id: 'd103b72b-29b6-4ff3-b243-f485856b765f',
-    title: 'Operational Excellence Initiative',
-    description: 'Manufacturing transformation through automation and Lean Six Sigma',
-    category: 'Operations',
-    slides: [
-      { id: '6e0af7a6-e119-443e-aee2-5f4cd8ae7b63', label: 'Title' },
-      { id: 'd4df5777-be1c-4ef8-a499-99e36cd6b23a', label: 'Gap analysis' },
-    ],
-  },
+// ── Showcase Slides (only slides with AI images) ──────────────────────
+const SHOWCASE_SLIDES = [
+  { id: 'a6622e87-7cc0-4aef-9440-6b4425b3245b', title: 'Enterprise AI Adoption Roadmap', deck: 'Digital Transformation' },
+  { id: '4526da7d-b87a-4e1b-8a8d-9b651a2bfd7d', title: "Data Quality's $8.2M Silent Tax", deck: 'Digital Transformation' },
+  { id: 'ad8abfac-5e20-490c-be55-00ec7aedc4c0', title: 'Southeast Asia Expansion Strategy', deck: 'Market Entry' },
+  { id: '18cae235-e392-4dc1-b401-5fba378e07af', title: 'Three Forces Narrowing the Window', deck: 'Market Entry' },
+  { id: '6e0af7a6-e119-443e-aee2-5f4cd8ae7b63', title: 'Unlocking $47M in Annual Savings', deck: 'Operational Excellence' },
+  { id: 'c0430eb2-8454-40d5-b0ed-e9e3fd3f9db5', title: 'Four Forces Driving $23M Exposure', deck: 'Operational Excellence' },
+  { id: '96b7715d-9f8b-4fcf-afeb-9482a5fd3c3b', title: 'Unified Knowledge Graph Layer', deck: 'Digital Transformation' },
+  { id: '6e17c6c7-9c18-454c-863f-b2b63218c636', title: 'Three-Market Entry at $18M', deck: 'Market Entry' },
+  { id: 'ad1f92f5-731a-41d6-9911-1960dc5f49a0', title: 'Three Pillars, $47M in Savings', deck: 'Operational Excellence' },
+  { id: '6a53fbbd-b54a-4288-a4e6-ef4b060d93eb', title: 'Four Agents, One Governance Framework', deck: 'Digital Transformation' },
 ];
 
 // ── Landing Page ─────────────────────────────────────────────
@@ -100,7 +78,6 @@ export function LandingPage() {
   const { t } = useTranslation();
   const SOCIAL_PROOF_MIN = { totalPresentations: 2847, totalUsers: 1203, totalSlides: 34520 };
   const [stats, setStats] = useState(SOCIAL_PROOF_MIN);
-  const [gallery, setGallery] = useState<GalleryPresentation[]>([]);
 
   useEffect(() => {
     fetch('/gallery/stats')
@@ -112,15 +89,25 @@ export function LandingPage() {
       }))
       .catch(() => {});
 
-    fetch('/gallery/presentations?limit=6')
-      .then((r) => r.json())
-      .then((d) => setGallery(d.items ?? []))
-      .catch(() => {});
+
   }, []);
 
   const presentations = useCountUp(stats.totalPresentations);
   const users = useCountUp(stats.totalUsers);
   const slides = useCountUp(stats.totalSlides);
+
+  // ── Showcase auto-advance carousel ──
+  const [activeSlide, setActiveSlide] = useState(0);
+  const isPaused = useRef(false);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      if (!isPaused.current) {
+        setActiveSlide((prev) => (prev + 1) % SHOWCASE_SLIDES.length);
+      }
+    }, 4000);
+    return () => clearInterval(timer);
+  }, []);
 
   const features = [
     {
@@ -427,43 +414,6 @@ export function LandingPage() {
         </div>
       </section>
 
-      {/* ── Public Gallery ───────────────────────────── */}
-      <section id="gallery" className="py-24">
-        <div className="mx-auto max-w-6xl px-6">
-          <div className="mb-10 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h2 className="mb-1 text-3xl font-bold text-foreground">{t('landing.gallery.title')}</h2>
-              <p className="text-muted-foreground">{t('landing.gallery.subtitle')}</p>
-            </div>
-            {gallery.length > 0 && (
-              <Link
-                to="/gallery"
-                className="flex items-center gap-1 text-sm font-medium text-orange-400 transition-colors hover:text-orange-300"
-              >
-                {t('landing.gallery.view_all')}
-                <ArrowRight className="h-3.5 w-3.5" />
-              </Link>
-            )}
-          </div>
-
-          {gallery.length > 0 ? (
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {gallery.map((p) => (
-                <GalleryCard key={p.id} presentation={p} />
-              ))}
-            </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-border py-20">
-              <PeachLogo className="mb-4 h-12 w-12 opacity-30" />
-              <p className="mb-2 text-lg font-medium text-muted-foreground">{t('landing.gallery.empty_title')}</p>
-              <p className="text-sm text-muted-foreground">
-                {t('landing.gallery.empty_subtitle')}
-              </p>
-            </div>
-          )}
-        </div>
-      </section>
-
       {/* ── CTA — gradient glow from bottom ───────────────────── */}
       <section className="relative overflow-hidden py-24">
         <div className="absolute inset-0 bg-[#0a0a0a]" />
@@ -486,65 +436,68 @@ export function LandingPage() {
       </section>
 
 
-      {/* ── McKinsey Showcase ────────────────────────────── */}
+      {/* ── Slide Showroom ──────────────────────────────── */}
       <section className="relative overflow-hidden py-24 sm:py-32">
         <div className="absolute inset-0 bg-[#0a0a0a]" />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_100%,rgba(249,115,22,0.15),transparent)]" />
 
-        <div className="relative mx-auto max-w-6xl px-6">
-          <div className="mb-16 text-center">
+        <div className="relative mx-auto max-w-5xl px-6">
+          <div className="mb-10 text-center">
             <h2 className="mb-3 text-3xl font-bold text-white sm:text-4xl">
               Built for high-stakes presentations
             </h2>
             <p className="mx-auto max-w-xl text-[#a1a1a1]">
-              McKinsey-quality decks generated in under 2 minutes — with AI imagery, action titles, and structured frameworks.
+              McKinsey-quality decks with AI imagery, action titles, and structured frameworks.
             </p>
           </div>
 
-          <div className="space-y-20">
-            {SHOWCASE_DECKS.map((deck, i) => (
-              <div
-                key={deck.id}
-                className={`flex flex-col items-center gap-10 lg:flex-row ${
-                  i % 2 === 1 ? 'lg:flex-row-reverse' : ''
-                }`}
-              >
-                {/* Slide pair */}
-                <div className="flex w-full gap-3 lg:w-3/5">
-                  {deck.slides.map((slide) => (
-                    <div
-                      key={slide.id}
-                      className="flex-1 overflow-hidden rounded-lg border border-white/10 shadow-xl shadow-black/40"
-                    >
-                      <img
-                        src={`/slides/${slide.id}/preview`}
-                        alt={slide.label}
-                        className="h-full w-full object-cover"
-                        style={{ aspectRatio: '16/9' }}
-                        loading="lazy"
-                      />
-                    </div>
-                  ))}
-                </div>
+          {/* Main slide viewer */}
+          <div
+            className="group relative overflow-hidden rounded-xl border border-white/10 bg-black shadow-2xl shadow-orange-500/5"
+            style={{ aspectRatio: '16/9' }}
+            onMouseEnter={() => { isPaused.current = true; }}
+            onMouseLeave={() => { isPaused.current = false; }}
+          >
+            <img
+              key={SHOWCASE_SLIDES[activeSlide].id}
+              src={`/slides/${SHOWCASE_SLIDES[activeSlide].id}/preview`}
+              alt={SHOWCASE_SLIDES[activeSlide].title}
+              className="h-full w-full object-contain"
+              style={{ animation: 'fadeSlideIn 0.4s ease-out' }}
+            />
+            {/* Overlay info */}
+            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent px-6 pb-5 pt-12">
+              <span className="mb-1 inline-block rounded-full bg-orange-500/20 px-2.5 py-0.5 text-xs font-semibold text-orange-400">
+                {SHOWCASE_SLIDES[activeSlide].deck}
+              </span>
+              <p className="text-sm font-medium text-white/90">{SHOWCASE_SLIDES[activeSlide].title}</p>
+            </div>
+            {/* Slide counter */}
+            <div className="absolute right-3 top-3 rounded-full bg-black/60 px-3 py-1 text-xs text-white/70">
+              {activeSlide + 1} / {SHOWCASE_SLIDES.length}
+            </div>
+          </div>
 
-                {/* Text */}
-                <div className="w-full lg:w-2/5">
-                  <span className="mb-3 inline-block rounded-full bg-orange-500/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-orange-400">
-                    {deck.category}
-                  </span>
-                  <h3 className="mb-2 text-xl font-bold text-white sm:text-2xl">
-                    {deck.title}
-                  </h3>
-                  <p className="mb-4 text-[#a1a1a1]">{deck.description}</p>
-                  <a
-                    href={`/gallery/${deck.id}`}
-                    className="inline-flex items-center gap-1 text-sm font-medium text-orange-400 transition-colors hover:text-orange-300"
-                  >
-                    View full deck
-                    <ArrowRight className="h-3.5 w-3.5" />
-                  </a>
-                </div>
-              </div>
+          {/* Thumbnail strip */}
+          <div className="mt-4 flex justify-center gap-2 overflow-x-auto pb-1">
+            {SHOWCASE_SLIDES.map((slide, i) => (
+              <button
+                key={slide.id}
+                onClick={() => setActiveSlide(i)}
+                className={`flex-shrink-0 overflow-hidden rounded border transition-all ${
+                  i === activeSlide
+                    ? 'border-orange-500 ring-1 ring-orange-500/30'
+                    : 'border-white/10 opacity-40 hover:opacity-70'
+                }`}
+                style={{ width: 80, aspectRatio: '16/9' }}
+              >
+                <img
+                  src={`/slides/${slide.id}/preview`}
+                  alt={slide.title}
+                  className="h-full w-full object-contain bg-black"
+                  loading="lazy"
+                />
+              </button>
             ))}
           </div>
         </div>
