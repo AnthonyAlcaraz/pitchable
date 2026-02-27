@@ -58,18 +58,35 @@ function useCountUp(target: number, duration = 2000) {
 }
 
 
-// ── Showcase Slides (only slides with AI images) ──────────────────────
+// ── Showcase Slides (8 themes, interleaved white/dark) ─────────────────
 const SHOWCASE_SLIDES = [
-  { id: 'a6622e87-7cc0-4aef-9440-6b4425b3245b', title: 'Enterprise AI Adoption Roadmap', deck: 'Digital Transformation' },
-  { id: '4526da7d-b87a-4e1b-8a8d-9b651a2bfd7d', title: "Data Quality's $8.2M Silent Tax", deck: 'Digital Transformation' },
-  { id: 'ad8abfac-5e20-490c-be55-00ec7aedc4c0', title: 'Southeast Asia Expansion Strategy', deck: 'Market Entry' },
-  { id: '18cae235-e392-4dc1-b401-5fba378e07af', title: 'Three Forces Narrowing the Window', deck: 'Market Entry' },
-  { id: '6e0af7a6-e119-443e-aee2-5f4cd8ae7b63', title: 'Unlocking $47M in Annual Savings', deck: 'Operational Excellence' },
-  { id: 'c0430eb2-8454-40d5-b0ed-e9e3fd3f9db5', title: 'Four Forces Driving $23M Exposure', deck: 'Operational Excellence' },
-  { id: '96b7715d-9f8b-4fcf-afeb-9482a5fd3c3b', title: 'Unified Knowledge Graph Layer', deck: 'Digital Transformation' },
-  { id: '6e17c6c7-9c18-454c-863f-b2b63218c636', title: 'Three-Market Entry at $18M', deck: 'Market Entry' },
-  { id: 'ad1f92f5-731a-41d6-9911-1960dc5f49a0', title: 'Three Pillars, $47M in Savings', deck: 'Operational Excellence' },
-  { id: '6a53fbbd-b54a-4288-a4e6-ef4b060d93eb', title: 'Four Agents, One Governance Framework', deck: 'Digital Transformation' },
+  // McKinsey Executive (white bg, navy/blue, Georgia serif)
+  { id: '5797312e-b95a-4a56-acf0-d819f0cc7e72', title: 'Enterprise AI Adoption Roadmap', deck: 'McKinsey Executive' },
+  { id: '0c3c8087-02b3-4a48-94f2-779233400218', title: 'Three barriers prevent scaling AI', deck: 'McKinsey Executive' },
+  // Pitchable Dark (deep slate, blue/cyan accents)
+  { id: '13b31193-02dd-4e66-a187-52fe8eeccf01', title: 'The Enterprise Intelligence Layer', deck: 'Pitchable Dark' },
+  { id: 'e4a0b577-ccef-47a8-bd27-a7af4f790c68', title: 'More Agents, More Chaos', deck: 'Pitchable Dark' },
+  // BCG Strategy (light gray bg, emerald green)
+  { id: '6752d041-fef0-4b15-bda7-b94710f105b8', title: 'Digital Health Portfolio Strategy', deck: 'BCG Strategy' },
+  { id: '79bac4a4-72b6-43fc-a4b6-ad936300d13e', title: 'Digital health reached $330B', deck: 'BCG Strategy' },
+  // Apple Keynote (black bg, white text, blue accents)
+  { id: '3b97335a-db2c-45bd-9e52-2ce94a641a8f', title: 'Winning the Nordic AI Boom', deck: 'Apple Keynote' },
+  { id: 'e974273e-4ca7-448e-8dd1-debd44bfb515', title: 'Execution failures cost $88M', deck: 'Apple Keynote' },
+  // Sequoia Capital (white bg, forest green)
+  { id: '94fb540e-13c7-4668-a233-8a4c3bba97e1', title: 'Enterprise Code Intelligence', deck: 'Sequoia Capital' },
+  { id: '07a65ef9-c150-46e7-b778-b398ed9ac58c', title: 'Three-Graph Architecture', deck: 'Sequoia Capital' },
+  // Stripe Fintech (dark purple-black, purple accents)
+  { id: '26d3e5aa-3b96-4d45-81dd-96543bd8fb47', title: 'Global Fintech Expansion', deck: 'Stripe Fintech' },
+  { id: '774ba974-df99-45d3-9159-c24176cebc9e', title: 'Three Pillars to $640M Revenue', deck: 'Stripe Fintech' },
+  // Airbnb Storytelling (white bg, warm coral)
+  { id: '4aed3aa9-eb43-4ac6-9d76-9d3ee2778470', title: 'Future of Remote Work Culture', deck: 'Airbnb Storytelling' },
+  { id: '359f09be-80ef-48ef-9a35-fb864cc503fd', title: 'Growth without community is fragmentation', deck: 'Airbnb Storytelling' },
+  // YC Startup (white bg, orange accents)
+  { id: 'fc99770c-a1dc-4754-b9ac-5c14326c33d7', title: 'AI-Powered Customer Analytics', deck: 'YC Startup' },
+  { id: '271fcf8d-20e2-4d59-a267-475a78af0704', title: '15-20% CLV uplift in two quarters', deck: 'YC Startup' },
+  // Back to McKinsey
+  { id: '1c7525b0-c0f8-4735-a6c3-781043886ac3', title: 'Unified orchestration layer', deck: 'McKinsey Executive' },
+  { id: 'a496b034-ce4b-4a6f-a5bf-20ba60009ba5', title: 'Four-phase orchestration path', deck: 'McKinsey Executive' },
 ];
 
 // ── Landing Page ─────────────────────────────────────────────
@@ -447,7 +464,7 @@ export function LandingPage() {
               Built for high-stakes presentations
             </h2>
             <p className="mx-auto max-w-xl text-[#a1a1a1]">
-              McKinsey-quality decks with AI imagery, action titles, and structured frameworks.
+              8 professional themes from McKinsey to YC — each with AI imagery, action titles, and consulting frameworks.
             </p>
           </div>
 
