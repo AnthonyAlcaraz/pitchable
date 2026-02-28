@@ -1220,7 +1220,8 @@ export class ExportsService {
     const paddedNum = String(slideNumber).padStart(3, '0');
 
     // Serve from bundled public/showcase/ files (included in Docker image)
-    const publicPath = join(__dirname, '..', '..', 'public', 'showcase', themeSlug, `${paddedNum}.jpeg`);
+    // __dirname = dist/src/exports/ → go up 3 levels to apps/api/
+    const publicPath = join(__dirname, '..', '..', '..', 'public', 'showcase', themeSlug, `${paddedNum}.jpeg`);
     try {
       const buffer = await readFile(publicPath);
       return { buffer };
