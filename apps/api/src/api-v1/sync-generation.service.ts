@@ -532,7 +532,7 @@ export class SyncGenerationService {
         where: { presentationId: presentation.id },
         orderBy: { slideNumber: 'asc' },
       });
-      const marpMd = this.marpExporter.generateMarpMarkdown(presentation, finalSlides, theme!);
+      const marpMd = this.marpExporter.generateMarpMarkdown(presentation, finalSlides, theme!, undefined, undefined, undefined, undefined, pitchLens?.accentColorDiversity);
 
       const [qualitySettled, criticSettled] = await Promise.allSettled([
         this.qualityAgents.reviewPresentation(syncSlidesForReview, {

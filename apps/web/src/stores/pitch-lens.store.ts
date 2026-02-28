@@ -24,6 +24,7 @@ export interface PitchLensListItem {
   presentationCount: number;
   backgroundImageFrequency: number;
   sidePanelImageFrequency: number;
+  accentColorDiversity: boolean;
   framework?: FrameworkSummary;
   createdAt: string;
   updatedAt: string;
@@ -63,6 +64,7 @@ export interface CreatePitchLensInput {
   selectedFramework: string;
   customGuidance?: string;
   showSectionLabels?: boolean;
+  accentColorDiversity?: boolean;
   showOutlineSlide?: boolean;
   isDefault?: boolean;
   figmaFileKey?: string;

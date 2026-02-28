@@ -92,6 +92,7 @@ export function PitchLensWizardPage() {
     customGuidance: '',
     showSectionLabels: false,
     showOutlineSlide: false,
+    accentColorDiversity: true,
     figmaFileKey: '',
     figmaAccessToken: '',
     figmaTemplateId: undefined as string | undefined,
@@ -124,6 +125,7 @@ export function PitchLensWizardPage() {
         customGuidance: currentLens.customGuidance ?? '',
         showSectionLabels: (currentLens as unknown as Record<string, unknown>).showSectionLabels as boolean ?? false,
         showOutlineSlide: (currentLens as unknown as Record<string, unknown>).showOutlineSlide as boolean ?? false,
+        accentColorDiversity: (currentLens as unknown as Record<string, unknown>).accentColorDiversity as boolean ?? true,
         figmaFileKey: (currentLens as unknown as Record<string, unknown>).figmaFileKey as string ?? '',
         figmaAccessToken: (currentLens as unknown as Record<string, unknown>).figmaAccessToken as string ? '********' : '',
         backgroundImageFrequency: (currentLens as unknown as Record<string, unknown>).backgroundImageFrequency as number ?? 0,
@@ -617,6 +619,30 @@ export function PitchLensWizardPage() {
                 <p className="text-xs text-muted-foreground">{t('pitch_lenses.wizard.outline_slide_desc')}</p>
               </div>
             </div>
+
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                role="switch"
+                aria-checked={form.accentColorDiversity}
+                onClick={() => setForm({ ...form, accentColorDiversity: !form.accentColorDiversity })}
+                className={cn(
+                  'relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2',
+                  form.accentColorDiversity ? 'bg-primary' : 'bg-muted',
+                )}
+              >
+                <span
+                  className={cn(
+                    'pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition-transform',
+                    form.accentColorDiversity ? 'translate-x-5' : 'translate-x-0',
+                  )}
+                />
+              </button>
+              <div>
+                <label className="text-sm font-medium text-foreground">Accent Color Diversity</label>
+                <p className="text-xs text-muted-foreground">Vary accent colors across slide elements for visual variety</p>
+              </div>
+            </div>
           </div>
         )}
 
@@ -673,6 +699,11 @@ export function PitchLensWizardPage() {
             <div className="border-t border-border pt-3">
               <p className="text-xs text-muted-foreground">{t('pitch_lenses.wizard.review_outline_slide')}</p>
               <p className="text-sm font-medium text-foreground">{form.showOutlineSlide ? t('common.enabled') : t('common.disabled')}</p>
+            </div>
+
+            <div className="border-t border-border pt-3">
+              <p className="text-xs text-muted-foreground">Accent Color Diversity</p>
+              <p className="text-sm font-medium text-foreground">{form.accentColorDiversity ? t('common.enabled') : t('common.disabled')}</p>
             </div>
 
             <div className="border-t border-border pt-3">

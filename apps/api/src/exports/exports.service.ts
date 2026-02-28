@@ -291,6 +291,7 @@ export class ExportsService {
       let pitchGoal: string | null = null;
       let toneStyle: string | null = null;
       let deckArchetype: string | null = null;
+      let accentColorDiversity: boolean | undefined;
 
       if (presentation.pitchLensId) {
         const lens = await this.prisma.pitchLens.findUnique({
@@ -301,6 +302,7 @@ export class ExportsService {
             pitchGoal: true,
             toneStyle: true,
             deckArchetype: true,
+            accentColorDiversity: true,
           },
         });
         figmaTemplateId = lens?.figmaTemplateId ?? null;
@@ -308,6 +310,7 @@ export class ExportsService {
         pitchGoal = lens?.pitchGoal ?? null;
         toneStyle = lens?.toneStyle ?? null;
         deckArchetype = lens?.deckArchetype ?? null;
+        accentColorDiversity = lens?.accentColorDiversity ?? undefined;
       }
 
       // Auto-select render engine and layout profile
@@ -377,6 +380,7 @@ export class ExportsService {
             rendererOverrides,
             figmaBackgrounds,
             figmaContrastOverrides,
+            accentColorDiversity,
           );
           await this.marpExporter.exportToPptx(pptxMarkdown, pptxPath);
           await this.cleanupSlideImages(pptxDir);
@@ -422,6 +426,7 @@ export class ExportsService {
             rendererOverrides,
             figmaBackgrounds,
             figmaContrastOverrides,
+            accentColorDiversity,
           );
           await this.marpExporter.exportToPdf(markdown, outputPath);
           await this.cleanupSlideImages(jobDir);
@@ -484,7 +489,7 @@ export class ExportsService {
       );
 
       // Generate and persist per-slide preview images (best-effort, non-blocking)
-      this.generateSlidePreviewImages(presentation, slides, theme, layoutProfile, rendererOverrides, figmaBackgrounds)
+      this.generateSlidePreviewImages(presentation, slides, theme, layoutProfile, rendererOverrides, figmaBackgrounds, accentColorDiversity)
         .catch((err: unknown) => {
           const msg = err instanceof Error ? err.message : String(err);
           this.logger.warn(`Preview generation failed for ${presentation.id}: ${msg}`);
@@ -557,6 +562,7 @@ export class ExportsService {
     let pitchGoal: string | null = null;
     let toneStyle: string | null = null;
     let deckArchetype: string | null = null;
+    let accentColorDiversity: boolean | undefined;
 
     if (presentation.pitchLensId) {
       const lens = await this.prisma.pitchLens.findUnique({
@@ -567,6 +573,7 @@ export class ExportsService {
           pitchGoal: true,
           toneStyle: true,
           deckArchetype: true,
+          accentColorDiversity: true,
         },
       });
       figmaTemplateId = lens?.figmaTemplateId ?? null;
@@ -574,6 +581,7 @@ export class ExportsService {
       pitchGoal = lens?.pitchGoal ?? null;
       toneStyle = lens?.toneStyle ?? null;
       deckArchetype = lens?.deckArchetype ?? null;
+      accentColorDiversity = lens?.accentColorDiversity ?? undefined;
     }
 
     // Auto-select render engine
@@ -626,7 +634,7 @@ export class ExportsService {
         const localSlidesPptx2 = await this.downloadSlideImages(slides, pptxDir);
 
         const pptxPath = join(pptxDir, `${safeFilename(presentation.title)}.pptx`);
-        const pptxMd = this.marpExporter.generateMarpMarkdown(presentation, localSlidesPptx2, theme, layoutProfile, rendererOverrides, figmaBackgrounds, figmaContrastOverrides);
+        const pptxMd = this.marpExporter.generateMarpMarkdown(presentation, localSlidesPptx2, theme, layoutProfile, rendererOverrides, figmaBackgrounds, figmaContrastOverrides, accentColorDiversity);
         await this.marpExporter.exportToPptx(pptxMd, pptxPath);
         await this.cleanupSlideImages(pptxDir);
         buffer = await readFile(pptxPath);
@@ -660,7 +668,7 @@ export class ExportsService {
         const localSlides2 = await this.downloadSlideImages(slides, jobDir);
 
         const outputPath = join(jobDir, `${safeFilename(presentation.title)}.pdf`);
-        const markdown = this.marpExporter.generateMarpMarkdown(presentation, localSlides2, theme, layoutProfile, rendererOverrides, figmaBackgrounds, figmaContrastOverrides);
+        const markdown = this.marpExporter.generateMarpMarkdown(presentation, localSlides2, theme, layoutProfile, rendererOverrides, figmaBackgrounds, figmaContrastOverrides, accentColorDiversity);
         await this.marpExporter.exportToPdf(markdown, outputPath);
         await this.cleanupSlideImages(jobDir);
         buffer = await readFile(outputPath);
@@ -1230,16 +1238,18 @@ export class ExportsService {
     let pitchGoal: string | null = null;
     let toneStyle: string | null = null;
     let deckArchetype: string | null = null;
+    let accentColorDiversity: boolean | undefined;
 
     if (presentation.pitchLensId) {
       const lens = await this.prisma.pitchLens.findUnique({
         where: { id: presentation.pitchLensId },
-        select: { audienceType: true, pitchGoal: true, toneStyle: true, deckArchetype: true },
+        select: { audienceType: true, pitchGoal: true, toneStyle: true, deckArchetype: true, accentColorDiversity: true },
       });
       audienceType = lens?.audienceType ?? null;
       pitchGoal = lens?.pitchGoal ?? null;
       toneStyle = lens?.toneStyle ?? null;
       deckArchetype = lens?.deckArchetype ?? null;
+      accentColorDiversity = lens?.accentColorDiversity ?? undefined;
     }
 
     // Match the export pipeline: use theme-aware layout profile + AI renderer chooser
@@ -1265,6 +1275,8 @@ export class ExportsService {
       theme,
       layoutProfile,
       rendererOverrides,
+      undefined,
+      accentColorDiversity,
     );
   }
 
@@ -1333,6 +1345,7 @@ export class ExportsService {
     layoutProfile?: LayoutProfile,
     rendererOverrides?: Map<number, string>,
     figmaBackgrounds?: Map<number, string>,
+    accentColorDiversity?: boolean,
   ): Promise<void> {
     if (!theme) return;
     const tPreview = Date.now();
@@ -1369,6 +1382,8 @@ export class ExportsService {
       layoutProfile,
       rendererOverrides,
       figmaBackgrounds,
+      undefined,
+      accentColorDiversity,
     );
 
     const textOnlyBuffers = await this.marpExporter.renderSlideImages(textOnlyMarkdown);
@@ -1400,6 +1415,8 @@ export class ExportsService {
       layoutProfile,
       rendererOverrides,
       figmaBackgrounds,
+      undefined,
+      accentColorDiversity,
     );
 
     const fullBuffers = await this.marpExporter.renderSlideImages(fullMarkdown);

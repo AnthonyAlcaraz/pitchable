@@ -122,4 +122,8 @@ export class UpdatePitchLensDto {
   @IsOptional()
   @IsString()
   figmaTemplateId?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  accentColorDiversity?: boolean;
 }

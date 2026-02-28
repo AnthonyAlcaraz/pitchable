@@ -421,6 +421,7 @@ function buildImageOverlay(imageUrl: string, palette: ColorPalette): string {
 export function buildHtmlSlideContent(
   slide: SlideInput,
   palette: ColorPalette,
+  options?: { accentColorDiversity?: boolean },
 ): string {
   // Strip markdown from title at entry point; body is passed raw so
   // builders like parseMarkdownTable() can detect **bold** markers.
@@ -429,36 +430,37 @@ export function buildHtmlSlideContent(
     title: stripMarkdown(slide.title),
     body: slide.body,
   };
+  const accentDiversity = options?.accentColorDiversity !== false;
 
   let html = '';
   switch (cleaned.slideType) {
     case 'MARKET_SIZING':
       html = buildMarketSizing(cleaned, palette, !!cleaned.imageUrl); break;
     case 'TIMELINE':
-      html = buildTimeline(cleaned, palette, !!cleaned.imageUrl); break;
+      html = buildTimeline(cleaned, palette, !!cleaned.imageUrl, accentDiversity); break;
     case 'METRICS_HIGHLIGHT':
     case 'DATA_METRICS':
       html = buildMetricsHighlight(cleaned, palette, !!cleaned.imageUrl); break;
     case 'COMPARISON':
-      html = buildComparison(cleaned, palette, !!cleaned.imageUrl); break;
+      html = buildComparison(cleaned, palette, !!cleaned.imageUrl, accentDiversity); break;
     case 'TEAM':
       html = buildTeam(cleaned, palette, !!cleaned.imageUrl); break;
     case 'FEATURE_GRID':
-      html = buildFeatureGrid(cleaned, palette, !!cleaned.imageUrl); break;
+      html = buildFeatureGrid(cleaned, palette, !!cleaned.imageUrl, accentDiversity); break;
     case 'PROCESS':
-      html = buildProcess(cleaned, palette, !!cleaned.imageUrl); break;
+      html = buildProcess(cleaned, palette, !!cleaned.imageUrl, accentDiversity); break;
     case 'PROBLEM':
-      html = buildProblem(cleaned, palette, !!cleaned.imageUrl); break;
+      html = buildProblem(cleaned, palette, !!cleaned.imageUrl, accentDiversity); break;
     case 'SOLUTION':
-      html = buildSolution(cleaned, palette, !!cleaned.imageUrl); break;
+      html = buildSolution(cleaned, palette, !!cleaned.imageUrl, accentDiversity); break;
     case 'CTA':
       html = buildCta(cleaned, palette, !!cleaned.imageUrl); break;
     case 'CONTENT':
-      html = buildContent(cleaned, palette, !!cleaned.imageUrl); break;
+      html = buildContent(cleaned, palette, !!cleaned.imageUrl, accentDiversity); break;
     case 'QUOTE':
       html = buildQuote(cleaned, palette, !!cleaned.imageUrl); break;
     case 'ARCHITECTURE':
-      html = buildArchitecture(cleaned, palette, !!cleaned.imageUrl); break;
+      html = buildArchitecture(cleaned, palette, !!cleaned.imageUrl, accentDiversity); break;
     default:
       return '';
   }
@@ -637,7 +639,7 @@ function buildMarketSizing(slide: SlideInput, p: ColorPalette, hasImage = false)
 // ── TIMELINE ─────────────────────────────────────────────────
 // Horizontal connector line + circle nodes at computed positions
 
-function buildTimeline(slide: SlideInput, p: ColorPalette, hasImage = false): string {
+function buildTimeline(slide: SlideInput, p: ColorPalette, hasImage = false, accentDiversity = true): string {
   const cW = hasImage ? CONTENT_W_IMG : W;
   const rawLines = parseBodyLines(slide.body);
   const expanded = splitProseToItems(rawLines, 3)
@@ -670,7 +672,7 @@ function buildTimeline(slide: SlideInput, p: ColorPalette, hasImage = false): st
     const zigSpacing = (zigEndX - zigStartX) / (count - 1 || 1);
     const zigCardW = Math.min(200, Math.round(zigSpacing - 16));
     const zigCardH = 130;
-    const zigAccents = cardAccentColors(p, colorOffset(slide.title));
+    const zigAccents = cardAccentColors(p, (accentDiversity ? colorOffset(slide.title) : 0));
     let zigHtml = '';
     let zigSvg = '';
 
@@ -738,7 +740,7 @@ function buildTimeline(slide: SlideInput, p: ColorPalette, hasImage = false): st
   const dateFontSz = count <= 3 ? 13 : 11;
   const textFontSz = count <= 3 ? 14 : 12;
 
-  const tlAccents = cardAccentColors(p, colorOffset(slide.title));
+  const tlAccents = cardAccentColors(p, (accentDiversity ? colorOffset(slide.title) : 0));
   let nodesSvg = '';
   let labelHtml = '';
 
@@ -1093,6 +1095,7 @@ function buildComparisonMultiCard(
   slide: SlideInput, p: ColorPalette,
   groups: { title: string; items: string[] }[],
   hasImage: boolean,
+  accentDiversity = true,
 ): string {
   const cW = hasImage ? CONTENT_W_IMG : W;
   const count = Math.min(groups.length, 4);
@@ -1100,7 +1103,7 @@ function buildComparisonMultiCard(
   const cardW = Math.round((cW - PAD * 2 - (count - 1) * gap) / count);
   const cardY = PAD + 80;
   const cardH = H - cardY - PAD;
-  const accents = cardAccentColors(p, colorOffset(slide.title));
+  const accents = cardAccentColors(p, (accentDiversity ? colorOffset(slide.title) : 0));
 
   let cards = '';
   for (let i = 0; i < count; i++) {
@@ -1136,7 +1139,7 @@ function buildComparisonMultiCard(
     '</div>';
 }
 
-function buildComparison(slide: SlideInput, p: ColorPalette, hasImage = false): string {
+function buildComparison(slide: SlideInput, p: ColorPalette, hasImage = false, accentDiversity = true): string {
   // ── McKinsey table path: detect pipe-delimited table in body ──
   const table = parseMarkdownTable(slide.body);
   if (table) {
@@ -1148,7 +1151,7 @@ function buildComparison(slide: SlideInput, p: ColorPalette, hasImage = false): 
   const lines = parseBodyLines(slide.body);
   const multiGroups = detectComparisonGroups(lines);
   if (multiGroups && multiGroups.length >= 3) {
-    return buildComparisonMultiCard(slide, p, multiGroups, hasImage);
+    return buildComparisonMultiCard(slide, p, multiGroups, hasImage, accentDiversity);
   }
 
   // ── Card path: two-column layout with VS badge ──
@@ -1398,7 +1401,7 @@ function buildTeam(slide: SlideInput, p: ColorPalette, hasImage = false): string
 // ── FEATURE_GRID ─────────────────────────────────────────────
 // Auto-column grid with icon placeholder squares
 
-function buildFeatureGrid(slide: SlideInput, p: ColorPalette, hasImage = false): string {
+function buildFeatureGrid(slide: SlideInput, p: ColorPalette, hasImage = false, accentDiversity = true): string {
   const cW = hasImage ? CONTENT_W_IMG : W;
   let lines = parseBodyLines(slide.body);
 
@@ -1449,7 +1452,7 @@ function buildFeatureGrid(slide: SlideInput, p: ColorPalette, hasImage = false):
     const rowH = Math.min(80, Math.round((H - PAD * 2 - 90) / count));
     const rowW = cW - PAD * 2 - 20;
     const rowStartY = PAD + 85;
-    const fgAccV = cardAccentColors(p, colorOffset(slide.title));
+    const fgAccV = cardAccentColors(p, (accentDiversity ? colorOffset(slide.title) : 0));
     let rowHtml = '';
     for (let ri = 0; ri < count; ri++) {
       const ry = rowStartY + ri * (rowH + 8);
@@ -1476,7 +1479,7 @@ function buildFeatureGrid(slide: SlideInput, p: ColorPalette, hasImage = false):
   // Falls through to default grid variant which renders correctly
   if (false && fgVariant === 2 && count >= 3) {
     const dark = isDarkBackground(p.background);
-    const bentoAccents = cardAccentColors(p, colorOffset(slide.title));
+    const bentoAccents = cardAccentColors(p, (accentDiversity ? colorOffset(slide.title) : 0));
     const bentoGap = 16;
     const bentoStartY = PAD + 82;
     const bentoAvailW = cW - PAD * 2;
@@ -1547,7 +1550,7 @@ function buildFeatureGrid(slide: SlideInput, p: ColorPalette, hasImage = false):
   const titleFontSz = cardH >= 220 ? 22 : 20;
   const descFontSz = cardH >= 220 ? 18 : 16;
   const descMaxH = Math.max(20, cardH - 100);
-  const accents = cardAccentColors(p, colorOffset(slide.title));
+  const accents = cardAccentColors(p, (accentDiversity ? colorOffset(slide.title) : 0));
 
   const totalGridW = cols * cardW + (cols - 1) * gapX;
   const gridStartX = Math.round((cW - totalGridW) / 2);
@@ -1582,7 +1585,7 @@ function buildFeatureGrid(slide: SlideInput, p: ColorPalette, hasImage = false):
 // ── PROCESS ─────────────────────────────────────────────────
 // Numbered step cards with connectors
 
-function buildProcess(slide: SlideInput, p: ColorPalette, hasImage = false): string {
+function buildProcess(slide: SlideInput, p: ColorPalette, hasImage = false, accentDiversity = true): string {
   const cW = hasImage ? CONTENT_W_IMG : W;
   const rawLines = parseBodyLines(slide.body);
   const lines = splitProseToItems(rawLines, 3)
@@ -1614,7 +1617,7 @@ function buildProcess(slide: SlideInput, p: ColorPalette, hasImage = false): str
   if (procVariant === 1 && steps.length >= 3 && steps.length <= 6) {
     const vtStartY = PAD + 80;
     const vtStepH = Math.min(90, Math.round((H - vtStartY - PAD) / steps.length));
-    const vtAccents = cardAccentColors(p, colorOffset(slide.title));
+    const vtAccents = cardAccentColors(p, (accentDiversity ? colorOffset(slide.title) : 0));
     const vtLineX = PAD + 40;
     let vtHtml = '';
     // Vertical line
@@ -1648,7 +1651,7 @@ function buildProcess(slide: SlideInput, p: ColorPalette, hasImage = false): str
     const circStartX = PAD + 80;
     const circEndX = (hasImage ? CONTENT_W_IMG : W) - PAD - 80;
     const circSpacing = (circEndX - circStartX) / (circCount - 1 || 1);
-    const circAccents = cardAccentColors(p, colorOffset(slide.title));
+    const circAccents = cardAccentColors(p, (accentDiversity ? colorOffset(slide.title) : 0));
     let circSvg = '';
     let circHtml = '';
 
@@ -1711,7 +1714,7 @@ function buildProcess(slide: SlideInput, p: ColorPalette, hasImage = false): str
   const totalW = cols * cardW + (cols - 1) * gapX;
   const startX = Math.round((cW - totalW) / 2);
 
-  const procAccents = cardAccentColors(p, colorOffset(slide.title));
+  const procAccents = cardAccentColors(p, (accentDiversity ? colorOffset(slide.title) : 0));
   let cardsHtml = '';
   let connectorsSvg = '';
 
@@ -1823,7 +1826,7 @@ function buildProblemTable(slide: SlideInput, p: ColorPalette, table: ParsedTabl
 }
 
 
-function buildProblem(slide: SlideInput, p: ColorPalette, hasImage = false): string {
+function buildProblem(slide: SlideInput, p: ColorPalette, hasImage = false, accentDiversity = true): string {
   const cW = hasImage ? CONTENT_W_IMG : W;
 
   // If body has a pipe table, render as styled table (preserves all content)
@@ -1851,7 +1854,7 @@ function buildProblem(slide: SlideInput, p: ColorPalette, hasImage = false): str
     const colW = Math.round((cW - PAD * 2 - 40) / 2);
     const itemStartY = PAD + 110;
     const itemSpacing = Math.min(130, Math.round((H - itemStartY - PAD) / Math.max(col1.length, col2.length)));
-    const pAccents = cardAccentColors(p, colorOffset(slide.title));
+    const pAccents = cardAccentColors(p, (accentDiversity ? colorOffset(slide.title) : 0));
     let itemsHtml = '';
 
     // Render column items with numbered badges
@@ -1902,7 +1905,7 @@ function buildProblem(slide: SlideInput, p: ColorPalette, hasImage = false): str
   const itemMaxH = itemSpacing - 12;
   const itemFontSz = 20;
 
-  const probAccents = cardAccentColors(p, colorOffset(slide.title));
+  const probAccents = cardAccentColors(p, (accentDiversity ? colorOffset(slide.title) : 0));
   let bodyHtml = '';
 
   // Render lead sentence as a subtitle
@@ -1936,7 +1939,7 @@ function buildProblem(slide: SlideInput, p: ColorPalette, hasImage = false): str
 // ── SOLUTION ────────────────────────────────────────────────
 // Left accent bar + checkmark icon
 
-function buildSolution(slide: SlideInput, p: ColorPalette, hasImage = false): string {
+function buildSolution(slide: SlideInput, p: ColorPalette, hasImage = false, accentDiversity = true): string {
   const cW = hasImage ? CONTENT_W_IMG : W;
   const lines = parseBodyLines(slide.body);
   const barColor = p.success || p.accent;
@@ -1957,7 +1960,7 @@ function buildSolution(slide: SlideInput, p: ColorPalette, hasImage = false): st
     const cascAvailH = H - cascStartY - PAD - 10;
     const cascSpacing = Math.min(76, Math.round(cascAvailH / solutionItems.length));
     const cascFontSz = solutionItems.length > 4 ? 14 : 16;
-    const cascAccents = cardAccentColors(p, colorOffset(slide.title));
+    const cascAccents = cardAccentColors(p, (accentDiversity ? colorOffset(slide.title) : 0));
     let cascHtml = '';
 
     for (let ci = 0; ci < solutionItems.length; ci++) {
@@ -1997,7 +2000,7 @@ function buildSolution(slide: SlideInput, p: ColorPalette, hasImage = false): st
   const solMaxH = solSpacing - 8;
   const solFontSz = solutionItems.length > 4 ? 14 : 16;
 
-  const solAccents = cardAccentColors(p, colorOffset(slide.title));
+  const solAccents = cardAccentColors(p, (accentDiversity ? colorOffset(slide.title) : 0));
   let bodyHtml = '';
   let ty = solStartY;
   for (let si = 0; si < solutionItems.length; si++) {
@@ -2065,7 +2068,7 @@ function buildCta(slide: SlideInput, p: ColorPalette, hasImage = false): string 
 // ── CONTENT ─────────────────────────────────────────────────
 // Left accent bar + card rows for body lines
 
-function buildContent(slide: SlideInput, p: ColorPalette, hasImage = false): string {
+function buildContent(slide: SlideInput, p: ColorPalette, hasImage = false, accentDiversity = true): string {
   const cW = hasImage ? CONTENT_W_IMG : W;
 
   // If body has a pipe table, render as comparison-style table
@@ -2087,7 +2090,7 @@ function buildContent(slide: SlideInput, p: ColorPalette, hasImage = false): str
   const cardW = cW - PAD * 2 - 40;
   const fontSize = cardH >= 70 ? 26 : cardH >= 55 ? 22 : 18;
 
-  const contAccents = cardAccentColors(p, colorOffset(slide.title));
+  const contAccents = cardAccentColors(p, (accentDiversity ? colorOffset(slide.title) : 0));
   let bodyHtml = '';
   let ty = contentStartY;
 
@@ -2143,7 +2146,7 @@ function buildQuote(slide: SlideInput, p: ColorPalette, hasImage = false): strin
 // ── ARCHITECTURE ─────────────────────────────────────────────
 // Horizontal flow diagram: connected box nodes with SVG connectors
 
-function buildArchitecture(slide: SlideInput, p: ColorPalette, hasImage = false): string {
+function buildArchitecture(slide: SlideInput, p: ColorPalette, hasImage = false, accentDiversity = true): string {
   const cW = hasImage ? CONTENT_W_IMG : W;
   const lines = parseBodyLines(slide.body);
   const archCap = titleCountCap(slide.title);
@@ -2158,7 +2161,7 @@ function buildArchitecture(slide: SlideInput, p: ColorPalette, hasImage = false)
 
   const count = nodes.length;
   const dark = isDarkBackground(p.background);
-  const archAccents = cardAccentColors(p, colorOffset(slide.title));
+  const archAccents = cardAccentColors(p, (accentDiversity ? colorOffset(slide.title) : 0));
 
   // Parse nodes into title:desc pairs
   const parsed = nodes.map((n, i) => {

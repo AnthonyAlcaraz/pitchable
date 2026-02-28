@@ -362,6 +362,7 @@ model PitchLens {
   figmaFileKey        String?
   figmaAccessToken    String?
   figmaTemplateId     String?        @db.Uuid
+  accentColorDiversity  Boolean        @default(true)
   clonedFrom          PitchLens?     @relation("PitchLensClone", fields: [clonedFromId], references: [id])
   clones              PitchLens[]    @relation("PitchLensClone")
   figmaTemplate       FigmaTemplate? @relation("PitchLensTemplate", fields: [figmaTemplateId], references: [id])

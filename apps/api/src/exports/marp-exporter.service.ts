@@ -198,6 +198,7 @@ export class MarpExporterService {
     rendererOverrides?: Map<number, string>,
     figmaBackgrounds?: Map<number, string>,
     figmaContrastOverrides?: Map<number, { isDark: boolean; textColor: string }>,
+    accentColorDiversity?: boolean,
   ): string {
     const palette = theme.colorPalette as unknown as ColorPalette;
 
@@ -523,13 +524,13 @@ export class MarpExporterService {
     for (const slide of sortedSlides) {
       const rendererOverride = rendererOverrides?.get(slide.slideNumber);
       const figmaBg = figmaBackgrounds?.get(slide.slideNumber);
-      slideSections.push(this.buildSlideMarkdown(slide, bg, safePrimary, profile, palette, rendererOverride, figmaBg, figmaContrastOverrides?.get(slide.slideNumber), totalSlides));
+      slideSections.push(this.buildSlideMarkdown(slide, bg, safePrimary, profile, palette, rendererOverride, figmaBg, figmaContrastOverrides?.get(slide.slideNumber), totalSlides, accentColorDiversity));
     }
 
     return frontmatter.join('\n') + '\n\n' + slideSections.join('\n\n---\n\n');
   }
 
-  private buildSlideMarkdown(slide: SlideModel, bgColor?: string, primaryColor?: string, profile?: LayoutProfileConfig, palette?: ColorPalette, rendererOverride?: string, figmaBackground?: string, figmaContrast?: { isDark: boolean; textColor: string }, totalSlides?: number): string {
+  private buildSlideMarkdown(slide: SlideModel, bgColor?: string, primaryColor?: string, profile?: LayoutProfileConfig, palette?: ColorPalette, rendererOverride?: string, figmaBackground?: string, figmaContrast?: { isDark: boolean; textColor: string }, totalSlides?: number, accentColorDiversity?: boolean): string {
     const lines: string[] = [];
     const type = slide.slideType;
     const bgVariant = getSlideBackground(type, slide.slideNumber, bgColor);
@@ -572,6 +573,7 @@ export class MarpExporterService {
       let figmaHtml = buildHtmlSlideContent(
         { title: slide.title, body: slide.body || '', slideType: figmaType, imageUrl: slide.imageUrl ?? undefined },
         palette,
+        { accentColorDiversity: accentColorDiversity !== false },
       );
       lines.push(figmaHtml);
       lines.push('');

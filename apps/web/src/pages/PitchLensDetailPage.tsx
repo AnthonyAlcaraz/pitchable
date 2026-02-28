@@ -156,6 +156,15 @@ export function PitchLensDetailPage() {
             </div>
           )}
         </div>
+        <div className="mt-4 border-t border-border pt-3">
+          <p className="text-xs font-medium uppercase text-muted-foreground">Accent Color Diversity</p>
+          <p className="mt-1 text-sm font-semibold text-foreground">
+            {currentLens.accentColorDiversity !== false ? 'Enabled' : 'Disabled'}
+          </p>
+          <p className="text-xs text-muted-foreground">
+            {currentLens.accentColorDiversity !== false ? 'Colors vary across slide elements' : 'Same color order on all slides'}
+          </p>
+        </div>
       </div>
 
       {/* Framework */}
