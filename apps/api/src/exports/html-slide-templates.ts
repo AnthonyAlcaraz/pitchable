@@ -74,10 +74,10 @@ function parseBodyLines(body: string): string[] {
 
 
 function titleFontSize(title: string, maxFontSize = 40): number {
-  if (title.length <= 30) return maxFontSize;
-  if (title.length <= 50) return 34;
-  if (title.length <= 70) return 30;
-  if (title.length <= 90) return 26;
+  if (title.length <= 25) return maxFontSize;
+  if (title.length <= 40) return 34;
+  if (title.length <= 55) return 30;
+  if (title.length <= 75) return 26;
   return 22;
 }
 
@@ -810,12 +810,13 @@ function buildMetricsHighlight(slide: SlideInput, p: ColorPalette, hasImage = fa
     }
   }
 
+  // Truncate hero value to keep font large and centered
+  if (bigValue.length > 20) bigValue = bigValue.substring(0, 20);
   // Auto-scale hero font: short metrics get 80px, long titles scale down
-  const heroFontSize = bigValue.length <= 10 ? 80
-    : bigValue.length <= 25 ? 56
-    : bigValue.length <= 50 ? 38
-    : 28;
-  const heroY = Math.round(H * (heroFontSize >= 56 ? 0.22 : 0.14));
+  const heroFontSize = bigValue.length <= 8 ? 80
+    : bigValue.length <= 15 ? 64
+    : 48;
+  const heroY = Math.round(H * 0.18);
   const supportText = supportLines.join(' ');
 
   // Secondary metrics: look for lines with "value: label" or "value - label" pattern
@@ -849,7 +850,8 @@ function buildMetricsHighlight(slide: SlideInput, p: ColorPalette, hasImage = fa
     }
   }
 
-  const displaySupport = nonMetricLines.length > 0 ? nonMetricLines.join(' ') : (metricLines.length < 2 ? supportText : '');
+  // When secondary metrics are shown, skip support text to prevent stacking
+  const displaySupport = metricLines.length >= 2 ? '' : (nonMetricLines.length > 0 ? nonMetricLines.join(' ') : supportText);
 
   // Center reference: use content width (accounts for image overlay)
   const centerX = Math.round(cW / 2);
@@ -916,7 +918,7 @@ function buildMetricsHighlight(slide: SlideInput, p: ColorPalette, hasImage = fa
 <div style="position:relative;width:${W}px;height:${H}px;background:${p.background};">
   <div style="position:absolute;left:0;top:0;width:${cW}px;height:${H}px;background:radial-gradient(ellipse 800px 600px at ${Math.round(cW / 2)}px 40%,${hexToRgba(p.primary, 0.06)} 0%,transparent 70%)"></div>
   ${circleSvg}
-  <div style="position:absolute;left:${PAD}px;top:${heroY}px;width:${cW - PAD * 2}px;text-align:center;font-size:${heroFontSize}px;font-weight:bold;color:${p.primary};line-height:1.1;z-index:2${isDarkBackground(p.background) ? `;${textGlow(p.primary, 0.4)}` : ''}">${escHtml(bigValue)}</div>
+  <div style="position:absolute;left:0;top:${heroY}px;width:${cW}px;text-align:center;font-size:${heroFontSize}px;font-weight:bold;color:${p.primary};line-height:1.1;z-index:2${isDarkBackground(p.background) ? `;${textGlow(p.primary, 0.4)}` : ''}">${escHtml(bigValue)}</div>
   ${showLabel ? `<div style="position:absolute;left:${PAD + 60}px;top:${labelY}px;width:${labelW}px;text-align:center;font-size:${labelFontSize}px;font-weight:bold;color:${p.text};line-height:1.3;overflow:hidden;max-height:${labelH}px">${escHtml(labelText)}</div>` : ''}
   <div style="position:absolute;left:${Math.round((cW - 80) / 2)}px;top:${accentY}px;width:80px;height:3px;background:${p.accent};border-radius:2px"></div>
   ${displaySupport && maxSupportH > 30 ? `<div style="position:absolute;left:${PAD + 60}px;top:${supportY}px;width:${cW - PAD * 2 - 120}px;text-align:center;font-size:16px;line-height:1.5;color:${p.text};opacity:0.75;overflow:hidden;max-height:${maxSupportH}px">${escHtml(displaySupport)}</div>` : ''}
