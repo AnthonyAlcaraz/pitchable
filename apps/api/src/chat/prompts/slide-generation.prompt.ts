@@ -324,6 +324,135 @@ The second-hand consumer experience lacks entertainment, social connection, and 
 </div>
 </div>"
 
+MATRIX_2X2: X-axis label, Y-axis label, then 4 quadrant entries (TopRight, TopLeft, BottomRight, BottomLeft). Each quadrant: Name — description. Plain text, rendered as 2x2 grid automatically.
+  Example body:
+  "X-Axis: Speed of Implementation
+Y-Axis: Business Impact
+Quick Wins: High impact, fast implementation — automation, self-service
+Strategic Bets: High impact, slow implementation — platform rebuild, AI
+Low Hanging Fruit: Low impact, fast — minor optimizations
+Avoid: Low impact, slow — legacy maintenance"
+
+WATERFALL: Starting value, then positive/negative changes, ending value. Format: Label: +$X or -$X. Plain text, rendered as waterfall chart automatically.
+  Example body:
+  "Starting Revenue: $12M
+New Business: +$4.2M
+Expansion: +$2.8M
+Contraction: -$1.1M
+Churn: -$2.4M
+Ending Revenue: $15.5M"
+
+FUNNEL: Stage name: count (percentage). Decreasing stages from top to bottom. Plain text, rendered as funnel visualization automatically.
+  Example body:
+  "Website Visitors: 100,000 (100%)
+Sign-ups: 12,000 (12%)
+Activated Users: 4,800 (4.8%)
+Paying Customers: 960 (0.96%)
+Enterprise Deals: 48 (0.048%)"
+
+COMPETITIVE_MATRIX: Markdown table with competitors as columns and features as rows. Use checkmarks and crosses. Title frames the competitive advantage.
+  Example body:
+  "| Feature | Us | Competitor A | Competitor B | Competitor C |
+|---|---|---|---|---|
+| AI Generation | ✓ | ✗ | ✓ | ✗ |
+| Real-time Collab | ✓ | ✓ | ✗ | ✗ |
+| Custom Themes | ✓ | ✗ | ✗ | ✓ |
+| API Access | ✓ | ✓ | ✓ | ✗ |"
+
+ROADMAP: Three planning lanes: Now, Next, Later. Each lane has 2-4 comma-separated items. Plain text, rendered as horizontal lanes automatically.
+  Example body:
+  "Now: Core platform stability, API v2 launch, Enterprise SSO
+Next: AI copilot beta, International expansion, Partner marketplace
+Later: Autonomous generation, Industry-specific templates, White-label offering"
+
+PRICING_TABLE: Tier name: price, then feature bullets indented with -. Mark one tier as (Recommended). Plain text, rendered as pricing cards automatically.
+  Example body:
+  "Starter: $0/mo
+- 5 presentations/month
+- Basic themes
+- PDF export
+Pro: $29/mo (Recommended)
+- Unlimited presentations
+- All 16 premium themes
+- PDF + PPTX export
+- AI image generation
+Enterprise: Custom
+- Everything in Pro
+- Custom branding
+- SSO & SAML
+- Dedicated support"
+
+UNIT_ECONOMICS: Hero metric as first line (e.g. LTV:CAC = 4.2x), then supporting KPIs as Label: value separated by |. Plain text, rendered with oversized hero metric automatically.
+  Example body:
+  "LTV:CAC = 4.2x
+CAC: $340 | LTV: $1,428 | Payback: 4.2 months | Gross Margin: 82% | Net Revenue Retention: 124%"
+
+SWOT: Four labeled sections: Strengths, Weaknesses, Opportunities, Threats. Each has 2-3 comma-separated items. Plain text, rendered as 4-quadrant grid automatically.
+  Example body:
+  "Strengths: Strong AI capabilities, 16 premium themes, Fast generation speed
+Weaknesses: Limited offline support, No mobile app, Small team
+Opportunities: Enterprise market expansion, API partnerships, International growth
+Threats: Big tech competition, AI commoditization, Economic slowdown"
+
+THREE_PILLARS: Three items, one per line. Format: Title: description sentence. Plain text, rendered as tall equal-width columns automatically. End with ### takeaway.
+  Example body:
+  "Speed: Generate complete decks in under 60 seconds with AI-powered content and design
+Quality: Figma-grade templates with 16 premium themes rivaling professional design agencies
+Intelligence: Context-aware AI adapts content density, tone, and visuals to your audience
+
+### Three pillars that compound into an unfair advantage"
+
+HOOK: Single dramatic statement or question. Oversized typography, no bullets, no table, no sources. Body is the hook text only. imagePromptHint optional.
+  Example body:
+  "What if every presentation you made looked like it was designed by McKinsey?"
+
+BEFORE_AFTER: Two labeled sections: Before and After. Each has 3-4 comma-separated items. Plain text, rendered as side-by-side comparison automatically.
+  Example body:
+  "Before: 4-6 hours per deck, inconsistent branding, generic templates, manual formatting
+After: 60-second generation, pixel-perfect themes, AI-adapted content, one-click export"
+
+SOCIAL_PROOF: Hero rating as first line, then trust badges/press mentions, then customer count or notable names. Plain text, rendered with large rating and badge grid automatically.
+  Example body:
+  "4.9/5 average rating from 2,400+ users
+Featured in TechCrunch, Product Hunt #1, Forbes 30 Under 30
+Trusted by teams at Stripe, Notion, Linear, Vercel"
+
+OBJECTION_HANDLER: Objection in quotes as first line, then data-driven rebuttal as second paragraph. Bold on key evidence.
+  Example body:
+  "\"AI-generated slides all look the same\"
+Our 16 Figma-grade themes produce slides indistinguishable from agency work. In blind tests, **78%** of executives preferred Pitchable output over manually designed decks."
+
+FAQ: Q/A pairs. Format: Q: question
+A: answer. 2-4 pairs. Plain text, rendered as card pairs automatically.
+  Example body:
+  "Q: Can I customize the AI-generated content?
+A: Yes — every slide is fully editable after generation with real-time preview
+Q: What export formats are supported?
+A: PDF, PPTX, Google Slides, and Reveal.js for web presentations
+Q: Is my data secure?
+A: SOC 2 Type II certified with end-to-end encryption"
+
+VERDICT: Judgment keyword (Approve/Reject/Hold) + colon + recommendation as first line. Supporting rationale as second paragraph. Bold on key metrics.
+  Example body:
+  "Approve: Proceed with Platform Migration
+The analysis confirms **340bps** margin improvement potential with **18-month** payback period. Risk-adjusted NPV of **$2.1B** exceeds threshold by 3.2x."
+
+COHORT_TABLE: Markdown table with cohort months as rows and retention periods as columns. Include percentage values. Color intensity is handled by renderer.
+  Example body:
+  "| Cohort | Month 1 | Month 2 | Month 3 | Month 6 | Month 12 |
+|---|---|---|---|---|---|
+| Jan 2025 | 100% | 72% | 61% | 48% | 34% |
+| Feb 2025 | 100% | 75% | 64% | 51% | — |
+| Mar 2025 | 100% | 78% | 68% | — | — |"
+
+PROGRESS_TRACKER: One metric per line. Format: Label: percentage%. 3-6 items. Plain text, rendered as horizontal progress bars automatically.
+  Example body:
+  "Platform Migration: 85%
+Data Integration: 62%
+User Training: 40%
+Security Audit: 95%
+Documentation: 55%"
+
 PRESENTATION TYPE: ${presentationType}
 ${themeBlock}
 ${mcKinseyBlock}
