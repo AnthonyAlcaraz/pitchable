@@ -2,8 +2,11 @@
 /**
  * Generate showcase slide JPEGs for all 16 themes and upload to S3.
  *
- * For each theme: generates 8 slides (diverse types), renders via Marp CLI,
+ * For each theme: generates 12 slides (diverse types), renders via Marp CLI,
  * uploads JPEGs to S3, and writes a JSON manifest.
+ *
+ * Content sets: A (Tech/SaaS), B (Strategy/Consulting), C (Creative/Consumer), D (Innovation/Research)
+ * Each theme is assigned a content set for industry-appropriate variety.
  *
  * Usage:
  *   node scripts/generate-showcase.mjs
@@ -234,124 +237,386 @@ const THEMES = [
   },
 ];
 
-// ── Stock Images ───────────────────────────────────────────────
+// ── Content Set Assignment per Theme ─────────────────────────────
+
+const THEME_CONTENT_SET = {
+  'pitchable-dark': 'A',
+  'technical-teal': 'A',
+  'stripe-fintech': 'A',
+  'z4-dark-premium': 'A',
+  'mckinsey-executive': 'B',
+  'bcg-strategy': 'B',
+  'sequoia-capital': 'B',
+  'corporate-blue': 'B',
+  'creative-warm': 'C',
+  'airbnb-story': 'C',
+  'ted-talk': 'C',
+  'apple-keynote': 'C',
+  'dark-professional': 'D',
+  'light-minimal': 'D',
+  'yc-startup': 'D',
+  'academic-research': 'D',
+};
+
+// ── Stock Images (8) ────────────────────────────────────────────
 
 const UNSPLASH_URLS = [
-  'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=800&q=80',
-  'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&q=80',
-  'https://images.unsplash.com/photo-1518770660439-4636190af475?w=800&q=80',
-  'https://images.unsplash.com/photo-1551434678-e076c223a692?w=800&q=80',
-  'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=800&q=80',
-  'https://images.unsplash.com/photo-1559136555-9303baea8ebd?w=800&q=80',
+  'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=800&q=80',   // 0: globe/tech
+  'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&q=80',   // 1: dashboard/analytics
+  'https://images.unsplash.com/photo-1518770660439-4636190af475?w=800&q=80',   // 2: circuit board
+  'https://images.unsplash.com/photo-1551434678-e076c223a692?w=800&q=80',      // 3: team office
+  'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=800&q=80',   // 4: workspace
+  'https://images.unsplash.com/photo-1559136555-9303baea8ebd?w=800&q=80',      // 5: abstract blue
+  'https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&q=80',   // 6: modern office
+  'https://images.unsplash.com/photo-1535378917042-10a22c95931a?w=800&q=80',   // 7: data visualization
 ];
+
+// ── Content Set Definitions ──────────────────────────────────────
+
+/**
+ * Content Set A - Tech/SaaS: Developer tools / platform engineering
+ */
+const CONTENT_A = {
+  PROBLEM: {
+    title: 'The Developer Productivity Crisis',
+    body: '1. Engineering teams waste 37% of time on manual deployments and configuration management\n2. Production incidents cost an average of $14,000 per minute with mean resolution time of 47 minutes\n3. Cloud infrastructure spend grows 40% annually while utilization remains below 35%\n4. Developer onboarding takes 3-4 months due to fragmented toolchains and tribal knowledge',
+  },
+  METRICS_HIGHLIGHT: {
+    title: '99.97% Platform Uptime',
+    body: '99.97%: Platform Uptime\n$4.2M: Annual Cost Savings\n340%: Developer Productivity Gain\n< 50ms: Average API Response Time',
+  },
+  COMPARISON: {
+    title: 'Legacy DevOps vs Platform Engineering',
+    body: 'Legacy DevOps vs Platform Engineering\n\nLegacy DevOps:\n- Manual CI/CD pipelines requiring 40+ hours weekly maintenance\n- Error rates averaging 12% per deployment cycle\n- Limited visibility into infrastructure costs and performance\n\nPlatform Engineering:\n- Automated golden paths completing deployments in minutes\n- 99.7% deployment success rate with AI validation\n- Real-time cost dashboards and performance alerts',
+  },
+  TIMELINE: {
+    title: 'Product Roadmap 2025',
+    body: 'Q1 2025: Foundation Phase - Core platform launch with CI/CD orchestration and beta testing\nQ2 2025: Scale Phase - Enterprise SSO, API marketplace, and SOC 2 Type II certification\nQ3 2025: Expansion Phase - International regions, partner integrations, and Series A\nQ4 2025: Acceleration Phase - AI copilot for deployments and advanced cost analytics',
+  },
+  FEATURE_GRID: {
+    title: 'Developer Platform Capabilities',
+    body: 'Intelligent Automation: Reduce manual deployment tasks by 80% with AI-powered workflow engines\nReal-Time Analytics: Monitor KPIs with sub-second dashboards and predictive performance alerts\nEnterprise Security: SOC2 Type II certified with end-to-end encryption and audit logging\nSeamless Integration: Connect 200+ tools via native connectors and open APIs',
+  },
+  PROCESS: {
+    title: 'Platform Adoption Framework',
+    body: '1. Discovery: Assess current DevOps workflows and identify deployment bottlenecks\n2. Design: Architect golden paths with stakeholder alignment and migration plan\n3. Build: Develop platform abstractions with continuous feedback from early adopters\n4. Deploy: Staged rollout across teams with monitoring and performance baselines\n5. Optimize: Measure developer velocity metrics and iterate on platform capabilities',
+  },
+  MARKET_SIZING: {
+    title: 'Developer Tools Market',
+    body: 'Total Addressable Market (TAM): $48B global developer tools market growing 23% CAGR\nServiceable Addressable Market (SAM): $12B enterprise DevOps and platform engineering\nServiceable Obtainable Market (SOM): $800M mid-market companies with 50-500 developers\nCurrent penetration: 2.1% of SOM with clear path to 15% by 2027\nCompetitive advantage: Only platform combining CI/CD, observability, and cost management',
+  },
+  QUOTE: {
+    title: 'Industry Perspective',
+    body: 'The companies that will win the next decade are not the ones with the most data - they are the ones that can ship code fastest. Developer velocity is the ultimate competitive moat in software.\n\n- Alex Thornton, CEO of Nexus Technologies',
+  },
+  ARCHITECTURE: {
+    title: 'Cloud-Native Platform Architecture',
+    body: 'Presentation Layer: React dashboard, CLI tools, API gateway with rate limiting and OAuth\nApplication Layer: Microservices mesh, event-driven processors, ML inference engine\nData Layer: PostgreSQL, Redis cache, vector database, real-time event streaming\nInfrastructure Layer: Kubernetes orchestration, multi-region CDN, auto-scaling compute',
+  },
+  TEAM: {
+    title: 'Leadership Team',
+    body: 'Alex Thornton - CEO & Co-Founder\nMaya Rodriguez - CTO & Co-Founder\nDr. James Liu - VP of AI Research\nRachel Okonkwo - VP of Engineering\nStefan Petrov - Head of Product\nKira Nakamura - Head of Growth',
+  },
+  CTA: {
+    title: 'Start Building Today',
+    body: '-> Schedule a personalized platform demo with our solutions engineering team\n-> Start your 14-day free trial with full enterprise features enabled\n-> Download our developer productivity ROI calculator',
+  },
+  SOLUTION: {
+    title: 'Intelligent Developer Platform',
+    body: '1. Automated Pipeline Orchestration: Eliminate manual deployment steps with intelligent CI/CD that adapts to your codebase complexity\n2. Predictive Performance Monitoring: Detect anomalies before they impact users using ML-powered observability across all services\n3. Unified Cost Intelligence: Track cloud spend across providers with actionable optimization recommendations saving 30%+ monthly\n4. Collaborative Development Environment: Real-time pair programming with AI-assisted code review and automated testing pipelines',
+  },
+};
+
+/**
+ * Content Set B - Strategy/Consulting: Corporate transformation / value creation
+ */
+const CONTENT_B = {
+  PROBLEM: {
+    title: 'Margin Erosion in Core Business Units',
+    body: '1. Operating margins declined 340 basis points over 24 months across three core business units\n2. Customer acquisition costs increased 67% while lifetime value remained flat at $18,400\n3. Legacy ERP systems require $23M annual maintenance with 14-hour mean time to resolution\n4. Competitor digital offerings captured 22% of addressable market in just 18 months',
+  },
+  METRICS_HIGHLIGHT: {
+    title: '$2.1B Revenue Opportunity Identified',
+    body: '$2.1B: Revenue Opportunity Identified\n340bps: Margin Improvement Potential\n$890M: Addressable Cost Reduction\n18mo: Time to Full Value Realization',
+  },
+  COMPARISON: {
+    title: 'Current Operating Model vs Target State',
+    body: 'Current Operating Model vs Target State\n\nCurrent Operating Model:\n- Siloed business units with 40+ redundant processes across functions\n- Decision cycles averaging 6-8 weeks for cross-functional initiatives\n- Manual reporting consuming 15,000 analyst hours annually\n\nTarget State:\n- Integrated platform with shared services reducing overhead by 35%\n- Data-driven decisions in 48 hours with automated insight generation\n- Real-time executive dashboards replacing 80% of manual reporting',
+  },
+  TIMELINE: {
+    title: 'Transformation Roadmap',
+    body: 'Phase 1 (Months 1-4): Diagnostic and quick wins delivering $120M in immediate savings\nPhase 2 (Months 5-9): Operating model redesign with pilot programs across two regions\nPhase 3 (Months 10-14): Full-scale implementation with change management and training\nPhase 4 (Months 15-18): Performance stabilization, continuous improvement, and scale',
+  },
+  FEATURE_GRID: {
+    title: 'Strategic Value Levers',
+    body: 'Revenue Acceleration: Identify $800M in cross-sell opportunities through customer analytics\nOperational Excellence: Reduce process cycle times by 60% via intelligent automation\nDigital Transformation: Modernize core systems with cloud-native architecture\nTalent Optimization: Upskill 4,000 employees with AI-augmented decision support tools',
+  },
+  PROCESS: {
+    title: 'Due Diligence Framework',
+    body: '1. Market Assessment: Evaluate competitive landscape, regulatory environment, and growth vectors\n2. Financial Analysis: Model revenue synergies, cost structures, and integration economics\n3. Operational Review: Audit processes, technology stack, and organizational capabilities\n4. Risk Evaluation: Quantify execution risks, regulatory exposure, and cultural alignment\n5. Integration Planning: Design Day 1 readiness plan with 100-day milestones and KPIs',
+  },
+  MARKET_SIZING: {
+    title: 'Addressable Market Opportunity',
+    body: 'Total Addressable Market (TAM): $320B global management consulting and advisory services\nServiceable Addressable Market (SAM): $85B digital transformation and operational improvement\nServiceable Obtainable Market (SOM): $4.2B Fortune 500 companies seeking integrated advisory\nCurrent penetration: 3.8% of SOM with expanding engagement across 12 industry verticals\nCompetitive advantage: Proprietary AI diagnostic tools reducing time-to-insight by 70%',
+  },
+  QUOTE: {
+    title: 'Executive Perspective',
+    body: 'Transformation is not a technology project - it is a fundamental rewiring of how an organization creates value. The winners will be those who move decisively while competitors are still debating the business case.\n\n- Margaret Hartwell, CEO of Meridian Industries',
+  },
+  ARCHITECTURE: {
+    title: 'Target Operating Model',
+    body: 'Client Interface: Digital engagement platform, self-service analytics, executive dashboards\nCapability Layer: Shared service centers, centers of excellence, agile delivery pods\nData Foundation: Enterprise data lake, ML model registry, governance and lineage\nInfrastructure: Hybrid cloud deployment, zero-trust security, disaster recovery',
+  },
+  TEAM: {
+    title: 'Advisory Board',
+    body: 'Margaret Hartwell - Board Chair, Former CEO Meridian Industries\nDr. Robert Asante - Senior Partner, Digital Transformation\nLinda Vasquez - Managing Director, Operations Practice\nThomas Brennan - Partner, Financial Services\nDr. Aisha Patel - Chief Data Scientist\nMichael Johansson - Partner, Change Management',
+  },
+  CTA: {
+    title: 'Accelerate Your Transformation',
+    body: '-> Request a confidential diagnostic assessment with our senior partners\n-> Access our proprietary benchmarking database across 40 industries\n-> Schedule an executive briefing on digital transformation best practices',
+  },
+  SOLUTION: {
+    title: 'Value Creation Engine',
+    body: '1. AI-Powered Diagnostics: Identify value creation opportunities in weeks instead of months using proprietary analytical frameworks\n2. Digital Operating Model: Design and implement next-generation shared services that reduce overhead by 35% within 18 months\n3. Revenue Growth Analytics: Unlock cross-sell and upsell opportunities through advanced customer segmentation and propensity modeling\n4. Change Acceleration: Drive adoption at scale with behavioral science-based change management and digital learning platforms',
+  },
+};
+
+/**
+ * Content Set C - Creative/Consumer: Creator economy / experience design
+ */
+const CONTENT_C = {
+  PROBLEM: {
+    title: 'The Creator Monetization Gap',
+    body: '1. Only 4% of full-time creators earn above the median household income despite 50M+ active creators\n2. Platform algorithm changes caused 62% of creators to lose over 30% of their audience reach in 2024\n3. Brand deal negotiation takes 23 hours per partnership with no standardized pricing transparency\n4. Creator burnout rates hit 71% as content demands outpace sustainable production workflows',
+  },
+  METRICS_HIGHLIGHT: {
+    title: '12.4M Monthly Active Creators',
+    body: '12.4M: Monthly Active Creators\n$780M: Creator Earnings Facilitated\n4.7x: Average Revenue Increase per Creator\n92%: Creator Retention Rate',
+  },
+  COMPARISON: {
+    title: 'Traditional Media vs Creator-Led Distribution',
+    body: 'Traditional Media vs Creator-Led Distribution\n\nTraditional Media:\n- 18-month production cycles with $500K minimum campaign budgets\n- Audience targeting limited to broad demographic segments\n- Engagement rates averaging 0.3% with declining consumer trust\n\nCreator-Led Distribution:\n- 48-hour content creation with authentic audience connection\n- Hyper-targeted communities built on shared interests and values\n- Engagement rates of 8.2% with 73% higher purchase intent',
+  },
+  TIMELINE: {
+    title: 'Platform Evolution',
+    body: '2023: Launch Phase - Creator marketplace with 50K initial creators and direct booking\n2024: Growth Phase - AI content tools, brand matchmaking, and revenue analytics dashboard\n2025: Scale Phase - International expansion to 30 markets with localized creator programs\n2026: Ecosystem Phase - Creator-owned storefronts, subscription bundles, and IP licensing',
+  },
+  FEATURE_GRID: {
+    title: 'Creator Toolkit',
+    body: 'Smart Content Studio: AI-assisted editing, thumbnail generation, and multi-platform publishing\nAudience Intelligence: Deep analytics on follower behavior, growth trends, and content performance\nBrand Matchmaker: Automated partnership recommendations based on audience overlap and brand fit\nRevenue Optimizer: Dynamic pricing engine for sponsorships, merchandise, and digital products',
+  },
+  PROCESS: {
+    title: 'Creator Success Journey',
+    body: '1. Onboard: Profile creation with portfolio showcase and audience verification\n2. Discover: AI-powered brand matching and collaboration opportunity surfacing\n3. Create: Access production tools, templates, and AI-assisted content workflows\n4. Monetize: Multi-stream revenue setup with automated invoicing and tax reporting\n5. Grow: Community building tools with analytics-driven content strategy recommendations',
+  },
+  MARKET_SIZING: {
+    title: 'Creator Economy Market',
+    body: 'Total Addressable Market (TAM): $104B global creator economy spanning content, commerce, and community\nServiceable Addressable Market (SAM): $28B creator monetization tools and marketplace platforms\nServiceable Obtainable Market (SOM): $2.1B mid-tier creators with 10K-1M followers seeking revenue growth\nCurrent penetration: 5.9% of SOM across 12 content verticals and 8 languages\nCompetitive advantage: Only platform combining content tools, brand deals, and direct monetization',
+  },
+  QUOTE: {
+    title: 'Design Philosophy',
+    body: 'Great design does not start with pixels - it starts with understanding the moment a person decides to create something and share it with the world. Our job is to remove every obstacle between that impulse and its expression.\n\n- Naomi Sato, Chief Design Officer at Luminary Creative',
+  },
+  ARCHITECTURE: {
+    title: 'Creator Platform Ecosystem',
+    body: 'Experience Layer: Progressive web app, native mobile apps, embeddable creator storefronts\nCreator Engine: Content pipeline, recommendation algorithms, social graph, payment processing\nIntelligence Layer: Audience analytics, brand safety scoring, trend prediction, pricing models\nFoundation: Multi-CDN delivery, edge computing, creator data sovereignty, GDPR compliance',
+  },
+  TEAM: {
+    title: 'Creative Leadership',
+    body: 'Naomi Sato - CEO & Co-Founder\nCarlos Mendez - Chief Product Officer\nJade Williams - VP of Creator Experience\nLiam O\'Brien - VP of Engineering\nAmira Hassan - Head of Brand Partnerships\nTyler Jackson - Head of Community',
+  },
+  CTA: {
+    title: 'Join the Creator Revolution',
+    body: '-> Apply for early access to our creator-first monetization platform\n-> Book a personalized demo to see your audience growth potential\n-> Download our free Creator Economy Trends 2025 report',
+  },
+  SOLUTION: {
+    title: 'Creator Empowerment Platform',
+    body: '1. Intelligent Content Pipeline: Produce platform-optimized content 3x faster with AI editing, auto-captioning, and smart scheduling\n2. Audience Growth Engine: Grow your community with data-driven content recommendations and cross-platform amplification tools\n3. Unified Monetization Hub: Manage sponsorships, subscriptions, merchandise, and digital products from a single revenue dashboard\n4. Creator Wellbeing System: Sustainable content calendars with burnout detection, batch creation tools, and automated engagement',
+  },
+};
+
+/**
+ * Content Set D - Innovation/Research: Enterprise innovation / R&D
+ */
+const CONTENT_D = {
+  PROBLEM: {
+    title: 'The Innovation Execution Gap',
+    body: '1. 78% of R&D projects fail to deliver commercial value despite $2.4T global annual research spending\n2. Average time from discovery to market application has grown to 17 years across pharmaceutical and materials science\n3. Research teams spend 42% of time on literature review and data preparation instead of actual experimentation\n4. Cross-disciplinary collaboration occurs in only 11% of projects despite evidence it improves outcomes by 3.5x',
+  },
+  METRICS_HIGHLIGHT: {
+    title: '327% ROI in First 18 Months',
+    body: '327%: Return on Innovation Investment\n6.2x: Faster Discovery-to-Patent Cycle\n$340M: Research Cost Reduction\n89%: Experiment Reproducibility Rate',
+  },
+  COMPARISON: {
+    title: 'Traditional R&D vs AI-Augmented Innovation',
+    body: 'Traditional R&D vs AI-Augmented Innovation\n\nTraditional R&D:\n- Manual literature review consuming 40+ researcher hours per project\n- Hypothesis generation limited by individual domain expertise\n- Experiment design based on intuition with 23% reproducibility rate\n\nAI-Augmented Innovation:\n- Automated knowledge synthesis across 200M+ papers in seconds\n- Cross-domain hypothesis generation revealing non-obvious connections\n- ML-optimized experiment design achieving 89% reproducibility rate',
+  },
+  TIMELINE: {
+    title: 'Innovation Milestones',
+    body: 'Year 1: Platform Launch - Knowledge graph with 200M papers and patent corpus integration\nYear 2: Intelligence Phase - Predictive models for research direction and funding optimization\nYear 3: Collaboration Phase - Cross-institutional research networks and shared experiment libraries\nYear 4: Autonomy Phase - AI research agents conducting literature synthesis and hypothesis ranking',
+  },
+  FEATURE_GRID: {
+    title: 'Research Acceleration Capabilities',
+    body: 'Knowledge Synthesis: Analyze 200M+ papers with entity extraction and cross-domain linking\nHypothesis Engine: Generate novel research directions using graph neural networks and reasoning\nExperiment Designer: ML-optimized protocols with automated parameter sweeps and controls\nCollaboration Hub: Secure multi-institutional workspaces with IP protection and data governance',
+  },
+  PROCESS: {
+    title: 'Innovation Pipeline',
+    body: '1. Explore: AI-powered landscape analysis across patents, papers, and clinical data\n2. Hypothesize: Generate and rank novel research directions with confidence scoring\n3. Design: Create ML-optimized experiment protocols with statistical power analysis\n4. Execute: Run experiments with automated data capture and real-time anomaly detection\n5. Validate: Reproducibility verification with automated reporting and knowledge capture',
+  },
+  MARKET_SIZING: {
+    title: 'Enterprise AI Research Market',
+    body: 'Total Addressable Market (TAM): $67B global enterprise AI and research automation market\nServiceable Addressable Market (SAM): $18B pharma, biotech, and materials science R&D tools\nServiceable Obtainable Market (SOM): $1.4B top-200 research institutions and enterprise R&D labs\nCurrent penetration: 1.8% of SOM with pilots at 14 Fortune 500 research divisions\nCompetitive advantage: Only platform combining knowledge graphs, experiment design, and collaboration',
+  },
+  QUOTE: {
+    title: 'Research Vision',
+    body: 'The next breakthrough in science will not come from a single brilliant mind working in isolation. It will emerge from AI systems that can connect disparate findings across disciplines faster than any human team. We are building that bridge.\n\n- Dr. Viktor Andreev, Director of Computational Research at Helios Labs',
+  },
+  ARCHITECTURE: {
+    title: 'Knowledge Graph Architecture',
+    body: 'Query Interface: Natural language search, visual graph explorer, API endpoints for programmatic access\nReasoning Layer: Graph neural networks, causal inference engine, hypothesis generation models\nKnowledge Store: Neo4j graph database, vector embeddings, temporal citation network, ontology layer\nIngestion Pipeline: Paper parsers, patent extractors, clinical trial importers, real-time feed processors',
+  },
+  TEAM: {
+    title: 'Research Leadership',
+    body: 'Dr. Viktor Andreev - CEO & Chief Scientist\nDr. Sarah Kimura - CTO & Co-Founder\nProf. Michael Osei - VP of Research, Former MIT Faculty\nDr. Elena Marchetti - VP of AI and Machine Learning\nRajesh Gupta - Head of Product Engineering\nDr. Anna Lindqvist - Head of Knowledge Systems',
+  },
+  CTA: {
+    title: 'Unlock Your Research Potential',
+    body: '-> Request a pilot with your existing research data and knowledge base\n-> Schedule a demo of our AI-powered hypothesis generation engine\n-> Download our whitepaper on AI-augmented research methodology',
+  },
+  SOLUTION: {
+    title: 'AI-Augmented Research Platform',
+    body: '1. Intelligent Literature Mining: Extract structured knowledge from 200M+ papers with entity recognition and relationship mapping across disciplines\n2. Hypothesis Generation Engine: Discover non-obvious connections between research domains using graph neural networks and causal reasoning models\n3. Automated Experiment Design: Create statistically rigorous protocols with ML-optimized parameters that achieve 89% reproducibility rates\n4. Collaborative Knowledge Network: Connect researchers across institutions with secure workspaces, shared ontologies, and IP-protected data exchange',
+  },
+};
+
+const CONTENT_SETS = { A: CONTENT_A, B: CONTENT_B, C: CONTENT_C, D: CONTENT_D };
 
 // ── Slide Definitions ──────────────────────────────────────────
 
 /**
- * Build the 8 showcase slides for a theme.
- * Slides 1-3: no image (Figma-grade HTML types)
- * Slides 4-6: with imageUrl (Figma-grade HTML types, right-panel image)
- * Slides 7-8: background image via Marp `![bg]` directive
+ * Image assignment strategy per content set (rotate across 8 images):
+ * Set A: FEATURE_GRID=img-0, ARCHITECTURE=img-2, CTA=img-5, SOLUTION=img-7
+ * Set B: FEATURE_GRID=img-1, ARCHITECTURE=img-3, CTA=img-6, SOLUTION=img-4
+ * Set C: FEATURE_GRID=img-6, ARCHITECTURE=img-0, CTA=img-3, SOLUTION=img-1
+ * Set D: FEATURE_GRID=img-7, ARCHITECTURE=img-5, CTA=img-4, SOLUTION=img-2
  */
-function getSlides(imgDir) {
+const IMAGE_ASSIGNMENTS = {
+  A: { FEATURE_GRID: 0, ARCHITECTURE: 2, CTA: 5, SOLUTION: 7 },
+  B: { FEATURE_GRID: 1, ARCHITECTURE: 3, CTA: 6, SOLUTION: 4 },
+  C: { FEATURE_GRID: 6, ARCHITECTURE: 0, CTA: 3, SOLUTION: 1 },
+  D: { FEATURE_GRID: 7, ARCHITECTURE: 5, CTA: 4, SOLUTION: 2 },
+};
+
+/**
+ * Build the 12 showcase slides for a theme based on its content set.
+ *
+ * Slide order (12 slides):
+ *  1. PROBLEM (no image)
+ *  2. METRICS_HIGHLIGHT (no image)
+ *  3. COMPARISON (no image) — body contains "vs" for two-card VS badge variant
+ *  4. TIMELINE (no image) — 4 items for zigzag variant
+ *  5. FEATURE_GRID (right-panel image) — 4 items for grid layout
+ *  6. PROCESS (no image) — 5 steps for circle-chain variant
+ *  7. MARKET_SIZING (no image)
+ *  8. QUOTE (no image)
+ *  9. ARCHITECTURE (right-panel image) — 4 layers
+ * 10. TEAM (no image) — 6 people with "Name - Role" format
+ * 11. CTA (background image)
+ * 12. SOLUTION (right-panel image) — 4 capabilities for cascade variant
+ */
+function getSlides(imgDir, contentSetKey) {
   const img = (i) => path.resolve(imgDir, `img-${i}.jpg`).replace(/\\/g, '/');
+  const content = CONTENT_SETS[contentSetKey];
+  const images = IMAGE_ASSIGNMENTS[contentSetKey];
+
   return [
     {
       slideNumber: 1,
       slideType: 'PROBLEM',
-      title: 'The Hidden Cost of Legacy Systems',
-      body: [
-        '72% of enterprises still run critical workflows on 15+ year old platforms',
-        'Average downtime costs $5,600 per minute across Fortune 500 companies',
-        'Technical debt compounds at 25% annually without systematic remediation',
-        'Migration delays correlate with 3.2x higher security breach probability',
-      ].join('\n'),
+      title: content.PROBLEM.title,
+      body: content.PROBLEM.body,
       hasImage: false,
     },
     {
       slideNumber: 2,
       slideType: 'METRICS_HIGHLIGHT',
-      title: '$4.2M Annual Revenue Loss',
-      body: [
-        '$4.2M lost annually from manual process inefficiencies across departments',
-        '340 hours per employee wasted on redundant data entry and reconciliation',
-        '89% reduction in processing errors after intelligent automation deployment',
-      ].join('\n'),
+      title: content.METRICS_HIGHLIGHT.title,
+      body: content.METRICS_HIGHLIGHT.body,
       hasImage: false,
     },
     {
       slideNumber: 3,
-      slideType: 'TIMELINE',
-      title: 'Strategic Roadmap to Market Leadership',
-      body: [
-        'Q1 2025: Foundation phase with core platform build and pilot customer onboarding',
-        'Q2 2025: Scale phase with enterprise API launch and SOC 2 Type II certification',
-        'Q3 2025: Growth phase targeting 500 enterprise accounts and Series A raise',
-        'Q4 2025: Expansion into EMEA and APAC markets with localized offerings',
-      ].join('\n'),
+      slideType: 'COMPARISON',
+      title: content.COMPARISON.title,
+      body: content.COMPARISON.body,
       hasImage: false,
     },
     {
       slideNumber: 4,
-      slideType: 'SOLUTION',
-      title: 'Intelligent Automation Platform',
-      body: [
-        'AI-powered document processing that learns from every interaction and improves accuracy',
-        'Real-time decision engine with explainable outputs for regulatory compliance',
-        'Seamless integration with existing enterprise systems via pre-built connectors',
-      ].join('\n'),
-      hasImage: true,
-      imageUrl: img(0),
+      slideType: 'TIMELINE',
+      title: content.TIMELINE.title,
+      body: content.TIMELINE.body,
+      hasImage: false,
     },
     {
       slideNumber: 5,
       slideType: 'FEATURE_GRID',
-      title: 'Four Capabilities That Drive Results',
-      body: [
-        'Smart Extraction: ML-powered data capture from any document format with 99.2% accuracy',
-        'Workflow Engine: Visual drag-and-drop automation builder for complex business processes',
-        'Analytics Hub: Real-time dashboards with predictive insights and anomaly detection',
-        'Security Vault: End-to-end encryption with role-based access and full audit trails',
-      ].join('\n'),
+      title: content.FEATURE_GRID.title,
+      body: content.FEATURE_GRID.body,
       hasImage: true,
-      imageUrl: img(1),
+      imageUrl: img(images.FEATURE_GRID),
     },
     {
       slideNumber: 6,
-      slideType: 'ARCHITECTURE',
-      title: 'Cloud-Native Architecture',
-      body: [
-        'Presentation Layer: React SPA with WebSocket real-time updates and CDN edge caching',
-        'API Gateway: Rate limiting, JWT auth, request routing across microservices',
-        'Processing Core: Kubernetes-orchestrated ML pipelines with auto-scaling workers',
-        'Data Layer: PostgreSQL primary store, Redis cache, S3 document storage, vector DB',
-      ].join('\n'),
-      hasImage: true,
-      imageUrl: img(2),
+      slideType: 'PROCESS',
+      title: content.PROCESS.title,
+      body: content.PROCESS.body,
+      hasImage: false,
     },
     {
       slideNumber: 7,
-      slideType: 'CTA',
-      title: 'Take the Next Step',
-      body: [
-        'Schedule a personalized demo with our solutions engineering team',
-        'Start your 14-day free trial with full enterprise features enabled',
-        'Join 200+ companies already transforming their operations',
-      ].join('\n'),
-      hasImage: true, // bg image via Marp directive
-      bgImagePath: img(3),
+      slideType: 'MARKET_SIZING',
+      title: content.MARKET_SIZING.title,
+      body: content.MARKET_SIZING.body,
+      hasImage: false,
     },
     {
       slideNumber: 8,
-      slideType: 'CONTENT',
-      title: 'Deep Dive: AI-Driven Analytics',
-      body: [
-        'Our analytics engine processes over 10 million data points daily, transforming raw operational data into actionable intelligence that drives measurable business outcomes.',
-        'Machine learning models continuously adapt to your organization\'s unique patterns, reducing false positives by 94% compared to rule-based systems.',
-        'Executive dashboards provide C-suite visibility with drill-down capabilities from strategic KPIs to individual transaction-level detail.',
-      ].join('\n'),
-      hasImage: true, // bg image via Marp directive
-      bgImagePath: img(4),
+      slideType: 'QUOTE',
+      title: content.QUOTE.title,
+      body: content.QUOTE.body,
+      hasImage: false,
+    },
+    {
+      slideNumber: 9,
+      slideType: 'ARCHITECTURE',
+      title: content.ARCHITECTURE.title,
+      body: content.ARCHITECTURE.body,
+      hasImage: true,
+      imageUrl: img(images.ARCHITECTURE),
+    },
+    {
+      slideNumber: 10,
+      slideType: 'TEAM',
+      title: content.TEAM.title,
+      body: content.TEAM.body,
+      hasImage: false,
+    },
+    {
+      slideNumber: 11,
+      slideType: 'CTA',
+      title: content.CTA.title,
+      body: content.CTA.body,
+      hasImage: true,
+      bgImagePath: img(images.CTA),
+    },
+    {
+      slideNumber: 12,
+      slideType: 'SOLUTION',
+      title: content.SOLUTION.title,
+      body: content.SOLUTION.body,
+      hasImage: true,
+      imageUrl: img(images.SOLUTION),
     },
   ];
 }
@@ -504,7 +769,7 @@ function buildCssPreamble(theme) {
   li:nth-child(4n+3) strong { color: ${palette.success}; }
   li:nth-child(4n+4) strong { color: ${palette.secondary}; }
 
-  /* ── Background image slides (7, 8) ──────────── */
+  /* ── Background image slides ──────────────────── */
   section[data-bg-image="true"] {
     display: flex;
     flex-direction: column;
@@ -539,9 +804,6 @@ function buildCssPreamble(theme) {
 }
 
 /**
- * Generate a single Marp markdown file for a theme containing all 8 slides.
- */
-/**
  * Fix mood overlay HTML that buildHtmlSlideContent injects inside <style scoped> blocks.
  * Moves any HTML elements (divs, SVGs) from inside <style scoped> to before it.
  */
@@ -562,6 +824,9 @@ function fixStyleBlocks(html) {
   });
 }
 
+/**
+ * Generate a single Marp markdown file for a theme containing all 12 slides.
+ */
 function generateMarpMarkdown(theme, slides) {
   const { palette } = theme;
   const lines = [];
@@ -592,7 +857,7 @@ function generateMarpMarkdown(theme, slides) {
     lines.push('');
 
     if (slide.bgImagePath) {
-      // Slides 7-8: background image via Marp directive + markdown content
+      // CTA slide: background image via Marp directive + markdown content
       lines.push(`![bg opacity:0.25](${slide.bgImagePath})`);
       lines.push('');
       lines.push(`<!-- _class: "" -->`);
@@ -604,12 +869,13 @@ function generateMarpMarkdown(theme, slides) {
       const bodyLines = slide.body.split('\n').filter(Boolean);
       lines.push('<ul style="list-style:none;padding:0;margin:0;">');
       for (const line of bodyLines) {
-        lines.push(`<li style="font-family:'${theme.bodyFont}',sans-serif;font-size:20px;color:${isDarkBg(palette.background) ? 'rgba(255,255,255,0.95)' : palette.text};margin-bottom:12px;padding-left:20px;position:relative;"><span style="position:absolute;left:0;color:${palette.accent};">&#9656;</span>${line}</li>`);
+        const cleanLine = line.replace(/^->?\s*/, '');
+        lines.push(`<li style="font-family:'${theme.bodyFont}',sans-serif;font-size:20px;color:${isDarkBg(palette.background) ? 'rgba(255,255,255,0.95)' : palette.text};margin-bottom:12px;padding-left:20px;position:relative;"><span style="position:absolute;left:0;color:${palette.accent};">&#9656;</span>${cleanLine}</li>`);
       }
       lines.push('</ul>');
       lines.push('</div>');
     } else {
-      // Slides 1-6: Figma-grade HTML content via buildHtmlSlideContent
+      // All other slides: Figma-grade HTML content via buildHtmlSlideContent
       const slideInput = {
         title: slide.title,
         body: slide.body,
@@ -621,7 +887,6 @@ function generateMarpMarkdown(theme, slides) {
 
       // Post-process: fix mood overlay HTML injected inside <style scoped> blocks
       html = fixStyleBlocks(html);
-
 
       // Inject the raw HTML directly into the Marp slide
       lines.push(html);
@@ -703,6 +968,8 @@ async function uploadToS3(localPath, s3Key) {
 async function main() {
   const startTime = Date.now();
   console.log('=== Pitchable Showcase Generator ===\n');
+  console.log('12 slides per theme x 16 themes = 192 total slides');
+  console.log('4 content sets: A (Tech/SaaS), B (Strategy/Consulting), C (Creative/Consumer), D (Innovation/Research)\n');
 
   // S3 config validated at module level
 
@@ -716,9 +983,6 @@ async function main() {
   // Download stock images
   await downloadImages(imgDir);
 
-  // Build slide definitions (shared across themes, only differs by imageUrl paths)
-  const slides = getSlides(imgDir);
-
   const manifest = {
     generated: new Date().toISOString(),
     themes: [],
@@ -728,7 +992,12 @@ async function main() {
   const failed = [];
 
   for (const theme of THEMES) {
-    console.log(`\n--- Theme: ${theme.displayName} (${theme.slug}) ---`);
+    const contentSetKey = THEME_CONTENT_SET[theme.slug] || 'A';
+    console.log(`\n--- Theme: ${theme.displayName} (${theme.slug}) [Content Set ${contentSetKey}] ---`);
+
+    // Build slide definitions for this theme's content set
+    const slides = getSlides(imgDir, contentSetKey);
+
     try {
       // 1. Generate Marp markdown
       const mdPath = path.join(marpDir, `${theme.slug}.md`);
@@ -743,6 +1012,7 @@ async function main() {
       const themeManifest = {
         slug: theme.slug,
         displayName: theme.displayName,
+        contentSet: contentSetKey,
         slides: [],
       };
 
@@ -755,6 +1025,11 @@ async function main() {
           continue;
         }
 
+        // Copy to public/showcase/ for Docker bundling
+        const publicDir = path.resolve(import.meta.dirname, '..'  , 'public', 'showcase', theme.slug);
+        fs.mkdirSync(publicDir, { recursive: true });
+        const publicDest = path.join(publicDir, jpegNum + '.jpeg');
+        fs.copyFileSync(jpegPath, publicDest);
         const s3Key = `showcase/${theme.slug}/${s + 1}.jpeg`;
         try {
           await uploadToS3(jpegPath, s3Key);

@@ -1,995 +1,1459 @@
 {
-  "generated": "2026-02-28T13:27:57.113Z",
+  "generated": "2026-02-28T16:53:38.947Z",
   "themes": [
     {
       "slug": "pitchable-dark",
       "displayName": "Pitchable Dark",
+      "contentSet": "A",
       "slides": [
         {
           "slideNumber": 1,
           "slideType": "PROBLEM",
-          "title": "The Hidden Cost of Legacy Systems",
+          "title": "The Developer Productivity Crisis",
           "hasImage": false,
           "s3Key": "showcase/pitchable-dark/1.jpeg"
         },
         {
           "slideNumber": 2,
           "slideType": "METRICS_HIGHLIGHT",
-          "title": "$4.2M Annual Revenue Loss",
+          "title": "99.97% Platform Uptime",
           "hasImage": false,
           "s3Key": "showcase/pitchable-dark/2.jpeg"
         },
         {
           "slideNumber": 3,
-          "slideType": "TIMELINE",
-          "title": "Strategic Roadmap to Market Leadership",
+          "slideType": "COMPARISON",
+          "title": "Legacy DevOps vs Platform Engineering",
           "hasImage": false,
           "s3Key": "showcase/pitchable-dark/3.jpeg"
         },
         {
           "slideNumber": 4,
-          "slideType": "SOLUTION",
-          "title": "Intelligent Automation Platform",
-          "hasImage": true,
+          "slideType": "TIMELINE",
+          "title": "Product Roadmap 2025",
+          "hasImage": false,
           "s3Key": "showcase/pitchable-dark/4.jpeg"
         },
         {
           "slideNumber": 5,
           "slideType": "FEATURE_GRID",
-          "title": "Four Capabilities That Drive Results",
+          "title": "Developer Platform Capabilities",
           "hasImage": true,
           "s3Key": "showcase/pitchable-dark/5.jpeg"
         },
         {
           "slideNumber": 6,
-          "slideType": "ARCHITECTURE",
-          "title": "Cloud-Native Architecture",
-          "hasImage": true,
+          "slideType": "PROCESS",
+          "title": "Platform Adoption Framework",
+          "hasImage": false,
           "s3Key": "showcase/pitchable-dark/6.jpeg"
         },
         {
           "slideNumber": 7,
-          "slideType": "CTA",
-          "title": "Take the Next Step",
-          "hasImage": true,
+          "slideType": "MARKET_SIZING",
+          "title": "Developer Tools Market",
+          "hasImage": false,
           "s3Key": "showcase/pitchable-dark/7.jpeg"
         },
         {
           "slideNumber": 8,
-          "slideType": "CONTENT",
-          "title": "Deep Dive: AI-Driven Analytics",
-          "hasImage": true,
+          "slideType": "QUOTE",
+          "title": "Industry Perspective",
+          "hasImage": false,
           "s3Key": "showcase/pitchable-dark/8.jpeg"
+        },
+        {
+          "slideNumber": 9,
+          "slideType": "ARCHITECTURE",
+          "title": "Cloud-Native Platform Architecture",
+          "hasImage": true,
+          "s3Key": "showcase/pitchable-dark/9.jpeg"
+        },
+        {
+          "slideNumber": 10,
+          "slideType": "TEAM",
+          "title": "Leadership Team",
+          "hasImage": false,
+          "s3Key": "showcase/pitchable-dark/10.jpeg"
+        },
+        {
+          "slideNumber": 11,
+          "slideType": "CTA",
+          "title": "Start Building Today",
+          "hasImage": true,
+          "s3Key": "showcase/pitchable-dark/11.jpeg"
+        },
+        {
+          "slideNumber": 12,
+          "slideType": "SOLUTION",
+          "title": "Intelligent Developer Platform",
+          "hasImage": true,
+          "s3Key": "showcase/pitchable-dark/12.jpeg"
         }
       ]
     },
     {
       "slug": "dark-professional",
       "displayName": "Dark Professional",
+      "contentSet": "D",
       "slides": [
         {
           "slideNumber": 1,
           "slideType": "PROBLEM",
-          "title": "The Hidden Cost of Legacy Systems",
+          "title": "The Innovation Execution Gap",
           "hasImage": false,
           "s3Key": "showcase/dark-professional/1.jpeg"
         },
         {
           "slideNumber": 2,
           "slideType": "METRICS_HIGHLIGHT",
-          "title": "$4.2M Annual Revenue Loss",
+          "title": "327% ROI in First 18 Months",
           "hasImage": false,
           "s3Key": "showcase/dark-professional/2.jpeg"
         },
         {
           "slideNumber": 3,
-          "slideType": "TIMELINE",
-          "title": "Strategic Roadmap to Market Leadership",
+          "slideType": "COMPARISON",
+          "title": "Traditional R&D vs AI-Augmented Innovation",
           "hasImage": false,
           "s3Key": "showcase/dark-professional/3.jpeg"
         },
         {
           "slideNumber": 4,
-          "slideType": "SOLUTION",
-          "title": "Intelligent Automation Platform",
-          "hasImage": true,
+          "slideType": "TIMELINE",
+          "title": "Innovation Milestones",
+          "hasImage": false,
           "s3Key": "showcase/dark-professional/4.jpeg"
         },
         {
           "slideNumber": 5,
           "slideType": "FEATURE_GRID",
-          "title": "Four Capabilities That Drive Results",
+          "title": "Research Acceleration Capabilities",
           "hasImage": true,
           "s3Key": "showcase/dark-professional/5.jpeg"
         },
         {
           "slideNumber": 6,
-          "slideType": "ARCHITECTURE",
-          "title": "Cloud-Native Architecture",
-          "hasImage": true,
+          "slideType": "PROCESS",
+          "title": "Innovation Pipeline",
+          "hasImage": false,
           "s3Key": "showcase/dark-professional/6.jpeg"
         },
         {
           "slideNumber": 7,
-          "slideType": "CTA",
-          "title": "Take the Next Step",
-          "hasImage": true,
+          "slideType": "MARKET_SIZING",
+          "title": "Enterprise AI Research Market",
+          "hasImage": false,
           "s3Key": "showcase/dark-professional/7.jpeg"
         },
         {
           "slideNumber": 8,
-          "slideType": "CONTENT",
-          "title": "Deep Dive: AI-Driven Analytics",
-          "hasImage": true,
+          "slideType": "QUOTE",
+          "title": "Research Vision",
+          "hasImage": false,
           "s3Key": "showcase/dark-professional/8.jpeg"
+        },
+        {
+          "slideNumber": 9,
+          "slideType": "ARCHITECTURE",
+          "title": "Knowledge Graph Architecture",
+          "hasImage": true,
+          "s3Key": "showcase/dark-professional/9.jpeg"
+        },
+        {
+          "slideNumber": 10,
+          "slideType": "TEAM",
+          "title": "Research Leadership",
+          "hasImage": false,
+          "s3Key": "showcase/dark-professional/10.jpeg"
+        },
+        {
+          "slideNumber": 11,
+          "slideType": "CTA",
+          "title": "Unlock Your Research Potential",
+          "hasImage": true,
+          "s3Key": "showcase/dark-professional/11.jpeg"
+        },
+        {
+          "slideNumber": 12,
+          "slideType": "SOLUTION",
+          "title": "AI-Augmented Research Platform",
+          "hasImage": true,
+          "s3Key": "showcase/dark-professional/12.jpeg"
         }
       ]
     },
     {
       "slug": "creative-warm",
       "displayName": "Creative Warm",
+      "contentSet": "C",
       "slides": [
         {
           "slideNumber": 1,
           "slideType": "PROBLEM",
-          "title": "The Hidden Cost of Legacy Systems",
+          "title": "The Creator Monetization Gap",
           "hasImage": false,
           "s3Key": "showcase/creative-warm/1.jpeg"
         },
         {
           "slideNumber": 2,
           "slideType": "METRICS_HIGHLIGHT",
-          "title": "$4.2M Annual Revenue Loss",
+          "title": "12.4M Monthly Active Creators",
           "hasImage": false,
           "s3Key": "showcase/creative-warm/2.jpeg"
         },
         {
           "slideNumber": 3,
-          "slideType": "TIMELINE",
-          "title": "Strategic Roadmap to Market Leadership",
+          "slideType": "COMPARISON",
+          "title": "Traditional Media vs Creator-Led Distribution",
           "hasImage": false,
           "s3Key": "showcase/creative-warm/3.jpeg"
         },
         {
           "slideNumber": 4,
-          "slideType": "SOLUTION",
-          "title": "Intelligent Automation Platform",
-          "hasImage": true,
+          "slideType": "TIMELINE",
+          "title": "Platform Evolution",
+          "hasImage": false,
           "s3Key": "showcase/creative-warm/4.jpeg"
         },
         {
           "slideNumber": 5,
           "slideType": "FEATURE_GRID",
-          "title": "Four Capabilities That Drive Results",
+          "title": "Creator Toolkit",
           "hasImage": true,
           "s3Key": "showcase/creative-warm/5.jpeg"
         },
         {
           "slideNumber": 6,
-          "slideType": "ARCHITECTURE",
-          "title": "Cloud-Native Architecture",
-          "hasImage": true,
+          "slideType": "PROCESS",
+          "title": "Creator Success Journey",
+          "hasImage": false,
           "s3Key": "showcase/creative-warm/6.jpeg"
         },
         {
           "slideNumber": 7,
-          "slideType": "CTA",
-          "title": "Take the Next Step",
-          "hasImage": true,
+          "slideType": "MARKET_SIZING",
+          "title": "Creator Economy Market",
+          "hasImage": false,
           "s3Key": "showcase/creative-warm/7.jpeg"
         },
         {
           "slideNumber": 8,
-          "slideType": "CONTENT",
-          "title": "Deep Dive: AI-Driven Analytics",
-          "hasImage": true,
+          "slideType": "QUOTE",
+          "title": "Design Philosophy",
+          "hasImage": false,
           "s3Key": "showcase/creative-warm/8.jpeg"
+        },
+        {
+          "slideNumber": 9,
+          "slideType": "ARCHITECTURE",
+          "title": "Creator Platform Ecosystem",
+          "hasImage": true,
+          "s3Key": "showcase/creative-warm/9.jpeg"
+        },
+        {
+          "slideNumber": 10,
+          "slideType": "TEAM",
+          "title": "Creative Leadership",
+          "hasImage": false,
+          "s3Key": "showcase/creative-warm/10.jpeg"
+        },
+        {
+          "slideNumber": 11,
+          "slideType": "CTA",
+          "title": "Join the Creator Revolution",
+          "hasImage": true,
+          "s3Key": "showcase/creative-warm/11.jpeg"
+        },
+        {
+          "slideNumber": 12,
+          "slideType": "SOLUTION",
+          "title": "Creator Empowerment Platform",
+          "hasImage": true,
+          "s3Key": "showcase/creative-warm/12.jpeg"
         }
       ]
     },
     {
       "slug": "technical-teal",
       "displayName": "Technical Teal",
+      "contentSet": "A",
       "slides": [
         {
           "slideNumber": 1,
           "slideType": "PROBLEM",
-          "title": "The Hidden Cost of Legacy Systems",
+          "title": "The Developer Productivity Crisis",
           "hasImage": false,
           "s3Key": "showcase/technical-teal/1.jpeg"
         },
         {
           "slideNumber": 2,
           "slideType": "METRICS_HIGHLIGHT",
-          "title": "$4.2M Annual Revenue Loss",
+          "title": "99.97% Platform Uptime",
           "hasImage": false,
           "s3Key": "showcase/technical-teal/2.jpeg"
         },
         {
           "slideNumber": 3,
-          "slideType": "TIMELINE",
-          "title": "Strategic Roadmap to Market Leadership",
+          "slideType": "COMPARISON",
+          "title": "Legacy DevOps vs Platform Engineering",
           "hasImage": false,
           "s3Key": "showcase/technical-teal/3.jpeg"
         },
         {
           "slideNumber": 4,
-          "slideType": "SOLUTION",
-          "title": "Intelligent Automation Platform",
-          "hasImage": true,
+          "slideType": "TIMELINE",
+          "title": "Product Roadmap 2025",
+          "hasImage": false,
           "s3Key": "showcase/technical-teal/4.jpeg"
         },
         {
           "slideNumber": 5,
           "slideType": "FEATURE_GRID",
-          "title": "Four Capabilities That Drive Results",
+          "title": "Developer Platform Capabilities",
           "hasImage": true,
           "s3Key": "showcase/technical-teal/5.jpeg"
         },
         {
           "slideNumber": 6,
-          "slideType": "ARCHITECTURE",
-          "title": "Cloud-Native Architecture",
-          "hasImage": true,
+          "slideType": "PROCESS",
+          "title": "Platform Adoption Framework",
+          "hasImage": false,
           "s3Key": "showcase/technical-teal/6.jpeg"
         },
         {
           "slideNumber": 7,
-          "slideType": "CTA",
-          "title": "Take the Next Step",
-          "hasImage": true,
+          "slideType": "MARKET_SIZING",
+          "title": "Developer Tools Market",
+          "hasImage": false,
           "s3Key": "showcase/technical-teal/7.jpeg"
         },
         {
           "slideNumber": 8,
-          "slideType": "CONTENT",
-          "title": "Deep Dive: AI-Driven Analytics",
-          "hasImage": true,
+          "slideType": "QUOTE",
+          "title": "Industry Perspective",
+          "hasImage": false,
           "s3Key": "showcase/technical-teal/8.jpeg"
+        },
+        {
+          "slideNumber": 9,
+          "slideType": "ARCHITECTURE",
+          "title": "Cloud-Native Platform Architecture",
+          "hasImage": true,
+          "s3Key": "showcase/technical-teal/9.jpeg"
+        },
+        {
+          "slideNumber": 10,
+          "slideType": "TEAM",
+          "title": "Leadership Team",
+          "hasImage": false,
+          "s3Key": "showcase/technical-teal/10.jpeg"
+        },
+        {
+          "slideNumber": 11,
+          "slideType": "CTA",
+          "title": "Start Building Today",
+          "hasImage": true,
+          "s3Key": "showcase/technical-teal/11.jpeg"
+        },
+        {
+          "slideNumber": 12,
+          "slideType": "SOLUTION",
+          "title": "Intelligent Developer Platform",
+          "hasImage": true,
+          "s3Key": "showcase/technical-teal/12.jpeg"
         }
       ]
     },
     {
       "slug": "light-minimal",
       "displayName": "Light Minimal",
+      "contentSet": "D",
       "slides": [
         {
           "slideNumber": 1,
           "slideType": "PROBLEM",
-          "title": "The Hidden Cost of Legacy Systems",
+          "title": "The Innovation Execution Gap",
           "hasImage": false,
           "s3Key": "showcase/light-minimal/1.jpeg"
         },
         {
           "slideNumber": 2,
           "slideType": "METRICS_HIGHLIGHT",
-          "title": "$4.2M Annual Revenue Loss",
+          "title": "327% ROI in First 18 Months",
           "hasImage": false,
           "s3Key": "showcase/light-minimal/2.jpeg"
         },
         {
           "slideNumber": 3,
-          "slideType": "TIMELINE",
-          "title": "Strategic Roadmap to Market Leadership",
+          "slideType": "COMPARISON",
+          "title": "Traditional R&D vs AI-Augmented Innovation",
           "hasImage": false,
           "s3Key": "showcase/light-minimal/3.jpeg"
         },
         {
           "slideNumber": 4,
-          "slideType": "SOLUTION",
-          "title": "Intelligent Automation Platform",
-          "hasImage": true,
+          "slideType": "TIMELINE",
+          "title": "Innovation Milestones",
+          "hasImage": false,
           "s3Key": "showcase/light-minimal/4.jpeg"
         },
         {
           "slideNumber": 5,
           "slideType": "FEATURE_GRID",
-          "title": "Four Capabilities That Drive Results",
+          "title": "Research Acceleration Capabilities",
           "hasImage": true,
           "s3Key": "showcase/light-minimal/5.jpeg"
         },
         {
           "slideNumber": 6,
-          "slideType": "ARCHITECTURE",
-          "title": "Cloud-Native Architecture",
-          "hasImage": true,
+          "slideType": "PROCESS",
+          "title": "Innovation Pipeline",
+          "hasImage": false,
           "s3Key": "showcase/light-minimal/6.jpeg"
         },
         {
           "slideNumber": 7,
-          "slideType": "CTA",
-          "title": "Take the Next Step",
-          "hasImage": true,
+          "slideType": "MARKET_SIZING",
+          "title": "Enterprise AI Research Market",
+          "hasImage": false,
           "s3Key": "showcase/light-minimal/7.jpeg"
         },
         {
           "slideNumber": 8,
-          "slideType": "CONTENT",
-          "title": "Deep Dive: AI-Driven Analytics",
-          "hasImage": true,
+          "slideType": "QUOTE",
+          "title": "Research Vision",
+          "hasImage": false,
           "s3Key": "showcase/light-minimal/8.jpeg"
+        },
+        {
+          "slideNumber": 9,
+          "slideType": "ARCHITECTURE",
+          "title": "Knowledge Graph Architecture",
+          "hasImage": true,
+          "s3Key": "showcase/light-minimal/9.jpeg"
+        },
+        {
+          "slideNumber": 10,
+          "slideType": "TEAM",
+          "title": "Research Leadership",
+          "hasImage": false,
+          "s3Key": "showcase/light-minimal/10.jpeg"
+        },
+        {
+          "slideNumber": 11,
+          "slideType": "CTA",
+          "title": "Unlock Your Research Potential",
+          "hasImage": true,
+          "s3Key": "showcase/light-minimal/11.jpeg"
+        },
+        {
+          "slideNumber": 12,
+          "slideType": "SOLUTION",
+          "title": "AI-Augmented Research Platform",
+          "hasImage": true,
+          "s3Key": "showcase/light-minimal/12.jpeg"
         }
       ]
     },
     {
       "slug": "corporate-blue",
       "displayName": "Corporate Blue",
+      "contentSet": "B",
       "slides": [
         {
           "slideNumber": 1,
           "slideType": "PROBLEM",
-          "title": "The Hidden Cost of Legacy Systems",
+          "title": "Margin Erosion in Core Business Units",
           "hasImage": false,
           "s3Key": "showcase/corporate-blue/1.jpeg"
         },
         {
           "slideNumber": 2,
           "slideType": "METRICS_HIGHLIGHT",
-          "title": "$4.2M Annual Revenue Loss",
+          "title": "$2.1B Revenue Opportunity Identified",
           "hasImage": false,
           "s3Key": "showcase/corporate-blue/2.jpeg"
         },
         {
           "slideNumber": 3,
-          "slideType": "TIMELINE",
-          "title": "Strategic Roadmap to Market Leadership",
+          "slideType": "COMPARISON",
+          "title": "Current Operating Model vs Target State",
           "hasImage": false,
           "s3Key": "showcase/corporate-blue/3.jpeg"
         },
         {
           "slideNumber": 4,
-          "slideType": "SOLUTION",
-          "title": "Intelligent Automation Platform",
-          "hasImage": true,
+          "slideType": "TIMELINE",
+          "title": "Transformation Roadmap",
+          "hasImage": false,
           "s3Key": "showcase/corporate-blue/4.jpeg"
         },
         {
           "slideNumber": 5,
           "slideType": "FEATURE_GRID",
-          "title": "Four Capabilities That Drive Results",
+          "title": "Strategic Value Levers",
           "hasImage": true,
           "s3Key": "showcase/corporate-blue/5.jpeg"
         },
         {
           "slideNumber": 6,
-          "slideType": "ARCHITECTURE",
-          "title": "Cloud-Native Architecture",
-          "hasImage": true,
+          "slideType": "PROCESS",
+          "title": "Due Diligence Framework",
+          "hasImage": false,
           "s3Key": "showcase/corporate-blue/6.jpeg"
         },
         {
           "slideNumber": 7,
-          "slideType": "CTA",
-          "title": "Take the Next Step",
-          "hasImage": true,
+          "slideType": "MARKET_SIZING",
+          "title": "Addressable Market Opportunity",
+          "hasImage": false,
           "s3Key": "showcase/corporate-blue/7.jpeg"
         },
         {
           "slideNumber": 8,
-          "slideType": "CONTENT",
-          "title": "Deep Dive: AI-Driven Analytics",
-          "hasImage": true,
+          "slideType": "QUOTE",
+          "title": "Executive Perspective",
+          "hasImage": false,
           "s3Key": "showcase/corporate-blue/8.jpeg"
+        },
+        {
+          "slideNumber": 9,
+          "slideType": "ARCHITECTURE",
+          "title": "Target Operating Model",
+          "hasImage": true,
+          "s3Key": "showcase/corporate-blue/9.jpeg"
+        },
+        {
+          "slideNumber": 10,
+          "slideType": "TEAM",
+          "title": "Advisory Board",
+          "hasImage": false,
+          "s3Key": "showcase/corporate-blue/10.jpeg"
+        },
+        {
+          "slideNumber": 11,
+          "slideType": "CTA",
+          "title": "Accelerate Your Transformation",
+          "hasImage": true,
+          "s3Key": "showcase/corporate-blue/11.jpeg"
+        },
+        {
+          "slideNumber": 12,
+          "slideType": "SOLUTION",
+          "title": "Value Creation Engine",
+          "hasImage": true,
+          "s3Key": "showcase/corporate-blue/12.jpeg"
         }
       ]
     },
     {
       "slug": "mckinsey-executive",
       "displayName": "McKinsey Executive",
+      "contentSet": "B",
       "slides": [
         {
           "slideNumber": 1,
           "slideType": "PROBLEM",
-          "title": "The Hidden Cost of Legacy Systems",
+          "title": "Margin Erosion in Core Business Units",
           "hasImage": false,
           "s3Key": "showcase/mckinsey-executive/1.jpeg"
         },
         {
           "slideNumber": 2,
           "slideType": "METRICS_HIGHLIGHT",
-          "title": "$4.2M Annual Revenue Loss",
+          "title": "$2.1B Revenue Opportunity Identified",
           "hasImage": false,
           "s3Key": "showcase/mckinsey-executive/2.jpeg"
         },
         {
           "slideNumber": 3,
-          "slideType": "TIMELINE",
-          "title": "Strategic Roadmap to Market Leadership",
+          "slideType": "COMPARISON",
+          "title": "Current Operating Model vs Target State",
           "hasImage": false,
           "s3Key": "showcase/mckinsey-executive/3.jpeg"
         },
         {
           "slideNumber": 4,
-          "slideType": "SOLUTION",
-          "title": "Intelligent Automation Platform",
-          "hasImage": true,
+          "slideType": "TIMELINE",
+          "title": "Transformation Roadmap",
+          "hasImage": false,
           "s3Key": "showcase/mckinsey-executive/4.jpeg"
         },
         {
           "slideNumber": 5,
           "slideType": "FEATURE_GRID",
-          "title": "Four Capabilities That Drive Results",
+          "title": "Strategic Value Levers",
           "hasImage": true,
           "s3Key": "showcase/mckinsey-executive/5.jpeg"
         },
         {
           "slideNumber": 6,
-          "slideType": "ARCHITECTURE",
-          "title": "Cloud-Native Architecture",
-          "hasImage": true,
+          "slideType": "PROCESS",
+          "title": "Due Diligence Framework",
+          "hasImage": false,
           "s3Key": "showcase/mckinsey-executive/6.jpeg"
         },
         {
           "slideNumber": 7,
-          "slideType": "CTA",
-          "title": "Take the Next Step",
-          "hasImage": true,
+          "slideType": "MARKET_SIZING",
+          "title": "Addressable Market Opportunity",
+          "hasImage": false,
           "s3Key": "showcase/mckinsey-executive/7.jpeg"
         },
         {
           "slideNumber": 8,
-          "slideType": "CONTENT",
-          "title": "Deep Dive: AI-Driven Analytics",
-          "hasImage": true,
+          "slideType": "QUOTE",
+          "title": "Executive Perspective",
+          "hasImage": false,
           "s3Key": "showcase/mckinsey-executive/8.jpeg"
+        },
+        {
+          "slideNumber": 9,
+          "slideType": "ARCHITECTURE",
+          "title": "Target Operating Model",
+          "hasImage": true,
+          "s3Key": "showcase/mckinsey-executive/9.jpeg"
+        },
+        {
+          "slideNumber": 10,
+          "slideType": "TEAM",
+          "title": "Advisory Board",
+          "hasImage": false,
+          "s3Key": "showcase/mckinsey-executive/10.jpeg"
+        },
+        {
+          "slideNumber": 11,
+          "slideType": "CTA",
+          "title": "Accelerate Your Transformation",
+          "hasImage": true,
+          "s3Key": "showcase/mckinsey-executive/11.jpeg"
+        },
+        {
+          "slideNumber": 12,
+          "slideType": "SOLUTION",
+          "title": "Value Creation Engine",
+          "hasImage": true,
+          "s3Key": "showcase/mckinsey-executive/12.jpeg"
         }
       ]
     },
     {
       "slug": "apple-keynote",
       "displayName": "Apple Keynote",
+      "contentSet": "C",
       "slides": [
         {
           "slideNumber": 1,
           "slideType": "PROBLEM",
-          "title": "The Hidden Cost of Legacy Systems",
+          "title": "The Creator Monetization Gap",
           "hasImage": false,
           "s3Key": "showcase/apple-keynote/1.jpeg"
         },
         {
           "slideNumber": 2,
           "slideType": "METRICS_HIGHLIGHT",
-          "title": "$4.2M Annual Revenue Loss",
+          "title": "12.4M Monthly Active Creators",
           "hasImage": false,
           "s3Key": "showcase/apple-keynote/2.jpeg"
         },
         {
           "slideNumber": 3,
-          "slideType": "TIMELINE",
-          "title": "Strategic Roadmap to Market Leadership",
+          "slideType": "COMPARISON",
+          "title": "Traditional Media vs Creator-Led Distribution",
           "hasImage": false,
           "s3Key": "showcase/apple-keynote/3.jpeg"
         },
         {
           "slideNumber": 4,
-          "slideType": "SOLUTION",
-          "title": "Intelligent Automation Platform",
-          "hasImage": true,
+          "slideType": "TIMELINE",
+          "title": "Platform Evolution",
+          "hasImage": false,
           "s3Key": "showcase/apple-keynote/4.jpeg"
         },
         {
           "slideNumber": 5,
           "slideType": "FEATURE_GRID",
-          "title": "Four Capabilities That Drive Results",
+          "title": "Creator Toolkit",
           "hasImage": true,
           "s3Key": "showcase/apple-keynote/5.jpeg"
         },
         {
           "slideNumber": 6,
-          "slideType": "ARCHITECTURE",
-          "title": "Cloud-Native Architecture",
-          "hasImage": true,
+          "slideType": "PROCESS",
+          "title": "Creator Success Journey",
+          "hasImage": false,
           "s3Key": "showcase/apple-keynote/6.jpeg"
         },
         {
           "slideNumber": 7,
-          "slideType": "CTA",
-          "title": "Take the Next Step",
-          "hasImage": true,
+          "slideType": "MARKET_SIZING",
+          "title": "Creator Economy Market",
+          "hasImage": false,
           "s3Key": "showcase/apple-keynote/7.jpeg"
         },
         {
           "slideNumber": 8,
-          "slideType": "CONTENT",
-          "title": "Deep Dive: AI-Driven Analytics",
-          "hasImage": true,
+          "slideType": "QUOTE",
+          "title": "Design Philosophy",
+          "hasImage": false,
           "s3Key": "showcase/apple-keynote/8.jpeg"
+        },
+        {
+          "slideNumber": 9,
+          "slideType": "ARCHITECTURE",
+          "title": "Creator Platform Ecosystem",
+          "hasImage": true,
+          "s3Key": "showcase/apple-keynote/9.jpeg"
+        },
+        {
+          "slideNumber": 10,
+          "slideType": "TEAM",
+          "title": "Creative Leadership",
+          "hasImage": false,
+          "s3Key": "showcase/apple-keynote/10.jpeg"
+        },
+        {
+          "slideNumber": 11,
+          "slideType": "CTA",
+          "title": "Join the Creator Revolution",
+          "hasImage": true,
+          "s3Key": "showcase/apple-keynote/11.jpeg"
+        },
+        {
+          "slideNumber": 12,
+          "slideType": "SOLUTION",
+          "title": "Creator Empowerment Platform",
+          "hasImage": true,
+          "s3Key": "showcase/apple-keynote/12.jpeg"
         }
       ]
     },
     {
       "slug": "ted-talk",
       "displayName": "TED Talk",
+      "contentSet": "C",
       "slides": [
         {
           "slideNumber": 1,
           "slideType": "PROBLEM",
-          "title": "The Hidden Cost of Legacy Systems",
+          "title": "The Creator Monetization Gap",
           "hasImage": false,
           "s3Key": "showcase/ted-talk/1.jpeg"
         },
         {
           "slideNumber": 2,
           "slideType": "METRICS_HIGHLIGHT",
-          "title": "$4.2M Annual Revenue Loss",
+          "title": "12.4M Monthly Active Creators",
           "hasImage": false,
           "s3Key": "showcase/ted-talk/2.jpeg"
         },
         {
           "slideNumber": 3,
-          "slideType": "TIMELINE",
-          "title": "Strategic Roadmap to Market Leadership",
+          "slideType": "COMPARISON",
+          "title": "Traditional Media vs Creator-Led Distribution",
           "hasImage": false,
           "s3Key": "showcase/ted-talk/3.jpeg"
         },
         {
           "slideNumber": 4,
-          "slideType": "SOLUTION",
-          "title": "Intelligent Automation Platform",
-          "hasImage": true,
+          "slideType": "TIMELINE",
+          "title": "Platform Evolution",
+          "hasImage": false,
           "s3Key": "showcase/ted-talk/4.jpeg"
         },
         {
           "slideNumber": 5,
           "slideType": "FEATURE_GRID",
-          "title": "Four Capabilities That Drive Results",
+          "title": "Creator Toolkit",
           "hasImage": true,
           "s3Key": "showcase/ted-talk/5.jpeg"
         },
         {
           "slideNumber": 6,
-          "slideType": "ARCHITECTURE",
-          "title": "Cloud-Native Architecture",
-          "hasImage": true,
+          "slideType": "PROCESS",
+          "title": "Creator Success Journey",
+          "hasImage": false,
           "s3Key": "showcase/ted-talk/6.jpeg"
         },
         {
           "slideNumber": 7,
-          "slideType": "CTA",
-          "title": "Take the Next Step",
-          "hasImage": true,
+          "slideType": "MARKET_SIZING",
+          "title": "Creator Economy Market",
+          "hasImage": false,
           "s3Key": "showcase/ted-talk/7.jpeg"
         },
         {
           "slideNumber": 8,
-          "slideType": "CONTENT",
-          "title": "Deep Dive: AI-Driven Analytics",
-          "hasImage": true,
+          "slideType": "QUOTE",
+          "title": "Design Philosophy",
+          "hasImage": false,
           "s3Key": "showcase/ted-talk/8.jpeg"
+        },
+        {
+          "slideNumber": 9,
+          "slideType": "ARCHITECTURE",
+          "title": "Creator Platform Ecosystem",
+          "hasImage": true,
+          "s3Key": "showcase/ted-talk/9.jpeg"
+        },
+        {
+          "slideNumber": 10,
+          "slideType": "TEAM",
+          "title": "Creative Leadership",
+          "hasImage": false,
+          "s3Key": "showcase/ted-talk/10.jpeg"
+        },
+        {
+          "slideNumber": 11,
+          "slideType": "CTA",
+          "title": "Join the Creator Revolution",
+          "hasImage": true,
+          "s3Key": "showcase/ted-talk/11.jpeg"
+        },
+        {
+          "slideNumber": 12,
+          "slideType": "SOLUTION",
+          "title": "Creator Empowerment Platform",
+          "hasImage": true,
+          "s3Key": "showcase/ted-talk/12.jpeg"
         }
       ]
     },
     {
       "slug": "yc-startup",
       "displayName": "YC Startup",
+      "contentSet": "D",
       "slides": [
         {
           "slideNumber": 1,
           "slideType": "PROBLEM",
-          "title": "The Hidden Cost of Legacy Systems",
+          "title": "The Innovation Execution Gap",
           "hasImage": false,
           "s3Key": "showcase/yc-startup/1.jpeg"
         },
         {
           "slideNumber": 2,
           "slideType": "METRICS_HIGHLIGHT",
-          "title": "$4.2M Annual Revenue Loss",
+          "title": "327% ROI in First 18 Months",
           "hasImage": false,
           "s3Key": "showcase/yc-startup/2.jpeg"
         },
         {
           "slideNumber": 3,
-          "slideType": "TIMELINE",
-          "title": "Strategic Roadmap to Market Leadership",
+          "slideType": "COMPARISON",
+          "title": "Traditional R&D vs AI-Augmented Innovation",
           "hasImage": false,
           "s3Key": "showcase/yc-startup/3.jpeg"
         },
         {
           "slideNumber": 4,
-          "slideType": "SOLUTION",
-          "title": "Intelligent Automation Platform",
-          "hasImage": true,
+          "slideType": "TIMELINE",
+          "title": "Innovation Milestones",
+          "hasImage": false,
           "s3Key": "showcase/yc-startup/4.jpeg"
         },
         {
           "slideNumber": 5,
           "slideType": "FEATURE_GRID",
-          "title": "Four Capabilities That Drive Results",
+          "title": "Research Acceleration Capabilities",
           "hasImage": true,
           "s3Key": "showcase/yc-startup/5.jpeg"
         },
         {
           "slideNumber": 6,
-          "slideType": "ARCHITECTURE",
-          "title": "Cloud-Native Architecture",
-          "hasImage": true,
+          "slideType": "PROCESS",
+          "title": "Innovation Pipeline",
+          "hasImage": false,
           "s3Key": "showcase/yc-startup/6.jpeg"
         },
         {
           "slideNumber": 7,
-          "slideType": "CTA",
-          "title": "Take the Next Step",
-          "hasImage": true,
+          "slideType": "MARKET_SIZING",
+          "title": "Enterprise AI Research Market",
+          "hasImage": false,
           "s3Key": "showcase/yc-startup/7.jpeg"
         },
         {
           "slideNumber": 8,
-          "slideType": "CONTENT",
-          "title": "Deep Dive: AI-Driven Analytics",
-          "hasImage": true,
+          "slideType": "QUOTE",
+          "title": "Research Vision",
+          "hasImage": false,
           "s3Key": "showcase/yc-startup/8.jpeg"
+        },
+        {
+          "slideNumber": 9,
+          "slideType": "ARCHITECTURE",
+          "title": "Knowledge Graph Architecture",
+          "hasImage": true,
+          "s3Key": "showcase/yc-startup/9.jpeg"
+        },
+        {
+          "slideNumber": 10,
+          "slideType": "TEAM",
+          "title": "Research Leadership",
+          "hasImage": false,
+          "s3Key": "showcase/yc-startup/10.jpeg"
+        },
+        {
+          "slideNumber": 11,
+          "slideType": "CTA",
+          "title": "Unlock Your Research Potential",
+          "hasImage": true,
+          "s3Key": "showcase/yc-startup/11.jpeg"
+        },
+        {
+          "slideNumber": 12,
+          "slideType": "SOLUTION",
+          "title": "AI-Augmented Research Platform",
+          "hasImage": true,
+          "s3Key": "showcase/yc-startup/12.jpeg"
         }
       ]
     },
     {
       "slug": "sequoia-capital",
       "displayName": "Sequoia Capital",
+      "contentSet": "B",
       "slides": [
         {
           "slideNumber": 1,
           "slideType": "PROBLEM",
-          "title": "The Hidden Cost of Legacy Systems",
+          "title": "Margin Erosion in Core Business Units",
           "hasImage": false,
           "s3Key": "showcase/sequoia-capital/1.jpeg"
         },
         {
           "slideNumber": 2,
           "slideType": "METRICS_HIGHLIGHT",
-          "title": "$4.2M Annual Revenue Loss",
+          "title": "$2.1B Revenue Opportunity Identified",
           "hasImage": false,
           "s3Key": "showcase/sequoia-capital/2.jpeg"
         },
         {
           "slideNumber": 3,
-          "slideType": "TIMELINE",
-          "title": "Strategic Roadmap to Market Leadership",
+          "slideType": "COMPARISON",
+          "title": "Current Operating Model vs Target State",
           "hasImage": false,
           "s3Key": "showcase/sequoia-capital/3.jpeg"
         },
         {
           "slideNumber": 4,
-          "slideType": "SOLUTION",
-          "title": "Intelligent Automation Platform",
-          "hasImage": true,
+          "slideType": "TIMELINE",
+          "title": "Transformation Roadmap",
+          "hasImage": false,
           "s3Key": "showcase/sequoia-capital/4.jpeg"
         },
         {
           "slideNumber": 5,
           "slideType": "FEATURE_GRID",
-          "title": "Four Capabilities That Drive Results",
+          "title": "Strategic Value Levers",
           "hasImage": true,
           "s3Key": "showcase/sequoia-capital/5.jpeg"
         },
         {
           "slideNumber": 6,
-          "slideType": "ARCHITECTURE",
-          "title": "Cloud-Native Architecture",
-          "hasImage": true,
+          "slideType": "PROCESS",
+          "title": "Due Diligence Framework",
+          "hasImage": false,
           "s3Key": "showcase/sequoia-capital/6.jpeg"
         },
         {
           "slideNumber": 7,
-          "slideType": "CTA",
-          "title": "Take the Next Step",
-          "hasImage": true,
+          "slideType": "MARKET_SIZING",
+          "title": "Addressable Market Opportunity",
+          "hasImage": false,
           "s3Key": "showcase/sequoia-capital/7.jpeg"
         },
         {
           "slideNumber": 8,
-          "slideType": "CONTENT",
-          "title": "Deep Dive: AI-Driven Analytics",
-          "hasImage": true,
+          "slideType": "QUOTE",
+          "title": "Executive Perspective",
+          "hasImage": false,
           "s3Key": "showcase/sequoia-capital/8.jpeg"
+        },
+        {
+          "slideNumber": 9,
+          "slideType": "ARCHITECTURE",
+          "title": "Target Operating Model",
+          "hasImage": true,
+          "s3Key": "showcase/sequoia-capital/9.jpeg"
+        },
+        {
+          "slideNumber": 10,
+          "slideType": "TEAM",
+          "title": "Advisory Board",
+          "hasImage": false,
+          "s3Key": "showcase/sequoia-capital/10.jpeg"
+        },
+        {
+          "slideNumber": 11,
+          "slideType": "CTA",
+          "title": "Accelerate Your Transformation",
+          "hasImage": true,
+          "s3Key": "showcase/sequoia-capital/11.jpeg"
+        },
+        {
+          "slideNumber": 12,
+          "slideType": "SOLUTION",
+          "title": "Value Creation Engine",
+          "hasImage": true,
+          "s3Key": "showcase/sequoia-capital/12.jpeg"
         }
       ]
     },
     {
       "slug": "airbnb-story",
       "displayName": "Airbnb Story",
+      "contentSet": "C",
       "slides": [
         {
           "slideNumber": 1,
           "slideType": "PROBLEM",
-          "title": "The Hidden Cost of Legacy Systems",
+          "title": "The Creator Monetization Gap",
           "hasImage": false,
           "s3Key": "showcase/airbnb-story/1.jpeg"
         },
         {
           "slideNumber": 2,
           "slideType": "METRICS_HIGHLIGHT",
-          "title": "$4.2M Annual Revenue Loss",
+          "title": "12.4M Monthly Active Creators",
           "hasImage": false,
           "s3Key": "showcase/airbnb-story/2.jpeg"
         },
         {
           "slideNumber": 3,
-          "slideType": "TIMELINE",
-          "title": "Strategic Roadmap to Market Leadership",
+          "slideType": "COMPARISON",
+          "title": "Traditional Media vs Creator-Led Distribution",
           "hasImage": false,
           "s3Key": "showcase/airbnb-story/3.jpeg"
         },
         {
           "slideNumber": 4,
-          "slideType": "SOLUTION",
-          "title": "Intelligent Automation Platform",
-          "hasImage": true,
+          "slideType": "TIMELINE",
+          "title": "Platform Evolution",
+          "hasImage": false,
           "s3Key": "showcase/airbnb-story/4.jpeg"
         },
         {
           "slideNumber": 5,
           "slideType": "FEATURE_GRID",
-          "title": "Four Capabilities That Drive Results",
+          "title": "Creator Toolkit",
           "hasImage": true,
           "s3Key": "showcase/airbnb-story/5.jpeg"
         },
         {
           "slideNumber": 6,
-          "slideType": "ARCHITECTURE",
-          "title": "Cloud-Native Architecture",
-          "hasImage": true,
+          "slideType": "PROCESS",
+          "title": "Creator Success Journey",
+          "hasImage": false,
           "s3Key": "showcase/airbnb-story/6.jpeg"
         },
         {
           "slideNumber": 7,
-          "slideType": "CTA",
-          "title": "Take the Next Step",
-          "hasImage": true,
+          "slideType": "MARKET_SIZING",
+          "title": "Creator Economy Market",
+          "hasImage": false,
           "s3Key": "showcase/airbnb-story/7.jpeg"
         },
         {
           "slideNumber": 8,
-          "slideType": "CONTENT",
-          "title": "Deep Dive: AI-Driven Analytics",
-          "hasImage": true,
+          "slideType": "QUOTE",
+          "title": "Design Philosophy",
+          "hasImage": false,
           "s3Key": "showcase/airbnb-story/8.jpeg"
+        },
+        {
+          "slideNumber": 9,
+          "slideType": "ARCHITECTURE",
+          "title": "Creator Platform Ecosystem",
+          "hasImage": true,
+          "s3Key": "showcase/airbnb-story/9.jpeg"
+        },
+        {
+          "slideNumber": 10,
+          "slideType": "TEAM",
+          "title": "Creative Leadership",
+          "hasImage": false,
+          "s3Key": "showcase/airbnb-story/10.jpeg"
+        },
+        {
+          "slideNumber": 11,
+          "slideType": "CTA",
+          "title": "Join the Creator Revolution",
+          "hasImage": true,
+          "s3Key": "showcase/airbnb-story/11.jpeg"
+        },
+        {
+          "slideNumber": 12,
+          "slideType": "SOLUTION",
+          "title": "Creator Empowerment Platform",
+          "hasImage": true,
+          "s3Key": "showcase/airbnb-story/12.jpeg"
         }
       ]
     },
     {
       "slug": "stripe-fintech",
       "displayName": "Stripe Fintech",
+      "contentSet": "A",
       "slides": [
         {
           "slideNumber": 1,
           "slideType": "PROBLEM",
-          "title": "The Hidden Cost of Legacy Systems",
+          "title": "The Developer Productivity Crisis",
           "hasImage": false,
           "s3Key": "showcase/stripe-fintech/1.jpeg"
         },
         {
           "slideNumber": 2,
           "slideType": "METRICS_HIGHLIGHT",
-          "title": "$4.2M Annual Revenue Loss",
+          "title": "99.97% Platform Uptime",
           "hasImage": false,
           "s3Key": "showcase/stripe-fintech/2.jpeg"
         },
         {
           "slideNumber": 3,
-          "slideType": "TIMELINE",
-          "title": "Strategic Roadmap to Market Leadership",
+          "slideType": "COMPARISON",
+          "title": "Legacy DevOps vs Platform Engineering",
           "hasImage": false,
           "s3Key": "showcase/stripe-fintech/3.jpeg"
         },
         {
           "slideNumber": 4,
-          "slideType": "SOLUTION",
-          "title": "Intelligent Automation Platform",
-          "hasImage": true,
+          "slideType": "TIMELINE",
+          "title": "Product Roadmap 2025",
+          "hasImage": false,
           "s3Key": "showcase/stripe-fintech/4.jpeg"
         },
         {
           "slideNumber": 5,
           "slideType": "FEATURE_GRID",
-          "title": "Four Capabilities That Drive Results",
+          "title": "Developer Platform Capabilities",
           "hasImage": true,
           "s3Key": "showcase/stripe-fintech/5.jpeg"
         },
         {
           "slideNumber": 6,
-          "slideType": "ARCHITECTURE",
-          "title": "Cloud-Native Architecture",
-          "hasImage": true,
+          "slideType": "PROCESS",
+          "title": "Platform Adoption Framework",
+          "hasImage": false,
           "s3Key": "showcase/stripe-fintech/6.jpeg"
         },
         {
           "slideNumber": 7,
-          "slideType": "CTA",
-          "title": "Take the Next Step",
-          "hasImage": true,
+          "slideType": "MARKET_SIZING",
+          "title": "Developer Tools Market",
+          "hasImage": false,
           "s3Key": "showcase/stripe-fintech/7.jpeg"
         },
         {
           "slideNumber": 8,
-          "slideType": "CONTENT",
-          "title": "Deep Dive: AI-Driven Analytics",
-          "hasImage": true,
+          "slideType": "QUOTE",
+          "title": "Industry Perspective",
+          "hasImage": false,
           "s3Key": "showcase/stripe-fintech/8.jpeg"
+        },
+        {
+          "slideNumber": 9,
+          "slideType": "ARCHITECTURE",
+          "title": "Cloud-Native Platform Architecture",
+          "hasImage": true,
+          "s3Key": "showcase/stripe-fintech/9.jpeg"
+        },
+        {
+          "slideNumber": 10,
+          "slideType": "TEAM",
+          "title": "Leadership Team",
+          "hasImage": false,
+          "s3Key": "showcase/stripe-fintech/10.jpeg"
+        },
+        {
+          "slideNumber": 11,
+          "slideType": "CTA",
+          "title": "Start Building Today",
+          "hasImage": true,
+          "s3Key": "showcase/stripe-fintech/11.jpeg"
+        },
+        {
+          "slideNumber": 12,
+          "slideType": "SOLUTION",
+          "title": "Intelligent Developer Platform",
+          "hasImage": true,
+          "s3Key": "showcase/stripe-fintech/12.jpeg"
         }
       ]
     },
     {
       "slug": "bcg-strategy",
       "displayName": "BCG Strategy",
+      "contentSet": "B",
       "slides": [
         {
           "slideNumber": 1,
           "slideType": "PROBLEM",
-          "title": "The Hidden Cost of Legacy Systems",
+          "title": "Margin Erosion in Core Business Units",
           "hasImage": false,
           "s3Key": "showcase/bcg-strategy/1.jpeg"
         },
         {
           "slideNumber": 2,
           "slideType": "METRICS_HIGHLIGHT",
-          "title": "$4.2M Annual Revenue Loss",
+          "title": "$2.1B Revenue Opportunity Identified",
           "hasImage": false,
           "s3Key": "showcase/bcg-strategy/2.jpeg"
         },
         {
           "slideNumber": 3,
-          "slideType": "TIMELINE",
-          "title": "Strategic Roadmap to Market Leadership",
+          "slideType": "COMPARISON",
+          "title": "Current Operating Model vs Target State",
           "hasImage": false,
           "s3Key": "showcase/bcg-strategy/3.jpeg"
         },
         {
           "slideNumber": 4,
-          "slideType": "SOLUTION",
-          "title": "Intelligent Automation Platform",
-          "hasImage": true,
+          "slideType": "TIMELINE",
+          "title": "Transformation Roadmap",
+          "hasImage": false,
           "s3Key": "showcase/bcg-strategy/4.jpeg"
         },
         {
           "slideNumber": 5,
           "slideType": "FEATURE_GRID",
-          "title": "Four Capabilities That Drive Results",
+          "title": "Strategic Value Levers",
           "hasImage": true,
           "s3Key": "showcase/bcg-strategy/5.jpeg"
         },
         {
           "slideNumber": 6,
-          "slideType": "ARCHITECTURE",
-          "title": "Cloud-Native Architecture",
-          "hasImage": true,
+          "slideType": "PROCESS",
+          "title": "Due Diligence Framework",
+          "hasImage": false,
           "s3Key": "showcase/bcg-strategy/6.jpeg"
         },
         {
           "slideNumber": 7,
-          "slideType": "CTA",
-          "title": "Take the Next Step",
-          "hasImage": true,
+          "slideType": "MARKET_SIZING",
+          "title": "Addressable Market Opportunity",
+          "hasImage": false,
           "s3Key": "showcase/bcg-strategy/7.jpeg"
         },
         {
           "slideNumber": 8,
-          "slideType": "CONTENT",
-          "title": "Deep Dive: AI-Driven Analytics",
-          "hasImage": true,
+          "slideType": "QUOTE",
+          "title": "Executive Perspective",
+          "hasImage": false,
           "s3Key": "showcase/bcg-strategy/8.jpeg"
+        },
+        {
+          "slideNumber": 9,
+          "slideType": "ARCHITECTURE",
+          "title": "Target Operating Model",
+          "hasImage": true,
+          "s3Key": "showcase/bcg-strategy/9.jpeg"
+        },
+        {
+          "slideNumber": 10,
+          "slideType": "TEAM",
+          "title": "Advisory Board",
+          "hasImage": false,
+          "s3Key": "showcase/bcg-strategy/10.jpeg"
+        },
+        {
+          "slideNumber": 11,
+          "slideType": "CTA",
+          "title": "Accelerate Your Transformation",
+          "hasImage": true,
+          "s3Key": "showcase/bcg-strategy/11.jpeg"
+        },
+        {
+          "slideNumber": 12,
+          "slideType": "SOLUTION",
+          "title": "Value Creation Engine",
+          "hasImage": true,
+          "s3Key": "showcase/bcg-strategy/12.jpeg"
         }
       ]
     },
     {
       "slug": "z4-dark-premium",
       "displayName": "Z4 Dark Premium",
+      "contentSet": "A",
       "slides": [
         {
           "slideNumber": 1,
           "slideType": "PROBLEM",
-          "title": "The Hidden Cost of Legacy Systems",
+          "title": "The Developer Productivity Crisis",
           "hasImage": false,
           "s3Key": "showcase/z4-dark-premium/1.jpeg"
         },
         {
           "slideNumber": 2,
           "slideType": "METRICS_HIGHLIGHT",
-          "title": "$4.2M Annual Revenue Loss",
+          "title": "99.97% Platform Uptime",
           "hasImage": false,
           "s3Key": "showcase/z4-dark-premium/2.jpeg"
         },
         {
           "slideNumber": 3,
-          "slideType": "TIMELINE",
-          "title": "Strategic Roadmap to Market Leadership",
+          "slideType": "COMPARISON",
+          "title": "Legacy DevOps vs Platform Engineering",
           "hasImage": false,
           "s3Key": "showcase/z4-dark-premium/3.jpeg"
         },
         {
           "slideNumber": 4,
-          "slideType": "SOLUTION",
-          "title": "Intelligent Automation Platform",
-          "hasImage": true,
+          "slideType": "TIMELINE",
+          "title": "Product Roadmap 2025",
+          "hasImage": false,
           "s3Key": "showcase/z4-dark-premium/4.jpeg"
         },
         {
           "slideNumber": 5,
           "slideType": "FEATURE_GRID",
-          "title": "Four Capabilities That Drive Results",
+          "title": "Developer Platform Capabilities",
           "hasImage": true,
           "s3Key": "showcase/z4-dark-premium/5.jpeg"
         },
         {
           "slideNumber": 6,
-          "slideType": "ARCHITECTURE",
-          "title": "Cloud-Native Architecture",
-          "hasImage": true,
+          "slideType": "PROCESS",
+          "title": "Platform Adoption Framework",
+          "hasImage": false,
           "s3Key": "showcase/z4-dark-premium/6.jpeg"
         },
         {
           "slideNumber": 7,
-          "slideType": "CTA",
-          "title": "Take the Next Step",
-          "hasImage": true,
+          "slideType": "MARKET_SIZING",
+          "title": "Developer Tools Market",
+          "hasImage": false,
           "s3Key": "showcase/z4-dark-premium/7.jpeg"
         },
         {
           "slideNumber": 8,
-          "slideType": "CONTENT",
-          "title": "Deep Dive: AI-Driven Analytics",
-          "hasImage": true,
+          "slideType": "QUOTE",
+          "title": "Industry Perspective",
+          "hasImage": false,
           "s3Key": "showcase/z4-dark-premium/8.jpeg"
+        },
+        {
+          "slideNumber": 9,
+          "slideType": "ARCHITECTURE",
+          "title": "Cloud-Native Platform Architecture",
+          "hasImage": true,
+          "s3Key": "showcase/z4-dark-premium/9.jpeg"
+        },
+        {
+          "slideNumber": 10,
+          "slideType": "TEAM",
+          "title": "Leadership Team",
+          "hasImage": false,
+          "s3Key": "showcase/z4-dark-premium/10.jpeg"
+        },
+        {
+          "slideNumber": 11,
+          "slideType": "CTA",
+          "title": "Start Building Today",
+          "hasImage": true,
+          "s3Key": "showcase/z4-dark-premium/11.jpeg"
+        },
+        {
+          "slideNumber": 12,
+          "slideType": "SOLUTION",
+          "title": "Intelligent Developer Platform",
+          "hasImage": true,
+          "s3Key": "showcase/z4-dark-premium/12.jpeg"
         }
       ]
     },
     {
       "slug": "academic-research",
       "displayName": "Academic Research",
+      "contentSet": "D",
       "slides": [
         {
           "slideNumber": 1,
           "slideType": "PROBLEM",
-          "title": "The Hidden Cost of Legacy Systems",
+          "title": "The Innovation Execution Gap",
           "hasImage": false,
           "s3Key": "showcase/academic-research/1.jpeg"
         },
         {
           "slideNumber": 2,
           "slideType": "METRICS_HIGHLIGHT",
-          "title": "$4.2M Annual Revenue Loss",
+          "title": "327% ROI in First 18 Months",
           "hasImage": false,
           "s3Key": "showcase/academic-research/2.jpeg"
         },
         {
           "slideNumber": 3,
-          "slideType": "TIMELINE",
-          "title": "Strategic Roadmap to Market Leadership",
+          "slideType": "COMPARISON",
+          "title": "Traditional R&D vs AI-Augmented Innovation",
           "hasImage": false,
           "s3Key": "showcase/academic-research/3.jpeg"
         },
         {
           "slideNumber": 4,
-          "slideType": "SOLUTION",
-          "title": "Intelligent Automation Platform",
-          "hasImage": true,
+          "slideType": "TIMELINE",
+          "title": "Innovation Milestones",
+          "hasImage": false,
           "s3Key": "showcase/academic-research/4.jpeg"
         },
         {
           "slideNumber": 5,
           "slideType": "FEATURE_GRID",
-          "title": "Four Capabilities That Drive Results",
+          "title": "Research Acceleration Capabilities",
           "hasImage": true,
           "s3Key": "showcase/academic-research/5.jpeg"
         },
         {
           "slideNumber": 6,
-          "slideType": "ARCHITECTURE",
-          "title": "Cloud-Native Architecture",
-          "hasImage": true,
+          "slideType": "PROCESS",
+          "title": "Innovation Pipeline",
+          "hasImage": false,
           "s3Key": "showcase/academic-research/6.jpeg"
         },
         {
           "slideNumber": 7,
-          "slideType": "CTA",
-          "title": "Take the Next Step",
-          "hasImage": true,
+          "slideType": "MARKET_SIZING",
+          "title": "Enterprise AI Research Market",
+          "hasImage": false,
           "s3Key": "showcase/academic-research/7.jpeg"
         },
         {
           "slideNumber": 8,
-          "slideType": "CONTENT",
-          "title": "Deep Dive: AI-Driven Analytics",
-          "hasImage": true,
+          "slideType": "QUOTE",
+          "title": "Research Vision",
+          "hasImage": false,
           "s3Key": "showcase/academic-research/8.jpeg"
+        },
+        {
+          "slideNumber": 9,
+          "slideType": "ARCHITECTURE",
+          "title": "Knowledge Graph Architecture",
+          "hasImage": true,
+          "s3Key": "showcase/academic-research/9.jpeg"
+        },
+        {
+          "slideNumber": 10,
+          "slideType": "TEAM",
+          "title": "Research Leadership",
+          "hasImage": false,
+          "s3Key": "showcase/academic-research/10.jpeg"
+        },
+        {
+          "slideNumber": 11,
+          "slideType": "CTA",
+          "title": "Unlock Your Research Potential",
+          "hasImage": true,
+          "s3Key": "showcase/academic-research/11.jpeg"
+        },
+        {
+          "slideNumber": 12,
+          "slideType": "SOLUTION",
+          "title": "AI-Augmented Research Platform",
+          "hasImage": true,
+          "s3Key": "showcase/academic-research/12.jpeg"
         }
       ]
     }
