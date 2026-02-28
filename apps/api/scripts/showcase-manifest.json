@@ -1,5 +1,5 @@
 {
-  "generated": "2026-02-28T16:53:38.947Z",
+  "generated": "2026-02-28T23:46:11.269Z",
   "themes": [
     {
       "slug": "pitchable-dark",
@@ -89,6 +89,125 @@
           "title": "Intelligent Developer Platform",
           "hasImage": true,
           "s3Key": "showcase/pitchable-dark/12.jpeg"
+        },
+        {
+          "slideNumber": 13,
+          "slideType": "HOOK",
+          "title": "The $4.7 Trillion Cloud Waste Problem",
+          "hasImage": false,
+          "s3Key": "showcase/pitchable-dark/13.jpeg"
+        },
+        {
+          "slideNumber": 14,
+          "slideType": "MATRIX_2X2",
+          "title": "DevOps Investment Priority Matrix",
+          "hasImage": false,
+          "s3Key": "showcase/pitchable-dark/14.jpeg"
+        },
+        {
+          "slideNumber": 15,
+          "slideType": "WATERFALL",
+          "title": "ARR Bridge Q3 to Q4",
+          "hasImage": false,
+          "s3Key": "showcase/pitchable-dark/15.jpeg"
+        },
+        {
+          "slideNumber": 16,
+          "slideType": "FUNNEL",
+          "title": "Developer Acquisition Funnel",
+          "hasImage": false,
+          "s3Key": "showcase/pitchable-dark/16.jpeg"
+        },
+        {
+          "slideNumber": 17,
+          "slideType": "COMPETITIVE_MATRIX",
+          "title": "Platform Comparison",
+          "hasImage": false,
+          "s3Key": "showcase/pitchable-dark/17.jpeg"
+        },
+        {
+          "slideNumber": 18,
+          "slideType": "ROADMAP",
+          "title": "Platform Roadmap 2026",
+          "hasImage": false,
+          "s3Key": "showcase/pitchable-dark/18.jpeg"
+        },
+        {
+          "slideNumber": 19,
+          "slideType": "PRICING_TABLE",
+          "title": "Developer-Friendly Pricing",
+          "hasImage": false,
+          "s3Key": "showcase/pitchable-dark/19.jpeg"
+        },
+        {
+          "slideNumber": 20,
+          "slideType": "UNIT_ECONOMICS",
+          "title": "Unit Economics at Scale",
+          "hasImage": false,
+          "s3Key": "showcase/pitchable-dark/20.jpeg"
+        },
+        {
+          "slideNumber": 21,
+          "slideType": "SWOT",
+          "title": "Platform Strategic Assessment",
+          "hasImage": false,
+          "s3Key": "showcase/pitchable-dark/21.jpeg"
+        },
+        {
+          "slideNumber": 22,
+          "slideType": "THREE_PILLARS",
+          "title": "The Platform Engineering Advantage",
+          "hasImage": false,
+          "s3Key": "showcase/pitchable-dark/22.jpeg"
+        },
+        {
+          "slideNumber": 23,
+          "slideType": "BEFORE_AFTER",
+          "title": "The DevOps Transformation",
+          "hasImage": false,
+          "s3Key": "showcase/pitchable-dark/23.jpeg"
+        },
+        {
+          "slideNumber": 24,
+          "slideType": "SOCIAL_PROOF",
+          "title": "Trusted by Engineering Teams",
+          "hasImage": false,
+          "s3Key": "showcase/pitchable-dark/24.jpeg"
+        },
+        {
+          "slideNumber": 25,
+          "slideType": "OBJECTION_HANDLER",
+          "title": "Addressing Platform Skeptics",
+          "hasImage": false,
+          "s3Key": "showcase/pitchable-dark/25.jpeg"
+        },
+        {
+          "slideNumber": 26,
+          "slideType": "FAQ",
+          "title": "Frequently Asked Questions",
+          "hasImage": false,
+          "s3Key": "showcase/pitchable-dark/26.jpeg"
+        },
+        {
+          "slideNumber": 27,
+          "slideType": "VERDICT",
+          "title": "Technical Advisory Recommendation",
+          "hasImage": false,
+          "s3Key": "showcase/pitchable-dark/27.jpeg"
+        },
+        {
+          "slideNumber": 28,
+          "slideType": "COHORT_TABLE",
+          "title": "Customer Retention by Cohort",
+          "hasImage": false,
+          "s3Key": "showcase/pitchable-dark/28.jpeg"
+        },
+        {
+          "slideNumber": 29,
+          "slideType": "PROGRESS_TRACKER",
+          "title": "Platform Migration Status",
+          "hasImage": false,
+          "s3Key": "showcase/pitchable-dark/29.jpeg"
         }
       ]
     },
@@ -180,6 +299,125 @@
           "title": "AI-Augmented Research Platform",
           "hasImage": true,
           "s3Key": "showcase/dark-professional/12.jpeg"
+        },
+        {
+          "slideNumber": 13,
+          "slideType": "HOOK",
+          "title": "78% of R&D Projects Fail to Deliver Value",
+          "hasImage": false,
+          "s3Key": "showcase/dark-professional/13.jpeg"
+        },
+        {
+          "slideNumber": 14,
+          "slideType": "MATRIX_2X2",
+          "title": "Research Investment Priority Matrix",
+          "hasImage": false,
+          "s3Key": "showcase/dark-professional/14.jpeg"
+        },
+        {
+          "slideNumber": 15,
+          "slideType": "WATERFALL",
+          "title": "Patent Portfolio Bridge FY25 to FY26",
+          "hasImage": false,
+          "s3Key": "showcase/dark-professional/15.jpeg"
+        },
+        {
+          "slideNumber": 16,
+          "slideType": "FUNNEL",
+          "title": "Research Commercialization Pipeline",
+          "hasImage": false,
+          "s3Key": "showcase/dark-professional/16.jpeg"
+        },
+        {
+          "slideNumber": 17,
+          "slideType": "COMPETITIVE_MATRIX",
+          "title": "Research Platform Comparison",
+          "hasImage": false,
+          "s3Key": "showcase/dark-professional/17.jpeg"
+        },
+        {
+          "slideNumber": 18,
+          "slideType": "ROADMAP",
+          "title": "Research Platform Roadmap",
+          "hasImage": false,
+          "s3Key": "showcase/dark-professional/18.jpeg"
+        },
+        {
+          "slideNumber": 19,
+          "slideType": "PRICING_TABLE",
+          "title": "Research-Grade Pricing",
+          "hasImage": false,
+          "s3Key": "showcase/dark-professional/19.jpeg"
+        },
+        {
+          "slideNumber": 20,
+          "slideType": "UNIT_ECONOMICS",
+          "title": "R&D Platform Economics",
+          "hasImage": false,
+          "s3Key": "showcase/dark-professional/20.jpeg"
+        },
+        {
+          "slideNumber": 21,
+          "slideType": "SWOT",
+          "title": "Research Platform Strategic Assessment",
+          "hasImage": false,
+          "s3Key": "showcase/dark-professional/21.jpeg"
+        },
+        {
+          "slideNumber": 22,
+          "slideType": "THREE_PILLARS",
+          "title": "The Research Acceleration Framework",
+          "hasImage": false,
+          "s3Key": "showcase/dark-professional/22.jpeg"
+        },
+        {
+          "slideNumber": 23,
+          "slideType": "BEFORE_AFTER",
+          "title": "The Research Transformation",
+          "hasImage": false,
+          "s3Key": "showcase/dark-professional/23.jpeg"
+        },
+        {
+          "slideNumber": 24,
+          "slideType": "SOCIAL_PROOF",
+          "title": "Trusted by Leading Research Institutions",
+          "hasImage": false,
+          "s3Key": "showcase/dark-professional/24.jpeg"
+        },
+        {
+          "slideNumber": 25,
+          "slideType": "OBJECTION_HANDLER",
+          "title": "Addressing Researcher Concerns",
+          "hasImage": false,
+          "s3Key": "showcase/dark-professional/25.jpeg"
+        },
+        {
+          "slideNumber": 26,
+          "slideType": "FAQ",
+          "title": "Research Platform Questions",
+          "hasImage": false,
+          "s3Key": "showcase/dark-professional/26.jpeg"
+        },
+        {
+          "slideNumber": 27,
+          "slideType": "VERDICT",
+          "title": "R&D Investment Committee Recommendation",
+          "hasImage": false,
+          "s3Key": "showcase/dark-professional/27.jpeg"
+        },
+        {
+          "slideNumber": 28,
+          "slideType": "COHORT_TABLE",
+          "title": "Research Output by Institution Cohort",
+          "hasImage": false,
+          "s3Key": "showcase/dark-professional/28.jpeg"
+        },
+        {
+          "slideNumber": 29,
+          "slideType": "PROGRESS_TRACKER",
+          "title": "Research Platform Deployment Status",
+          "hasImage": false,
+          "s3Key": "showcase/dark-professional/29.jpeg"
         }
       ]
     },
@@ -271,6 +509,125 @@
           "title": "Creator Empowerment Platform",
           "hasImage": true,
           "s3Key": "showcase/creative-warm/12.jpeg"
+        },
+        {
+          "slideNumber": 13,
+          "slideType": "HOOK",
+          "title": "Only 4% of Creators Earn a Living Wage",
+          "hasImage": false,
+          "s3Key": "showcase/creative-warm/13.jpeg"
+        },
+        {
+          "slideNumber": 14,
+          "slideType": "MATRIX_2X2",
+          "title": "Content Strategy Priority Matrix",
+          "hasImage": false,
+          "s3Key": "showcase/creative-warm/14.jpeg"
+        },
+        {
+          "slideNumber": 15,
+          "slideType": "WATERFALL",
+          "title": "Creator Revenue Bridge Q3 to Q4",
+          "hasImage": false,
+          "s3Key": "showcase/creative-warm/15.jpeg"
+        },
+        {
+          "slideNumber": 16,
+          "slideType": "FUNNEL",
+          "title": "Creator Onboarding Funnel",
+          "hasImage": false,
+          "s3Key": "showcase/creative-warm/16.jpeg"
+        },
+        {
+          "slideNumber": 17,
+          "slideType": "COMPETITIVE_MATRIX",
+          "title": "Creator Platform Comparison",
+          "hasImage": false,
+          "s3Key": "showcase/creative-warm/17.jpeg"
+        },
+        {
+          "slideNumber": 18,
+          "slideType": "ROADMAP",
+          "title": "Platform Evolution 2026",
+          "hasImage": false,
+          "s3Key": "showcase/creative-warm/18.jpeg"
+        },
+        {
+          "slideNumber": 19,
+          "slideType": "PRICING_TABLE",
+          "title": "Creator-First Pricing",
+          "hasImage": false,
+          "s3Key": "showcase/creative-warm/19.jpeg"
+        },
+        {
+          "slideNumber": 20,
+          "slideType": "UNIT_ECONOMICS",
+          "title": "Creator Platform Unit Economics",
+          "hasImage": false,
+          "s3Key": "showcase/creative-warm/20.jpeg"
+        },
+        {
+          "slideNumber": 21,
+          "slideType": "SWOT",
+          "title": "Creator Platform Strategic Position",
+          "hasImage": false,
+          "s3Key": "showcase/creative-warm/21.jpeg"
+        },
+        {
+          "slideNumber": 22,
+          "slideType": "THREE_PILLARS",
+          "title": "The Creator Advantage",
+          "hasImage": false,
+          "s3Key": "showcase/creative-warm/22.jpeg"
+        },
+        {
+          "slideNumber": 23,
+          "slideType": "BEFORE_AFTER",
+          "title": "The Creator Transformation",
+          "hasImage": false,
+          "s3Key": "showcase/creative-warm/23.jpeg"
+        },
+        {
+          "slideNumber": 24,
+          "slideType": "SOCIAL_PROOF",
+          "title": "Loved by Creators Worldwide",
+          "hasImage": false,
+          "s3Key": "showcase/creative-warm/24.jpeg"
+        },
+        {
+          "slideNumber": 25,
+          "slideType": "OBJECTION_HANDLER",
+          "title": "Addressing Creator Concerns",
+          "hasImage": false,
+          "s3Key": "showcase/creative-warm/25.jpeg"
+        },
+        {
+          "slideNumber": 26,
+          "slideType": "FAQ",
+          "title": "Creator Questions Answered",
+          "hasImage": false,
+          "s3Key": "showcase/creative-warm/26.jpeg"
+        },
+        {
+          "slideNumber": 27,
+          "slideType": "VERDICT",
+          "title": "Creator Advisory Recommendation",
+          "hasImage": false,
+          "s3Key": "showcase/creative-warm/27.jpeg"
+        },
+        {
+          "slideNumber": 28,
+          "slideType": "COHORT_TABLE",
+          "title": "Creator Revenue Growth by Cohort",
+          "hasImage": false,
+          "s3Key": "showcase/creative-warm/28.jpeg"
+        },
+        {
+          "slideNumber": 29,
+          "slideType": "PROGRESS_TRACKER",
+          "title": "Platform Launch Milestones",
+          "hasImage": false,
+          "s3Key": "showcase/creative-warm/29.jpeg"
         }
       ]
     },
@@ -362,6 +719,125 @@
           "title": "Intelligent Developer Platform",
           "hasImage": true,
           "s3Key": "showcase/technical-teal/12.jpeg"
+        },
+        {
+          "slideNumber": 13,
+          "slideType": "HOOK",
+          "title": "The $4.7 Trillion Cloud Waste Problem",
+          "hasImage": false,
+          "s3Key": "showcase/technical-teal/13.jpeg"
+        },
+        {
+          "slideNumber": 14,
+          "slideType": "MATRIX_2X2",
+          "title": "DevOps Investment Priority Matrix",
+          "hasImage": false,
+          "s3Key": "showcase/technical-teal/14.jpeg"
+        },
+        {
+          "slideNumber": 15,
+          "slideType": "WATERFALL",
+          "title": "ARR Bridge Q3 to Q4",
+          "hasImage": false,
+          "s3Key": "showcase/technical-teal/15.jpeg"
+        },
+        {
+          "slideNumber": 16,
+          "slideType": "FUNNEL",
+          "title": "Developer Acquisition Funnel",
+          "hasImage": false,
+          "s3Key": "showcase/technical-teal/16.jpeg"
+        },
+        {
+          "slideNumber": 17,
+          "slideType": "COMPETITIVE_MATRIX",
+          "title": "Platform Comparison",
+          "hasImage": false,
+          "s3Key": "showcase/technical-teal/17.jpeg"
+        },
+        {
+          "slideNumber": 18,
+          "slideType": "ROADMAP",
+          "title": "Platform Roadmap 2026",
+          "hasImage": false,
+          "s3Key": "showcase/technical-teal/18.jpeg"
+        },
+        {
+          "slideNumber": 19,
+          "slideType": "PRICING_TABLE",
+          "title": "Developer-Friendly Pricing",
+          "hasImage": false,
+          "s3Key": "showcase/technical-teal/19.jpeg"
+        },
+        {
+          "slideNumber": 20,
+          "slideType": "UNIT_ECONOMICS",
+          "title": "Unit Economics at Scale",
+          "hasImage": false,
+          "s3Key": "showcase/technical-teal/20.jpeg"
+        },
+        {
+          "slideNumber": 21,
+          "slideType": "SWOT",
+          "title": "Platform Strategic Assessment",
+          "hasImage": false,
+          "s3Key": "showcase/technical-teal/21.jpeg"
+        },
+        {
+          "slideNumber": 22,
+          "slideType": "THREE_PILLARS",
+          "title": "The Platform Engineering Advantage",
+          "hasImage": false,
+          "s3Key": "showcase/technical-teal/22.jpeg"
+        },
+        {
+          "slideNumber": 23,
+          "slideType": "BEFORE_AFTER",
+          "title": "The DevOps Transformation",
+          "hasImage": false,
+          "s3Key": "showcase/technical-teal/23.jpeg"
+        },
+        {
+          "slideNumber": 24,
+          "slideType": "SOCIAL_PROOF",
+          "title": "Trusted by Engineering Teams",
+          "hasImage": false,
+          "s3Key": "showcase/technical-teal/24.jpeg"
+        },
+        {
+          "slideNumber": 25,
+          "slideType": "OBJECTION_HANDLER",
+          "title": "Addressing Platform Skeptics",
+          "hasImage": false,
+          "s3Key": "showcase/technical-teal/25.jpeg"
+        },
+        {
+          "slideNumber": 26,
+          "slideType": "FAQ",
+          "title": "Frequently Asked Questions",
+          "hasImage": false,
+          "s3Key": "showcase/technical-teal/26.jpeg"
+        },
+        {
+          "slideNumber": 27,
+          "slideType": "VERDICT",
+          "title": "Technical Advisory Recommendation",
+          "hasImage": false,
+          "s3Key": "showcase/technical-teal/27.jpeg"
+        },
+        {
+          "slideNumber": 28,
+          "slideType": "COHORT_TABLE",
+          "title": "Customer Retention by Cohort",
+          "hasImage": false,
+          "s3Key": "showcase/technical-teal/28.jpeg"
+        },
+        {
+          "slideNumber": 29,
+          "slideType": "PROGRESS_TRACKER",
+          "title": "Platform Migration Status",
+          "hasImage": false,
+          "s3Key": "showcase/technical-teal/29.jpeg"
         }
       ]
     },
@@ -453,6 +929,125 @@
           "title": "AI-Augmented Research Platform",
           "hasImage": true,
           "s3Key": "showcase/light-minimal/12.jpeg"
+        },
+        {
+          "slideNumber": 13,
+          "slideType": "HOOK",
+          "title": "78% of R&D Projects Fail to Deliver Value",
+          "hasImage": false,
+          "s3Key": "showcase/light-minimal/13.jpeg"
+        },
+        {
+          "slideNumber": 14,
+          "slideType": "MATRIX_2X2",
+          "title": "Research Investment Priority Matrix",
+          "hasImage": false,
+          "s3Key": "showcase/light-minimal/14.jpeg"
+        },
+        {
+          "slideNumber": 15,
+          "slideType": "WATERFALL",
+          "title": "Patent Portfolio Bridge FY25 to FY26",
+          "hasImage": false,
+          "s3Key": "showcase/light-minimal/15.jpeg"
+        },
+        {
+          "slideNumber": 16,
+          "slideType": "FUNNEL",
+          "title": "Research Commercialization Pipeline",
+          "hasImage": false,
+          "s3Key": "showcase/light-minimal/16.jpeg"
+        },
+        {
+          "slideNumber": 17,
+          "slideType": "COMPETITIVE_MATRIX",
+          "title": "Research Platform Comparison",
+          "hasImage": false,
+          "s3Key": "showcase/light-minimal/17.jpeg"
+        },
+        {
+          "slideNumber": 18,
+          "slideType": "ROADMAP",
+          "title": "Research Platform Roadmap",
+          "hasImage": false,
+          "s3Key": "showcase/light-minimal/18.jpeg"
+        },
+        {
+          "slideNumber": 19,
+          "slideType": "PRICING_TABLE",
+          "title": "Research-Grade Pricing",
+          "hasImage": false,
+          "s3Key": "showcase/light-minimal/19.jpeg"
+        },
+        {
+          "slideNumber": 20,
+          "slideType": "UNIT_ECONOMICS",
+          "title": "R&D Platform Economics",
+          "hasImage": false,
+          "s3Key": "showcase/light-minimal/20.jpeg"
+        },
+        {
+          "slideNumber": 21,
+          "slideType": "SWOT",
+          "title": "Research Platform Strategic Assessment",
+          "hasImage": false,
+          "s3Key": "showcase/light-minimal/21.jpeg"
+        },
+        {
+          "slideNumber": 22,
+          "slideType": "THREE_PILLARS",
+          "title": "The Research Acceleration Framework",
+          "hasImage": false,
+          "s3Key": "showcase/light-minimal/22.jpeg"
+        },
+        {
+          "slideNumber": 23,
+          "slideType": "BEFORE_AFTER",
+          "title": "The Research Transformation",
+          "hasImage": false,
+          "s3Key": "showcase/light-minimal/23.jpeg"
+        },
+        {
+          "slideNumber": 24,
+          "slideType": "SOCIAL_PROOF",
+          "title": "Trusted by Leading Research Institutions",
+          "hasImage": false,
+          "s3Key": "showcase/light-minimal/24.jpeg"
+        },
+        {
+          "slideNumber": 25,
+          "slideType": "OBJECTION_HANDLER",
+          "title": "Addressing Researcher Concerns",
+          "hasImage": false,
+          "s3Key": "showcase/light-minimal/25.jpeg"
+        },
+        {
+          "slideNumber": 26,
+          "slideType": "FAQ",
+          "title": "Research Platform Questions",
+          "hasImage": false,
+          "s3Key": "showcase/light-minimal/26.jpeg"
+        },
+        {
+          "slideNumber": 27,
+          "slideType": "VERDICT",
+          "title": "R&D Investment Committee Recommendation",
+          "hasImage": false,
+          "s3Key": "showcase/light-minimal/27.jpeg"
+        },
+        {
+          "slideNumber": 28,
+          "slideType": "COHORT_TABLE",
+          "title": "Research Output by Institution Cohort",
+          "hasImage": false,
+          "s3Key": "showcase/light-minimal/28.jpeg"
+        },
+        {
+          "slideNumber": 29,
+          "slideType": "PROGRESS_TRACKER",
+          "title": "Research Platform Deployment Status",
+          "hasImage": false,
+          "s3Key": "showcase/light-minimal/29.jpeg"
         }
       ]
     },
@@ -544,6 +1139,125 @@
           "title": "Value Creation Engine",
           "hasImage": true,
           "s3Key": "showcase/corporate-blue/12.jpeg"
+        },
+        {
+          "slideNumber": 13,
+          "slideType": "HOOK",
+          "title": "The $890M Cost Reduction Opportunity",
+          "hasImage": false,
+          "s3Key": "showcase/corporate-blue/13.jpeg"
+        },
+        {
+          "slideNumber": 14,
+          "slideType": "MATRIX_2X2",
+          "title": "Strategic Initiative Prioritization",
+          "hasImage": false,
+          "s3Key": "showcase/corporate-blue/14.jpeg"
+        },
+        {
+          "slideNumber": 15,
+          "slideType": "WATERFALL",
+          "title": "EBITDA Bridge FY25 to FY26",
+          "hasImage": false,
+          "s3Key": "showcase/corporate-blue/15.jpeg"
+        },
+        {
+          "slideNumber": 16,
+          "slideType": "FUNNEL",
+          "title": "Deal Pipeline Progression",
+          "hasImage": false,
+          "s3Key": "showcase/corporate-blue/16.jpeg"
+        },
+        {
+          "slideNumber": 17,
+          "slideType": "COMPETITIVE_MATRIX",
+          "title": "Advisory Capability Comparison",
+          "hasImage": false,
+          "s3Key": "showcase/corporate-blue/17.jpeg"
+        },
+        {
+          "slideNumber": 18,
+          "slideType": "ROADMAP",
+          "title": "Transformation Roadmap",
+          "hasImage": false,
+          "s3Key": "showcase/corporate-blue/18.jpeg"
+        },
+        {
+          "slideNumber": 19,
+          "slideType": "PRICING_TABLE",
+          "title": "Engagement Models",
+          "hasImage": false,
+          "s3Key": "showcase/corporate-blue/19.jpeg"
+        },
+        {
+          "slideNumber": 20,
+          "slideType": "UNIT_ECONOMICS",
+          "title": "Client Value Economics",
+          "hasImage": false,
+          "s3Key": "showcase/corporate-blue/20.jpeg"
+        },
+        {
+          "slideNumber": 21,
+          "slideType": "SWOT",
+          "title": "Practice Strategic Assessment",
+          "hasImage": false,
+          "s3Key": "showcase/corporate-blue/21.jpeg"
+        },
+        {
+          "slideNumber": 22,
+          "slideType": "THREE_PILLARS",
+          "title": "The Value Creation Framework",
+          "hasImage": false,
+          "s3Key": "showcase/corporate-blue/22.jpeg"
+        },
+        {
+          "slideNumber": 23,
+          "slideType": "BEFORE_AFTER",
+          "title": "The Transformation Impact",
+          "hasImage": false,
+          "s3Key": "showcase/corporate-blue/23.jpeg"
+        },
+        {
+          "slideNumber": 24,
+          "slideType": "SOCIAL_PROOF",
+          "title": "Trusted by Fortune 500 Leadership",
+          "hasImage": false,
+          "s3Key": "showcase/corporate-blue/24.jpeg"
+        },
+        {
+          "slideNumber": 25,
+          "slideType": "OBJECTION_HANDLER",
+          "title": "Addressing Executive Concerns",
+          "hasImage": false,
+          "s3Key": "showcase/corporate-blue/25.jpeg"
+        },
+        {
+          "slideNumber": 26,
+          "slideType": "FAQ",
+          "title": "Engagement Questions",
+          "hasImage": false,
+          "s3Key": "showcase/corporate-blue/26.jpeg"
+        },
+        {
+          "slideNumber": 27,
+          "slideType": "VERDICT",
+          "title": "Board Recommendation",
+          "hasImage": false,
+          "s3Key": "showcase/corporate-blue/27.jpeg"
+        },
+        {
+          "slideNumber": 28,
+          "slideType": "COHORT_TABLE",
+          "title": "Client Value Realization by Engagement Cohort",
+          "hasImage": false,
+          "s3Key": "showcase/corporate-blue/28.jpeg"
+        },
+        {
+          "slideNumber": 29,
+          "slideType": "PROGRESS_TRACKER",
+          "title": "Transformation Progress Dashboard",
+          "hasImage": false,
+          "s3Key": "showcase/corporate-blue/29.jpeg"
         }
       ]
     },
@@ -635,6 +1349,125 @@
           "title": "Value Creation Engine",
           "hasImage": true,
           "s3Key": "showcase/mckinsey-executive/12.jpeg"
+        },
+        {
+          "slideNumber": 13,
+          "slideType": "HOOK",
+          "title": "The $890M Cost Reduction Opportunity",
+          "hasImage": false,
+          "s3Key": "showcase/mckinsey-executive/13.jpeg"
+        },
+        {
+          "slideNumber": 14,
+          "slideType": "MATRIX_2X2",
+          "title": "Strategic Initiative Prioritization",
+          "hasImage": false,
+          "s3Key": "showcase/mckinsey-executive/14.jpeg"
+        },
+        {
+          "slideNumber": 15,
+          "slideType": "WATERFALL",
+          "title": "EBITDA Bridge FY25 to FY26",
+          "hasImage": false,
+          "s3Key": "showcase/mckinsey-executive/15.jpeg"
+        },
+        {
+          "slideNumber": 16,
+          "slideType": "FUNNEL",
+          "title": "Deal Pipeline Progression",
+          "hasImage": false,
+          "s3Key": "showcase/mckinsey-executive/16.jpeg"
+        },
+        {
+          "slideNumber": 17,
+          "slideType": "COMPETITIVE_MATRIX",
+          "title": "Advisory Capability Comparison",
+          "hasImage": false,
+          "s3Key": "showcase/mckinsey-executive/17.jpeg"
+        },
+        {
+          "slideNumber": 18,
+          "slideType": "ROADMAP",
+          "title": "Transformation Roadmap",
+          "hasImage": false,
+          "s3Key": "showcase/mckinsey-executive/18.jpeg"
+        },
+        {
+          "slideNumber": 19,
+          "slideType": "PRICING_TABLE",
+          "title": "Engagement Models",
+          "hasImage": false,
+          "s3Key": "showcase/mckinsey-executive/19.jpeg"
+        },
+        {
+          "slideNumber": 20,
+          "slideType": "UNIT_ECONOMICS",
+          "title": "Client Value Economics",
+          "hasImage": false,
+          "s3Key": "showcase/mckinsey-executive/20.jpeg"
+        },
+        {
+          "slideNumber": 21,
+          "slideType": "SWOT",
+          "title": "Practice Strategic Assessment",
+          "hasImage": false,
+          "s3Key": "showcase/mckinsey-executive/21.jpeg"
+        },
+        {
+          "slideNumber": 22,
+          "slideType": "THREE_PILLARS",
+          "title": "The Value Creation Framework",
+          "hasImage": false,
+          "s3Key": "showcase/mckinsey-executive/22.jpeg"
+        },
+        {
+          "slideNumber": 23,
+          "slideType": "BEFORE_AFTER",
+          "title": "The Transformation Impact",
+          "hasImage": false,
+          "s3Key": "showcase/mckinsey-executive/23.jpeg"
+        },
+        {
+          "slideNumber": 24,
+          "slideType": "SOCIAL_PROOF",
+          "title": "Trusted by Fortune 500 Leadership",
+          "hasImage": false,
+          "s3Key": "showcase/mckinsey-executive/24.jpeg"
+        },
+        {
+          "slideNumber": 25,
+          "slideType": "OBJECTION_HANDLER",
+          "title": "Addressing Executive Concerns",
+          "hasImage": false,
+          "s3Key": "showcase/mckinsey-executive/25.jpeg"
+        },
+        {
+          "slideNumber": 26,
+          "slideType": "FAQ",
+          "title": "Engagement Questions",
+          "hasImage": false,
+          "s3Key": "showcase/mckinsey-executive/26.jpeg"
+        },
+        {
+          "slideNumber": 27,
+          "slideType": "VERDICT",
+          "title": "Board Recommendation",
+          "hasImage": false,
+          "s3Key": "showcase/mckinsey-executive/27.jpeg"
+        },
+        {
+          "slideNumber": 28,
+          "slideType": "COHORT_TABLE",
+          "title": "Client Value Realization by Engagement Cohort",
+          "hasImage": false,
+          "s3Key": "showcase/mckinsey-executive/28.jpeg"
+        },
+        {
+          "slideNumber": 29,
+          "slideType": "PROGRESS_TRACKER",
+          "title": "Transformation Progress Dashboard",
+          "hasImage": false,
+          "s3Key": "showcase/mckinsey-executive/29.jpeg"
         }
       ]
     },
@@ -726,6 +1559,125 @@
           "title": "Creator Empowerment Platform",
           "hasImage": true,
           "s3Key": "showcase/apple-keynote/12.jpeg"
+        },
+        {
+          "slideNumber": 13,
+          "slideType": "HOOK",
+          "title": "Only 4% of Creators Earn a Living Wage",
+          "hasImage": false,
+          "s3Key": "showcase/apple-keynote/13.jpeg"
+        },
+        {
+          "slideNumber": 14,
+          "slideType": "MATRIX_2X2",
+          "title": "Content Strategy Priority Matrix",
+          "hasImage": false,
+          "s3Key": "showcase/apple-keynote/14.jpeg"
+        },
+        {
+          "slideNumber": 15,
+          "slideType": "WATERFALL",
+          "title": "Creator Revenue Bridge Q3 to Q4",
+          "hasImage": false,
+          "s3Key": "showcase/apple-keynote/15.jpeg"
+        },
+        {
+          "slideNumber": 16,
+          "slideType": "FUNNEL",
+          "title": "Creator Onboarding Funnel",
+          "hasImage": false,
+          "s3Key": "showcase/apple-keynote/16.jpeg"
+        },
+        {
+          "slideNumber": 17,
+          "slideType": "COMPETITIVE_MATRIX",
+          "title": "Creator Platform Comparison",
+          "hasImage": false,
+          "s3Key": "showcase/apple-keynote/17.jpeg"
+        },
+        {
+          "slideNumber": 18,
+          "slideType": "ROADMAP",
+          "title": "Platform Evolution 2026",
+          "hasImage": false,
+          "s3Key": "showcase/apple-keynote/18.jpeg"
+        },
+        {
+          "slideNumber": 19,
+          "slideType": "PRICING_TABLE",
+          "title": "Creator-First Pricing",
+          "hasImage": false,
+          "s3Key": "showcase/apple-keynote/19.jpeg"
+        },
+        {
+          "slideNumber": 20,
+          "slideType": "UNIT_ECONOMICS",
+          "title": "Creator Platform Unit Economics",
+          "hasImage": false,
+          "s3Key": "showcase/apple-keynote/20.jpeg"
+        },
+        {
+          "slideNumber": 21,
+          "slideType": "SWOT",
+          "title": "Creator Platform Strategic Position",
+          "hasImage": false,
+          "s3Key": "showcase/apple-keynote/21.jpeg"
+        },
+        {
+          "slideNumber": 22,
+          "slideType": "THREE_PILLARS",
+          "title": "The Creator Advantage",
+          "hasImage": false,
+          "s3Key": "showcase/apple-keynote/22.jpeg"
+        },
+        {
+          "slideNumber": 23,
+          "slideType": "BEFORE_AFTER",
+          "title": "The Creator Transformation",
+          "hasImage": false,
+          "s3Key": "showcase/apple-keynote/23.jpeg"
+        },
+        {
+          "slideNumber": 24,
+          "slideType": "SOCIAL_PROOF",
+          "title": "Loved by Creators Worldwide",
+          "hasImage": false,
+          "s3Key": "showcase/apple-keynote/24.jpeg"
+        },
+        {
+          "slideNumber": 25,
+          "slideType": "OBJECTION_HANDLER",
+          "title": "Addressing Creator Concerns",
+          "hasImage": false,
+          "s3Key": "showcase/apple-keynote/25.jpeg"
+        },
+        {
+          "slideNumber": 26,
+          "slideType": "FAQ",
+          "title": "Creator Questions Answered",
+          "hasImage": false,
+          "s3Key": "showcase/apple-keynote/26.jpeg"
+        },
+        {
+          "slideNumber": 27,
+          "slideType": "VERDICT",
+          "title": "Creator Advisory Recommendation",
+          "hasImage": false,
+          "s3Key": "showcase/apple-keynote/27.jpeg"
+        },
+        {
+          "slideNumber": 28,
+          "slideType": "COHORT_TABLE",
+          "title": "Creator Revenue Growth by Cohort",
+          "hasImage": false,
+          "s3Key": "showcase/apple-keynote/28.jpeg"
+        },
+        {
+          "slideNumber": 29,
+          "slideType": "PROGRESS_TRACKER",
+          "title": "Platform Launch Milestones",
+          "hasImage": false,
+          "s3Key": "showcase/apple-keynote/29.jpeg"
         }
       ]
     },
@@ -817,6 +1769,125 @@
           "title": "Creator Empowerment Platform",
           "hasImage": true,
           "s3Key": "showcase/ted-talk/12.jpeg"
+        },
+        {
+          "slideNumber": 13,
+          "slideType": "HOOK",
+          "title": "Only 4% of Creators Earn a Living Wage",
+          "hasImage": false,
+          "s3Key": "showcase/ted-talk/13.jpeg"
+        },
+        {
+          "slideNumber": 14,
+          "slideType": "MATRIX_2X2",
+          "title": "Content Strategy Priority Matrix",
+          "hasImage": false,
+          "s3Key": "showcase/ted-talk/14.jpeg"
+        },
+        {
+          "slideNumber": 15,
+          "slideType": "WATERFALL",
+          "title": "Creator Revenue Bridge Q3 to Q4",
+          "hasImage": false,
+          "s3Key": "showcase/ted-talk/15.jpeg"
+        },
+        {
+          "slideNumber": 16,
+          "slideType": "FUNNEL",
+          "title": "Creator Onboarding Funnel",
+          "hasImage": false,
+          "s3Key": "showcase/ted-talk/16.jpeg"
+        },
+        {
+          "slideNumber": 17,
+          "slideType": "COMPETITIVE_MATRIX",
+          "title": "Creator Platform Comparison",
+          "hasImage": false,
+          "s3Key": "showcase/ted-talk/17.jpeg"
+        },
+        {
+          "slideNumber": 18,
+          "slideType": "ROADMAP",
+          "title": "Platform Evolution 2026",
+          "hasImage": false,
+          "s3Key": "showcase/ted-talk/18.jpeg"
+        },
+        {
+          "slideNumber": 19,
+          "slideType": "PRICING_TABLE",
+          "title": "Creator-First Pricing",
+          "hasImage": false,
+          "s3Key": "showcase/ted-talk/19.jpeg"
+        },
+        {
+          "slideNumber": 20,
+          "slideType": "UNIT_ECONOMICS",
+          "title": "Creator Platform Unit Economics",
+          "hasImage": false,
+          "s3Key": "showcase/ted-talk/20.jpeg"
+        },
+        {
+          "slideNumber": 21,
+          "slideType": "SWOT",
+          "title": "Creator Platform Strategic Position",
+          "hasImage": false,
+          "s3Key": "showcase/ted-talk/21.jpeg"
+        },
+        {
+          "slideNumber": 22,
+          "slideType": "THREE_PILLARS",
+          "title": "The Creator Advantage",
+          "hasImage": false,
+          "s3Key": "showcase/ted-talk/22.jpeg"
+        },
+        {
+          "slideNumber": 23,
+          "slideType": "BEFORE_AFTER",
+          "title": "The Creator Transformation",
+          "hasImage": false,
+          "s3Key": "showcase/ted-talk/23.jpeg"
+        },
+        {
+          "slideNumber": 24,
+          "slideType": "SOCIAL_PROOF",
+          "title": "Loved by Creators Worldwide",
+          "hasImage": false,
+          "s3Key": "showcase/ted-talk/24.jpeg"
+        },
+        {
+          "slideNumber": 25,
+          "slideType": "OBJECTION_HANDLER",
+          "title": "Addressing Creator Concerns",
+          "hasImage": false,
+          "s3Key": "showcase/ted-talk/25.jpeg"
+        },
+        {
+          "slideNumber": 26,
+          "slideType": "FAQ",
+          "title": "Creator Questions Answered",
+          "hasImage": false,
+          "s3Key": "showcase/ted-talk/26.jpeg"
+        },
+        {
+          "slideNumber": 27,
+          "slideType": "VERDICT",
+          "title": "Creator Advisory Recommendation",
+          "hasImage": false,
+          "s3Key": "showcase/ted-talk/27.jpeg"
+        },
+        {
+          "slideNumber": 28,
+          "slideType": "COHORT_TABLE",
+          "title": "Creator Revenue Growth by Cohort",
+          "hasImage": false,
+          "s3Key": "showcase/ted-talk/28.jpeg"
+        },
+        {
+          "slideNumber": 29,
+          "slideType": "PROGRESS_TRACKER",
+          "title": "Platform Launch Milestones",
+          "hasImage": false,
+          "s3Key": "showcase/ted-talk/29.jpeg"
         }
       ]
     },
@@ -908,6 +1979,125 @@
           "title": "AI-Augmented Research Platform",
           "hasImage": true,
           "s3Key": "showcase/yc-startup/12.jpeg"
+        },
+        {
+          "slideNumber": 13,
+          "slideType": "HOOK",
+          "title": "78% of R&D Projects Fail to Deliver Value",
+          "hasImage": false,
+          "s3Key": "showcase/yc-startup/13.jpeg"
+        },
+        {
+          "slideNumber": 14,
+          "slideType": "MATRIX_2X2",
+          "title": "Research Investment Priority Matrix",
+          "hasImage": false,
+          "s3Key": "showcase/yc-startup/14.jpeg"
+        },
+        {
+          "slideNumber": 15,
+          "slideType": "WATERFALL",
+          "title": "Patent Portfolio Bridge FY25 to FY26",
+          "hasImage": false,
+          "s3Key": "showcase/yc-startup/15.jpeg"
+        },
+        {
+          "slideNumber": 16,
+          "slideType": "FUNNEL",
+          "title": "Research Commercialization Pipeline",
+          "hasImage": false,
+          "s3Key": "showcase/yc-startup/16.jpeg"
+        },
+        {
+          "slideNumber": 17,
+          "slideType": "COMPETITIVE_MATRIX",
+          "title": "Research Platform Comparison",
+          "hasImage": false,
+          "s3Key": "showcase/yc-startup/17.jpeg"
+        },
+        {
+          "slideNumber": 18,
+          "slideType": "ROADMAP",
+          "title": "Research Platform Roadmap",
+          "hasImage": false,
+          "s3Key": "showcase/yc-startup/18.jpeg"
+        },
+        {
+          "slideNumber": 19,
+          "slideType": "PRICING_TABLE",
+          "title": "Research-Grade Pricing",
+          "hasImage": false,
+          "s3Key": "showcase/yc-startup/19.jpeg"
+        },
+        {
+          "slideNumber": 20,
+          "slideType": "UNIT_ECONOMICS",
+          "title": "R&D Platform Economics",
+          "hasImage": false,
+          "s3Key": "showcase/yc-startup/20.jpeg"
+        },
+        {
+          "slideNumber": 21,
+          "slideType": "SWOT",
+          "title": "Research Platform Strategic Assessment",
+          "hasImage": false,
+          "s3Key": "showcase/yc-startup/21.jpeg"
+        },
+        {
+          "slideNumber": 22,
+          "slideType": "THREE_PILLARS",
+          "title": "The Research Acceleration Framework",
+          "hasImage": false,
+          "s3Key": "showcase/yc-startup/22.jpeg"
+        },
+        {
+          "slideNumber": 23,
+          "slideType": "BEFORE_AFTER",
+          "title": "The Research Transformation",
+          "hasImage": false,
+          "s3Key": "showcase/yc-startup/23.jpeg"
+        },
+        {
+          "slideNumber": 24,
+          "slideType": "SOCIAL_PROOF",
+          "title": "Trusted by Leading Research Institutions",
+          "hasImage": false,
+          "s3Key": "showcase/yc-startup/24.jpeg"
+        },
+        {
+          "slideNumber": 25,
+          "slideType": "OBJECTION_HANDLER",
+          "title": "Addressing Researcher Concerns",
+          "hasImage": false,
+          "s3Key": "showcase/yc-startup/25.jpeg"
+        },
+        {
+          "slideNumber": 26,
+          "slideType": "FAQ",
+          "title": "Research Platform Questions",
+          "hasImage": false,
+          "s3Key": "showcase/yc-startup/26.jpeg"
+        },
+        {
+          "slideNumber": 27,
+          "slideType": "VERDICT",
+          "title": "R&D Investment Committee Recommendation",
+          "hasImage": false,
+          "s3Key": "showcase/yc-startup/27.jpeg"
+        },
+        {
+          "slideNumber": 28,
+          "slideType": "COHORT_TABLE",
+          "title": "Research Output by Institution Cohort",
+          "hasImage": false,
+          "s3Key": "showcase/yc-startup/28.jpeg"
+        },
+        {
+          "slideNumber": 29,
+          "slideType": "PROGRESS_TRACKER",
+          "title": "Research Platform Deployment Status",
+          "hasImage": false,
+          "s3Key": "showcase/yc-startup/29.jpeg"
         }
       ]
     },
@@ -999,6 +2189,125 @@
           "title": "Value Creation Engine",
           "hasImage": true,
           "s3Key": "showcase/sequoia-capital/12.jpeg"
+        },
+        {
+          "slideNumber": 13,
+          "slideType": "HOOK",
+          "title": "The $890M Cost Reduction Opportunity",
+          "hasImage": false,
+          "s3Key": "showcase/sequoia-capital/13.jpeg"
+        },
+        {
+          "slideNumber": 14,
+          "slideType": "MATRIX_2X2",
+          "title": "Strategic Initiative Prioritization",
+          "hasImage": false,
+          "s3Key": "showcase/sequoia-capital/14.jpeg"
+        },
+        {
+          "slideNumber": 15,
+          "slideType": "WATERFALL",
+          "title": "EBITDA Bridge FY25 to FY26",
+          "hasImage": false,
+          "s3Key": "showcase/sequoia-capital/15.jpeg"
+        },
+        {
+          "slideNumber": 16,
+          "slideType": "FUNNEL",
+          "title": "Deal Pipeline Progression",
+          "hasImage": false,
+          "s3Key": "showcase/sequoia-capital/16.jpeg"
+        },
+        {
+          "slideNumber": 17,
+          "slideType": "COMPETITIVE_MATRIX",
+          "title": "Advisory Capability Comparison",
+          "hasImage": false,
+          "s3Key": "showcase/sequoia-capital/17.jpeg"
+        },
+        {
+          "slideNumber": 18,
+          "slideType": "ROADMAP",
+          "title": "Transformation Roadmap",
+          "hasImage": false,
+          "s3Key": "showcase/sequoia-capital/18.jpeg"
+        },
+        {
+          "slideNumber": 19,
+          "slideType": "PRICING_TABLE",
+          "title": "Engagement Models",
+          "hasImage": false,
+          "s3Key": "showcase/sequoia-capital/19.jpeg"
+        },
+        {
+          "slideNumber": 20,
+          "slideType": "UNIT_ECONOMICS",
+          "title": "Client Value Economics",
+          "hasImage": false,
+          "s3Key": "showcase/sequoia-capital/20.jpeg"
+        },
+        {
+          "slideNumber": 21,
+          "slideType": "SWOT",
+          "title": "Practice Strategic Assessment",
+          "hasImage": false,
+          "s3Key": "showcase/sequoia-capital/21.jpeg"
+        },
+        {
+          "slideNumber": 22,
+          "slideType": "THREE_PILLARS",
+          "title": "The Value Creation Framework",
+          "hasImage": false,
+          "s3Key": "showcase/sequoia-capital/22.jpeg"
+        },
+        {
+          "slideNumber": 23,
+          "slideType": "BEFORE_AFTER",
+          "title": "The Transformation Impact",
+          "hasImage": false,
+          "s3Key": "showcase/sequoia-capital/23.jpeg"
+        },
+        {
+          "slideNumber": 24,
+          "slideType": "SOCIAL_PROOF",
+          "title": "Trusted by Fortune 500 Leadership",
+          "hasImage": false,
+          "s3Key": "showcase/sequoia-capital/24.jpeg"
+        },
+        {
+          "slideNumber": 25,
+          "slideType": "OBJECTION_HANDLER",
+          "title": "Addressing Executive Concerns",
+          "hasImage": false,
+          "s3Key": "showcase/sequoia-capital/25.jpeg"
+        },
+        {
+          "slideNumber": 26,
+          "slideType": "FAQ",
+          "title": "Engagement Questions",
+          "hasImage": false,
+          "s3Key": "showcase/sequoia-capital/26.jpeg"
+        },
+        {
+          "slideNumber": 27,
+          "slideType": "VERDICT",
+          "title": "Board Recommendation",
+          "hasImage": false,
+          "s3Key": "showcase/sequoia-capital/27.jpeg"
+        },
+        {
+          "slideNumber": 28,
+          "slideType": "COHORT_TABLE",
+          "title": "Client Value Realization by Engagement Cohort",
+          "hasImage": false,
+          "s3Key": "showcase/sequoia-capital/28.jpeg"
+        },
+        {
+          "slideNumber": 29,
+          "slideType": "PROGRESS_TRACKER",
+          "title": "Transformation Progress Dashboard",
+          "hasImage": false,
+          "s3Key": "showcase/sequoia-capital/29.jpeg"
         }
       ]
     },
@@ -1090,6 +2399,125 @@
           "title": "Creator Empowerment Platform",
           "hasImage": true,
           "s3Key": "showcase/airbnb-story/12.jpeg"
+        },
+        {
+          "slideNumber": 13,
+          "slideType": "HOOK",
+          "title": "Only 4% of Creators Earn a Living Wage",
+          "hasImage": false,
+          "s3Key": "showcase/airbnb-story/13.jpeg"
+        },
+        {
+          "slideNumber": 14,
+          "slideType": "MATRIX_2X2",
+          "title": "Content Strategy Priority Matrix",
+          "hasImage": false,
+          "s3Key": "showcase/airbnb-story/14.jpeg"
+        },
+        {
+          "slideNumber": 15,
+          "slideType": "WATERFALL",
+          "title": "Creator Revenue Bridge Q3 to Q4",
+          "hasImage": false,
+          "s3Key": "showcase/airbnb-story/15.jpeg"
+        },
+        {
+          "slideNumber": 16,
+          "slideType": "FUNNEL",
+          "title": "Creator Onboarding Funnel",
+          "hasImage": false,
+          "s3Key": "showcase/airbnb-story/16.jpeg"
+        },
+        {
+          "slideNumber": 17,
+          "slideType": "COMPETITIVE_MATRIX",
+          "title": "Creator Platform Comparison",
+          "hasImage": false,
+          "s3Key": "showcase/airbnb-story/17.jpeg"
+        },
+        {
+          "slideNumber": 18,
+          "slideType": "ROADMAP",
+          "title": "Platform Evolution 2026",
+          "hasImage": false,
+          "s3Key": "showcase/airbnb-story/18.jpeg"
+        },
+        {
+          "slideNumber": 19,
+          "slideType": "PRICING_TABLE",
+          "title": "Creator-First Pricing",
+          "hasImage": false,
+          "s3Key": "showcase/airbnb-story/19.jpeg"
+        },
+        {
+          "slideNumber": 20,
+          "slideType": "UNIT_ECONOMICS",
+          "title": "Creator Platform Unit Economics",
+          "hasImage": false,
+          "s3Key": "showcase/airbnb-story/20.jpeg"
+        },
+        {
+          "slideNumber": 21,
+          "slideType": "SWOT",
+          "title": "Creator Platform Strategic Position",
+          "hasImage": false,
+          "s3Key": "showcase/airbnb-story/21.jpeg"
+        },
+        {
+          "slideNumber": 22,
+          "slideType": "THREE_PILLARS",
+          "title": "The Creator Advantage",
+          "hasImage": false,
+          "s3Key": "showcase/airbnb-story/22.jpeg"
+        },
+        {
+          "slideNumber": 23,
+          "slideType": "BEFORE_AFTER",
+          "title": "The Creator Transformation",
+          "hasImage": false,
+          "s3Key": "showcase/airbnb-story/23.jpeg"
+        },
+        {
+          "slideNumber": 24,
+          "slideType": "SOCIAL_PROOF",
+          "title": "Loved by Creators Worldwide",
+          "hasImage": false,
+          "s3Key": "showcase/airbnb-story/24.jpeg"
+        },
+        {
+          "slideNumber": 25,
+          "slideType": "OBJECTION_HANDLER",
+          "title": "Addressing Creator Concerns",
+          "hasImage": false,
+          "s3Key": "showcase/airbnb-story/25.jpeg"
+        },
+        {
+          "slideNumber": 26,
+          "slideType": "FAQ",
+          "title": "Creator Questions Answered",
+          "hasImage": false,
+          "s3Key": "showcase/airbnb-story/26.jpeg"
+        },
+        {
+          "slideNumber": 27,
+          "slideType": "VERDICT",
+          "title": "Creator Advisory Recommendation",
+          "hasImage": false,
+          "s3Key": "showcase/airbnb-story/27.jpeg"
+        },
+        {
+          "slideNumber": 28,
+          "slideType": "COHORT_TABLE",
+          "title": "Creator Revenue Growth by Cohort",
+          "hasImage": false,
+          "s3Key": "showcase/airbnb-story/28.jpeg"
+        },
+        {
+          "slideNumber": 29,
+          "slideType": "PROGRESS_TRACKER",
+          "title": "Platform Launch Milestones",
+          "hasImage": false,
+          "s3Key": "showcase/airbnb-story/29.jpeg"
         }
       ]
     },
@@ -1181,6 +2609,125 @@
           "title": "Intelligent Developer Platform",
           "hasImage": true,
           "s3Key": "showcase/stripe-fintech/12.jpeg"
+        },
+        {
+          "slideNumber": 13,
+          "slideType": "HOOK",
+          "title": "The $4.7 Trillion Cloud Waste Problem",
+          "hasImage": false,
+          "s3Key": "showcase/stripe-fintech/13.jpeg"
+        },
+        {
+          "slideNumber": 14,
+          "slideType": "MATRIX_2X2",
+          "title": "DevOps Investment Priority Matrix",
+          "hasImage": false,
+          "s3Key": "showcase/stripe-fintech/14.jpeg"
+        },
+        {
+          "slideNumber": 15,
+          "slideType": "WATERFALL",
+          "title": "ARR Bridge Q3 to Q4",
+          "hasImage": false,
+          "s3Key": "showcase/stripe-fintech/15.jpeg"
+        },
+        {
+          "slideNumber": 16,
+          "slideType": "FUNNEL",
+          "title": "Developer Acquisition Funnel",
+          "hasImage": false,
+          "s3Key": "showcase/stripe-fintech/16.jpeg"
+        },
+        {
+          "slideNumber": 17,
+          "slideType": "COMPETITIVE_MATRIX",
+          "title": "Platform Comparison",
+          "hasImage": false,
+          "s3Key": "showcase/stripe-fintech/17.jpeg"
+        },
+        {
+          "slideNumber": 18,
+          "slideType": "ROADMAP",
+          "title": "Platform Roadmap 2026",
+          "hasImage": false,
+          "s3Key": "showcase/stripe-fintech/18.jpeg"
+        },
+        {
+          "slideNumber": 19,
+          "slideType": "PRICING_TABLE",
+          "title": "Developer-Friendly Pricing",
+          "hasImage": false,
+          "s3Key": "showcase/stripe-fintech/19.jpeg"
+        },
+        {
+          "slideNumber": 20,
+          "slideType": "UNIT_ECONOMICS",
+          "title": "Unit Economics at Scale",
+          "hasImage": false,
+          "s3Key": "showcase/stripe-fintech/20.jpeg"
+        },
+        {
+          "slideNumber": 21,
+          "slideType": "SWOT",
+          "title": "Platform Strategic Assessment",
+          "hasImage": false,
+          "s3Key": "showcase/stripe-fintech/21.jpeg"
+        },
+        {
+          "slideNumber": 22,
+          "slideType": "THREE_PILLARS",
+          "title": "The Platform Engineering Advantage",
+          "hasImage": false,
+          "s3Key": "showcase/stripe-fintech/22.jpeg"
+        },
+        {
+          "slideNumber": 23,
+          "slideType": "BEFORE_AFTER",
+          "title": "The DevOps Transformation",
+          "hasImage": false,
+          "s3Key": "showcase/stripe-fintech/23.jpeg"
+        },
+        {
+          "slideNumber": 24,
+          "slideType": "SOCIAL_PROOF",
+          "title": "Trusted by Engineering Teams",
+          "hasImage": false,
+          "s3Key": "showcase/stripe-fintech/24.jpeg"
+        },
+        {
+          "slideNumber": 25,
+          "slideType": "OBJECTION_HANDLER",
+          "title": "Addressing Platform Skeptics",
+          "hasImage": false,
+          "s3Key": "showcase/stripe-fintech/25.jpeg"
+        },
+        {
+          "slideNumber": 26,
+          "slideType": "FAQ",
+          "title": "Frequently Asked Questions",
+          "hasImage": false,
+          "s3Key": "showcase/stripe-fintech/26.jpeg"
+        },
+        {
+          "slideNumber": 27,
+          "slideType": "VERDICT",
+          "title": "Technical Advisory Recommendation",
+          "hasImage": false,
+          "s3Key": "showcase/stripe-fintech/27.jpeg"
+        },
+        {
+          "slideNumber": 28,
+          "slideType": "COHORT_TABLE",
+          "title": "Customer Retention by Cohort",
+          "hasImage": false,
+          "s3Key": "showcase/stripe-fintech/28.jpeg"
+        },
+        {
+          "slideNumber": 29,
+          "slideType": "PROGRESS_TRACKER",
+          "title": "Platform Migration Status",
+          "hasImage": false,
+          "s3Key": "showcase/stripe-fintech/29.jpeg"
         }
       ]
     },
@@ -1272,6 +2819,125 @@
           "title": "Value Creation Engine",
           "hasImage": true,
           "s3Key": "showcase/bcg-strategy/12.jpeg"
+        },
+        {
+          "slideNumber": 13,
+          "slideType": "HOOK",
+          "title": "The $890M Cost Reduction Opportunity",
+          "hasImage": false,
+          "s3Key": "showcase/bcg-strategy/13.jpeg"
+        },
+        {
+          "slideNumber": 14,
+          "slideType": "MATRIX_2X2",
+          "title": "Strategic Initiative Prioritization",
+          "hasImage": false,
+          "s3Key": "showcase/bcg-strategy/14.jpeg"
+        },
+        {
+          "slideNumber": 15,
+          "slideType": "WATERFALL",
+          "title": "EBITDA Bridge FY25 to FY26",
+          "hasImage": false,
+          "s3Key": "showcase/bcg-strategy/15.jpeg"
+        },
+        {
+          "slideNumber": 16,
+          "slideType": "FUNNEL",
+          "title": "Deal Pipeline Progression",
+          "hasImage": false,
+          "s3Key": "showcase/bcg-strategy/16.jpeg"
+        },
+        {
+          "slideNumber": 17,
+          "slideType": "COMPETITIVE_MATRIX",
+          "title": "Advisory Capability Comparison",
+          "hasImage": false,
+          "s3Key": "showcase/bcg-strategy/17.jpeg"
+        },
+        {
+          "slideNumber": 18,
+          "slideType": "ROADMAP",
+          "title": "Transformation Roadmap",
+          "hasImage": false,
+          "s3Key": "showcase/bcg-strategy/18.jpeg"
+        },
+        {
+          "slideNumber": 19,
+          "slideType": "PRICING_TABLE",
+          "title": "Engagement Models",
+          "hasImage": false,
+          "s3Key": "showcase/bcg-strategy/19.jpeg"
+        },
+        {
+          "slideNumber": 20,
+          "slideType": "UNIT_ECONOMICS",
+          "title": "Client Value Economics",
+          "hasImage": false,
+          "s3Key": "showcase/bcg-strategy/20.jpeg"
+        },
+        {
+          "slideNumber": 21,
+          "slideType": "SWOT",
+          "title": "Practice Strategic Assessment",
+          "hasImage": false,
+          "s3Key": "showcase/bcg-strategy/21.jpeg"
+        },
+        {
+          "slideNumber": 22,
+          "slideType": "THREE_PILLARS",
+          "title": "The Value Creation Framework",
+          "hasImage": false,
+          "s3Key": "showcase/bcg-strategy/22.jpeg"
+        },
+        {
+          "slideNumber": 23,
+          "slideType": "BEFORE_AFTER",
+          "title": "The Transformation Impact",
+          "hasImage": false,
+          "s3Key": "showcase/bcg-strategy/23.jpeg"
+        },
+        {
+          "slideNumber": 24,
+          "slideType": "SOCIAL_PROOF",
+          "title": "Trusted by Fortune 500 Leadership",
+          "hasImage": false,
+          "s3Key": "showcase/bcg-strategy/24.jpeg"
+        },
+        {
+          "slideNumber": 25,
+          "slideType": "OBJECTION_HANDLER",
+          "title": "Addressing Executive Concerns",
+          "hasImage": false,
+          "s3Key": "showcase/bcg-strategy/25.jpeg"
+        },
+        {
+          "slideNumber": 26,
+          "slideType": "FAQ",
+          "title": "Engagement Questions",
+          "hasImage": false,
+          "s3Key": "showcase/bcg-strategy/26.jpeg"
+        },
+        {
+          "slideNumber": 27,
+          "slideType": "VERDICT",
+          "title": "Board Recommendation",
+          "hasImage": false,
+          "s3Key": "showcase/bcg-strategy/27.jpeg"
+        },
+        {
+          "slideNumber": 28,
+          "slideType": "COHORT_TABLE",
+          "title": "Client Value Realization by Engagement Cohort",
+          "hasImage": false,
+          "s3Key": "showcase/bcg-strategy/28.jpeg"
+        },
+        {
+          "slideNumber": 29,
+          "slideType": "PROGRESS_TRACKER",
+          "title": "Transformation Progress Dashboard",
+          "hasImage": false,
+          "s3Key": "showcase/bcg-strategy/29.jpeg"
         }
       ]
     },
@@ -1363,6 +3029,125 @@
           "title": "Intelligent Developer Platform",
           "hasImage": true,
           "s3Key": "showcase/z4-dark-premium/12.jpeg"
+        },
+        {
+          "slideNumber": 13,
+          "slideType": "HOOK",
+          "title": "The $4.7 Trillion Cloud Waste Problem",
+          "hasImage": false,
+          "s3Key": "showcase/z4-dark-premium/13.jpeg"
+        },
+        {
+          "slideNumber": 14,
+          "slideType": "MATRIX_2X2",
+          "title": "DevOps Investment Priority Matrix",
+          "hasImage": false,
+          "s3Key": "showcase/z4-dark-premium/14.jpeg"
+        },
+        {
+          "slideNumber": 15,
+          "slideType": "WATERFALL",
+          "title": "ARR Bridge Q3 to Q4",
+          "hasImage": false,
+          "s3Key": "showcase/z4-dark-premium/15.jpeg"
+        },
+        {
+          "slideNumber": 16,
+          "slideType": "FUNNEL",
+          "title": "Developer Acquisition Funnel",
+          "hasImage": false,
+          "s3Key": "showcase/z4-dark-premium/16.jpeg"
+        },
+        {
+          "slideNumber": 17,
+          "slideType": "COMPETITIVE_MATRIX",
+          "title": "Platform Comparison",
+          "hasImage": false,
+          "s3Key": "showcase/z4-dark-premium/17.jpeg"
+        },
+        {
+          "slideNumber": 18,
+          "slideType": "ROADMAP",
+          "title": "Platform Roadmap 2026",
+          "hasImage": false,
+          "s3Key": "showcase/z4-dark-premium/18.jpeg"
+        },
+        {
+          "slideNumber": 19,
+          "slideType": "PRICING_TABLE",
+          "title": "Developer-Friendly Pricing",
+          "hasImage": false,
+          "s3Key": "showcase/z4-dark-premium/19.jpeg"
+        },
+        {
+          "slideNumber": 20,
+          "slideType": "UNIT_ECONOMICS",
+          "title": "Unit Economics at Scale",
+          "hasImage": false,
+          "s3Key": "showcase/z4-dark-premium/20.jpeg"
+        },
+        {
+          "slideNumber": 21,
+          "slideType": "SWOT",
+          "title": "Platform Strategic Assessment",
+          "hasImage": false,
+          "s3Key": "showcase/z4-dark-premium/21.jpeg"
+        },
+        {
+          "slideNumber": 22,
+          "slideType": "THREE_PILLARS",
+          "title": "The Platform Engineering Advantage",
+          "hasImage": false,
+          "s3Key": "showcase/z4-dark-premium/22.jpeg"
+        },
+        {
+          "slideNumber": 23,
+          "slideType": "BEFORE_AFTER",
+          "title": "The DevOps Transformation",
+          "hasImage": false,
+          "s3Key": "showcase/z4-dark-premium/23.jpeg"
+        },
+        {
+          "slideNumber": 24,
+          "slideType": "SOCIAL_PROOF",
+          "title": "Trusted by Engineering Teams",
+          "hasImage": false,
+          "s3Key": "showcase/z4-dark-premium/24.jpeg"
+        },
+        {
+          "slideNumber": 25,
+          "slideType": "OBJECTION_HANDLER",
+          "title": "Addressing Platform Skeptics",
+          "hasImage": false,
+          "s3Key": "showcase/z4-dark-premium/25.jpeg"
+        },
+        {
+          "slideNumber": 26,
+          "slideType": "FAQ",
+          "title": "Frequently Asked Questions",
+          "hasImage": false,
+          "s3Key": "showcase/z4-dark-premium/26.jpeg"
+        },
+        {
+          "slideNumber": 27,
+          "slideType": "VERDICT",
+          "title": "Technical Advisory Recommendation",
+          "hasImage": false,
+          "s3Key": "showcase/z4-dark-premium/27.jpeg"
+        },
+        {
+          "slideNumber": 28,
+          "slideType": "COHORT_TABLE",
+          "title": "Customer Retention by Cohort",
+          "hasImage": false,
+          "s3Key": "showcase/z4-dark-premium/28.jpeg"
+        },
+        {
+          "slideNumber": 29,
+          "slideType": "PROGRESS_TRACKER",
+          "title": "Platform Migration Status",
+          "hasImage": false,
+          "s3Key": "showcase/z4-dark-premium/29.jpeg"
         }
       ]
     },
@@ -1454,6 +3239,125 @@
           "title": "AI-Augmented Research Platform",
           "hasImage": true,
           "s3Key": "showcase/academic-research/12.jpeg"
+        },
+        {
+          "slideNumber": 13,
+          "slideType": "HOOK",
+          "title": "78% of R&D Projects Fail to Deliver Value",
+          "hasImage": false,
+          "s3Key": "showcase/academic-research/13.jpeg"
+        },
+        {
+          "slideNumber": 14,
+          "slideType": "MATRIX_2X2",
+          "title": "Research Investment Priority Matrix",
+          "hasImage": false,
+          "s3Key": "showcase/academic-research/14.jpeg"
+        },
+        {
+          "slideNumber": 15,
+          "slideType": "WATERFALL",
+          "title": "Patent Portfolio Bridge FY25 to FY26",
+          "hasImage": false,
+          "s3Key": "showcase/academic-research/15.jpeg"
+        },
+        {
+          "slideNumber": 16,
+          "slideType": "FUNNEL",
+          "title": "Research Commercialization Pipeline",
+          "hasImage": false,
+          "s3Key": "showcase/academic-research/16.jpeg"
+        },
+        {
+          "slideNumber": 17,
+          "slideType": "COMPETITIVE_MATRIX",
+          "title": "Research Platform Comparison",
+          "hasImage": false,
+          "s3Key": "showcase/academic-research/17.jpeg"
+        },
+        {
+          "slideNumber": 18,
+          "slideType": "ROADMAP",
+          "title": "Research Platform Roadmap",
+          "hasImage": false,
+          "s3Key": "showcase/academic-research/18.jpeg"
+        },
+        {
+          "slideNumber": 19,
+          "slideType": "PRICING_TABLE",
+          "title": "Research-Grade Pricing",
+          "hasImage": false,
+          "s3Key": "showcase/academic-research/19.jpeg"
+        },
+        {
+          "slideNumber": 20,
+          "slideType": "UNIT_ECONOMICS",
+          "title": "R&D Platform Economics",
+          "hasImage": false,
+          "s3Key": "showcase/academic-research/20.jpeg"
+        },
+        {
+          "slideNumber": 21,
+          "slideType": "SWOT",
+          "title": "Research Platform Strategic Assessment",
+          "hasImage": false,
+          "s3Key": "showcase/academic-research/21.jpeg"
+        },
+        {
+          "slideNumber": 22,
+          "slideType": "THREE_PILLARS",
+          "title": "The Research Acceleration Framework",
+          "hasImage": false,
+          "s3Key": "showcase/academic-research/22.jpeg"
+        },
+        {
+          "slideNumber": 23,
+          "slideType": "BEFORE_AFTER",
+          "title": "The Research Transformation",
+          "hasImage": false,
+          "s3Key": "showcase/academic-research/23.jpeg"
+        },
+        {
+          "slideNumber": 24,
+          "slideType": "SOCIAL_PROOF",
+          "title": "Trusted by Leading Research Institutions",
+          "hasImage": false,
+          "s3Key": "showcase/academic-research/24.jpeg"
+        },
+        {
+          "slideNumber": 25,
+          "slideType": "OBJECTION_HANDLER",
+          "title": "Addressing Researcher Concerns",
+          "hasImage": false,
+          "s3Key": "showcase/academic-research/25.jpeg"
+        },
+        {
+          "slideNumber": 26,
+          "slideType": "FAQ",
+          "title": "Research Platform Questions",
+          "hasImage": false,
+          "s3Key": "showcase/academic-research/26.jpeg"
+        },
+        {
+          "slideNumber": 27,
+          "slideType": "VERDICT",
+          "title": "R&D Investment Committee Recommendation",
+          "hasImage": false,
+          "s3Key": "showcase/academic-research/27.jpeg"
+        },
+        {
+          "slideNumber": 28,
+          "slideType": "COHORT_TABLE",
+          "title": "Research Output by Institution Cohort",
+          "hasImage": false,
+          "s3Key": "showcase/academic-research/28.jpeg"
+        },
+        {
+          "slideNumber": 29,
+          "slideType": "PROGRESS_TRACKER",
+          "title": "Research Platform Deployment Status",
+          "hasImage": false,
+          "s3Key": "showcase/academic-research/29.jpeg"
         }
       ]
     }

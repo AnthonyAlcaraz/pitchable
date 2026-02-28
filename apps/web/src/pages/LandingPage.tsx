@@ -58,7 +58,7 @@ function useCountUp(target: number, duration = 2000) {
 }
 
 
-// ── Showcase Slides (16 themes x 12 types, 4 content sets, max visual diversity) ──
+// ── Showcase Slides (16 themes x 29 types, 4 content sets, max visual diversity) ──
 const SHOWCASE_SLIDES = [
   // Round 1 — all 12 slide types, alternating dark/light themes
   { themeSlug: 'pitchable-dark', slideNumber: 1, title: 'The Developer Productivity Crisis', deck: 'Pitchable Dark' },
@@ -112,6 +112,42 @@ const SHOWCASE_SLIDES = [
   { themeSlug: 'creative-warm', slideNumber: 7, title: 'Creator Economy Market', deck: 'Creative Warm' },
   { themeSlug: 'academic-research', slideNumber: 2, title: '327% ROI in First 18 Months', deck: 'Academic Research' },
   { themeSlug: 'ted-talk', slideNumber: 12, title: 'Creator Empowerment Platform', deck: 'TED Talk' },
+  // Round 5 — new slide types (13-29), dark themes first
+  { themeSlug: 'pitchable-dark', slideNumber: 13, title: 'The $4.7 Trillion Cloud Waste Problem', deck: 'Pitchable Dark' },
+  { themeSlug: 'mckinsey-executive', slideNumber: 14, title: 'Strategic Initiative Prioritization', deck: 'McKinsey Executive' },
+  { themeSlug: 'stripe-fintech', slideNumber: 15, title: 'ARR Bridge Q3 to Q4', deck: 'Stripe Fintech' },
+  { themeSlug: 'apple-keynote', slideNumber: 16, title: 'Creator Onboarding Funnel', deck: 'Apple Keynote' },
+  { themeSlug: 'sequoia-capital', slideNumber: 17, title: 'Advisory Capability Comparison', deck: 'Sequoia Capital' },
+  { themeSlug: 'technical-teal', slideNumber: 18, title: 'Platform Roadmap 2026', deck: 'Technical Teal' },
+  { themeSlug: 'yc-startup', slideNumber: 19, title: 'Research-Grade Pricing', deck: 'YC Startup' },
+  { themeSlug: 'z4-dark-premium', slideNumber: 20, title: 'Unit Economics at Scale', deck: 'Z4 Dark Premium' },
+  { themeSlug: 'bcg-strategy', slideNumber: 21, title: 'Practice Strategic Assessment', deck: 'BCG Strategy' },
+  { themeSlug: 'corporate-blue', slideNumber: 22, title: 'The Value Creation Framework', deck: 'Corporate Blue' },
+  { themeSlug: 'dark-professional', slideNumber: 23, title: 'The Research Transformation', deck: 'Dark Professional' },
+  { themeSlug: 'creative-warm', slideNumber: 24, title: 'Loved by Creators Worldwide', deck: 'Creative Warm' },
+  { themeSlug: 'ted-talk', slideNumber: 25, title: 'Addressing Platform Skeptics', deck: 'TED Talk' },
+  { themeSlug: 'airbnb-story', slideNumber: 26, title: 'Creator Questions Answered', deck: 'Airbnb Story' },
+  { themeSlug: 'light-minimal', slideNumber: 27, title: 'Technical Advisory Recommendation', deck: 'Light Minimal' },
+  { themeSlug: 'academic-research', slideNumber: 28, title: 'Research Output by Institution Cohort', deck: 'Academic Research' },
+  { themeSlug: 'pitchable-dark', slideNumber: 29, title: 'Platform Migration Status', deck: 'Pitchable Dark' },
+  // Round 6 — new slide types, complementary themes
+  { themeSlug: 'light-minimal', slideNumber: 13, title: 'Only 4% of Creators Earn a Living Wage', deck: 'Light Minimal' },
+  { themeSlug: 'z4-dark-premium', slideNumber: 14, title: 'Research Investment Priority Matrix', deck: 'Z4 Dark Premium' },
+  { themeSlug: 'bcg-strategy', slideNumber: 15, title: 'EBITDA Bridge FY25 to FY26', deck: 'BCG Strategy' },
+  { themeSlug: 'creative-warm', slideNumber: 16, title: 'Creator Onboarding Funnel', deck: 'Creative Warm' },
+  { themeSlug: 'mckinsey-executive', slideNumber: 17, title: 'Feature Comparison', deck: 'McKinsey Executive' },
+  { themeSlug: 'airbnb-story', slideNumber: 18, title: 'Platform Evolution 2026', deck: 'Airbnb Story' },
+  { themeSlug: 'apple-keynote', slideNumber: 19, title: 'Creator-First Pricing', deck: 'Apple Keynote' },
+  { themeSlug: 'sequoia-capital', slideNumber: 20, title: 'R&D Platform Economics', deck: 'Sequoia Capital' },
+  { themeSlug: 'technical-teal', slideNumber: 21, title: 'Platform Strategic Assessment', deck: 'Technical Teal' },
+  { themeSlug: 'ted-talk', slideNumber: 22, title: 'The Creator Advantage', deck: 'TED Talk' },
+  { themeSlug: 'stripe-fintech', slideNumber: 23, title: 'The DevOps Transformation', deck: 'Stripe Fintech' },
+  { themeSlug: 'yc-startup', slideNumber: 24, title: 'Trusted by Leading Research Institutions', deck: 'YC Startup' },
+  { themeSlug: 'corporate-blue', slideNumber: 25, title: 'Addressing Researcher Concerns', deck: 'Corporate Blue' },
+  { themeSlug: 'dark-professional', slideNumber: 26, title: 'Research Platform Questions', deck: 'Dark Professional' },
+  { themeSlug: 'academic-research', slideNumber: 27, title: 'Board Recommendation', deck: 'Academic Research' },
+  { themeSlug: 'pitchable-dark', slideNumber: 28, title: 'Customer Retention by Cohort', deck: 'Pitchable Dark' },
+  { themeSlug: 'mckinsey-executive', slideNumber: 29, title: 'Transformation Progress Dashboard', deck: 'McKinsey Executive' },
 ];
 
 // ── Landing Page ─────────────────────────────────────────────

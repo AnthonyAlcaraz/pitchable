@@ -325,6 +325,75 @@ const CONTENT_A = {
     title: 'Intelligent Developer Platform',
     body: '1. Automated Pipeline Orchestration: Eliminate manual deployment steps with intelligent CI/CD that adapts to your codebase complexity\n2. Predictive Performance Monitoring: Detect anomalies before they impact users using ML-powered observability across all services\n3. Unified Cost Intelligence: Track cloud spend across providers with actionable optimization recommendations saving 30%+ monthly\n4. Collaborative Development Environment: Real-time pair programming with AI-assisted code review and automated testing pipelines',
   },
+
+  HOOK: {
+    title: 'The $4.7 Trillion Cloud Waste Problem',
+    body: 'What if your engineering team could reclaim 37% of lost productivity overnight?',
+  },
+  MATRIX_2X2: {
+    title: 'DevOps Investment Priority Matrix',
+    body: 'X-Axis: Implementation Speed\nY-Axis: Developer Velocity Impact\nQuick Wins: High velocity, fast implementation — CI/CD automation, golden paths, self-service portals\nStrategic Bets: High velocity, slow implementation — platform engineering, AI copilots, observability mesh\nLow Hanging Fruit: Low velocity, fast — documentation updates, minor CLI improvements\nAvoid: Low velocity, slow — legacy migration, manual runbooks',
+  },
+  WATERFALL: {
+    title: 'ARR Bridge Q3 to Q4',
+    body: 'Starting ARR: $8.4M\nNew Logos: +$2.8M\nExpansion: +$1.9M\nContraction: -$0.6M\nChurn: -$1.2M\nEnding ARR: $11.3M',
+  },
+  FUNNEL: {
+    title: 'Developer Acquisition Funnel',
+    body: 'GitHub Stars: 24,000 (100%)\nDocs Visitors: 8,400 (35%)\nFree Tier Sign-ups: 2,100 (8.75%)\nPaid Conversions: 420 (1.75%)\nEnterprise Deals: 21 (0.088%)',
+  },
+  COMPETITIVE_MATRIX: {
+    title: 'Platform Comparison',
+    body: '| Feature | Us | Vercel | Heroku | Render |\n|---|---|---|---|---|\n| Auto-Scaling | \u2713 | \u2713 | \u2717 | \u2713 |\n| Cost Analytics | \u2713 | \u2717 | \u2717 | \u2717 |\n| AI Copilot | \u2713 | \u2717 | \u2717 | \u2717 |\n| Multi-Cloud | \u2713 | \u2717 | \u2717 | \u2713 |\n| SOC 2 Type II | \u2713 | \u2713 | \u2713 | \u2717 |',
+  },
+  ROADMAP: {
+    title: 'Platform Roadmap 2026',
+    body: 'Now: Kubernetes orchestration v2, AI deployment copilot, Cost optimization engine, Enterprise SSO\nNext: Multi-cloud abstraction, Partner marketplace, Custom golden paths, Compliance automation\nLater: Autonomous incident response, Predictive scaling, White-label platform, Edge compute',
+  },
+  PRICING_TABLE: {
+    title: 'Developer-Friendly Pricing',
+    body: 'Starter: $0/mo\n- 3 environments\n- 10 deployments/day\n- Community support\nTeam: $49/seat/mo (Recommended)\n- Unlimited environments\n- Unlimited deployments\n- AI copilot\n- SOC 2 compliance\nEnterprise: Custom\n- Everything in Team\n- Multi-cloud\n- Dedicated support\n- Custom SLAs',
+  },
+  UNIT_ECONOMICS: {
+    title: 'Unit Economics at Scale',
+    body: 'LTV:CAC = 5.1x\nCAC: $2,400 | LTV: $12,240 | Payback: 6 months | Gross Margin: 78% | Net Revenue Retention: 132%',
+  },
+  SWOT: {
+    title: 'Platform Strategic Assessment',
+    body: 'Strengths: AI-powered deployment copilot, 78% gross margins, 132% NRR, SOC 2 certified\nWeaknesses: Early enterprise traction, Single-cloud focus, Small sales team\nOpportunities: Multi-cloud expansion, $48B TAM growth, Platform engineering wave, AI ops market\nThreats: Hyperscaler native tools, Open-source alternatives, Economic slowdown, Talent competition',
+  },
+  THREE_PILLARS: {
+    title: 'The Platform Engineering Advantage',
+    body: 'Velocity: Ship 10x faster with golden paths that eliminate configuration drift and manual deployment steps\nReliability: Achieve 99.97% uptime with AI-powered incident detection and automated rollback capabilities\nEfficiency: Reduce cloud spend by 40% with intelligent resource optimization and cost anomaly alerts\n\n### Three pillars that transform developer experience',
+  },
+  BEFORE_AFTER: {
+    title: 'The DevOps Transformation',
+    body: 'Before: 40+ hours weekly pipeline maintenance, 12% deployment failure rate, 47-minute MTTR, fragmented toolchain\nAfter: Zero-touch deployments, 99.7% success rate, 3-minute MTTR, unified platform experience',
+  },
+  SOCIAL_PROOF: {
+    title: 'Trusted by Engineering Teams',
+    body: '4.8/5 average rating from 1,200+ engineering teams\nFeatured in InfoWorld, The New Stack, DevOps Weekly\nUsed by platform teams at Stripe, Shopify, Datadog, Linear, Vercel',
+  },
+  OBJECTION_HANDLER: {
+    title: 'Addressing Platform Skeptics',
+    body: '"Platform engineering is just DevOps renamed"\nPlatform engineering shifts from per-team CI/CD pipelines to self-service golden paths. Teams using our platform deploy **10x faster** with **80% fewer incidents**. The difference: developers never touch infrastructure directly.',
+  },
+  FAQ: {
+    title: 'Frequently Asked Questions',
+    body: 'Q: How long does migration take?\nA: Typical migration completes in 2-4 weeks with zero downtime using our automated migration toolkit\nQ: Does it work with our existing CI/CD?\nA: Yes — native integrations with GitHub Actions, GitLab CI, Jenkins, and CircleCI\nQ: What about compliance requirements?\nA: SOC 2 Type II certified with HIPAA and GDPR compliance modules available',
+  },
+  VERDICT: {
+    title: 'Technical Advisory Recommendation',
+    body: 'Approve: Proceed with Platform Adoption\nThe evaluation confirms **10x deployment velocity** improvement with **6-month** payback period. Infrastructure costs reduced by **40%** with projected annual savings of **$4.2M**. Engineering team capacity freed for product development.',
+  },
+  COHORT_TABLE: {
+    title: 'Customer Retention by Cohort',
+    body: '| Cohort | Month 1 | Month 3 | Month 6 | Month 12 | Month 18 |\n|---|---|---|---|---|---|\n| Q1 2025 | 100% | 89% | 78% | 64% | 58% |\n| Q2 2025 | 100% | 91% | 82% | 68% | — |\n| Q3 2025 | 100% | 93% | 85% | — | — |\n| Q4 2025 | 100% | 94% | — | — | — |',
+  },
+  PROGRESS_TRACKER: {
+    title: 'Platform Migration Status',
+    body: 'CI/CD Pipeline Migration: 92%\nInfrastructure as Code: 78%\nObservability Setup: 85%\nSecurity Compliance: 95%\nTeam Onboarding: 60%',
+  },
 };
 
 /**
@@ -378,6 +447,75 @@ const CONTENT_B = {
   SOLUTION: {
     title: 'Value Creation Engine',
     body: '1. AI-Powered Diagnostics: Identify value creation opportunities in weeks instead of months using proprietary analytical frameworks\n2. Digital Operating Model: Design and implement next-generation shared services that reduce overhead by 35% within 18 months\n3. Revenue Growth Analytics: Unlock cross-sell and upsell opportunities through advanced customer segmentation and propensity modeling\n4. Change Acceleration: Drive adoption at scale with behavioral science-based change management and digital learning platforms',
+  },
+
+  HOOK: {
+    title: 'The $890M Cost Reduction Opportunity',
+    body: 'What if your organization could identify margin erosion before it hits the P&L?',
+  },
+  MATRIX_2X2: {
+    title: 'Strategic Initiative Prioritization',
+    body: 'X-Axis: Execution Complexity\nY-Axis: Value Creation Potential\nQuick Wins: High value, low complexity — procurement optimization, shared services, process automation\nStrategic Bets: High value, high complexity — digital transformation, M&A integration, operating model redesign\nLow Hanging Fruit: Low value, low complexity — policy updates, reporting consolidation\nAvoid: Low value, high complexity — legacy system patches, organizational restructuring without clear ROI',
+  },
+  WATERFALL: {
+    title: 'EBITDA Bridge FY25 to FY26',
+    body: 'Starting EBITDA: $340M\nRevenue Growth: +$120M\nCost Synergies: +$85M\nInvestment Spend: -$45M\nInflation Impact: -$28M\nEnding EBITDA: $472M',
+  },
+  FUNNEL: {
+    title: 'Deal Pipeline Progression',
+    body: 'Prospect Universe: 2,400 companies (100%)\nQualified Targets: 480 (20%)\nDue Diligence: 96 (4%)\nLetter of Intent: 24 (1%)\nClosed Deals: 6 (0.25%)',
+  },
+  COMPETITIVE_MATRIX: {
+    title: 'Advisory Capability Comparison',
+    body: '| Capability | Us | McKinsey | BCG | Bain |\n|---|---|---|---|---|\n| AI Diagnostics | \u2713 | \u2717 | \u2713 | \u2717 |\n| Real-time Dashboards | \u2713 | \u2717 | \u2717 | \u2717 |\n| Industry Benchmarks | \u2713 | \u2713 | \u2713 | \u2713 |\n| Change Management | \u2713 | \u2713 | \u2717 | \u2713 |\n| Implementation Support | \u2713 | \u2717 | \u2713 | \u2717 |',
+  },
+  ROADMAP: {
+    title: 'Transformation Roadmap',
+    body: 'Now: Diagnostic assessment, Quick wins identification, Governance setup, Baseline KPIs\nNext: Operating model redesign, Pilot programs, Change management rollout, Talent development\nLater: Full-scale implementation, Continuous improvement, Performance stabilization, Value tracking',
+  },
+  PRICING_TABLE: {
+    title: 'Engagement Models',
+    body: 'Diagnostic: $250K\n- 4-week assessment\n- Executive readout\n- Quick wins roadmap\nTransformation: $1.2M+ (Recommended)\n- 12-18 month engagement\n- Dedicated team\n- Implementation support\n- Value guarantee\nAdvisory Retainer: Custom\n- Ongoing strategic counsel\n- Board-level access\n- Quarterly reviews\n- Priority response',
+  },
+  UNIT_ECONOMICS: {
+    title: 'Client Value Economics',
+    body: 'ROI:Fee = 8.4x\nAvg Engagement: $1.8M | Client Value Created: $15.1M | Payback: 4.2 months | Margin Improvement: 340bps | Client Retention: 87%',
+  },
+  SWOT: {
+    title: 'Practice Strategic Assessment',
+    body: 'Strengths: Proprietary AI diagnostics, Senior partner network, 40-industry benchmark database, Implementation track record\nWeaknesses: Limited digital talent pipeline, Geographic concentration, Premium pricing perception\nOpportunities: AI-augmented advisory, Mid-market expansion, ESG transformation, Cross-border M&A wave\nThreats: In-house strategy teams, Boutique specialists, Fee compression, AI commoditizing analysis',
+  },
+  THREE_PILLARS: {
+    title: 'The Value Creation Framework',
+    body: 'Diagnose: AI-powered assessment identifies $890M in addressable cost reduction within 4 weeks of engagement\nDesign: Proprietary operating model templates reduce design phase from 6 months to 6 weeks\nDeliver: Implementation guarantee with value tracking ensures 8.4x ROI on advisory fees\n\n### Three pillars that deliver measurable transformation',
+  },
+  BEFORE_AFTER: {
+    title: 'The Transformation Impact',
+    body: 'Before: 6-8 week decision cycles, 40+ redundant processes, 15,000 manual analyst hours, siloed business units\nAfter: 48-hour decisions, unified shared services, 80% automated reporting, integrated operating model',
+  },
+  SOCIAL_PROOF: {
+    title: 'Trusted by Fortune 500 Leadership',
+    body: '94% client satisfaction score across 200+ engagements\nNamed Top 10 Transformation Consultancy by Gartner, Forrester, and ALM Vanguard\nTrusted by C-suites at Boeing, JPMorgan, Unilever, Siemens, Novartis',
+  },
+  OBJECTION_HANDLER: {
+    title: 'Addressing Executive Concerns',
+    body: '"Consulting engagements rarely deliver promised ROI"\nOur value guarantee ties **30% of fees** to measurable outcomes. Across 200+ engagements, we have delivered an average **8.4x ROI** with **94%** of clients achieving targets within the committed timeline.',
+  },
+  FAQ: {
+    title: 'Engagement Questions',
+    body: 'Q: How quickly can you mobilize a team?\nA: Senior partners on-site within 2 weeks with full team deployed by week 4\nQ: Do you guarantee outcomes?\nA: Yes — 30% of fees are tied to achieving agreed KPIs within the transformation timeline\nQ: How do you handle change resistance?\nA: Our behavioral science-based change program achieves 89% adoption rates across organizational levels',
+  },
+  VERDICT: {
+    title: 'Board Recommendation',
+    body: 'Approve: Proceed with Strategic Transformation\nDiagnostic confirms **$2.1B** revenue opportunity with **340bps** margin improvement. Risk-adjusted NPV exceeds investment threshold by **3.2x**. Recommend immediate Phase 1 authorization with $45M budget allocation.',
+  },
+  COHORT_TABLE: {
+    title: 'Client Value Realization by Engagement Cohort',
+    body: '| Cohort | Q1 | Q2 | Q3 | Q4 | Year 2 |\n|---|---|---|---|---|---|\n| FY23 Clients | 12% | 34% | 67% | 89% | 112% |\n| FY24 Clients | 15% | 41% | 72% | 94% | — |\n| FY25 Clients | 18% | 45% | 78% | — | — |\n| FY26 Clients | 22% | 48% | — | — | — |',
+  },
+  PROGRESS_TRACKER: {
+    title: 'Transformation Progress Dashboard',
+    body: 'Operating Model Redesign: 88%\nProcess Automation: 65%\nTalent Upskilling: 45%\nTechnology Migration: 72%\nChange Adoption: 58%',
   },
 };
 
@@ -433,6 +571,75 @@ const CONTENT_C = {
     title: 'Creator Empowerment Platform',
     body: '1. Intelligent Content Pipeline: Produce platform-optimized content 3x faster with AI editing, auto-captioning, and smart scheduling\n2. Audience Growth Engine: Grow your community with data-driven content recommendations and cross-platform amplification tools\n3. Unified Monetization Hub: Manage sponsorships, subscriptions, merchandise, and digital products from a single revenue dashboard\n4. Creator Wellbeing System: Sustainable content calendars with burnout detection, batch creation tools, and automated engagement',
   },
+
+  HOOK: {
+    title: 'Only 4% of Creators Earn a Living Wage',
+    body: 'What if every creator had the tools to turn their passion into a sustainable business?',
+  },
+  MATRIX_2X2: {
+    title: 'Content Strategy Priority Matrix',
+    body: 'X-Axis: Production Effort\nY-Axis: Audience Growth Impact\nQuick Wins: High growth, low effort — trending audio remixes, carousel posts, community polls\nStrategic Bets: High growth, high effort — documentary series, course launches, brand collaborations\nLow Hanging Fruit: Low growth, low effort — story reposts, comment engagement, quick takes\nAvoid: Low growth, high effort — overproduced content, vanity metrics campaigns',
+  },
+  WATERFALL: {
+    title: 'Creator Revenue Bridge Q3 to Q4',
+    body: 'Starting MRR: $3.2M\nNew Creators: +$1.4M\nBrand Deals: +$2.1M\nSubscription Growth: +$0.8M\nPlatform Churn: -$0.9M\nEnding MRR: $6.6M',
+  },
+  FUNNEL: {
+    title: 'Creator Onboarding Funnel',
+    body: 'Landing Page Visitors: 500,000 (100%)\nSign-ups: 75,000 (15%)\nProfile Complete: 30,000 (6%)\nFirst Revenue: 6,000 (1.2%)\nPower Creators: 600 (0.12%)',
+  },
+  COMPETITIVE_MATRIX: {
+    title: 'Creator Platform Comparison',
+    body: '| Feature | Us | Patreon | Gumroad | Stan Store |\n|---|---|---|---|---|\n| AI Content Tools | \u2713 | \u2717 | \u2717 | \u2717 |\n| Brand Matching | \u2713 | \u2717 | \u2717 | \u2717 |\n| Multi-Platform | \u2713 | \u2717 | \u2713 | \u2713 |\n| Analytics Suite | \u2713 | \u2713 | \u2717 | \u2717 |\n| Digital Products | \u2713 | \u2713 | \u2713 | \u2713 |',
+  },
+  ROADMAP: {
+    title: 'Platform Evolution 2026',
+    body: 'Now: AI content studio, Brand matchmaking v2, Revenue analytics, Multi-platform publishing\nNext: Creator storefronts, Subscription bundles, International expansion, Mobile app\nLater: IP licensing marketplace, Creator-to-creator collaborations, White-label tools, Live commerce',
+  },
+  PRICING_TABLE: {
+    title: 'Creator-First Pricing',
+    body: 'Free: $0/mo\n- Basic analytics\n- 3 brand applications/month\n- Community access\nCreator Pro: $19/mo (Recommended)\n- AI content tools\n- Unlimited brand deals\n- Revenue optimizer\n- Priority matching\nBusiness: $79/mo\n- Everything in Pro\n- Team collaboration\n- White-label storefront\n- API access',
+  },
+  UNIT_ECONOMICS: {
+    title: 'Creator Platform Unit Economics',
+    body: 'LTV:CAC = 6.8x\nCAC: $18 | LTV: $122 | Payback: 2.1 months | Take Rate: 8% | Net Revenue Retention: 142%',
+  },
+  SWOT: {
+    title: 'Creator Platform Strategic Position',
+    body: 'Strengths: AI content tools, 4.7x creator revenue lift, 92% retention rate, Brand matchmaking algorithm\nWeaknesses: No mobile app yet, Limited international presence, Creator support capacity\nOpportunities: $104B creator economy TAM, Brand deal automation, Education vertical, Live commerce wave\nThreats: Platform algorithm changes, Big tech creator programs, Subscription fatigue, Creator burnout trends',
+  },
+  THREE_PILLARS: {
+    title: 'The Creator Advantage',
+    body: 'Create: AI-powered content studio that cuts production time by 3x while maintaining authentic voice and style\nMonetize: Unified revenue hub combining sponsorships, subscriptions, and digital products in one dashboard\nGrow: Data-driven audience intelligence that identifies growth opportunities and optimal posting strategies\n\n### Three pillars that transform creators into businesses',
+  },
+  BEFORE_AFTER: {
+    title: 'The Creator Transformation',
+    body: 'Before: 23 hours per brand deal, 4% earning a living, 62% audience reach decline, 71% burnout rate\nAfter: 2-hour deal flow, 4.7x revenue increase, algorithm-proof distribution, sustainable content calendar',
+  },
+  SOCIAL_PROOF: {
+    title: 'Loved by Creators Worldwide',
+    body: '4.9/5 average rating from 12.4M monthly active creators\nProduct Hunt #1 Product of the Year, Creator Economy Award 2025\nTrusted by top creators across YouTube, TikTok, Instagram, and Twitch',
+  },
+  OBJECTION_HANDLER: {
+    title: 'Addressing Creator Concerns',
+    body: '"Another creator tool that takes a cut of my earnings"\nOur 8% take rate is the lowest in the industry, and creators using our platform earn **4.7x more** on average. We only succeed when creators succeed — our revenue is directly tied to yours.',
+  },
+  FAQ: {
+    title: 'Creator Questions Answered',
+    body: 'Q: Will the AI tools change my authentic voice?\nA: Our AI learns your unique style and tone — it amplifies your voice, never replaces it\nQ: How does brand matching work?\nA: Our algorithm analyzes audience overlap, brand fit, and engagement patterns to surface ideal partnerships\nQ: Can I use this with my existing platforms?\nA: Yes — native integrations with YouTube, TikTok, Instagram, Twitch, and Substack',
+  },
+  VERDICT: {
+    title: 'Creator Advisory Recommendation',
+    body: 'Approve: Scale Creator Platform Investment\nCreator acquisition metrics show **142% NRR** with **6.8x LTV:CAC**. Platform demonstrates clear product-market fit with **92%** retention and **4.7x** creator revenue lift. Recommend Series B raise to accelerate international expansion.',
+  },
+  COHORT_TABLE: {
+    title: 'Creator Revenue Growth by Cohort',
+    body: '| Cohort | Month 1 | Month 3 | Month 6 | Month 12 | Month 18 |\n|---|---|---|---|---|---|\n| Jan 2025 | $120 | $340 | $780 | $1,420 | $2,100 |\n| Apr 2025 | $140 | $390 | $890 | $1,680 | — |\n| Jul 2025 | $160 | $420 | $950 | — | — |\n| Oct 2025 | $180 | $460 | — | — | — |',
+  },
+  PROGRESS_TRACKER: {
+    title: 'Platform Launch Milestones',
+    body: 'AI Content Studio: 95%\nBrand Matchmaker v2: 80%\nCreator Storefront: 55%\nMobile App: 35%\nInternational Expansion: 42%',
+  },
 };
 
 /**
@@ -486,6 +693,75 @@ const CONTENT_D = {
   SOLUTION: {
     title: 'AI-Augmented Research Platform',
     body: '1. Intelligent Literature Mining: Extract structured knowledge from 200M+ papers with entity recognition and relationship mapping across disciplines\n2. Hypothesis Generation Engine: Discover non-obvious connections between research domains using graph neural networks and causal reasoning models\n3. Automated Experiment Design: Create statistically rigorous protocols with ML-optimized parameters that achieve 89% reproducibility rates\n4. Collaborative Knowledge Network: Connect researchers across institutions with secure workspaces, shared ontologies, and IP-protected data exchange',
+  },
+
+  HOOK: {
+    title: '78% of R&D Projects Fail to Deliver Value',
+    body: 'What if AI could cut your discovery-to-market cycle from 17 years to 17 months?',
+  },
+  MATRIX_2X2: {
+    title: 'Research Investment Priority Matrix',
+    body: 'X-Axis: Technical Feasibility\nY-Axis: Commercial Potential\nQuick Wins: High potential, high feasibility — ML model optimization, data pipeline automation, literature synthesis\nStrategic Bets: High potential, low feasibility — novel drug candidates, quantum materials, AGI safety\nLow Hanging Fruit: Low potential, high feasibility — documentation generation, protocol templates\nAvoid: Low potential, low feasibility — incremental improvements to deprecated approaches',
+  },
+  WATERFALL: {
+    title: 'Patent Portfolio Bridge FY25 to FY26',
+    body: 'Starting Patents: 847\nNew Filings: +234\nGranted: +189\nAbandoned: -56\nExpired: -23\nEnding Portfolio: 1,191',
+  },
+  FUNNEL: {
+    title: 'Research Commercialization Pipeline',
+    body: 'Published Papers: 12,000 (100%)\nNovel Discoveries: 1,800 (15%)\nPatent Filings: 360 (3%)\nLicensing Deals: 72 (0.6%)\nCommercial Products: 12 (0.1%)',
+  },
+  COMPETITIVE_MATRIX: {
+    title: 'Research Platform Comparison',
+    body: '| Capability | Us | Semantic Scholar | Elicit | Consensus |\n|---|---|---|---|---|\n| Knowledge Graph | \u2713 | \u2713 | \u2717 | \u2717 |\n| Experiment Design | \u2713 | \u2717 | \u2717 | \u2717 |\n| Cross-Domain Links | \u2713 | \u2717 | \u2713 | \u2717 |\n| Reproducibility | \u2713 | \u2717 | \u2717 | \u2717 |\n| API Access | \u2713 | \u2713 | \u2713 | \u2713 |',
+  },
+  ROADMAP: {
+    title: 'Research Platform Roadmap',
+    body: 'Now: 200M paper knowledge graph, Patent corpus integration, Hypothesis generation v1, Lab notebook sync\nNext: Cross-institutional networks, Experiment marketplace, Predictive funding models, Regulatory intelligence\nLater: AI research agents, Automated experiment execution, IP portfolio optimization, Clinical trial matching',
+  },
+  PRICING_TABLE: {
+    title: 'Research-Grade Pricing',
+    body: 'Academic: $0/seat/mo\n- 1,000 queries/month\n- Basic knowledge graph\n- Paper search\nResearch Team: $199/seat/mo (Recommended)\n- Unlimited queries\n- Full knowledge graph\n- Hypothesis engine\n- Experiment designer\nEnterprise R&D: Custom\n- Everything in Team\n- Private knowledge base\n- On-premise deployment\n- Dedicated support',
+  },
+  UNIT_ECONOMICS: {
+    title: 'R&D Platform Economics',
+    body: 'LTV:CAC = 7.2x\nCAC: $8,400 | LTV: $60,480 | Payback: 8 months | Gross Margin: 84% | Net Revenue Retention: 128%',
+  },
+  SWOT: {
+    title: 'Research Platform Strategic Assessment',
+    body: 'Strengths: 200M paper knowledge graph, 89% reproducibility rate, Cross-domain discovery, Enterprise R&D partnerships\nWeaknesses: Long sales cycles, Domain expertise requirements, Data sovereignty concerns\nOpportunities: $67B enterprise AI market, Pharma R&D automation, Materials science boom, Climate tech research\nThreats: Open-source alternatives, Big tech research tools, Data access restrictions, IP litigation risk',
+  },
+  THREE_PILLARS: {
+    title: 'The Research Acceleration Framework',
+    body: 'Discover: AI-powered knowledge synthesis across 200M+ papers reveals non-obvious connections in seconds\nDesign: ML-optimized experiment protocols achieve 89% reproducibility vs 23% industry average\nDeliver: Automated reporting and IP capture ensure every discovery reaches commercial potential\n\n### Three pillars that accelerate the pace of science',
+  },
+  BEFORE_AFTER: {
+    title: 'The Research Transformation',
+    body: 'Before: 40+ hours literature review, 23% reproducibility, 17-year discovery-to-market, siloed disciplines\nAfter: Seconds for knowledge synthesis, 89% reproducibility, 6.2x faster patents, cross-domain collaboration',
+  },
+  SOCIAL_PROOF: {
+    title: 'Trusted by Leading Research Institutions',
+    body: '4.7/5 average rating from 800+ research teams across 14 Fortune 500 R&D divisions\nPublished in Nature Methods, Science, and PNAS for research methodology innovation\nUsed by teams at MIT, Stanford, Max Planck Institute, Roche, and Pfizer',
+  },
+  OBJECTION_HANDLER: {
+    title: 'Addressing Researcher Concerns',
+    body: '"AI-generated hypotheses lack the intuition of experienced researchers"\nOur platform augments researcher intuition — it does not replace it. In controlled trials, research teams using our hypothesis engine published **3.5x more** novel findings while maintaining **89%** reproducibility, compared to 23% baseline.',
+  },
+  FAQ: {
+    title: 'Research Platform Questions',
+    body: 'Q: How does the knowledge graph handle proprietary research?\nA: Private knowledge bases are fully isolated with on-premise deployment options and SOC 2 compliance\nQ: Can it integrate with our existing lab systems?\nA: Native integrations with electronic lab notebooks, LIMS, and instrument data pipelines\nQ: What about data sovereignty and IP protection?\nA: All data processing can run in your own infrastructure with end-to-end encryption and audit logging',
+  },
+  VERDICT: {
+    title: 'R&D Investment Committee Recommendation',
+    body: 'Approve: Scale AI Research Platform Deployment\nPilot results demonstrate **6.2x faster** discovery-to-patent cycle with **327% ROI** in 18 months. Reproducibility rates improved from **23% to 89%** across 14 research divisions. Recommend enterprise-wide rollout with $12M budget.',
+  },
+  COHORT_TABLE: {
+    title: 'Research Output by Institution Cohort',
+    body: '| Cohort | Q1 | Q2 | Q3 | Q4 | Year 2 |\n|---|---|---|---|---|---|\n| Wave 1 (2024) | 12 papers | 34 papers | 67 papers | 89 papers | 156 papers |\n| Wave 2 (2025 H1) | 18 papers | 45 papers | 78 papers | — | — |\n| Wave 3 (2025 H2) | 24 papers | 52 papers | — | — | — |\n| Wave 4 (2026) | 28 papers | — | — | — | — |',
+  },
+  PROGRESS_TRACKER: {
+    title: 'Research Platform Deployment Status',
+    body: 'Knowledge Graph Integration: 92%\nHypothesis Engine Calibration: 78%\nLab System Connectors: 65%\nSecurity Audit: 98%\nResearcher Training: 52%',
   },
 };
 
@@ -617,6 +893,127 @@ function getSlides(imgDir, contentSetKey) {
       body: content.SOLUTION.body,
       hasImage: true,
       imageUrl: img(images.SOLUTION),
+    },
+
+    // ── New slide types (13-29): data-visualization SVGs, no images ──
+    {
+      slideNumber: 13,
+      slideType: 'HOOK',
+      title: content.HOOK.title,
+      body: content.HOOK.body,
+      hasImage: false,
+    },
+    {
+      slideNumber: 14,
+      slideType: 'MATRIX_2X2',
+      title: content.MATRIX_2X2.title,
+      body: content.MATRIX_2X2.body,
+      hasImage: false,
+    },
+    {
+      slideNumber: 15,
+      slideType: 'WATERFALL',
+      title: content.WATERFALL.title,
+      body: content.WATERFALL.body,
+      hasImage: false,
+    },
+    {
+      slideNumber: 16,
+      slideType: 'FUNNEL',
+      title: content.FUNNEL.title,
+      body: content.FUNNEL.body,
+      hasImage: false,
+    },
+    {
+      slideNumber: 17,
+      slideType: 'COMPETITIVE_MATRIX',
+      title: content.COMPETITIVE_MATRIX.title,
+      body: content.COMPETITIVE_MATRIX.body,
+      hasImage: false,
+    },
+    {
+      slideNumber: 18,
+      slideType: 'ROADMAP',
+      title: content.ROADMAP.title,
+      body: content.ROADMAP.body,
+      hasImage: false,
+    },
+    {
+      slideNumber: 19,
+      slideType: 'PRICING_TABLE',
+      title: content.PRICING_TABLE.title,
+      body: content.PRICING_TABLE.body,
+      hasImage: false,
+    },
+    {
+      slideNumber: 20,
+      slideType: 'UNIT_ECONOMICS',
+      title: content.UNIT_ECONOMICS.title,
+      body: content.UNIT_ECONOMICS.body,
+      hasImage: false,
+    },
+    {
+      slideNumber: 21,
+      slideType: 'SWOT',
+      title: content.SWOT.title,
+      body: content.SWOT.body,
+      hasImage: false,
+    },
+    {
+      slideNumber: 22,
+      slideType: 'THREE_PILLARS',
+      title: content.THREE_PILLARS.title,
+      body: content.THREE_PILLARS.body,
+      hasImage: false,
+    },
+    {
+      slideNumber: 23,
+      slideType: 'BEFORE_AFTER',
+      title: content.BEFORE_AFTER.title,
+      body: content.BEFORE_AFTER.body,
+      hasImage: false,
+    },
+    {
+      slideNumber: 24,
+      slideType: 'SOCIAL_PROOF',
+      title: content.SOCIAL_PROOF.title,
+      body: content.SOCIAL_PROOF.body,
+      hasImage: false,
+    },
+    {
+      slideNumber: 25,
+      slideType: 'OBJECTION_HANDLER',
+      title: content.OBJECTION_HANDLER.title,
+      body: content.OBJECTION_HANDLER.body,
+      hasImage: false,
+    },
+    {
+      slideNumber: 26,
+      slideType: 'FAQ',
+      title: content.FAQ.title,
+      body: content.FAQ.body,
+      hasImage: false,
+    },
+    {
+      slideNumber: 27,
+      slideType: 'VERDICT',
+      title: content.VERDICT.title,
+      body: content.VERDICT.body,
+      hasImage: false,
+    },
+    {
+      slideNumber: 28,
+      slideType: 'COHORT_TABLE',
+      title: content.COHORT_TABLE.title,
+      body: content.COHORT_TABLE.body,
+      hasImage: false,
+    },
+    {
+      slideNumber: 29,
+      slideType: 'PROGRESS_TRACKER',
+      title: content.PROGRESS_TRACKER.title,
+      body: content.PROGRESS_TRACKER.body,
+      hasImage: false,
     },
   ];
 }
@@ -968,7 +1365,7 @@ async function uploadToS3(localPath, s3Key) {
 async function main() {
   const startTime = Date.now();
   console.log('=== Pitchable Showcase Generator ===\n');
-  console.log('12 slides per theme x 16 themes = 192 total slides');
+  console.log('29 slides per theme x 16 themes = 464 total slides');
   console.log('4 content sets: A (Tech/SaaS), B (Strategy/Consulting), C (Creative/Consumer), D (Innovation/Research)\n');
 
   // S3 config validated at module level
