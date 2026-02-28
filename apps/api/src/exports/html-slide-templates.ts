@@ -29,6 +29,9 @@ const H = 720;
 export const FIGMA_GRADE_TYPES: Set<string> = new Set([
   'COMPARISON', 'TIMELINE', 'METRICS_HIGHLIGHT', 'DATA_METRICS', 'MARKET_SIZING', 'TEAM',
   'FEATURE_GRID', 'PROCESS', 'PROBLEM', 'SOLUTION', 'CTA', 'CONTENT', 'QUOTE', 'ARCHITECTURE',
+  'HOOK', 'MATRIX_2X2', 'WATERFALL', 'FUNNEL', 'COMPETITIVE_MATRIX', 'ROADMAP',
+  'PRICING_TABLE', 'UNIT_ECONOMICS', 'SWOT', 'THREE_PILLARS', 'BEFORE_AFTER',
+  'SOCIAL_PROOF', 'OBJECTION_HANDLER', 'FAQ', 'VERDICT', 'COHORT_TABLE', 'PROGRESS_TRACKER',
 ]);
 
 // ── Helpers ──────────────────────────────────────────────────
@@ -461,6 +464,40 @@ export function buildHtmlSlideContent(
       html = buildQuote(cleaned, palette, !!cleaned.imageUrl); break;
     case 'ARCHITECTURE':
       html = buildArchitecture(cleaned, palette, !!cleaned.imageUrl, accentDiversity); break;
+    case 'HOOK':
+      html = buildHook(cleaned, palette, !!cleaned.imageUrl); break;
+    case 'MATRIX_2X2':
+      html = buildMatrix2x2(cleaned, palette, !!cleaned.imageUrl, accentDiversity); break;
+    case 'WATERFALL':
+      html = buildWaterfall(cleaned, palette, !!cleaned.imageUrl); break;
+    case 'FUNNEL':
+      html = buildFunnel(cleaned, palette, !!cleaned.imageUrl, accentDiversity); break;
+    case 'COMPETITIVE_MATRIX':
+      html = buildCompetitiveMatrix(cleaned, palette, !!cleaned.imageUrl, accentDiversity); break;
+    case 'ROADMAP':
+      html = buildRoadmap(cleaned, palette, !!cleaned.imageUrl, accentDiversity); break;
+    case 'PRICING_TABLE':
+      html = buildPricingTable(cleaned, palette, !!cleaned.imageUrl, accentDiversity); break;
+    case 'UNIT_ECONOMICS':
+      html = buildUnitEconomics(cleaned, palette, !!cleaned.imageUrl); break;
+    case 'SWOT':
+      html = buildSwot(cleaned, palette, !!cleaned.imageUrl); break;
+    case 'THREE_PILLARS':
+      html = buildThreePillars(cleaned, palette, !!cleaned.imageUrl, accentDiversity); break;
+    case 'BEFORE_AFTER':
+      html = buildBeforeAfter(cleaned, palette, !!cleaned.imageUrl); break;
+    case 'SOCIAL_PROOF':
+      html = buildSocialProof(cleaned, palette, !!cleaned.imageUrl); break;
+    case 'OBJECTION_HANDLER':
+      html = buildObjectionHandler(cleaned, palette, !!cleaned.imageUrl); break;
+    case 'FAQ':
+      html = buildFaq(cleaned, palette, !!cleaned.imageUrl, accentDiversity); break;
+    case 'VERDICT':
+      html = buildVerdict(cleaned, palette, !!cleaned.imageUrl); break;
+    case 'COHORT_TABLE':
+      html = buildCohortTable(cleaned, palette, !!cleaned.imageUrl); break;
+    case 'PROGRESS_TRACKER':
+      html = buildProgressTracker(cleaned, palette, !!cleaned.imageUrl); break;
     default:
       return '';
   }
@@ -2234,5 +2271,1436 @@ function buildArchitecture(slide: SlideInput, p: ColorPalette, hasImage = false,
     <defs><marker id="arch-arrow" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="${p.border}" /></marker></defs>
     ${connectorsSvg}
   </svg>
+</div>`;
+}
+
+
+// ── HOOK ────────────────────────────────────────────────────
+// Opening provocation — single dramatic sentence centered with gradient glow
+
+function buildHook(slide: SlideInput, p: ColorPalette, hasImage = false): string {
+  const cW = hasImage ? CONTENT_W_IMG : W;
+  const lines = parseBodyLines(slide.body);
+  const dark = isDarkBackground(p.background);
+
+  // Use first body line as the dramatic sentence, or fall back to title
+  const hookText = lines.length > 0 ? lines[0] : slide.title;
+  const subtitle = lines.length > 1 ? lines[1] : '';
+
+  // Detect provocation symbol
+  const hasQuestion = hookText.includes('?') || slide.title.includes('?');
+  const decorSymbol = hasQuestion ? '?' : '!';
+
+  // Large decorative symbol at low opacity
+  const symbolX = Math.round(cW * 0.5);
+  const symbolY = Math.round(H * 0.48);
+  const symbolHtml = `<div style="position:absolute;left:${symbolX - 100}px;top:${symbolY - 120}px;width:200px;height:200px;font-size:200px;line-height:200px;text-align:center;color:${p.accent};opacity:0.08;font-weight:900;pointer-events:none">${decorSymbol}</div>`;
+
+  // Centered hook text
+  const hookFontSize = hookText.length <= 60 ? 48 : hookText.length <= 100 ? 38 : 30;
+  const titleGlowCss = dark ? `;${textGlow(p.accent, 0.3)}` : '';
+
+  // Gradient glow behind text
+  const glowHtml = `<div style="position:absolute;left:${Math.round(cW * 0.15)}px;top:${Math.round(H * 0.25)}px;width:${Math.round(cW * 0.7)}px;height:${Math.round(H * 0.5)}px;background:radial-gradient(ellipse at center,${hexToRgba(p.accent, 0.12)} 0%,transparent 70%);pointer-events:none"></div>`;
+
+  const subtitleHtml = subtitle
+    ? `<div style="position:absolute;left:${PAD}px;top:${Math.round(H * 0.62)}px;width:${cW - PAD * 2}px;text-align:center;font-size:18px;line-height:1.5;color:${p.text};opacity:0.7">${escHtml(subtitle)}</div>`
+    : '';
+
+  return `${SCOPED_RESET}
+<div style="position:relative;width:${W}px;height:${H}px;background:${p.background};overflow:hidden">
+  ${bgGradientOverlay(cW, H, p.accent, 0.04, '50%')}
+  ${symbolHtml}
+  ${glowHtml}
+  <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;text-align:center;font-size:${titleFontSize(slide.title)}px;font-weight:bold;overflow-wrap:break-word;word-wrap:break-word;color:${p.text};line-height:1.2">${escHtml(slide.title)}</div>
+  <div style="position:absolute;left:${Math.round((cW - 60) / 2)}px;top:${PAD + 56}px;width:60px;height:3px;background:${p.accent};border-radius:2px"></div>
+  <div style="position:absolute;left:${PAD + 20}px;top:${Math.round(H * 0.38)}px;width:${cW - PAD * 2 - 40}px;text-align:center;font-size:${hookFontSize}px;font-weight:bold;line-height:1.3;color:${p.text}${titleGlowCss}">${escHtml(hookText)}</div>
+  ${subtitleHtml}
+</div>`;
+}
+
+
+// ── MATRIX_2X2 ──────────────────────────────────────────────
+// BCG/McKinsey 2x2 quadrant grid with labeled axes
+
+function buildMatrix2x2(slide: SlideInput, p: ColorPalette, hasImage = false, accentDiversity = true): string {
+  const cW = hasImage ? CONTENT_W_IMG : W;
+  const lines = parseBodyLines(slide.body);
+  const dark = isDarkBackground(p.background);
+  const accents = cardAccentColors(p, accentDiversity ? colorOffset(slide.title) : 0);
+
+  // Parse axis labels from first two lines, quadrant labels, and items
+  let xAxisLabel = 'Low \u2192 High';
+  let yAxisLabel = 'Low \u2192 High';
+  const quadrantLabels: string[] = [];
+  const items: { label: string; desc: string; qIdx: number }[] = [];
+
+  for (const line of lines) {
+    const axisMatch = line.match(/^(X|Y)\s*[-:]\s*(.+)/i);
+    if (axisMatch) {
+      if (axisMatch[1].toUpperCase() === 'X') xAxisLabel = axisMatch[2].trim();
+      else yAxisLabel = axisMatch[2].trim();
+      continue;
+    }
+    const quadMatch = line.match(/^Q(\d)\s*[-:]\s*(.+)/i);
+    if (quadMatch) {
+      const qi = parseInt(quadMatch[1], 10) - 1;
+      if (qi >= 0 && qi < 4) quadrantLabels[qi] = quadMatch[2].trim();
+      continue;
+    }
+    // Items: "Label: description"
+    const sep = line.indexOf(':');
+    if (sep > 0 && sep < 40) {
+      items.push({ label: line.slice(0, sep).trim(), desc: line.slice(sep + 1).trim(), qIdx: items.length % 4 });
+    } else {
+      items.push({ label: line.slice(0, 20).trim(), desc: '', qIdx: items.length % 4 });
+    }
+  }
+
+  // Default quadrant labels
+  const defaultLabels = ['Stars', 'Question Marks', 'Cash Cows', 'Dogs'];
+  for (let i = 0; i < 4; i++) {
+    if (!quadrantLabels[i]) quadrantLabels[i] = defaultLabels[i];
+  }
+
+  // Grid layout
+  const gridLeft = PAD + 40;
+  const gridTop = PAD + 90;
+  const gridW = Math.round((cW - PAD * 2 - 60) * 0.92);
+  const gridH = H - gridTop - PAD - 30;
+  const halfW = Math.round(gridW / 2);
+  const halfH = Math.round(gridH / 2);
+
+  // Quadrant backgrounds
+  const qColors = [accents[0] || p.accent, accents[1] || p.primary, accents[2] || p.secondary, accents[3] || p.warning];
+  let quadHtml = '';
+  const qPositions = [
+    { x: gridLeft, y: gridTop },                          // Q1: top-left
+    { x: gridLeft + halfW, y: gridTop },                   // Q2: top-right
+    { x: gridLeft, y: gridTop + halfH },                   // Q3: bottom-left
+    { x: gridLeft + halfW, y: gridTop + halfH },           // Q4: bottom-right
+  ];
+
+  for (let qi = 0; qi < 4; qi++) {
+    const qp = qPositions[qi];
+    quadHtml += `<div style="position:absolute;left:${qp.x}px;top:${qp.y}px;width:${halfW}px;height:${halfH}px;background:${hexToRgba(qColors[qi], 0.06)};border:1px solid ${hexToRgba(p.border, 0.2)}"></div>`;
+    quadHtml += `<div style="position:absolute;left:${qp.x + 12}px;top:${qp.y + 8}px;width:${halfW - 24}px;font-size:12px;font-weight:bold;text-transform:uppercase;letter-spacing:1px;color:${qColors[qi]};opacity:0.8">${escHtml(quadrantLabels[qi])}</div>`;
+  }
+
+  // Plot items as circles in quadrants
+  let itemsSvg = '';
+  for (let i = 0; i < Math.min(items.length, 8); i++) {
+    const item = items[i];
+    const qp = qPositions[item.qIdx];
+    // Pseudo-random position within quadrant
+    const hash = (item.label.charCodeAt(0) || 65) + (item.label.charCodeAt(1) || 66);
+    const ix = qp.x + 30 + (hash * 7) % (halfW - 60);
+    const iy = qp.y + 32 + ((hash * 13) % (halfH - 50));
+    const color = qColors[item.qIdx];
+    itemsSvg += `<circle cx="${ix}" cy="${iy}" r="18" fill="${hexToRgba(color, 0.25)}" stroke="${color}" stroke-width="2" />`;
+    itemsSvg += `<text x="${ix}" y="${iy + 4}" text-anchor="middle" fill="${p.text}" font-size="10" font-weight="bold">${escHtml(item.label.slice(0, 6))}</text>`;
+  }
+
+  // Axis labels
+  const xLabelHtml = `<div style="position:absolute;left:${gridLeft}px;top:${gridTop + gridH + 6}px;width:${gridW}px;text-align:center;font-size:12px;color:${p.text};opacity:0.6">${escHtml(xAxisLabel)}</div>`;
+  const yLabelHtml = `<div style="position:absolute;left:${gridLeft - 30}px;top:${gridTop}px;width:${gridH}px;font-size:12px;color:${p.text};opacity:0.6;transform:rotate(-90deg);transform-origin:0 0;white-space:nowrap">${escHtml(yAxisLabel)}</div>`;
+
+  // Axis lines SVG
+  const axesSvg = `<line x1="${gridLeft}" y1="${gridTop + halfH}" x2="${gridLeft + gridW}" y2="${gridTop + halfH}" stroke="${p.border}" stroke-width="2" opacity="0.4" />` +
+    `<line x1="${gridLeft + halfW}" y1="${gridTop}" x2="${gridLeft + halfW}" y2="${gridTop + gridH}" stroke="${p.border}" stroke-width="2" opacity="0.4" />`;
+
+  return `${SCOPED_RESET}
+<div style="position:relative;width:${W}px;height:${H}px;background:${p.background};overflow:hidden">
+  ${bgGradientOverlay(cW, H, p.primary, 0.04, '50%')}
+  <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;font-size:${titleFontSize(slide.title)}px;font-weight:bold;overflow-wrap:break-word;word-wrap:break-word;color:${p.text};line-height:1.2">${escHtml(slide.title)}</div>
+  <div style="position:absolute;left:${PAD}px;top:${PAD + 56}px;width:50px;height:3px;background:${p.accent};border-radius:2px"></div>
+  ${quadHtml}
+  ${xLabelHtml}
+  ${yLabelHtml}
+  <svg style="position:absolute;left:0;top:0" width="${cW}" height="${H}" xmlns="http://www.w3.org/2000/svg">
+    ${axesSvg}
+    ${itemsSvg}
+  </svg>
+</div>`;
+}
+
+
+// ── WATERFALL ───────────────────────────────────────────────
+// Waterfall chart with positive (green), negative (red), total (gray) bars
+
+function buildWaterfall(slide: SlideInput, p: ColorPalette, hasImage = false): string {
+  const cW = hasImage ? CONTENT_W_IMG : W;
+  const lines = parseBodyLines(slide.body);
+  const dark = isDarkBackground(p.background);
+
+  // Parse "Label: +$XXM" or "Label: -$XXM" or "Label: $XXM (total)"
+  const entries: { label: string; value: number; isTotal: boolean }[] = [];
+  for (const line of lines.slice(0, 8)) {
+    const sep = line.indexOf(':');
+    if (sep <= 0) continue;
+    const label = line.slice(0, sep).trim();
+    const valStr = line.slice(sep + 1).trim();
+    const numMatch = valStr.match(/([+-]?)\s*\$?([\d,.]+)/);
+    if (!numMatch) continue;
+    const sign = numMatch[1] === '-' ? -1 : 1;
+    const num = parseFloat(numMatch[2].replace(/,/g, '')) * sign;
+    const isTotal = /total|net|sum|result/i.test(label) || /total/i.test(valStr);
+    entries.push({ label, value: num, isTotal });
+  }
+
+  if (entries.length === 0) {
+    // Fallback: simple lines
+    for (let i = 0; i < Math.min(lines.length, 6); i++) {
+      entries.push({ label: `Item ${i + 1}`, value: (6 - i) * 10 * (i % 3 === 2 ? -1 : 1), isTotal: false });
+    }
+  }
+
+  const count = entries.length;
+  const chartLeft = PAD + 10;
+  const chartRight = cW - PAD - 10;
+  const chartTop = PAD + 100;
+  const chartBottom = H - PAD - 40;
+  const chartH = chartBottom - chartTop;
+  const barTotalW = chartRight - chartLeft;
+  const barW = Math.min(80, Math.round(barTotalW / count - 12));
+  const gap = Math.round((barTotalW - barW * count) / (count + 1));
+
+  // Calculate running total for waterfall positioning
+  const maxAbs = Math.max(...entries.map(e => Math.abs(e.value)), 1);
+  const baselineY = chartTop + Math.round(chartH * 0.55); // baseline slightly below center
+  const scale = (chartH * 0.45) / maxAbs;
+
+  let runningTotal = 0;
+  let barsSvg = '';
+  let labelsHtml = '';
+  let connectorsSvg = '';
+  let prevTopY = baselineY;
+
+  for (let i = 0; i < count; i++) {
+    const e = entries[i];
+    const bx = chartLeft + gap + i * (barW + gap);
+
+    let barTop: number;
+    let barH: number;
+    let color: string;
+
+    if (e.isTotal) {
+      // Total bar from baseline
+      const totalH = Math.round(Math.abs(runningTotal) * scale);
+      barTop = runningTotal >= 0 ? baselineY - totalH : baselineY;
+      barH = Math.max(totalH, 4);
+      color = p.border;
+    } else {
+      const valH = Math.round(Math.abs(e.value) * scale);
+      if (e.value >= 0) {
+        barTop = baselineY - Math.round(runningTotal * scale) - valH;
+        barH = Math.max(valH, 4);
+        color = p.success || '#22c55e';
+      } else {
+        barTop = baselineY - Math.round(runningTotal * scale);
+        barH = Math.max(valH, 4);
+        color = p.error || '#ef4444';
+      }
+      runningTotal += e.value;
+    }
+
+    // Bar
+    barsSvg += `<rect x="${bx}" y="${barTop}" width="${barW}" height="${barH}" rx="4" fill="${color}" opacity="0.85" />`;
+
+    // Value label above bar
+    const valLabel = e.value >= 0 ? `+${Math.abs(e.value)}` : `${e.value}`;
+    barsSvg += `<text x="${bx + barW / 2}" y="${barTop - 6}" text-anchor="middle" fill="${p.text}" font-size="11" font-weight="bold">${escHtml(valLabel)}</text>`;
+
+    // Connector line to next bar
+    if (i < count - 1 && !e.isTotal) {
+      const connY = e.value >= 0 ? barTop : barTop + barH;
+      const nextBx = chartLeft + gap + (i + 1) * (barW + gap);
+      connectorsSvg += `<line x1="${bx + barW}" y1="${connY}" x2="${nextBx}" y2="${connY}" stroke="${hexToRgba(p.border, 0.4)}" stroke-width="1" stroke-dasharray="4,3" />`;
+    }
+
+    // Label below
+    labelsHtml += `<div style="position:absolute;left:${bx - 4}px;top:${chartBottom + 6}px;width:${barW + 8}px;text-align:center;font-size:10px;color:${p.text};opacity:0.7;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${escHtml(e.label)}</div>`;
+
+    prevTopY = barTop;
+  }
+
+  // Baseline
+  barsSvg += `<line x1="${chartLeft}" y1="${baselineY}" x2="${chartRight}" y2="${baselineY}" stroke="${hexToRgba(p.border, 0.3)}" stroke-width="1" />`;
+
+  return `${SCOPED_RESET}
+<div style="position:relative;width:${W}px;height:${H}px;background:${p.background};overflow:hidden">
+  ${bgGradientOverlay(cW, H, p.primary, 0.04, '40%')}
+  <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;font-size:${titleFontSize(slide.title)}px;font-weight:bold;overflow-wrap:break-word;word-wrap:break-word;color:${p.text};line-height:1.2">${escHtml(slide.title)}</div>
+  <div style="position:absolute;left:${PAD}px;top:${PAD + 56}px;width:50px;height:3px;background:${p.accent};border-radius:2px"></div>
+  ${labelsHtml}
+  <svg style="position:absolute;left:0;top:0" width="${cW}" height="${H}" xmlns="http://www.w3.org/2000/svg">
+    ${barsSvg}
+    ${connectorsSvg}
+  </svg>
+</div>`;
+}
+
+
+// ── FUNNEL ──────────────────────────────────────────────────
+// Conversion funnel with stacking trapezoids
+
+function buildFunnel(slide: SlideInput, p: ColorPalette, hasImage = false, accentDiversity = true): string {
+  const cW = hasImage ? CONTENT_W_IMG : W;
+  const lines = parseBodyLines(slide.body);
+  const dark = isDarkBackground(p.background);
+  const accents = cardAccentColors(p, accentDiversity ? colorOffset(slide.title) : 0);
+
+  // Parse "Stage Name: 10,000 (100%)" or just "Stage Name"
+  const stages: { name: string; value: string; pct: string }[] = [];
+  for (const line of lines.slice(0, 6)) {
+    const sep = line.indexOf(':');
+    if (sep > 0 && sep < 40) {
+      const name = line.slice(0, sep).trim();
+      const rest = line.slice(sep + 1).trim();
+      const pctMatch = rest.match(/\((\d+%?)\)/);
+      stages.push({ name, value: rest.replace(/\(.*?\)/, '').trim(), pct: pctMatch ? pctMatch[1] : '' });
+    } else {
+      stages.push({ name: line.trim(), value: '', pct: '' });
+    }
+  }
+
+  if (stages.length === 0) {
+    stages.push({ name: 'Awareness', value: '10,000', pct: '100%' });
+    stages.push({ name: 'Interest', value: '5,000', pct: '50%' });
+    stages.push({ name: 'Decision', value: '1,000', pct: '10%' });
+    stages.push({ name: 'Action', value: '200', pct: '2%' });
+  }
+
+  const count = stages.length;
+  const funnelTop = PAD + 90;
+  const funnelBottom = H - PAD - 10;
+  const funnelH = funnelBottom - funnelTop;
+  const segH = Math.round(funnelH / count);
+  const maxWidth = Math.round((cW - PAD * 2) * 0.6);
+  const minWidth = Math.round(maxWidth * 0.25);
+  const centerX = Math.round(cW * 0.38);
+
+  let funnelSvg = '';
+  let labelsHtml = '';
+
+  for (let i = 0; i < count; i++) {
+    const topW = maxWidth - Math.round((maxWidth - minWidth) * (i / count));
+    const botW = maxWidth - Math.round((maxWidth - minWidth) * ((i + 1) / count));
+    const ty = funnelTop + i * segH;
+    const by = ty + segH;
+
+    const x1 = centerX - Math.round(topW / 2);
+    const x2 = centerX + Math.round(topW / 2);
+    const x3 = centerX + Math.round(botW / 2);
+    const x4 = centerX - Math.round(botW / 2);
+
+    const color = accents[i % accents.length];
+    funnelSvg += `<polygon points="${x1},${ty} ${x2},${ty} ${x3},${by} ${x4},${by}" fill="${hexToRgba(color, 0.7)}" stroke="${hexToRgba(color, 0.9)}" stroke-width="1" />`;
+
+    // Stage label on the right
+    const labelX = centerX + Math.round(topW / 2) + 20;
+    const labelY = ty + Math.round(segH / 2);
+    labelsHtml += `<div style="position:absolute;left:${labelX}px;top:${labelY - 18}px;width:${cW - labelX - PAD}px">`;
+    labelsHtml += `<div style="font-size:14px;font-weight:bold;color:${color}">${escHtml(stages[i].name)}</div>`;
+    if (stages[i].value) {
+      labelsHtml += `<div style="font-size:12px;color:${p.text};opacity:0.7">${escHtml(stages[i].value)}${stages[i].pct ? ' (' + escHtml(stages[i].pct) + ')' : ''}</div>`;
+    }
+    labelsHtml += `</div>`;
+
+    // Stage name inside funnel
+    funnelSvg += `<text x="${centerX}" y="${ty + segH / 2 + 4}" text-anchor="middle" fill="#fff" font-size="13" font-weight="bold">${escHtml(stages[i].name.slice(0, 15))}</text>`;
+
+    // Conversion rate between stages
+    if (i < count - 1 && stages[i + 1].pct) {
+      labelsHtml += `<div style="position:absolute;left:${labelX - 10}px;top:${by - 6}px;font-size:10px;color:${p.text};opacity:0.5">\u2193 ${escHtml(stages[i + 1].pct)}</div>`;
+    }
+  }
+
+  return `${SCOPED_RESET}
+<div style="position:relative;width:${W}px;height:${H}px;background:${p.background};overflow:hidden">
+  ${bgGradientOverlay(cW, H, p.primary, 0.04, '50%')}
+  <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;font-size:${titleFontSize(slide.title)}px;font-weight:bold;overflow-wrap:break-word;word-wrap:break-word;color:${p.text};line-height:1.2">${escHtml(slide.title)}</div>
+  <div style="position:absolute;left:${PAD}px;top:${PAD + 56}px;width:50px;height:3px;background:${p.accent};border-radius:2px"></div>
+  ${labelsHtml}
+  <svg style="position:absolute;left:0;top:0" width="${cW}" height="${H}" xmlns="http://www.w3.org/2000/svg">
+    ${funnelSvg}
+  </svg>
+</div>`;
+}
+
+
+// ── COMPETITIVE_MATRIX ──────────────────────────────────────
+// Feature comparison table with checkmarks and crosses
+
+function buildCompetitiveMatrix(slide: SlideInput, p: ColorPalette, hasImage = false, accentDiversity = true): string {
+  const cW = hasImage ? CONTENT_W_IMG : W;
+  const lines = parseBodyLines(slide.body);
+  const dark = isDarkBackground(p.background);
+
+  // Parse: first line = company names, rest = feature rows
+  // Format: "Feature: Company1=yes, Company2=no" or pipe-delimited
+  const companies: string[] = [];
+  const features: { name: string; vals: boolean[] }[] = [];
+
+  for (const line of lines) {
+    // Try pipe-delimited: "Feature | Yes | No | Yes"
+    const parts = line.split(/\s*\|\s*/).filter(Boolean);
+    if (parts.length >= 3 && companies.length === 0 && !/=/.test(line)) {
+      // First pipe line with 3+ parts = header row (company names)
+      for (let i = 1; i < parts.length; i++) companies.push(parts[i]);
+      continue;
+    }
+    if (parts.length >= 3 && companies.length > 0) {
+      const vals = parts.slice(1).map(v => /yes|true|\u2713|check/i.test(v));
+      features.push({ name: parts[0], vals });
+      continue;
+    }
+    // Try "Feature: Co1=yes, Co2=no"
+    const sep = line.indexOf(':');
+    if (sep > 0) {
+      const fName = line.slice(0, sep).trim();
+      const valStr = line.slice(sep + 1).trim();
+      const pairs = valStr.split(/,\s*/);
+      if (companies.length === 0) {
+        for (const pair of pairs) {
+          const eqIdx = pair.indexOf('=');
+          if (eqIdx > 0) companies.push(pair.slice(0, eqIdx).trim());
+        }
+      }
+      const vals = pairs.map(pair => {
+        const eqIdx = pair.indexOf('=');
+        if (eqIdx > 0) return /yes|true|\u2713/i.test(pair.slice(eqIdx + 1));
+        return /yes|true|\u2713/i.test(pair);
+      });
+      features.push({ name: fName, vals });
+    }
+  }
+
+  // Defaults if parsing yields nothing
+  if (companies.length === 0) companies.push('Us', 'Comp A', 'Comp B');
+  if (features.length === 0) {
+    features.push({ name: 'Feature 1', vals: [true, false, true] });
+    features.push({ name: 'Feature 2', vals: [true, true, false] });
+  }
+
+  const colCount = companies.length + 1; // +1 for feature name col
+  const tableLeft = PAD + 10;
+  const tableTop = PAD + 90;
+  const tableW = cW - PAD * 2 - 20;
+  const colW = Math.round(tableW / colCount);
+  const featureColW = Math.round(tableW * 0.3);
+  const dataColW = Math.round((tableW - featureColW) / companies.length);
+  const rowH = Math.min(50, Math.round((H - tableTop - PAD) / (features.length + 1)));
+
+  let tableHtml = '';
+
+  // Header row
+  const headerY = tableTop;
+  tableHtml += `<div style="position:absolute;left:${tableLeft}px;top:${headerY}px;width:${featureColW}px;height:${rowH}px;background:${hexToRgba(p.surface, 0.3)};border-bottom:2px solid ${p.border};display:flex;align-items:center;padding-left:12px;font-size:12px;font-weight:bold;color:${p.text};opacity:0.6">Feature</div>`;
+  for (let ci = 0; ci < companies.length; ci++) {
+    const cx = tableLeft + featureColW + ci * dataColW;
+    const isOurs = ci === 0;
+    const bgColor = isOurs ? hexToRgba(p.accent, 0.12) : hexToRgba(p.surface, 0.3);
+    tableHtml += `<div style="position:absolute;left:${cx}px;top:${headerY}px;width:${dataColW}px;height:${rowH}px;background:${bgColor};border-bottom:2px solid ${p.border};text-align:center;line-height:${rowH}px;font-size:13px;font-weight:bold;color:${isOurs ? p.accent : p.text}">${escHtml(companies[ci])}</div>`;
+  }
+
+  // Feature rows
+  for (let ri = 0; ri < features.length; ri++) {
+    const ry = tableTop + (ri + 1) * rowH;
+    const f = features[ri];
+    const rowBg = ri % 2 === 0 ? 'transparent' : hexToRgba(p.surface, 0.15);
+
+    tableHtml += `<div style="position:absolute;left:${tableLeft}px;top:${ry}px;width:${featureColW}px;height:${rowH}px;background:${rowBg};border-bottom:1px solid ${hexToRgba(p.border, 0.2)};line-height:${rowH}px;padding-left:12px;font-size:13px;color:${p.text}">${escHtml(f.name)}</div>`;
+
+    for (let ci = 0; ci < companies.length; ci++) {
+      const cx = tableLeft + featureColW + ci * dataColW;
+      const isOurs = ci === 0;
+      const cellBg = isOurs ? hexToRgba(p.accent, 0.06) : rowBg;
+      const hasFeature = ci < f.vals.length ? f.vals[ci] : false;
+      const symbol = hasFeature ? '\u2713' : '\u2717';
+      const symColor = hasFeature ? (p.success || '#22c55e') : (p.error || '#ef4444');
+
+      tableHtml += `<div style="position:absolute;left:${cx}px;top:${ry}px;width:${dataColW}px;height:${rowH}px;background:${cellBg};border-bottom:1px solid ${hexToRgba(p.border, 0.2)};text-align:center;line-height:${rowH}px;font-size:18px;font-weight:bold;color:${symColor}">${symbol}</div>`;
+    }
+  }
+
+  return `${SCOPED_RESET}
+<div style="position:relative;width:${W}px;height:${H}px;background:${p.background};overflow:hidden">
+  ${bgGradientOverlay(cW, H, p.primary, 0.04, '50%')}
+  <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;font-size:${titleFontSize(slide.title)}px;font-weight:bold;overflow-wrap:break-word;word-wrap:break-word;color:${p.text};line-height:1.2">${escHtml(slide.title)}</div>
+  <div style="position:absolute;left:${PAD}px;top:${PAD + 56}px;width:50px;height:3px;background:${p.accent};border-radius:2px"></div>
+  ${tableHtml}
+</div>`;
+}
+
+
+// ── ROADMAP ─────────────────────────────────────────────────
+// Now/Next/Later 3-column lane layout
+
+function buildRoadmap(slide: SlideInput, p: ColorPalette, hasImage = false, accentDiversity = true): string {
+  const cW = hasImage ? CONTENT_W_IMG : W;
+  const lines = parseBodyLines(slide.body);
+  const dark = isDarkBackground(p.background);
+  const accents = cardAccentColors(p, accentDiversity ? colorOffset(slide.title) : 0);
+
+  // Parse lines into Now/Next/Later buckets
+  const lanes: { label: string; items: string[] }[] = [
+    { label: 'Now', items: [] },
+    { label: 'Next', items: [] },
+    { label: 'Later', items: [] },
+  ];
+
+  let currentLane = -1;
+  for (const line of lines) {
+    const laneMatch = line.match(/^(Now|Next|Later)\s*[-:]?\s*(.*)/i);
+    if (laneMatch) {
+      const lIdx = laneMatch[1].toLowerCase() === 'now' ? 0 : laneMatch[1].toLowerCase() === 'next' ? 1 : 2;
+      currentLane = lIdx;
+      if (laneMatch[2].trim()) lanes[lIdx].items.push(laneMatch[2].trim());
+      continue;
+    }
+    if (currentLane >= 0) {
+      lanes[currentLane].items.push(line);
+    } else {
+      // No lane marker: distribute evenly
+      const autoIdx = Math.min(2, Math.floor(lanes[0].items.length + lanes[1].items.length + lanes[2].items.length) % 3);
+      lanes[autoIdx].items.push(line);
+    }
+  }
+
+  // If no markers found, split lines into thirds
+  if (lanes[0].items.length === 0 && lanes[1].items.length === 0 && lanes[2].items.length === 0) {
+    const third = Math.ceil(lines.length / 3);
+    lanes[0].items = lines.slice(0, third);
+    lanes[1].items = lines.slice(third, third * 2);
+    lanes[2].items = lines.slice(third * 2);
+  }
+
+  const laneTop = PAD + 90;
+  const laneH = H - laneTop - PAD;
+  const totalW = cW - PAD * 2;
+  const laneGap = 16;
+  const laneW = Math.round((totalW - laneGap * 2) / 3);
+
+  let lanesHtml = '';
+  const laneColors = [accents[0] || p.accent, accents[1] || p.primary, accents[2] || p.secondary];
+
+  for (let li = 0; li < 3; li++) {
+    const lx = PAD + li * (laneW + laneGap);
+    const color = laneColors[li];
+
+    // Lane background
+    lanesHtml += `<div style="position:absolute;left:${lx}px;top:${laneTop}px;width:${laneW}px;height:${laneH}px;background:${hexToRgba(p.surface, 0.3)};border:1px solid ${hexToRgba(p.border, 0.2)};border-radius:12px;border-top:3px solid ${color}"></div>`;
+
+    // Lane header
+    lanesHtml += `<div style="position:absolute;left:${lx}px;top:${laneTop + 10}px;width:${laneW}px;text-align:center;font-size:14px;font-weight:bold;text-transform:uppercase;letter-spacing:2px;color:${color}">${escHtml(lanes[li].label)}</div>`;
+
+    // Item cards
+    const cardPad = 10;
+    const cardStartY = laneTop + 42;
+    const cardAvailH = laneH - 52;
+    const items = lanes[li].items.slice(0, 5);
+    const cardGap = 8;
+    const cardH = Math.min(60, Math.round((cardAvailH - (items.length - 1) * cardGap) / Math.max(items.length, 1)));
+
+    for (let ci = 0; ci < items.length; ci++) {
+      const cy = cardStartY + ci * (cardH + cardGap);
+      const cardBg = dark ? hexToRgba(p.surface, 0.5) : p.surface;
+      lanesHtml += `<div style="position:absolute;left:${lx + cardPad}px;top:${cy}px;width:${laneW - cardPad * 2}px;height:${cardH}px;background:${cardBg};border:1px solid ${hexToRgba(p.border, 0.15)};border-radius:8px;border-left:3px solid ${hexToRgba(color, 0.6)};box-shadow:${cardShadow(1, dark)}"></div>`;
+      lanesHtml += `<div style="position:absolute;left:${lx + cardPad + 10}px;top:${cy + Math.round((cardH - 14) / 2)}px;width:${laneW - cardPad * 2 - 20}px;font-size:12px;line-height:1.4;color:${p.text};overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">${escHtml(items[ci])}</div>`;
+    }
+  }
+
+  // Arrow connectors between lanes
+  let arrowsSvg = '';
+  for (let li = 0; li < 2; li++) {
+    const ax = PAD + (li + 1) * (laneW + laneGap) - laneGap / 2;
+    const ay = laneTop + Math.round(laneH / 2);
+    arrowsSvg += `<line x1="${ax - 6}" y1="${ay}" x2="${ax + 6}" y2="${ay}" stroke="${hexToRgba(p.border, 0.4)}" stroke-width="2" />`;
+    arrowsSvg += `<polygon points="${ax + 3},${ay - 4} ${ax + 9},${ay} ${ax + 3},${ay + 4}" fill="${hexToRgba(p.border, 0.4)}" />`;
+  }
+
+  return `${SCOPED_RESET}
+<div style="position:relative;width:${W}px;height:${H}px;background:${p.background};overflow:hidden">
+  ${bgGradientOverlay(cW, H, p.primary, 0.04, '45%')}
+  <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;font-size:${titleFontSize(slide.title)}px;font-weight:bold;overflow-wrap:break-word;word-wrap:break-word;color:${p.text};line-height:1.2">${escHtml(slide.title)}</div>
+  <div style="position:absolute;left:${PAD}px;top:${PAD + 56}px;width:50px;height:3px;background:${p.accent};border-radius:2px"></div>
+  ${lanesHtml}
+  <svg style="position:absolute;left:0;top:0" width="${cW}" height="${H}" xmlns="http://www.w3.org/2000/svg">
+    ${arrowsSvg}
+  </svg>
+</div>`;
+}
+
+
+// ── PRICING_TABLE ───────────────────────────────────────────
+// Tiered pricing cards with recommended highlight
+
+function buildPricingTable(slide: SlideInput, p: ColorPalette, hasImage = false, accentDiversity = true): string {
+  const cW = hasImage ? CONTENT_W_IMG : W;
+  const lines = parseBodyLines(slide.body);
+  const dark = isDarkBackground(p.background);
+  const accents = cardAccentColors(p, accentDiversity ? colorOffset(slide.title) : 0);
+
+  // Parse tiers: "Tier Name:" starts a section, lines below are features
+  const tiers: { name: string; price: string; features: string[]; recommended: boolean }[] = [];
+  let currentTier: { name: string; price: string; features: string[]; recommended: boolean } | null = null;
+
+  for (const line of lines) {
+    const tierMatch = line.match(/^(Basic|Free|Starter|Pro|Professional|Plus|Enterprise|Business|Premium|Growth)\s*[-:]?\s*(.*)/i);
+    if (tierMatch) {
+      if (currentTier) tiers.push(currentTier);
+      const priceMatch = tierMatch[2].match(/\$[\d,.]+(?:\/\w+)?/);
+      currentTier = {
+        name: tierMatch[1],
+        price: priceMatch ? priceMatch[0] : tierMatch[2].trim(),
+        features: [],
+        recommended: /pro|professional|plus|growth/i.test(tierMatch[1]),
+      };
+      continue;
+    }
+    if (currentTier) {
+      currentTier.features.push(line);
+    } else {
+      // Auto-create tiers from lines
+      if (!currentTier) {
+        currentTier = { name: line.slice(0, 20), price: '', features: [], recommended: false };
+      }
+    }
+  }
+  if (currentTier) tiers.push(currentTier);
+
+  // Defaults
+  if (tiers.length === 0) {
+    tiers.push({ name: 'Basic', price: '$9/mo', features: ['5 projects', 'Basic support'], recommended: false });
+    tiers.push({ name: 'Pro', price: '$29/mo', features: ['Unlimited projects', 'Priority support', 'Analytics'], recommended: true });
+    tiers.push({ name: 'Enterprise', price: 'Custom', features: ['Custom SLA', 'Dedicated support', 'SSO'], recommended: false });
+  }
+
+  const count = Math.min(tiers.length, 4);
+  const cardTop = PAD + 90;
+  const totalW = cW - PAD * 2;
+  const cardGap = 16;
+  const cardW = Math.round((totalW - (count - 1) * cardGap) / count);
+  const cardH = H - cardTop - PAD;
+
+  let cardsHtml = '';
+
+  for (let i = 0; i < count; i++) {
+    const tier = tiers[i];
+    const cx = PAD + i * (cardW + cardGap);
+    const color = accents[i % accents.length];
+    const isRec = tier.recommended;
+
+    // Card container
+    const borderStyle = isRec ? `border:2px solid ${p.accent}` : `border:1px solid ${hexToRgba(p.border, 0.2)}`;
+    const cardBg = dark ? hexToRgba(p.surface, 0.4) : p.surface;
+    const elevation = isRec ? 3 : 1;
+    cardsHtml += `<div style="position:absolute;left:${cx}px;top:${isRec ? cardTop - 8 : cardTop}px;width:${cardW}px;height:${isRec ? cardH + 8 : cardH}px;background:${cardBg};${borderStyle};border-radius:16px;box-shadow:${cardShadow(elevation as 1 | 2 | 3, dark)};overflow:hidden"></div>`;
+
+    // Recommended badge
+    if (isRec) {
+      cardsHtml += `<div style="position:absolute;left:${cx}px;top:${cardTop - 8}px;width:${cardW}px;height:28px;background:${p.accent};border-radius:16px 16px 0 0;text-align:center;line-height:28px;font-size:11px;font-weight:bold;color:#fff;letter-spacing:1px">RECOMMENDED</div>`;
+    }
+
+    // Tier name
+    const nameY = isRec ? cardTop + 28 : cardTop + 16;
+    cardsHtml += `<div style="position:absolute;left:${cx}px;top:${nameY}px;width:${cardW}px;text-align:center;font-size:16px;font-weight:bold;color:${color}">${escHtml(tier.name)}</div>`;
+
+    // Price
+    cardsHtml += `<div style="position:absolute;left:${cx}px;top:${nameY + 30}px;width:${cardW}px;text-align:center;font-size:28px;font-weight:bold;color:${p.text}">${escHtml(tier.price)}</div>`;
+
+    // Divider
+    cardsHtml += `<div style="position:absolute;left:${cx + 20}px;top:${nameY + 72}px;width:${cardW - 40}px;height:1px;background:${hexToRgba(p.border, 0.2)}"></div>`;
+
+    // Features
+    let fy = nameY + 86;
+    for (const feat of tier.features.slice(0, 6)) {
+      cardsHtml += `<div style="position:absolute;left:${cx + 16}px;top:${fy}px;width:${cardW - 32}px;font-size:12px;line-height:1.4;color:${p.text};opacity:0.8"><span style="color:${p.success || '#22c55e'};margin-right:6px">\u2713</span>${escHtml(feat)}</div>`;
+      fy += 24;
+    }
+  }
+
+  return `${SCOPED_RESET}
+<div style="position:relative;width:${W}px;height:${H}px;background:${p.background};overflow:hidden">
+  ${bgGradientOverlay(cW, H, p.primary, 0.04, '50%')}
+  <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;text-align:center;font-size:${titleFontSize(slide.title)}px;font-weight:bold;overflow-wrap:break-word;word-wrap:break-word;color:${p.text};line-height:1.2">${escHtml(slide.title)}</div>
+  <div style="position:absolute;left:${Math.round((cW - 60) / 2)}px;top:${PAD + 56}px;width:60px;height:3px;background:${p.accent};border-radius:2px"></div>
+  ${cardsHtml}
+</div>`;
+}
+
+
+// ── UNIT_ECONOMICS ──────────────────────────────────────────
+// Large central hero metric with supporting metrics around it
+
+function buildUnitEconomics(slide: SlideInput, p: ColorPalette, hasImage = false): string {
+  const cW = hasImage ? CONTENT_W_IMG : W;
+  const lines = parseBodyLines(slide.body);
+  const dark = isDarkBackground(p.background);
+
+  // First line = hero metric, rest = supporting
+  const heroLine = lines.length > 0 ? lines[0] : '3.5x LTV:CAC';
+  const supporting = lines.slice(1, 7);
+
+  // Parse hero metric
+  const heroSep = heroLine.indexOf(':');
+  let heroLabel = '';
+  let heroValue = heroLine;
+  if (heroSep > 0 && heroSep < 30) {
+    heroLabel = heroLine.slice(0, heroSep).trim();
+    heroValue = heroLine.slice(heroSep + 1).trim();
+  }
+
+  // Central hero
+  const heroCx = Math.round(cW * 0.5);
+  const heroCy = Math.round(H * 0.45);
+  const heroR = 110;
+
+  let heroHtml = '';
+  // Large ring behind hero
+  heroHtml += `<div style="position:absolute;left:${heroCx - heroR}px;top:${heroCy - heroR}px;width:${heroR * 2}px;height:${heroR * 2}px;border-radius:50%;background:${hexToRgba(p.accent, 0.08)};border:3px solid ${hexToRgba(p.accent, 0.3)}"></div>`;
+  // Hero value
+  heroHtml += `<div style="position:absolute;left:${heroCx - heroR}px;top:${heroCy - 30}px;width:${heroR * 2}px;text-align:center;font-size:48px;font-weight:bold;color:${p.accent}">${escHtml(heroValue)}</div>`;
+  // Hero label below value
+  if (heroLabel) {
+    heroHtml += `<div style="position:absolute;left:${heroCx - heroR}px;top:${heroCy + 26}px;width:${heroR * 2}px;text-align:center;font-size:14px;font-weight:bold;color:${p.text};opacity:0.6;text-transform:uppercase;letter-spacing:1px">${escHtml(heroLabel)}</div>`;
+  }
+
+  // Supporting metrics in a ring around hero
+  let supportHtml = '';
+  const supportR = heroR + 120;
+  const startAngle = -Math.PI / 2; // start from top
+  const count = Math.min(supporting.length, 6);
+
+  for (let i = 0; i < count; i++) {
+    const angle = startAngle + (i / count) * 2 * Math.PI;
+    const sx = heroCx + Math.round(supportR * Math.cos(angle));
+    const sy = heroCy + Math.round(supportR * Math.sin(angle));
+    const cardW = 150;
+    const cardH = 60;
+
+    const sep = supporting[i].indexOf(':');
+    let sLabel = '';
+    let sValue = supporting[i];
+    if (sep > 0 && sep < 30) {
+      sLabel = supporting[i].slice(0, sep).trim();
+      sValue = supporting[i].slice(sep + 1).trim();
+    }
+
+    const cardBg = dark ? hexToRgba(p.surface, 0.4) : p.surface;
+    supportHtml += `<div style="position:absolute;left:${sx - cardW / 2}px;top:${sy - cardH / 2}px;width:${cardW}px;height:${cardH}px;background:${cardBg};border:1px solid ${hexToRgba(p.border, 0.2)};border-radius:10px;box-shadow:${cardShadow(1, dark)};text-align:center;overflow:hidden"></div>`;
+    supportHtml += `<div style="position:absolute;left:${sx - cardW / 2}px;top:${sy - cardH / 2 + 8}px;width:${cardW}px;text-align:center;font-size:18px;font-weight:bold;color:${p.primary}">${escHtml(sValue)}</div>`;
+    if (sLabel) {
+      supportHtml += `<div style="position:absolute;left:${sx - cardW / 2}px;top:${sy - cardH / 2 + 32}px;width:${cardW}px;text-align:center;font-size:10px;color:${p.text};opacity:0.6;text-transform:uppercase;letter-spacing:0.5px">${escHtml(sLabel)}</div>`;
+    }
+  }
+
+  // Connecting lines from hero to supporting metrics (SVG)
+  let linesSvg = '';
+  for (let i = 0; i < count; i++) {
+    const angle = startAngle + (i / count) * 2 * Math.PI;
+    const sx = heroCx + Math.round(supportR * Math.cos(angle));
+    const sy = heroCy + Math.round(supportR * Math.sin(angle));
+    const ex = heroCx + Math.round((heroR + 10) * Math.cos(angle));
+    const ey = heroCy + Math.round((heroR + 10) * Math.sin(angle));
+    linesSvg += `<line x1="${ex}" y1="${ey}" x2="${sx}" y2="${sy}" stroke="${hexToRgba(p.border, 0.2)}" stroke-width="1" stroke-dasharray="4,4" />`;
+  }
+
+  return `${SCOPED_RESET}
+<div style="position:relative;width:${W}px;height:${H}px;background:${p.background};overflow:hidden">
+  ${bgGradientOverlay(cW, H, p.accent, 0.04, '50%')}
+  <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;text-align:center;font-size:${titleFontSize(slide.title)}px;font-weight:bold;overflow-wrap:break-word;word-wrap:break-word;color:${p.text};line-height:1.2">${escHtml(slide.title)}</div>
+  <div style="position:absolute;left:${Math.round((cW - 60) / 2)}px;top:${PAD + 56}px;width:60px;height:3px;background:${p.accent};border-radius:2px"></div>
+  ${heroHtml}
+  ${supportHtml}
+  <svg style="position:absolute;left:0;top:0" width="${cW}" height="${H}" xmlns="http://www.w3.org/2000/svg">
+    ${linesSvg}
+  </svg>
+</div>`;
+}
+
+
+// ── SWOT ────────────────────────────────────────────────────
+// 4-quadrant colored grid: Strengths, Weaknesses, Opportunities, Threats
+
+function buildSwot(slide: SlideInput, p: ColorPalette, hasImage = false): string {
+  const cW = hasImage ? CONTENT_W_IMG : W;
+  const lines = parseBodyLines(slide.body);
+  const dark = isDarkBackground(p.background);
+
+  // Parse body into SWOT sections
+  const swot: { label: string; color: string; items: string[] }[] = [
+    { label: 'Strengths', color: p.success || '#22c55e', items: [] },
+    { label: 'Weaknesses', color: p.warning || '#eab308', items: [] },
+    { label: 'Opportunities', color: p.primary || '#3b82f6', items: [] },
+    { label: 'Threats', color: p.error || '#ef4444', items: [] },
+  ];
+
+  let currentSection = -1;
+  for (const line of lines) {
+    const sMatch = line.match(/^(S|Strengths?)\s*[-:]/i);
+    const wMatch = line.match(/^(W|Weaknesses?)\s*[-:]/i);
+    const oMatch = line.match(/^(O|Opportunities?)\s*[-:]/i);
+    const tMatch = line.match(/^(T|Threats?)\s*[-:]/i);
+
+    if (sMatch) { currentSection = 0; const rest = line.slice(sMatch[0].length).trim(); if (rest) swot[0].items.push(rest); continue; }
+    if (wMatch) { currentSection = 1; const rest = line.slice(wMatch[0].length).trim(); if (rest) swot[1].items.push(rest); continue; }
+    if (oMatch) { currentSection = 2; const rest = line.slice(oMatch[0].length).trim(); if (rest) swot[2].items.push(rest); continue; }
+    if (tMatch) { currentSection = 3; const rest = line.slice(tMatch[0].length).trim(); if (rest) swot[3].items.push(rest); continue; }
+
+    if (currentSection >= 0) {
+      swot[currentSection].items.push(line);
+    } else {
+      // Auto-distribute
+      swot[lines.indexOf(line) % 4].items.push(line);
+    }
+  }
+
+  const gridLeft = PAD + 10;
+  const gridTop = PAD + 80;
+  const gridW = cW - PAD * 2 - 20;
+  const gridH = H - gridTop - PAD;
+  const halfW = Math.round(gridW / 2) - 6;
+  const halfH = Math.round(gridH / 2) - 6;
+
+  const positions = [
+    { x: gridLeft, y: gridTop },                     // S: top-left
+    { x: gridLeft + halfW + 12, y: gridTop },         // W: top-right
+    { x: gridLeft, y: gridTop + halfH + 12 },         // O: bottom-left
+    { x: gridLeft + halfW + 12, y: gridTop + halfH + 12 }, // T: bottom-right
+  ];
+
+  let quadHtml = '';
+  for (let qi = 0; qi < 4; qi++) {
+    const qp = positions[qi];
+    const sq = swot[qi];
+    const bgAlpha = dark ? 0.08 : 0.06;
+
+    // Quadrant bg
+    quadHtml += `<div style="position:absolute;left:${qp.x}px;top:${qp.y}px;width:${halfW}px;height:${halfH}px;background:${hexToRgba(sq.color, bgAlpha)};border:1px solid ${hexToRgba(sq.color, 0.15)};border-radius:12px;overflow:hidden"></div>`;
+    // Color bar at top
+    quadHtml += `<div style="position:absolute;left:${qp.x}px;top:${qp.y}px;width:${halfW}px;height:3px;background:${sq.color};border-radius:12px 12px 0 0"></div>`;
+    // Section label
+    quadHtml += `<div style="position:absolute;left:${qp.x + 14}px;top:${qp.y + 10}px;font-size:13px;font-weight:bold;color:${sq.color};text-transform:uppercase;letter-spacing:1px">${escHtml(sq.label)}</div>`;
+
+    // Items
+    let iy = qp.y + 34;
+    for (const item of sq.items.slice(0, 4)) {
+      quadHtml += `<div style="position:absolute;left:${qp.x + 14}px;top:${iy}px;width:${halfW - 28}px;font-size:12px;line-height:1.4;color:${p.text};overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical"><span style="color:${sq.color};margin-right:4px">\u2022</span>${escHtml(item)}</div>`;
+      iy += Math.min(36, Math.round((halfH - 44) / Math.max(sq.items.length, 1)));
+    }
+  }
+
+  return `${SCOPED_RESET}
+<div style="position:relative;width:${W}px;height:${H}px;background:${p.background};overflow:hidden">
+  ${bgGradientOverlay(cW, H, p.primary, 0.04, '50%')}
+  <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;font-size:${titleFontSize(slide.title)}px;font-weight:bold;overflow-wrap:break-word;word-wrap:break-word;color:${p.text};line-height:1.2">${escHtml(slide.title)}</div>
+  <div style="position:absolute;left:${PAD}px;top:${PAD + 48}px;width:50px;height:3px;background:${p.accent};border-radius:2px"></div>
+  ${quadHtml}
+</div>`;
+}
+
+
+// ── THREE_PILLARS ───────────────────────────────────────────
+// Rule of Three — 3 tall equal columns with decorative numbers
+
+function buildThreePillars(slide: SlideInput, p: ColorPalette, hasImage = false, accentDiversity = true): string {
+  const cW = hasImage ? CONTENT_W_IMG : W;
+  const lines = parseBodyLines(slide.body);
+  const dark = isDarkBackground(p.background);
+  const accents = cardAccentColors(p, accentDiversity ? colorOffset(slide.title) : 0);
+
+  // Parse 3 pillars: "Title: description" format
+  const pillars: { title: string; desc: string }[] = [];
+  for (const line of lines.slice(0, 3)) {
+    const sep = line.indexOf(':');
+    if (sep > 0 && sep < 40) {
+      pillars.push({ title: line.slice(0, sep).trim(), desc: line.slice(sep + 1).trim() });
+    } else {
+      pillars.push({ title: line.slice(0, 25).trim(), desc: line.slice(25).trim() });
+    }
+  }
+  while (pillars.length < 3) {
+    pillars.push({ title: `Pillar ${pillars.length + 1}`, desc: '' });
+  }
+
+  const colTop = PAD + 90;
+  const totalW = cW - PAD * 2;
+  const colGap = 20;
+  const colW = Math.round((totalW - colGap * 2) / 3);
+  const colH = H - colTop - PAD;
+
+  let pillarsHtml = '';
+  for (let i = 0; i < 3; i++) {
+    const px = PAD + i * (colW + colGap);
+    const color = accents[i % accents.length];
+    const cardBg = dark ? hexToRgba(p.surface, 0.35) : p.surface;
+
+    // Column card
+    pillarsHtml += `<div style="position:absolute;left:${px}px;top:${colTop}px;width:${colW}px;height:${colH}px;background:${cardBg};border:1px solid ${hexToRgba(p.border, 0.15)};border-radius:16px;box-shadow:${cardShadow(2, dark)};overflow:hidden"></div>`;
+    // Accent stripe at top
+    pillarsHtml += `<div style="position:absolute;left:${px}px;top:${colTop}px;width:${colW}px;height:4px;background:${color};border-radius:16px 16px 0 0"></div>`;
+
+    // Large decorative number
+    const numStr = String(i + 1).padStart(2, '0');
+    pillarsHtml += `<div style="position:absolute;left:${px}px;top:${colTop + 14}px;width:${colW}px;text-align:center;font-size:48px;font-weight:900;color:${hexToRgba(color, 0.12)};line-height:1">${numStr}</div>`;
+
+    // Pillar title
+    pillarsHtml += `<div style="position:absolute;left:${px + 16}px;top:${colTop + 70}px;width:${colW - 32}px;text-align:center;font-size:16px;font-weight:bold;color:${color};line-height:1.3;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">${escHtml(pillars[i].title)}</div>`;
+
+    // Pillar description
+    if (pillars[i].desc) {
+      pillarsHtml += `<div style="position:absolute;left:${px + 16}px;top:${colTop + 114}px;width:${colW - 32}px;text-align:center;font-size:13px;line-height:1.5;color:${p.text};opacity:0.75;overflow:hidden;display:-webkit-box;-webkit-line-clamp:5;-webkit-box-orient:vertical">${escHtml(pillars[i].desc)}</div>`;
+    }
+  }
+
+  return `${SCOPED_RESET}
+<div style="position:relative;width:${W}px;height:${H}px;background:${p.background};overflow:hidden">
+  ${bgGradientOverlay(cW, H, p.primary, 0.04, '50%')}
+  <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;text-align:center;font-size:${titleFontSize(slide.title)}px;font-weight:bold;overflow-wrap:break-word;word-wrap:break-word;color:${p.text};line-height:1.2">${escHtml(slide.title)}</div>
+  <div style="position:absolute;left:${Math.round((cW - 60) / 2)}px;top:${PAD + 56}px;width:60px;height:3px;background:${p.accent};border-radius:2px"></div>
+  ${pillarsHtml}
+</div>`;
+}
+
+
+// ── BEFORE_AFTER ────────────────────────────────────────────
+// Visual transformation — two panels with "BEFORE" / "AFTER"
+
+function buildBeforeAfter(slide: SlideInput, p: ColorPalette, hasImage = false): string {
+  const cW = hasImage ? CONTENT_W_IMG : W;
+  const lines = parseBodyLines(slide.body);
+  const dark = isDarkBackground(p.background);
+
+  // Split on "Before/After" markers, "vs", or empty line
+  const beforeItems: string[] = [];
+  const afterItems: string[] = [];
+  let inAfter = false;
+
+  for (const line of lines) {
+    if (/^(After|AFTER)\s*[-:]?\s*/i.test(line)) {
+      inAfter = true;
+      const rest = line.replace(/^(After|AFTER)\s*[-:]?\s*/i, '').trim();
+      if (rest) afterItems.push(rest);
+      continue;
+    }
+    if (/^(Before|BEFORE)\s*[-:]?\s*/i.test(line)) {
+      inAfter = false;
+      const rest = line.replace(/^(Before|BEFORE)\s*[-:]?\s*/i, '').trim();
+      if (rest) beforeItems.push(rest);
+      continue;
+    }
+    if (/^(vs\.?|-->|->|\u2192)$/i.test(line.trim())) {
+      inAfter = true;
+      continue;
+    }
+    if (inAfter) afterItems.push(line);
+    else beforeItems.push(line);
+  }
+
+  // If no markers, split in half
+  if (beforeItems.length === 0 && afterItems.length === 0) {
+    const half = Math.ceil(lines.length / 2);
+    beforeItems.push(...lines.slice(0, half));
+    afterItems.push(...lines.slice(half));
+  }
+
+  const panelTop = PAD + 90;
+  const panelH = H - panelTop - PAD;
+  const totalW = cW - PAD * 2;
+  const dividerW = 50;
+  const panelW = Math.round((totalW - dividerW) / 2);
+  const leftX = PAD;
+  const rightX = PAD + panelW + dividerW;
+
+  let panelsHtml = '';
+
+  // Before panel
+  const beforeBg = dark ? hexToRgba(p.error || '#ef4444', 0.05) : hexToRgba(p.error || '#ef4444', 0.04);
+  panelsHtml += `<div style="position:absolute;left:${leftX}px;top:${panelTop}px;width:${panelW}px;height:${panelH}px;background:${beforeBg};border:1px solid ${hexToRgba(p.error || '#ef4444', 0.15)};border-radius:12px"></div>`;
+  panelsHtml += `<div style="position:absolute;left:${leftX}px;top:${panelTop + 10}px;width:${panelW}px;text-align:center;font-size:12px;font-weight:bold;text-transform:uppercase;letter-spacing:2px;color:${p.error || '#ef4444'}">\u2717 BEFORE</div>`;
+
+  let by = panelTop + 40;
+  for (const item of beforeItems.slice(0, 5)) {
+    panelsHtml += `<div style="position:absolute;left:${leftX + 16}px;top:${by}px;width:${panelW - 32}px;font-size:13px;line-height:1.4;color:${p.text};opacity:0.8;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical"><span style="color:${p.error || '#ef4444'};margin-right:6px">\u2022</span>${escHtml(item)}</div>`;
+    by += Math.min(44, Math.round((panelH - 50) / Math.max(beforeItems.length, 1)));
+  }
+
+  // After panel
+  const afterBg = dark ? hexToRgba(p.success || '#22c55e', 0.05) : hexToRgba(p.success || '#22c55e', 0.04);
+  panelsHtml += `<div style="position:absolute;left:${rightX}px;top:${panelTop}px;width:${panelW}px;height:${panelH}px;background:${afterBg};border:1px solid ${hexToRgba(p.success || '#22c55e', 0.15)};border-radius:12px"></div>`;
+  panelsHtml += `<div style="position:absolute;left:${rightX}px;top:${panelTop + 10}px;width:${panelW}px;text-align:center;font-size:12px;font-weight:bold;text-transform:uppercase;letter-spacing:2px;color:${p.success || '#22c55e'}">\u2713 AFTER</div>`;
+
+  let ay = panelTop + 40;
+  for (const item of afterItems.slice(0, 5)) {
+    panelsHtml += `<div style="position:absolute;left:${rightX + 16}px;top:${ay}px;width:${panelW - 32}px;font-size:13px;line-height:1.4;color:${p.text};opacity:0.8;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical"><span style="color:${p.success || '#22c55e'};margin-right:6px">\u2022</span>${escHtml(item)}</div>`;
+    ay += Math.min(44, Math.round((panelH - 50) / Math.max(afterItems.length, 1)));
+  }
+
+  // Center divider with arrow
+  const divCx = PAD + panelW + Math.round(dividerW / 2);
+  const divCy = panelTop + Math.round(panelH / 2);
+  let arrowSvg = `<line x1="${divCx - 16}" y1="${divCy}" x2="${divCx + 16}" y2="${divCy}" stroke="${p.accent}" stroke-width="3" />`;
+  arrowSvg += `<polygon points="${divCx + 12},${divCy - 6} ${divCx + 22},${divCy} ${divCx + 12},${divCy + 6}" fill="${p.accent}" />`;
+
+  return `${SCOPED_RESET}
+<div style="position:relative;width:${W}px;height:${H}px;background:${p.background};overflow:hidden">
+  ${bgGradientOverlay(cW, H, p.primary, 0.04, '50%')}
+  <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;text-align:center;font-size:${titleFontSize(slide.title)}px;font-weight:bold;overflow-wrap:break-word;word-wrap:break-word;color:${p.text};line-height:1.2">${escHtml(slide.title)}</div>
+  <div style="position:absolute;left:${Math.round((cW - 60) / 2)}px;top:${PAD + 56}px;width:60px;height:3px;background:${p.accent};border-radius:2px"></div>
+  ${panelsHtml}
+  <svg style="position:absolute;left:0;top:0" width="${cW}" height="${H}" xmlns="http://www.w3.org/2000/svg">
+    ${arrowSvg}
+  </svg>
+</div>`;
+}
+
+
+// ── SOCIAL_PROOF ────────────────────────────────────────────
+// Aggregated credibility — large rating/number + trust badges
+
+function buildSocialProof(slide: SlideInput, p: ColorPalette, hasImage = false): string {
+  const cW = hasImage ? CONTENT_W_IMG : W;
+  const lines = parseBodyLines(slide.body);
+  const dark = isDarkBackground(p.background);
+
+  // First line = hero stat, rest = badges/awards
+  const heroText = lines.length > 0 ? lines[0] : '4.9/5 from 2,400+ reviews';
+  const badges = lines.slice(1, 7);
+
+  // Parse hero for rating number
+  const ratingMatch = heroText.match(/([\d.]+)\s*\/\s*(\d+)/);
+  const rating = ratingMatch ? parseFloat(ratingMatch[1]) : 4.8;
+  const maxRating = ratingMatch ? parseInt(ratingMatch[2], 10) : 5;
+
+  // Stars visualization
+  const starCount = Math.min(maxRating, 5);
+  const fullStars = Math.floor(rating);
+  const heroCx = Math.round(cW * 0.5);
+  const heroCy = Math.round(H * 0.38);
+
+  let starsHtml = '';
+  const starSize = 28;
+  const starGap = 6;
+  const starsWidth = starCount * starSize + (starCount - 1) * starGap;
+  const starsLeft = heroCx - Math.round(starsWidth / 2);
+
+  for (let i = 0; i < starCount; i++) {
+    const sx = starsLeft + i * (starSize + starGap);
+    const filled = i < fullStars;
+    const starColor = filled ? (p.warning || '#eab308') : hexToRgba(p.border, 0.3);
+    starsHtml += `<div style="position:absolute;left:${sx}px;top:${heroCy - 50}px;font-size:${starSize}px;color:${starColor}">\u2605</div>`;
+  }
+
+  // Hero stat text
+  const heroHtml = `<div style="position:absolute;left:${PAD}px;top:${heroCy}px;width:${cW - PAD * 2}px;text-align:center;font-size:22px;color:${p.text};opacity:0.85">${escHtml(heroText)}</div>`;
+
+  // Badge cards in a grid
+  let badgesHtml = '';
+  const badgeTop = heroCy + 60;
+  const badgeCols = Math.min(badges.length, 3);
+  const badgeGap = 16;
+  const badgeW = Math.round((cW - PAD * 2 - (badgeCols - 1) * badgeGap) / badgeCols);
+  const badgeH = 55;
+
+  for (let i = 0; i < badges.length; i++) {
+    const col = i % badgeCols;
+    const row = Math.floor(i / badgeCols);
+    const bx = PAD + col * (badgeW + badgeGap);
+    const bby = badgeTop + row * (badgeH + badgeGap);
+    const cardBg = dark ? hexToRgba(p.surface, 0.4) : p.surface;
+
+    badgesHtml += `<div style="position:absolute;left:${bx}px;top:${bby}px;width:${badgeW}px;height:${badgeH}px;background:${cardBg};border:1px solid ${hexToRgba(p.border, 0.15)};border-radius:10px;box-shadow:${cardShadow(1, dark)};overflow:hidden"></div>`;
+    badgesHtml += `<div style="position:absolute;left:${bx + 12}px;top:${bby + Math.round((badgeH - 14) / 2)}px;width:${badgeW - 24}px;font-size:13px;color:${p.text};text-align:center;overflow:hidden;white-space:nowrap;text-overflow:ellipsis"><span style="color:${p.accent};margin-right:6px">\u2605</span>${escHtml(badges[i])}</div>`;
+  }
+
+  return `${SCOPED_RESET}
+<div style="position:relative;width:${W}px;height:${H}px;background:${p.background};overflow:hidden">
+  ${bgGradientOverlay(cW, H, p.accent, 0.04, '40%')}
+  <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;text-align:center;font-size:${titleFontSize(slide.title)}px;font-weight:bold;overflow-wrap:break-word;word-wrap:break-word;color:${p.text};line-height:1.2">${escHtml(slide.title)}</div>
+  <div style="position:absolute;left:${Math.round((cW - 60) / 2)}px;top:${PAD + 56}px;width:60px;height:3px;background:${p.accent};border-radius:2px"></div>
+  ${starsHtml}
+  ${heroHtml}
+  ${badgesHtml}
+</div>`;
+}
+
+
+// ── OBJECTION_HANDLER ───────────────────────────────────────
+// Left panel: objection in italic with red accent, right: rebuttal with green data points
+
+function buildObjectionHandler(slide: SlideInput, p: ColorPalette, hasImage = false): string {
+  const cW = hasImage ? CONTENT_W_IMG : W;
+  const lines = parseBodyLines(slide.body);
+  const dark = isDarkBackground(p.background);
+
+  // Split on "---" or marker for objection vs rebuttal
+  const objectionLines: string[] = [];
+  const rebuttalLines: string[] = [];
+  let inRebuttal = false;
+
+  for (const line of lines) {
+    if (/^---+$/.test(line.trim()) || /^(But|However|Rebuttal|Response|Answer)\s*[-:]?\s*/i.test(line)) {
+      inRebuttal = true;
+      const cleaned = line.replace(/^(But|However|Rebuttal|Response|Answer)\s*[-:]?\s*/i, '').trim();
+      if (cleaned && !/^---+$/.test(cleaned)) rebuttalLines.push(cleaned);
+      continue;
+    }
+    if (inRebuttal) rebuttalLines.push(line);
+    else objectionLines.push(line);
+  }
+
+  // If no separator, first line is objection, rest is rebuttal
+  if (objectionLines.length === 0 && rebuttalLines.length === 0) {
+    if (lines.length > 0) objectionLines.push(lines[0]);
+    rebuttalLines.push(...lines.slice(1));
+  } else if (rebuttalLines.length === 0 && objectionLines.length > 1) {
+    rebuttalLines.push(...objectionLines.splice(1));
+  }
+
+  const panelTop = PAD + 90;
+  const panelH = H - panelTop - PAD;
+  const totalW = cW - PAD * 2;
+  const leftW = Math.round(totalW * 0.32);
+  const rightW = totalW - leftW - 20;
+  const leftX = PAD;
+  const rightX = PAD + leftW + 20;
+
+  let html = '';
+
+  // Left panel — objection
+  const objBg = dark ? hexToRgba(p.error || '#ef4444', 0.06) : hexToRgba(p.error || '#ef4444', 0.04);
+  html += `<div style="position:absolute;left:${leftX}px;top:${panelTop}px;width:${leftW}px;height:${panelH}px;background:${objBg};border:1px solid ${hexToRgba(p.error || '#ef4444', 0.15)};border-radius:12px;border-left:4px solid ${p.error || '#ef4444'}"></div>`;
+  html += `<div style="position:absolute;left:${leftX + 16}px;top:${panelTop + 14}px;font-size:14px;font-weight:bold;color:${p.error || '#ef4444'}">But...</div>`;
+
+  let oy = panelTop + 44;
+  for (const item of objectionLines.slice(0, 3)) {
+    html += `<div style="position:absolute;left:${leftX + 16}px;top:${oy}px;width:${leftW - 32}px;font-size:15px;font-style:italic;line-height:1.5;color:${p.text};opacity:0.85;overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical">&ldquo;${escHtml(item)}&rdquo;</div>`;
+    oy += 70;
+  }
+
+  // Right panel — rebuttal
+  const rebBg = dark ? hexToRgba(p.success || '#22c55e', 0.05) : hexToRgba(p.success || '#22c55e', 0.03);
+  html += `<div style="position:absolute;left:${rightX}px;top:${panelTop}px;width:${rightW}px;height:${panelH}px;background:${rebBg};border:1px solid ${hexToRgba(p.success || '#22c55e', 0.15)};border-radius:12px;border-left:4px solid ${p.success || '#22c55e'}"></div>`;
+  html += `<div style="position:absolute;left:${rightX + 16}px;top:${panelTop + 14}px;font-size:14px;font-weight:bold;color:${p.success || '#22c55e'}">The Data Says...</div>`;
+
+  let ry = panelTop + 44;
+  for (const item of rebuttalLines.slice(0, 5)) {
+    html += `<div style="position:absolute;left:${rightX + 16}px;top:${ry}px;width:${rightW - 32}px;font-size:14px;line-height:1.5;color:${p.text};opacity:0.85;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical"><span style="color:${p.success || '#22c55e'};font-weight:bold;margin-right:6px">\u2713</span>${escHtml(item)}</div>`;
+    ry += Math.min(50, Math.round((panelH - 54) / Math.max(rebuttalLines.length, 1)));
+  }
+
+  return `${SCOPED_RESET}
+<div style="position:relative;width:${W}px;height:${H}px;background:${p.background};overflow:hidden">
+  ${bgGradientOverlay(cW, H, p.primary, 0.04, '50%')}
+  <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;font-size:${titleFontSize(slide.title)}px;font-weight:bold;overflow-wrap:break-word;word-wrap:break-word;color:${p.text};line-height:1.2">${escHtml(slide.title)}</div>
+  <div style="position:absolute;left:${PAD}px;top:${PAD + 56}px;width:50px;height:3px;background:${p.accent};border-radius:2px"></div>
+  ${html}
+</div>`;
+}
+
+
+// ── FAQ ─────────────────────────────────────────────────────
+// Card-based Q&A pairs
+
+function buildFaq(slide: SlideInput, p: ColorPalette, hasImage = false, accentDiversity = true): string {
+  const cW = hasImage ? CONTENT_W_IMG : W;
+  const lines = parseBodyLines(slide.body);
+  const dark = isDarkBackground(p.background);
+  const accents = cardAccentColors(p, accentDiversity ? colorOffset(slide.title) : 0);
+
+  // Parse Q/A pairs
+  const qaPairs: { q: string; a: string }[] = [];
+  let currentQ = '';
+
+  for (const line of lines) {
+    const qMatch = line.match(/^Q\s*[-:.]?\s*(.+)/i);
+    const aMatch = line.match(/^A\s*[-:.]?\s*(.+)/i);
+
+    if (qMatch) {
+      if (currentQ && qaPairs.length > 0) {
+        // Previous Q had no A, keep it
+      }
+      currentQ = qMatch[1].trim();
+      continue;
+    }
+    if (aMatch && currentQ) {
+      qaPairs.push({ q: currentQ, a: aMatch[1].trim() });
+      currentQ = '';
+      continue;
+    }
+    // If no Q/A markers, alternate Q and A
+    if (qaPairs.length === 0 && currentQ === '') {
+      currentQ = line;
+    } else if (currentQ) {
+      qaPairs.push({ q: currentQ, a: line });
+      currentQ = '';
+    }
+  }
+  // Leftover Q without A
+  if (currentQ) qaPairs.push({ q: currentQ, a: '' });
+
+  if (qaPairs.length === 0) {
+    qaPairs.push({ q: 'What makes us different?', a: 'Our unique approach combines...' });
+  }
+
+  const count = Math.min(qaPairs.length, 6);
+  const cols = count <= 3 ? 1 : 2;
+  const rows = Math.ceil(count / cols);
+  const cardTop = PAD + 90;
+  const totalW = cW - PAD * 2;
+  const cardGap = 12;
+  const cardW = cols === 1 ? totalW : Math.round((totalW - cardGap) / 2);
+  const cardH = Math.min(100, Math.round((H - cardTop - PAD - (rows - 1) * cardGap) / rows));
+
+  let cardsHtml = '';
+  for (let i = 0; i < count; i++) {
+    const qa = qaPairs[i];
+    const col = cols === 1 ? 0 : i % cols;
+    const row = cols === 1 ? i : Math.floor(i / cols);
+    const cx = PAD + col * (cardW + cardGap);
+    const cy = cardTop + row * (cardH + cardGap);
+    const color = accents[i % accents.length];
+    const cardBg = dark ? hexToRgba(p.surface, 0.35) : p.surface;
+
+    cardsHtml += `<div style="position:absolute;left:${cx}px;top:${cy}px;width:${cardW}px;height:${cardH}px;background:${cardBg};border:1px solid ${hexToRgba(p.border, 0.15)};border-radius:12px;box-shadow:${cardShadow(1, dark)};overflow:hidden"></div>`;
+    // Q prefix
+    cardsHtml += `<div style="position:absolute;left:${cx + 12}px;top:${cy + 10}px;width:${cardW - 24}px;font-size:14px;font-weight:bold;color:${p.text};line-height:1.3;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical"><span style="color:${color};font-weight:900;margin-right:6px">Q:</span>${escHtml(qa.q)}</div>`;
+    // Answer
+    if (qa.a) {
+      cardsHtml += `<div style="position:absolute;left:${cx + 12}px;top:${cy + Math.min(50, Math.round(cardH * 0.5))}px;width:${cardW - 24}px;font-size:12px;line-height:1.4;color:${p.text};opacity:0.75;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">${escHtml(qa.a)}</div>`;
+    }
+  }
+
+  return `${SCOPED_RESET}
+<div style="position:relative;width:${W}px;height:${H}px;background:${p.background};overflow:hidden">
+  ${bgGradientOverlay(cW, H, p.primary, 0.04, '50%')}
+  <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;font-size:${titleFontSize(slide.title)}px;font-weight:bold;overflow-wrap:break-word;word-wrap:break-word;color:${p.text};line-height:1.2">${escHtml(slide.title)}</div>
+  <div style="position:absolute;left:${PAD}px;top:${PAD + 56}px;width:50px;height:3px;background:${p.accent};border-radius:2px"></div>
+  ${cardsHtml}
+</div>`;
+}
+
+
+// ── VERDICT ─────────────────────────────────────────────────
+// Conclusion/recommendation with colored verdict bar
+
+function buildVerdict(slide: SlideInput, p: ColorPalette, hasImage = false): string {
+  const cW = hasImage ? CONTENT_W_IMG : W;
+  const lines = parseBodyLines(slide.body);
+  const dark = isDarkBackground(p.background);
+
+  // First line = verdict, rest = rationale
+  const verdictText = lines.length > 0 ? lines[0] : 'Recommended';
+  const rationale = lines.slice(1, 6);
+
+  // Detect sentiment for verdict bar color
+  const lowerVerdict = verdictText.toLowerCase();
+  let verdictColor = p.success || '#22c55e'; // default green
+  if (/not recommended|avoid|reject|fail|poor|weak|decline|stop/i.test(lowerVerdict)) {
+    verdictColor = p.error || '#ef4444';
+  } else if (/caution|risk|consider|maybe|mixed|partial|moderate|conditional/i.test(lowerVerdict)) {
+    verdictColor = p.warning || '#eab308';
+  }
+
+  const verdictY = Math.round(H * 0.32);
+  const barY = verdictY + 50;
+  const barW = Math.round((cW - PAD * 2) * 0.6);
+  const barLeft = Math.round((cW - barW) / 2);
+
+  let html = '';
+
+  // Verdict text
+  html += `<div style="position:absolute;left:${PAD}px;top:${verdictY}px;width:${cW - PAD * 2}px;text-align:center;font-size:32px;font-weight:bold;color:${verdictColor};line-height:1.3">${escHtml(verdictText)}</div>`;
+
+  // Verdict bar
+  html += `<div style="position:absolute;left:${barLeft}px;top:${barY}px;width:${barW}px;height:6px;background:${hexToRgba(p.border, 0.15)};border-radius:3px"></div>`;
+  html += `<div style="position:absolute;left:${barLeft}px;top:${barY}px;width:${barW}px;height:6px;background:${verdictColor};border-radius:3px;box-shadow:0 0 12px ${hexToRgba(verdictColor, 0.4)}"></div>`;
+
+  // Rationale
+  let ry = barY + 30;
+  for (const item of rationale.slice(0, 5)) {
+    html += `<div style="position:absolute;left:${PAD + 40}px;top:${ry}px;width:${cW - PAD * 2 - 80}px;text-align:center;font-size:15px;line-height:1.5;color:${p.text};opacity:0.8">${escHtml(item)}</div>`;
+    ry += 36;
+  }
+
+  return `${SCOPED_RESET}
+<div style="position:relative;width:${W}px;height:${H}px;background:${p.background};overflow:hidden">
+  ${bgGradientOverlay(cW, H, p.primary, 0.04, '50%')}
+  <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;text-align:center;font-size:${titleFontSize(slide.title)}px;font-weight:bold;overflow-wrap:break-word;word-wrap:break-word;color:${p.text};line-height:1.2">${escHtml(slide.title)}</div>
+  <div style="position:absolute;left:${Math.round((cW - 60) / 2)}px;top:${PAD + 56}px;width:60px;height:3px;background:${p.accent};border-radius:2px"></div>
+  ${html}
+</div>`;
+}
+
+
+// ── COHORT_TABLE ────────────────────────────────────────────
+// Retention matrix with color-intensity cells
+
+function buildCohortTable(slide: SlideInput, p: ColorPalette, hasImage = false): string {
+  const cW = hasImage ? CONTENT_W_IMG : W;
+  const lines = parseBodyLines(slide.body);
+  const dark = isDarkBackground(p.background);
+
+  // Parse "Month N: X%, Y%, Z%" format or simple table rows
+  const rows: { label: string; values: number[] }[] = [];
+  const headers: string[] = [];
+
+  for (const line of lines) {
+    const sep = line.indexOf(':');
+    if (sep > 0 && sep < 30) {
+      const label = line.slice(0, sep).trim();
+      const valsStr = line.slice(sep + 1).trim();
+      const vals = valsStr.split(/[,\s]+/).map(v => {
+        const num = parseFloat(v.replace('%', ''));
+        return isNaN(num) ? 0 : num;
+      }).filter(v => v > 0 || valsStr.includes('0'));
+      if (vals.length > 0) rows.push({ label, values: vals });
+    }
+  }
+
+  // Default data
+  if (rows.length === 0) {
+    rows.push({ label: 'Jan', values: [100, 80, 65, 50, 42] });
+    rows.push({ label: 'Feb', values: [100, 75, 60, 48] });
+    rows.push({ label: 'Mar', values: [100, 82, 68] });
+    rows.push({ label: 'Apr', values: [100, 78] });
+  }
+
+  const maxCols = Math.max(...rows.map(r => r.values.length), 1);
+  for (let i = 0; i < maxCols; i++) headers.push(`P${i}`);
+
+  const tableLeft = PAD + 10;
+  const tableTop = PAD + 90;
+  const tableW = cW - PAD * 2 - 20;
+  const labelColW = Math.round(tableW * 0.15);
+  const dataCellW = Math.round((tableW - labelColW) / maxCols);
+  const rowH = Math.min(45, Math.round((H - tableTop - PAD) / (rows.length + 1)));
+
+  let tableHtml = '';
+
+  // Header row
+  tableHtml += `<div style="position:absolute;left:${tableLeft}px;top:${tableTop}px;width:${labelColW}px;height:${rowH}px;border-bottom:2px solid ${p.border};line-height:${rowH}px;font-size:11px;font-weight:bold;color:${p.text};opacity:0.5;padding-left:8px">Cohort</div>`;
+  for (let ci = 0; ci < maxCols; ci++) {
+    const cx = tableLeft + labelColW + ci * dataCellW;
+    tableHtml += `<div style="position:absolute;left:${cx}px;top:${tableTop}px;width:${dataCellW}px;height:${rowH}px;border-bottom:2px solid ${p.border};text-align:center;line-height:${rowH}px;font-size:11px;font-weight:bold;color:${p.text};opacity:0.5">${headers[ci]}</div>`;
+  }
+
+  // Data rows
+  for (let ri = 0; ri < rows.length; ri++) {
+    const row = rows[ri];
+    const ry = tableTop + (ri + 1) * rowH;
+
+    tableHtml += `<div style="position:absolute;left:${tableLeft}px;top:${ry}px;width:${labelColW}px;height:${rowH}px;border-bottom:1px solid ${hexToRgba(p.border, 0.15)};line-height:${rowH}px;font-size:12px;font-weight:bold;color:${p.text};padding-left:8px">${escHtml(row.label)}</div>`;
+
+    for (let ci = 0; ci < maxCols; ci++) {
+      const cx = tableLeft + labelColW + ci * dataCellW;
+      const val = ci < row.values.length ? row.values[ci] : -1;
+
+      if (val < 0) {
+        // No data for this cell
+        tableHtml += `<div style="position:absolute;left:${cx}px;top:${ry}px;width:${dataCellW}px;height:${rowH}px;border-bottom:1px solid ${hexToRgba(p.border, 0.1)}"></div>`;
+      } else {
+        // Color intensity based on value (higher = darker accent)
+        const intensity = Math.min(val / 100, 1);
+        const bgColor = hexToRgba(p.accent, 0.05 + intensity * 0.35);
+        const textColor = intensity > 0.6 ? '#fff' : p.text;
+        tableHtml += `<div style="position:absolute;left:${cx}px;top:${ry}px;width:${dataCellW}px;height:${rowH}px;background:${bgColor};border-bottom:1px solid ${hexToRgba(p.border, 0.1)};text-align:center;line-height:${rowH}px;font-size:12px;font-weight:bold;color:${textColor}">${val}%</div>`;
+      }
+    }
+  }
+
+  return `${SCOPED_RESET}
+<div style="position:relative;width:${W}px;height:${H}px;background:${p.background};overflow:hidden">
+  ${bgGradientOverlay(cW, H, p.primary, 0.04, '45%')}
+  <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;font-size:${titleFontSize(slide.title)}px;font-weight:bold;overflow-wrap:break-word;word-wrap:break-word;color:${p.text};line-height:1.2">${escHtml(slide.title)}</div>
+  <div style="position:absolute;left:${PAD}px;top:${PAD + 56}px;width:50px;height:3px;background:${p.accent};border-radius:2px"></div>
+  ${tableHtml}
+</div>`;
+}
+
+
+// ── PROGRESS_TRACKER ────────────────────────────────────────
+// Horizontal progress bars with fill showing % complete
+
+function buildProgressTracker(slide: SlideInput, p: ColorPalette, hasImage = false): string {
+  const cW = hasImage ? CONTENT_W_IMG : W;
+  const lines = parseBodyLines(slide.body);
+  const dark = isDarkBackground(p.background);
+
+  // Parse "Item Name: 75%" format
+  const items: { name: string; pct: number }[] = [];
+  for (const line of lines.slice(0, 8)) {
+    const sep = line.indexOf(':');
+    if (sep > 0) {
+      const name = line.slice(0, sep).trim();
+      const rest = line.slice(sep + 1).trim();
+      const pctMatch = rest.match(/(\d+)\s*%?/);
+      if (pctMatch) {
+        items.push({ name, pct: Math.min(100, parseInt(pctMatch[1], 10)) });
+        continue;
+      }
+    }
+    // Fallback: try to find percentage anywhere
+    const anyPct = line.match(/(\d+)\s*%/);
+    if (anyPct) {
+      const name = line.replace(/\d+\s*%.*/, '').trim() || `Item ${items.length + 1}`;
+      items.push({ name, pct: Math.min(100, parseInt(anyPct[1], 10)) });
+    }
+  }
+
+  if (items.length === 0) {
+    items.push({ name: 'Design', pct: 100 });
+    items.push({ name: 'Development', pct: 75 });
+    items.push({ name: 'Testing', pct: 40 });
+    items.push({ name: 'Launch', pct: 10 });
+  }
+
+  const count = items.length;
+  const barStartY = PAD + 100;
+  const barAvailH = H - barStartY - PAD;
+  const barGap = 12;
+  const barH = Math.min(40, Math.round((barAvailH - (count - 1) * barGap) / count));
+  const barLeft = PAD + 10;
+  const barW = cW - PAD * 2 - 20;
+  const labelW = Math.round(barW * 0.28);
+  const trackLeft = barLeft + labelW + 10;
+  const trackW = barW - labelW - 60; // leave space for percentage label
+  const trackH = Math.max(12, Math.round(barH * 0.45));
+
+  let barsHtml = '';
+
+  for (let i = 0; i < count; i++) {
+    const item = items[i];
+    const by = barStartY + i * (barH + barGap);
+    const trackY = by + Math.round((barH - trackH) / 2);
+
+    // Color based on percentage
+    let barColor: string;
+    if (item.pct >= 75) barColor = p.success || '#22c55e';
+    else if (item.pct >= 40) barColor = p.warning || '#eab308';
+    else barColor = p.error || '#ef4444';
+
+    // Label
+    barsHtml += `<div style="position:absolute;left:${barLeft}px;top:${by + Math.round((barH - 16) / 2)}px;width:${labelW}px;font-size:14px;font-weight:600;color:${p.text};overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${escHtml(item.name)}</div>`;
+
+    // Track background
+    barsHtml += `<div style="position:absolute;left:${trackLeft}px;top:${trackY}px;width:${trackW}px;height:${trackH}px;background:${hexToRgba(p.border, 0.15)};border-radius:${Math.round(trackH / 2)}px"></div>`;
+
+    // Fill
+    const fillW = Math.round(trackW * item.pct / 100);
+    barsHtml += `<div style="position:absolute;left:${trackLeft}px;top:${trackY}px;width:${fillW}px;height:${trackH}px;background:${barColor};border-radius:${Math.round(trackH / 2)}px;box-shadow:0 0 8px ${hexToRgba(barColor, 0.3)}"></div>`;
+
+    // Percentage label
+    barsHtml += `<div style="position:absolute;left:${trackLeft + trackW + 8}px;top:${by + Math.round((barH - 14) / 2)}px;font-size:14px;font-weight:bold;color:${barColor}">${item.pct}%</div>`;
+  }
+
+  return `${SCOPED_RESET}
+<div style="position:relative;width:${W}px;height:${H}px;background:${p.background};overflow:hidden">
+  ${bgGradientOverlay(cW, H, p.primary, 0.04, '45%')}
+  <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;font-size:${titleFontSize(slide.title)}px;font-weight:bold;overflow-wrap:break-word;word-wrap:break-word;color:${p.text};line-height:1.2">${escHtml(slide.title)}</div>
+  <div style="position:absolute;left:${PAD}px;top:${PAD + 56}px;width:50px;height:3px;background:${p.accent};border-radius:2px"></div>
+  ${barsHtml}
 </div>`;
 }
