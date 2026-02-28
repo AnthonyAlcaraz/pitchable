@@ -1539,7 +1539,7 @@ function buildFeatureGrid(slide: SlideInput, p: ColorPalette, hasImage = false):
     html += `<div style="position:absolute;left:${cx + 20}px;top:${cy + 64}px;width:${cardW - 40}px;font-size:${titleFontSz}px;font-weight:bold;color:${cardColor};overflow:hidden;max-height:40px;line-height:1.3">${escHtml(features[i].title)}</div>`;
     // Description
     if (features[i].desc) {
-      html += `<div style="position:absolute;left:${cx + 20}px;top:${cy + 100}px;width:${cardW - 40}px;font-size:${descFontSz}px;line-height:1.4;color:${p.text};opacity:0.8;overflow:hidden;max-height:${descMaxH}px">${escHtml(features[i].desc)}</div>`;
+      html += `<div style="position:absolute;left:${cx + 20}px;top:${cy + 100}px;width:${cardW - 40}px;font-size:${descFontSz}px;line-height:1.4;color:${p.text};opacity:0.8;overflow:hidden;max-height:${descMaxH}px;display:-webkit-box;-webkit-line-clamp:${Math.max(2, Math.floor(descMaxH / (descFontSz * 1.4)))};-webkit-box-orient:vertical">${escHtml(features[i].desc)}</div>`;
     }
   }
 
@@ -1654,7 +1654,7 @@ function buildProcess(slide: SlideInput, p: ColorPalette, hasImage = false): str
   ${bgGradientOverlay(cW, H, p.primary, 0.04)}
   <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;text-align:center;font-size:${titleFontSize(slide.title)}px;font-weight:bold;overflow-wrap:break-word;word-wrap:break-word;color:${p.text};line-height:1.2${titleGlow}">${escHtml(slide.title)}</div>
   <div style="position:absolute;left:${Math.round((cW - 60) / 2)}px;top:${PAD + 56}px;width:60px;height:3px;background:${p.accent};border-radius:2px"></div>
-  <svg style="position:absolute;left:0;top:0" width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg">
+  <svg style="position:absolute;left:0;top:0" width="${cW}" height="${H}" xmlns="http://www.w3.org/2000/svg">
     ${circSvg}
   </svg>
   ${circHtml}
@@ -1673,8 +1673,10 @@ function buildProcess(slide: SlideInput, p: ColorPalette, hasImage = false): str
   const useRows = count >= 5;
   const cols = useRows ? Math.ceil(count / 2) : count;
   const rows = useRows ? 2 : 1;
-  const cardW = cols <= 3 ? 300 : 260;
+  // Adaptive card width — fits within cW
   const gapX = 24;
+  const maxCardW = Math.round((cW - PAD * 2 - (cols - 1) * gapX) / cols);
+  const cardW = Math.min(300, maxCardW);
   const gapY = 20;
   const cardH = useRows ? 220 : (count <= 3 ? 340 : 300);
   const totalW = cols * cardW + (cols - 1) * gapX;
@@ -1716,7 +1718,7 @@ function buildProcess(slide: SlideInput, p: ColorPalette, hasImage = false): str
   <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;text-align:center;font-size:${titleFontSize(slide.title)}px;font-weight:bold;overflow-wrap:break-word;word-wrap:break-word;color:${p.text};line-height:1.2">${escHtml(slide.title)}</div>
   <div style="position:absolute;left:${Math.round((cW - 60) / 2)}px;top:${PAD + 56}px;width:60px;height:3px;background:${p.accent};border-radius:2px"></div>
   ${cardsHtml}
-  <svg style="position:absolute;left:0;top:0" width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg">
+  <svg style="position:absolute;left:0;top:0" width="${cW}" height="${H}" xmlns="http://www.w3.org/2000/svg">
     <defs><marker id="arrowhead" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="${p.border}" /></marker></defs>
     ${connectorsSvg}
   </svg>
