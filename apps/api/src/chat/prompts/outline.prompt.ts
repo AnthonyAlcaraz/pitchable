@@ -77,6 +77,23 @@ PRODUCT_SHOWCASE — Split layout: left has bold headline + 1-sentence descripti
 LOGO_WALL — Grid of customer/partner/investor name badges. Title frames the social proof ("Trusted by 50+ enterprises" or "Backed by leading VCs"). Body contains styled text badges in a grid — no images needed. Use for credibility slides showing partnerships, customers, or investor backing. Max 12 logos.
 MARKET_SIZING — TAM/SAM/SOM concentric market visualization. Title states the market size claim. Body contains structured data that renders as nested circles or a revenue derivation chain. Use for market opportunity slides in investor decks. Must include specific dollar amounts and sources.
 SPLIT_STATEMENT — Bold provocative statement on left (30%), supporting evidence on right (70%). Left side is the emotional hook — one sentence, large font. Right side has 2-4 proof points with data. Think editorial magazine layout. Use for slides where a bold claim needs immediate backing.
+MATRIX_2X2 — 2x2 positioning grid with labeled axes and quadrants — use for competitive positioning, prioritization matrices, or risk/impact analysis.
+WATERFALL — Waterfall chart showing cumulative positive/negative changes — use for revenue bridges, cost breakdowns, or margin analysis.
+FUNNEL — Conversion funnel visualization — use for sales pipelines, user journeys, or marketing funnels.
+COMPETITIVE_MATRIX — Multi-competitor feature comparison table with checkmarks — use when comparing 3+ options across features.
+ROADMAP — Now/Next/Later categorical planning lanes — use for product roadmaps or strategic priorities.
+PRICING_TABLE — Tiered pricing comparison with highlighted recommended plan — use for product pricing slides.
+UNIT_ECONOMICS — Hero SaaS metric with supporting KPIs — use for LTV:CAC, payback period, unit margin analysis.
+SWOT — Strengths/Weaknesses/Opportunities/Threats 4-quadrant grid — use for strategic analysis.
+THREE_PILLARS — Three equal-weight arguments in tall columns (Rule of Three) — use for key capabilities or strategic priorities.
+HOOK — Opening provocation — single dramatic statement or question at oversized typography — use as slide 2 after title.
+BEFORE_AFTER — Side-by-side transformation comparison — use for case studies, product demos, or state change narratives.
+SOCIAL_PROOF — Aggregated credibility with hero rating and trust badges — use for customer validation beyond logos.
+OBJECTION_HANDLER — Skeptic objection + data-driven rebuttal layout — use for addressing investor or customer concerns.
+FAQ — Question and answer card pairs — use for anticipated questions in sales or onboarding decks.
+VERDICT — Single judgment or recommendation with colored confidence bar — use as conclusion after analysis sections.
+COHORT_TABLE — Retention or revenue cohort matrix with color-intensity encoding — use for investor or board metrics.
+PROGRESS_TRACKER — Horizontal progress bars with percentage fill — use for OKR, project status, or milestone tracking.
 
 SLIDE TYPE SELECTION RULES:
 - Use DATA_METRICS or CONTENT (with tables) when the outline item contains 3+ data points that can be organized in columns
@@ -84,7 +101,7 @@ SLIDE TYPE SELECTION RULES:
 - Use PROCESS only for sequential workflows (3-6 steps)
 - Use QUOTE when featuring a specific person's statement
 - Prefer DATA_METRICS/CONTENT over PROBLEM/SOLUTION for data-heavy slides
-- A well-structured deck typically has: 1 TITLE, 2-4 DATA_METRICS/CONTENT with tables, 1-2 PROBLEM/SOLUTION, 0-1 COMPARISON, 0-1 QUOTE, 0-2 VISUAL_HUMOR, 0-1 TEAM, 0-1 TIMELINE, 0-2 SECTION_DIVIDER, 0-1 METRICS_HIGHLIGHT, 0-1 FEATURE_GRID, 0-1 PRODUCT_SHOWCASE, 0-1 LOGO_WALL, 0-1 MARKET_SIZING, 0-1 SPLIT_STATEMENT, 1 CTA
+- A well-structured deck typically has: 1 TITLE, 2-4 DATA_METRICS/CONTENT with tables, 1-2 PROBLEM/SOLUTION, 0-1 COMPARISON, 0-1 QUOTE, 0-2 VISUAL_HUMOR, 0-1 TEAM, 0-1 TIMELINE, 0-2 SECTION_DIVIDER, 0-1 METRICS_HIGHLIGHT, 0-1 FEATURE_GRID, 0-1 PRODUCT_SHOWCASE, 0-1 LOGO_WALL, 0-1 MARKET_SIZING, 0-1 SPLIT_STATEMENT, 0-1 MATRIX_2X2, 0-1 WATERFALL, 0-1 FUNNEL, 0-1 COMPETITIVE_MATRIX, 0-1 ROADMAP, 0-1 PRICING_TABLE, 0-1 UNIT_ECONOMICS, 0-1 SWOT, 0-1 THREE_PILLARS, 0-1 HOOK, 0-1 BEFORE_AFTER, 0-1 SOCIAL_PROOF, 0-1 OBJECTION_HANDLER, 0-1 FAQ, 0-1 VERDICT, 0-1 COHORT_TABLE, 0-1 PROGRESS_TRACKER, 1 CTA
 - Use TEAM when presenting founders, leadership, or advisory board members
 - Use TIMELINE for roadmap or milestones (NOT for how-to steps — that's PROCESS)
 - Use SECTION_DIVIDER to break decks of 12+ slides into sections. Place before each major topic shift
@@ -94,6 +111,23 @@ SLIDE TYPE SELECTION RULES:
 - Use LOGO_WALL for social proof: customer logos, investor names, partner brands. Place in the proof/credibility section. Max 12 logos.
 - Use MARKET_SIZING for TAM/SAM/SOM market opportunity slides. Must include specific dollar amounts. Renders as concentric circles visualization. One per deck max.
 - Use SPLIT_STATEMENT for bold provocative claims that need immediate evidence. Left = emotional hook (large text), right = supporting data. Great for problem slides, insight reveals, or thesis statements. Use instead of PROBLEM when the pain is more emotional than analytical.
+- Use MATRIX_2X2 for positioning frameworks, priority matrices, or risk/impact analysis. X and Y axes must be clearly labeled.
+- Use WATERFALL for revenue bridges, cost breakdowns, or financial flow analysis. Show starting value, changes, and ending value.
+- Use FUNNEL for conversion pipelines, user journeys, or any decreasing-stage visualization. Include percentages at each stage.
+- Use COMPETITIVE_MATRIX when comparing 3+ competitors across 4+ features. Uses checkmark/cross notation.
+- Use ROADMAP for Now/Next/Later planning. Max 3-4 items per lane. Good for product strategy and quarterly planning.
+- Use PRICING_TABLE for tiered pricing. Always mark one tier as recommended. Max 3 tiers.
+- Use UNIT_ECONOMICS for a single hero SaaS metric (e.g. LTV:CAC = 4.2x) with 4-5 supporting KPIs. Great for investor decks.
+- Use SWOT for strategic analysis. Keep each quadrant to 2-3 items max. Good for market entry, product strategy, or competitive positioning.
+- Use THREE_PILLARS for presenting 3 equal-weight arguments, capabilities, or strategic priorities. Rule of Three for persuasion.
+- Use HOOK as slide 2 (after TITLE) for a single provocative statement, surprising statistic, or rhetorical question. Oversized typography, no bullets.
+- Use BEFORE_AFTER for transformation narratives. Left = painful old state, right = improved new state. Great for case studies and product demos.
+- Use SOCIAL_PROOF for aggregated credibility beyond logos: ratings, awards, press mentions, trust badges. Different from LOGO_WALL (which shows individual logos).
+- Use OBJECTION_HANDLER for preemptively addressing skeptic concerns. Shows the objection in quotes + data-driven rebuttal. Max 1-2 per deck.
+- Use FAQ for 2-4 anticipated questions with concise answers. Good for sales, onboarding, or investor Q&A prep slides.
+- Use VERDICT as a conclusion slide after analysis sections. Shows a single recommendation with confidence level. Different from CTA (which has action items).
+- Use COHORT_TABLE for retention or revenue cohort matrices. Color-intensity encoding makes trends visible. Great for board and investor metrics.
+- Use PROGRESS_TRACKER for OKR status, project milestones, or any percentage-based tracking. Shows 3-6 horizontal progress bars.
 - NARRATIVE RHYTHM: Alternate between emotional slides (SPLIT_STATEMENT, QUOTE, PRODUCT_SHOWCASE) and analytical slides (DATA_METRICS, COMPARISON, MARKET_SIZING) to maintain audience engagement. Never place 3+ analytical slides in a row.
 - Use VISUAL_HUMOR sparingly (max 1-2 per deck) as a breather between dense slides — only when tone is conversational, bold, inspirational, or storytelling. Never use for formal or analytical presentations.
 - AI DEFENSIBILITY: When the topic involves AI, ML, or technology, include a FEATURE_GRID slide addressing AI resilience with 3 pillars: (1) Deep Workflow Integration — how the product embeds into complex processes vs. surface-level chatbot features, (2) Proprietary Data Loops — unique datasets or feedback loops competitors cannot replicate, (3) Trust Layer — human-in-the-loop verification, regulatory compliance, or brand trust moats. Title should be a defensibility claim like "Three moats competitors cannot replicate" — NOT "AI Defensibility". Place after SOLUTION slides and before COMPARISON.
