@@ -58,99 +58,59 @@ function useCountUp(target: number, duration = 2000) {
 }
 
 
-// ── Showcase Slides (all slides from 8 themes, interleaved) ─────────────────
+// ── Showcase Slides (all 16 themes, interleaved for visual variety) ──────────
 const SHOWCASE_SLIDES = [
-  // McKinsey Executive (white bg, navy/blue, Georgia serif)
-  { id: '5797312e-b95a-4a56-acf0-d819f0cc7e72', title: 'Scaling AI from experimentation to enterprise value', deck: 'McKinsey Executive' },
-  { id: 'e2662e95-3d34-4087-b182-155de4abefdb', title: 'Fewer than 11% of Fortune 500 firms back AI spending', deck: 'McKinsey Executive' },
-  { id: '0c3c8087-02b3-4a48-94f2-779233400218', title: 'Three systemic barriers prevent scaling AI', deck: 'McKinsey Executive' },
-  { id: '00b5891b-35b0-441e-b311-f19ee8b44b0f', title: 'AI adoption stalls without leadership mandate', deck: 'McKinsey Executive' },
-  { id: 'cdceb4ba-3258-4bd0-bd94-4c1033a6de4c', title: 'Targeted resolution closes the performance gap', deck: 'McKinsey Executive' },
-  { id: '1c7525b0-c0f8-4735-a6c3-781043886ac3', title: 'Unified orchestration layer', deck: 'McKinsey Executive' },
-  { id: '92e07318-4a88-47b8-bccc-07b1917fb202', title: 'SoftBank 90% efficiency gains', deck: 'McKinsey Executive' },
-  { id: 'b40d31ec-f86f-4250-8d60-5b8d633fa853', title: 'Amazon and J.P. Morgan prove CEO-led AI mandates', deck: 'McKinsey Executive' },
-  { id: 'a496b034-ce4b-4a6f-a5bf-20ba60009ba5', title: 'Four-phase orchestration path', deck: 'McKinsey Executive' },
-  { id: 'cb2fad49-1e7c-4d1b-abd4-d94436192491', title: 'Winners embrace orchestration', deck: 'McKinsey Executive' },
-  { id: 'e52a20bc-5b49-4dbc-94a7-fd0414c511a9', title: 'Three actions this quarter', deck: 'McKinsey Executive' },
-  // Pitchable Dark (deep slate, blue/cyan accents)
-  { id: '13b31193-02dd-4e66-a187-52fe8eeccf01', title: 'The Enterprise Intelligence Layer', deck: 'Pitchable Dark' },
-  { id: 'dffc4a08-b2bc-4790-9f2f-f6cbefb052a0', title: 'Enterprise Reality Defeats Magical Thinking', deck: 'Pitchable Dark' },
-  { id: 'e4a0b577-ccef-47a8-bd27-a7af4f790c68', title: 'More Agents, More Chaos', deck: 'Pitchable Dark' },
-  { id: '6347fa79-4884-4742-810b-9529b29d73a6', title: 'The Orchestration Layer', deck: 'Pitchable Dark' },
-  { id: '5bf53ee0-6518-4d15-bd41-ff516fd0f5d6', title: 'One Architecture, Zero Silos', deck: 'Pitchable Dark' },
-  { id: '4a5cb839-c7e4-48c3-9f74-9f391caa81d8', title: 'SoftBank: 250K Hours Reclaimed', deck: 'Pitchable Dark' },
-  { id: '29854c29-0e05-4488-9844-4d0a23de3b7d', title: 'Graphs Beat Flat Storage Everywhere', deck: 'Pitchable Dark' },
-  { id: '9b43471f-640b-4072-adfc-fa3c249acd82', title: 'Four-Phase Deployment Roadmap', deck: 'Pitchable Dark' },
-  { id: '65c24863-5a66-431d-8a04-4f1b39edf462', title: 'Series B: Triple Enterprise Scale', deck: 'Pitchable Dark' },
-  { id: '0fa6a223-4ab9-4cce-8887-f197e8ce978c', title: 'Build the Intelligence Layer', deck: 'Pitchable Dark' },
-  // Apple Keynote (black bg, white/blue accents)
-  { id: '3b97335a-db2c-45bd-9e52-2ce94a641a8f', title: 'Winning the Nordic AI Boom', deck: 'Apple Keynote' },
-  { id: 'df596fdc-ce53-434f-ae3c-5b8f907f423e', title: 'Nordic AI Ignites Cloud Demand', deck: 'Apple Keynote' },
-  { id: '3455a164-e929-40ff-8a4d-c6ab5485e673', title: 'Pipeline Surge: $46M Booked', deck: 'Apple Keynote' },
-  { id: 'e974273e-4ca7-448e-8dd1-debd44bfb515', title: '$88M Lost — Execution Failures', deck: 'Apple Keynote' },
-  { id: '72304a28-f025-4fe8-8329-6f43113db97c', title: 'Three competitive gaps cost $25M+', deck: 'Apple Keynote' },
-  { id: '77e2ec75-2908-4f69-8dbd-dc02d3d15728', title: 'Recapture AI Workloads', deck: 'Apple Keynote' },
-  { id: '9c937dbb-a9aa-4c51-baa5-46a7151fdbdc', title: 'Voice AI & World Models: $200M+ Pipeline', deck: 'Apple Keynote' },
-  { id: 'ad6a970f-6e78-4ec1-91ee-3b75294fab35', title: 'Canonical resource abstractions', deck: 'Apple Keynote' },
-  { id: '25bbb5d7-ed9d-4c8a-a52a-06ab67ae57a4', title: '90-Day $15M Recapture Plan', deck: 'Apple Keynote' },
-  { id: 'a8abc15a-4adf-4b67-a2a2-95d4cd3656d3', title: 'Three decisions needed this week', deck: 'Apple Keynote' },
-  // Sequoia Capital (white bg, forest green)
-  { id: '94fb540e-13c7-4668-a233-8a4c3bba97e1', title: 'Enterprise Code Intelligence at Scale', deck: 'Sequoia Capital' },
-  { id: 'ab655349-4d28-45fc-a8ef-c0d5ba346030', title: 'Fragmented code context consumes 68% of dev time', deck: 'Sequoia Capital' },
-  { id: '4f3e014c-b55f-44b5-96ff-7b611bbf9f59', title: 'AI agents cost $8.2M annually in rework', deck: 'Sequoia Capital' },
-  { id: '07a65ef9-c150-46e7-b778-b398ed9ac58c', title: 'Three-Graph Architecture', deck: 'Sequoia Capital' },
-  { id: '6e57aa89-8513-4898-a89e-f11428bd8141', title: 'Four integrated capabilities', deck: 'Sequoia Capital' },
-  { id: 'cde8d071-23bc-42ee-a1db-dcd1aed3c1b4', title: '16% higher relevancy, 250K hours saved', deck: 'Sequoia Capital' },
-  { id: '979865bd-ea43-4208-8398-9e715f001954', title: '$12B market growing at 34% CAGR', deck: 'Sequoia Capital' },
-  { id: '809bf02c-1ea7-4a54-8df2-5b7a6130a34b', title: 'Deploy in under 6 weeks', deck: 'Sequoia Capital' },
-  { id: '936dbe66-30d3-4c51-b6f0-0fddfdecd046', title: 'Product-market fit and capital efficiency', deck: 'Sequoia Capital' },
-  { id: 'a45b8f13-77d0-44f7-a0f8-c26654330bc4', title: '$15M ARR by Q4 2026', deck: 'Sequoia Capital' },
-  { id: '4920cf54-aa42-4492-8071-8888bda700d6', title: 'Raising $18M Series A', deck: 'Sequoia Capital' },
-  // Airbnb Storytelling (white bg, warm coral)
-  { id: '4aed3aa9-eb43-4ac6-9d76-9d3ee2778470', title: 'Future of Remote Work Culture', deck: 'Airbnb Storytelling' },
-  { id: '8a1fde86-33b3-406a-a927-d9d86c06cfcc', title: 'Distributed workforces grew 280%', deck: 'Airbnb Storytelling' },
-  { id: '15402c43-afea-4cc0-85e5-aa3ecb3e1b78', title: '$8.8M annual productivity loss', deck: 'Airbnb Storytelling' },
-  { id: '359f09be-80ef-48ef-9a35-fb864cc503fd', title: 'Growth without community is fragmentation', deck: 'Airbnb Storytelling' },
-  { id: 'fa1e4daa-da80-472b-81cb-046d617dc4cd', title: 'The Moment Everything Clicked', deck: 'Airbnb Storytelling' },
-  { id: '3596a5fd-38e5-4535-af93-3acf69b832f3', title: 'Agnostic orchestration layer', deck: 'Airbnb Storytelling' },
-  { id: '6460308f-228b-41de-8ea8-940fd832b535', title: 'SoftBank 1,000 sellers: 90% higher efficiency', deck: 'Airbnb Storytelling' },
-  { id: '026930ff-83dd-4991-ad56-e9a2228791c4', title: 'Build vs. Buy trade-offs', deck: 'Airbnb Storytelling' },
-  { id: '37b4e87a-c33f-456f-98db-ff9f57efeea2', title: 'Four-phase rollout', deck: 'Airbnb Storytelling' },
-  { id: '41cbbbfe-ce73-49b6-be2a-6222ee46e3a4', title: 'Close the $8.8M Gap in 12 Months', deck: 'Airbnb Storytelling' },
-  { id: '481e4057-cdc1-4edd-904b-cc28fe5afe39', title: 'Three decisions this quarter', deck: 'Airbnb Storytelling' },
-  // Stripe Fintech (dark purple-black, purple accents)
-  { id: '26d3e5aa-3b96-4d45-81dd-96543bd8fb47', title: 'Global Fintech Expansion Strategy', deck: 'Stripe Fintech' },
-  { id: '41f856f2-e524-4b9b-a628-836f5a1016fd', title: 'Digital Payments Hit $14.8T', deck: 'Stripe Fintech' },
-  { id: '3e0793f2-1702-473c-9152-a82193fcc8e6', title: 'Four Threats to Payment Architecture', deck: 'Stripe Fintech' },
-  { id: '8a50e2d4-dd1f-48ea-9d79-ba4c5352ccfc', title: 'The $420M Cost of Inaction', deck: 'Stripe Fintech' },
-  { id: '774ba974-df99-45d3-9159-c24176cebc9e', title: 'Three Pillars to $640M Revenue', deck: 'Stripe Fintech' },
-  { id: '94349964-746a-4536-aa84-85eba3e28321', title: 'Smart Routing Pilot Results', deck: 'Stripe Fintech' },
-  { id: 'b95e3291-5e5c-4ab4-8aca-289578fb202f', title: 'APAC & LATAM: Fastest-Growing Corridors', deck: 'Stripe Fintech' },
-  { id: '63cfeb06-9361-4a5d-9a36-d6ecc83196e3', title: 'Embedded Finance APIs: 3.2x Lifetime Value', deck: 'Stripe Fintech' },
-  { id: '2f6dab23-0df8-417d-a360-048c20b7d4ff', title: 'Build, Launch, Open, Scale', deck: 'Stripe Fintech' },
-  { id: '0c818913-ad3b-4ddf-add2-8d0da2ec6170', title: '$185M Investment, 3.5x ROI', deck: 'Stripe Fintech' },
-  { id: '034b8051-ec70-471e-8b53-a35ea0c176c0', title: 'Critical Path to Q3 2026 Revenue', deck: 'Stripe Fintech' },
-  { id: '02907509-3099-45bf-afa7-7d6b9bfab016', title: 'Green-Light Phase 1 Investment', deck: 'Stripe Fintech' },
-  // YC Startup (white bg, orange accents)
-  { id: 'fc99770c-a1dc-4754-b9ac-5c14326c33d7', title: 'AI-Powered Customer Analytics', deck: 'YC Startup' },
-  { id: '3d3914e1-4c02-4b52-8322-5c518884b088', title: 'Enterprise AI spending accelerates', deck: 'YC Startup' },
-  { id: '81f9c9db-9554-49ac-9637-a791d011e3be', title: 'Three gaps cost $8.2M annually', deck: 'YC Startup' },
-  { id: '3fd65c8d-31be-481d-b382-67e90838f6bf', title: 'Turning Complexity into Clarity', deck: 'YC Startup' },
-  { id: '271fcf8d-20e2-4d59-a267-475a78af0704', title: '15-20% CLV uplift in two quarters', deck: 'YC Startup' },
-  { id: 'd62a4767-76dc-43d5-ac42-db52a9d7708c', title: '23% revenue uplift, 40% faster insights', deck: 'YC Startup' },
-  { id: 'cae0deff-bc6c-4c69-a4c9-a02a160d0b06', title: 'Predictive analytics closes every gap', deck: 'YC Startup' },
-  { id: '865ac6cb-473f-457b-9688-3c665b410208', title: 'Platform capabilities with outcomes', deck: 'YC Startup' },
-  { id: '42faf7f4-1990-4cda-b92d-6268c7bef45f', title: '90-day implementation', deck: 'YC Startup' },
-  { id: '4b0f174b-1f6a-4d99-97c3-b15c46aa3160', title: '4.1x ROI in 12 Months', deck: 'YC Startup' },
-  { id: 'f295ee98-a112-472c-ba26-aa83d61687ff', title: 'Three steps this quarter', deck: 'YC Startup' },
-  // Corporate Blue (white bg, blue/gold)
-  { id: '251aa36a-b414-43ed-a487-5ca685724bf8', title: 'Enterprise Cloud Migration Strategy', deck: 'Corporate Blue' },
-  { id: 'bb1d266e-25e4-46be-86cf-b9dd93537529', title: '$46-55M annual cloud spend per account', deck: 'Corporate Blue' },
-  { id: '8c9a25ec-f443-4813-bf8f-285501eb7521', title: 'Speed, pricing, and reliability gaps', deck: 'Corporate Blue' },
-  { id: '05f31cfc-5e12-47ce-ad05-2e71af42cbb8', title: 'Recapture $30M+ in at-risk revenue', deck: 'Corporate Blue' },
-  { id: '9c77c3d6-b8c5-4461-93af-7474f05f8713', title: 'Marketplace cuts friction by 60%', deck: 'Corporate Blue' },
-  { id: 'c8cdb129-00f3-483c-9393-5fae4da4e942', title: 'Graph-based storage migration', deck: 'Corporate Blue' },
-  { id: '5ace2d65-5f34-4bf6-a3ed-cfd776db1dcf', title: 'Three actions to win Q2 pipeline', deck: 'Corporate Blue' },
+  // Round 1 — one slide from each theme
+  { themeSlug: 'pitchable-dark', slideNumber: 1, title: 'The Hidden Cost of Legacy Systems', deck: 'Pitchable Dark' },
+  { themeSlug: 'mckinsey-executive', slideNumber: 2, title: '$4.2M Annual Revenue Loss', deck: 'McKinsey Executive' },
+  { themeSlug: 'apple-keynote', slideNumber: 4, title: 'Intelligent Automation Platform', deck: 'Apple Keynote' },
+  { themeSlug: 'sequoia-capital', slideNumber: 3, title: 'Strategic Roadmap to Market Leadership', deck: 'Sequoia Capital' },
+  { themeSlug: 'stripe-fintech', slideNumber: 5, title: 'Four Capabilities That Drive Results', deck: 'Stripe Fintech' },
+  { themeSlug: 'airbnb-story', slideNumber: 1, title: 'The Hidden Cost of Legacy Systems', deck: 'Airbnb Storytelling' },
+  { themeSlug: 'yc-startup', slideNumber: 6, title: 'Cloud-Native Architecture', deck: 'YC Startup' },
+  { themeSlug: 'corporate-blue', slideNumber: 2, title: '$4.2M Annual Revenue Loss', deck: 'Corporate Blue' },
+  { themeSlug: 'ted-talk', slideNumber: 4, title: 'Intelligent Automation Platform', deck: 'TED Talk' },
+  { themeSlug: 'dark-professional', slideNumber: 3, title: 'Strategic Roadmap to Market Leadership', deck: 'Dark Professional' },
+  { themeSlug: 'creative-warm', slideNumber: 5, title: 'Four Capabilities That Drive Results', deck: 'Creative Warm' },
+  { themeSlug: 'technical-teal', slideNumber: 1, title: 'The Hidden Cost of Legacy Systems', deck: 'Technical Teal' },
+  { themeSlug: 'light-minimal', slideNumber: 6, title: 'Cloud-Native Architecture', deck: 'Light Minimal' },
+  { themeSlug: 'bcg-strategy', slideNumber: 2, title: '$4.2M Annual Revenue Loss', deck: 'BCG Strategy' },
+  { themeSlug: 'z4-dark-premium', slideNumber: 4, title: 'Intelligent Automation Platform', deck: 'Z4 Dark Premium' },
+  { themeSlug: 'academic-research', slideNumber: 3, title: 'Strategic Roadmap to Market Leadership', deck: 'Academic Research' },
+  // Round 2 — different slide types per theme
+  { themeSlug: 'pitchable-dark', slideNumber: 4, title: 'Intelligent Automation Platform', deck: 'Pitchable Dark' },
+  { themeSlug: 'mckinsey-executive', slideNumber: 6, title: 'Cloud-Native Architecture', deck: 'McKinsey Executive' },
+  { themeSlug: 'apple-keynote', slideNumber: 1, title: 'The Hidden Cost of Legacy Systems', deck: 'Apple Keynote' },
+  { themeSlug: 'sequoia-capital', slideNumber: 5, title: 'Four Capabilities That Drive Results', deck: 'Sequoia Capital' },
+  { themeSlug: 'stripe-fintech', slideNumber: 2, title: '$4.2M Annual Revenue Loss', deck: 'Stripe Fintech' },
+  { themeSlug: 'airbnb-story', slideNumber: 7, title: 'Take the Next Step', deck: 'Airbnb Storytelling' },
+  { themeSlug: 'yc-startup', slideNumber: 3, title: 'Strategic Roadmap to Market Leadership', deck: 'YC Startup' },
+  { themeSlug: 'corporate-blue', slideNumber: 8, title: 'Deep Dive: AI-Driven Analytics', deck: 'Corporate Blue' },
+  { themeSlug: 'ted-talk', slideNumber: 5, title: 'Four Capabilities That Drive Results', deck: 'TED Talk' },
+  { themeSlug: 'dark-professional', slideNumber: 1, title: 'The Hidden Cost of Legacy Systems', deck: 'Dark Professional' },
+  { themeSlug: 'creative-warm', slideNumber: 7, title: 'Take the Next Step', deck: 'Creative Warm' },
+  { themeSlug: 'technical-teal', slideNumber: 4, title: 'Intelligent Automation Platform', deck: 'Technical Teal' },
+  { themeSlug: 'light-minimal', slideNumber: 8, title: 'Deep Dive: AI-Driven Analytics', deck: 'Light Minimal' },
+  { themeSlug: 'bcg-strategy', slideNumber: 5, title: 'Four Capabilities That Drive Results', deck: 'BCG Strategy' },
+  { themeSlug: 'z4-dark-premium', slideNumber: 1, title: 'The Hidden Cost of Legacy Systems', deck: 'Z4 Dark Premium' },
+  { themeSlug: 'academic-research', slideNumber: 6, title: 'Cloud-Native Architecture', deck: 'Academic Research' },
+  // Round 3 — more variety
+  { themeSlug: 'pitchable-dark', slideNumber: 7, title: 'Take the Next Step', deck: 'Pitchable Dark' },
+  { themeSlug: 'mckinsey-executive', slideNumber: 1, title: 'The Hidden Cost of Legacy Systems', deck: 'McKinsey Executive' },
+  { themeSlug: 'apple-keynote', slideNumber: 8, title: 'Deep Dive: AI-Driven Analytics', deck: 'Apple Keynote' },
+  { themeSlug: 'sequoia-capital', slideNumber: 7, title: 'Take the Next Step', deck: 'Sequoia Capital' },
+  { themeSlug: 'stripe-fintech', slideNumber: 3, title: 'Strategic Roadmap to Market Leadership', deck: 'Stripe Fintech' },
+  { themeSlug: 'airbnb-story', slideNumber: 4, title: 'Intelligent Automation Platform', deck: 'Airbnb Storytelling' },
+  { themeSlug: 'yc-startup', slideNumber: 8, title: 'Deep Dive: AI-Driven Analytics', deck: 'YC Startup' },
+  { themeSlug: 'corporate-blue', slideNumber: 4, title: 'Intelligent Automation Platform', deck: 'Corporate Blue' },
+  { themeSlug: 'ted-talk', slideNumber: 7, title: 'Take the Next Step', deck: 'TED Talk' },
+  { themeSlug: 'dark-professional', slideNumber: 6, title: 'Cloud-Native Architecture', deck: 'Dark Professional' },
+  { themeSlug: 'creative-warm', slideNumber: 2, title: '$4.2M Annual Revenue Loss', deck: 'Creative Warm' },
+  { themeSlug: 'technical-teal', slideNumber: 8, title: 'Deep Dive: AI-Driven Analytics', deck: 'Technical Teal' },
+  { themeSlug: 'light-minimal', slideNumber: 3, title: 'Strategic Roadmap to Market Leadership', deck: 'Light Minimal' },
+  { themeSlug: 'bcg-strategy', slideNumber: 7, title: 'Take the Next Step', deck: 'BCG Strategy' },
+  { themeSlug: 'z4-dark-premium', slideNumber: 8, title: 'Deep Dive: AI-Driven Analytics', deck: 'Z4 Dark Premium' },
+  { themeSlug: 'academic-research', slideNumber: 1, title: 'The Hidden Cost of Legacy Systems', deck: 'Academic Research' },
 ];
 
 // ── Landing Page ─────────────────────────────────────────────
@@ -528,7 +488,7 @@ export function LandingPage() {
               Built for high-stakes presentations
             </h2>
             <p className="mx-auto max-w-xl text-[#a1a1a1]">
-              8 professional themes from McKinsey to YC — each with AI imagery, action titles, and consulting frameworks.
+              16 professional themes from McKinsey to YC — each with AI imagery, action titles, and consulting frameworks.
             </p>
           </div>
 
@@ -540,8 +500,8 @@ export function LandingPage() {
             onMouseLeave={() => { isPaused.current = false; }}
           >
             <img
-              key={SHOWCASE_SLIDES[activeSlide].id}
-              src={`/slides/${SHOWCASE_SLIDES[activeSlide].id}/preview`}
+              key={`${SHOWCASE_SLIDES[activeSlide].themeSlug}-${SHOWCASE_SLIDES[activeSlide].slideNumber}`}
+              src={`/exports/showcase/${SHOWCASE_SLIDES[activeSlide].themeSlug}/${SHOWCASE_SLIDES[activeSlide].slideNumber}/preview`}
               alt={SHOWCASE_SLIDES[activeSlide].title}
               className="h-full w-full object-contain"
               style={{ animation: 'fadeSlideIn 0.4s ease-out' }}
@@ -563,7 +523,7 @@ export function LandingPage() {
           <div className="mt-4 flex justify-center gap-2 overflow-x-auto pb-1">
             {SHOWCASE_SLIDES.map((slide, i) => (
               <button
-                key={slide.id}
+                key={`${slide.themeSlug}-${slide.slideNumber}-${i}`}
                 onClick={() => setActiveSlide(i)}
                 className={`flex-shrink-0 overflow-hidden rounded border transition-all ${
                   i === activeSlide
@@ -573,7 +533,7 @@ export function LandingPage() {
                 style={{ width: 80, aspectRatio: '16/9' }}
               >
                 <img
-                  src={`/slides/${slide.id}/preview`}
+                  src={`/exports/showcase/${slide.themeSlug}/${slide.slideNumber}/preview`}
                   alt={slide.title}
                   className="h-full w-full object-contain bg-black"
                   loading="lazy"

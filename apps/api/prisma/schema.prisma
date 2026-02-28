@@ -708,3 +708,29 @@ model FigmaWebhook {
   @@index([fileKey])
   @@index([userId])
 }
+
+model ImagePool {
+  id          String       @id @default(uuid()) @db.Uuid
+  category    String
+  s3Key       String       @unique
+  prompt      String
+  width       Int          @default(1280)
+  height      Int          @default(720)
+  usageCount  Int          @default(0)
+  createdAt   DateTime     @default(now())
+  usages      ImageUsage[]
+
+  @@index([category])
+}
+
+model ImageUsage {
+  id          String    @id @default(uuid()) @db.Uuid
+  userId      String    @db.Uuid
+  imagePoolId String    @db.Uuid
+  slideId     String?   @db.Uuid
+  usedAt      DateTime  @default(now())
+  imagePool   ImagePool @relation(fields: [imagePoolId], references: [id])
+
+  @@unique([userId, imagePoolId])
+  @@index([userId])
+}

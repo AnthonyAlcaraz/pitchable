@@ -12,6 +12,7 @@ import { IMAGE_GENERATION_COST } from '../credits/tier-config.js';
 import { EventsGateway } from '../events/events.gateway.js';
 import { InteractionGateService } from '../chat/interaction-gate.service.js';
 import { ExportsService } from '../exports/exports.service.js';
+import { ImagePoolService } from './image-pool.service.js';
 import { JobStatus, CreditReason } from '../../generated/prisma/enums.js';
 
 /** Generate an SVG placeholder when image generation fails. */
@@ -49,6 +50,7 @@ export class ImageGenerationProcessor extends WorkerHost {
     private readonly events: EventsGateway,
     private readonly interactionGate: InteractionGateService,
     private readonly exports: ExportsService,
+    private readonly imagePool: ImagePoolService,
   ) {
     super();
   }
@@ -84,6 +86,46 @@ export class ImageGenerationProcessor extends WorkerHost {
         where: { id: slideId },
         select: { title: true, body: true, slideType: true },
       });
+
+      // 2b. Cache-first: check ImagePool for a reusable image
+      const cacheCategory = ImagePoolService.deriveCategory(
+        slideData?.slideType ?? 'CONTENT',
+        `${slideData?.title ?? ''} ${(slideData?.body ?? '').slice(0, 500)}`,
+      );
+
+      const cachedImage = await this.imagePool.findCachedImage(cacheCategory, userId);
+      if (cachedImage) {
+        this.logger.log(`Image CACHE HIT for slide ${slideId}: category="${cacheCategory}", poolId=${cachedImage.id}`);
+        const imageUrl = this.s3.getPublicUrl(cachedImage.s3Key);
+
+        // Record usage so this user won't get the same image again
+        await this.imagePool.recordUsage(userId, cachedImage.id, slideId);
+
+        // Update ImageJob + Slide
+        await this.prisma.imageJob.update({
+          where: { id: imageJobId },
+          data: { resultUrl: null, imgurUrl: imageUrl, status: JobStatus.COMPLETED, completedAt: new Date() },
+        });
+        const slide = await this.prisma.slide.update({
+          where: { id: slideId },
+          data: { imageUrl },
+          select: { presentationId: true },
+        });
+
+        // No credit deduction for cached images
+        this.events.emitImageGenerated({ presentationId: slide.presentationId, slideId, imageUrl });
+        await this.checkAllImagesComplete(slide.presentationId);
+
+        if (progressPresId) {
+          this.events.emitGenerationProgress({
+            presentationId: progressPresId,
+            step: `image-${slideId}`,
+            progress: 1,
+            message: 'Image ready (cached)',
+          });
+        }
+        return;
+      }
 
       // 3. PaperBanana Critic Loop: Generate → Evaluate → Refine (up to N rounds)
       // Generate at least 2 candidates for user selection when critic is enabled
@@ -351,6 +393,15 @@ export class ImageGenerationProcessor extends WorkerHost {
         data: { imageUrl },
         select: { presentationId: true },
       });
+
+      // 6b. Add generated image to pool for future reuse
+      try {
+        const s3Key = `images/slides/${slideId}.${bestMimeType.includes('png') ? 'png' : 'jpg'}`;
+        const poolEntry = await this.imagePool.addToPool(cacheCategory, s3Key, prompt);
+        await this.imagePool.recordUsage(userId, poolEntry.id, slideId);
+      } catch (poolErr) {
+        this.logger.warn(`Failed to add image to pool: ${poolErr instanceof Error ? poolErr.message : 'unknown'}`);
+      }
 
       // 7. Deduct credits per image (uses configured cost, not per-round)
       await this.credits.deductCredits(

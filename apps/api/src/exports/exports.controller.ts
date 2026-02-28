@@ -117,4 +117,27 @@ export class ExportsController {
     res.setHeader('Cache-Control', 'public, max-age=3600');
     res.send(result.buffer);
   }
+
+  @SkipThrottle()
+  @Get('exports/showcase/:themeSlug/:slideNumber/preview')
+  async getShowcasePreview(
+    @Param('themeSlug') themeSlug: string,
+    @Param('slideNumber') slideNumber: string,
+    @Res() res: HttpResponse,
+  ) {
+    const result = await this.exportsService.getShowcasePreview(themeSlug, parseInt(slideNumber, 10));
+    if (!result) {
+      res.status(404).json({ message: 'No showcase preview available' });
+      return;
+    }
+
+    if ('url' in result) {
+      res.redirect(result.url);
+      return;
+    }
+
+    res.setHeader('Content-Type', 'image/jpeg');
+    res.setHeader('Cache-Control', 'public, max-age=86400');
+    res.send(result.buffer);
+  }
 }

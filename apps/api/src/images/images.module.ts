@@ -13,6 +13,7 @@ import { ImageGenerationProcessor } from './image-generation.processor.js';
 import { ImagesService } from './images.service.js';
 import { ImagesController } from './images.controller.js';
 import { ImageCriticService } from './image-critic.service.js';
+import { ImagePoolService } from './image-pool.service.js';
 
 @Module({
   imports: [
@@ -32,7 +33,8 @@ import { ImageCriticService } from './image-critic.service.js';
     ImgurService,
     ImageGenerationProcessor,
     ImagesService,
+    ImagePoolService,
   ],
-  exports: [ImagesService, ImagePromptBuilderService, NanoBananaService, ImageCriticService],
+  exports: [ImagesService, ImagePromptBuilderService, NanoBananaService, ImageCriticService, ImagePoolService],
 })
 export class ImagesModule {}

@@ -1210,6 +1210,35 @@ export class ExportsService {
   }
 
   /**
+   * Get a showcase preview image for the landing page.
+   * S3 key pattern: showcase/{themeSlug}/{slideNumber}.jpeg
+   */
+  async getShowcasePreview(
+    themeSlug: string,
+    slideNumber: number,
+  ): Promise<{ url: string } | { buffer: Buffer } | null> {
+    const s3Key = `showcase/${themeSlug}/${slideNumber}.jpeg`;
+
+    if (!this.s3.isAvailable()) {
+      // Try local fallback
+      const localPath = join(this.tempDir, '..', s3Key);
+      try {
+        const buffer = await readFile(localPath);
+        return { buffer };
+      } catch {
+        return null;
+      }
+    }
+
+    try {
+      const url = await this.s3.getSignedDownloadUrl(s3Key, 86400);
+      return { url };
+    } catch {
+      return null;
+    }
+  }
+
+  /**
    * Generate per-slide preview images and save them.
    * Uses the same Marp markdown the export uses.
    * Updates each slide's previewUrl in the database.
