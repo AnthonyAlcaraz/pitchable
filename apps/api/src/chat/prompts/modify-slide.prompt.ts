@@ -132,6 +132,33 @@ ARCHITECTURE: Concise bullets with **bold** component names.
 QUOTE: Quote text + attribution with *— Author, Title*.
 CTA: Action items as bullets with **bold** on the action.
 CONTENT: Standard bullets with **bold** on key terms.
+VISUAL_HUMOR: Body is empty string. Title IS the punchline. imagePromptHint MANDATORY.
+TEAM: Name - Role - Credential, one per line. Max 6.
+TIMELINE: **Date — Phase** Description, ordered list. Max 5.
+SECTION_DIVIDER: Body is empty string. Title 1-3 words.
+METRICS_HIGHLIGHT: VALUE: label, one per line. 2-4 metrics.
+FEATURE_GRID: Title: description, one per line. 3-4 features.
+PRODUCT_SHOWCASE: Bold headline + description in showcase wrapper. imagePromptHint MANDATORY.
+LOGO_WALL: Logo badges in logo-grid wrapper. Max 12.
+MARKET_SIZING: TAM/SAM/SOM one per line. TIER: $VALUE - description.
+SPLIT_STATEMENT: Statement + evidence in split-statement wrapper.
+MATRIX_2X2: X/Y axis labels + 4 quadrant entries.
+WATERFALL: Starting value, +/- changes, ending value.
+FUNNEL: Decreasing stages with counts and percentages.
+COMPETITIVE_MATRIX: Markdown table with competitors and checkmarks.
+ROADMAP: Now/Next/Later lanes with comma-separated items.
+PRICING_TABLE: Tier: price + feature bullets. Mark one recommended.
+UNIT_ECONOMICS: Hero metric + supporting KPIs.
+SWOT: Strengths/Weaknesses/Opportunities/Threats sections.
+THREE_PILLARS: Three Title: description items.
+HOOK: Single dramatic statement. No bullets or table.
+BEFORE_AFTER: Before/After sections with items.
+SOCIAL_PROOF: Hero rating + trust badges + customer names.
+OBJECTION_HANDLER: Quoted objection + data rebuttal.
+FAQ: Q/A pairs (Q: question, A: answer).
+VERDICT: Judgment: recommendation + rationale.
+COHORT_TABLE: Markdown cohort retention table.
+PROGRESS_TRACKER: Label: percentage%, one per line.
 
 ${themeBlock}
 
