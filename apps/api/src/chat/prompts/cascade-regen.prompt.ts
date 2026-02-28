@@ -78,6 +78,33 @@ ARCHITECTURE: Concise bullets with **bold** component names.
 QUOTE: Quote text + *— Author, Title*.
 CTA: Action items with **bold** on the action.
 CONTENT: Standard bullets with **bold** on key terms.
+VISUAL_HUMOR: Body is empty string. Title IS the punchline. imagePromptHint MANDATORY.
+TEAM: Name - Role - Credential, one per line. Max 6.
+TIMELINE: **Date — Phase** Description, ordered list. Max 5.
+SECTION_DIVIDER: Body is empty string. Title 1-3 words.
+METRICS_HIGHLIGHT: VALUE: label, one per line. 2-4 metrics.
+FEATURE_GRID: Title: description, one per line. 3-4 features.
+PRODUCT_SHOWCASE: Bold headline + description in showcase wrapper. imagePromptHint MANDATORY.
+LOGO_WALL: Logo badges in logo-grid wrapper. Max 12.
+MARKET_SIZING: TAM/SAM/SOM one per line. TIER: $VALUE - description.
+SPLIT_STATEMENT: Statement + evidence in split-statement wrapper.
+MATRIX_2X2: X/Y axis labels + 4 quadrant entries (QuadrantName: description).
+WATERFALL: Starting value, +/- changes, ending value (Label: +$X or -$X).
+FUNNEL: Decreasing stages (Stage: count (percentage%)).
+COMPETITIVE_MATRIX: Markdown table with competitors as columns, checkmarks/crosses.
+ROADMAP: Now/Next/Later lanes with comma-separated items.
+PRICING_TABLE: Tier: price + feature bullets. Mark one (Recommended).
+UNIT_ECONOMICS: Hero metric first line + supporting KPIs separated by |.
+SWOT: Strengths/Weaknesses/Opportunities/Threats sections with comma-separated items.
+THREE_PILLARS: Three Title: description items. End with ### takeaway.
+HOOK: Single dramatic statement or question. No bullets or table.
+BEFORE_AFTER: Before/After sections with comma-separated items.
+SOCIAL_PROOF: Hero rating + trust badges + customer names.
+OBJECTION_HANDLER: Quoted objection + data-driven rebuttal with **bold** evidence.
+FAQ: Q/A pairs (Q: question, A: answer). 2-4 pairs.
+VERDICT: Judgment (Approve/Reject/Hold): recommendation + rationale.
+COHORT_TABLE: Markdown cohort retention table with percentage values.
+PROGRESS_TRACKER: Label: percentage%, one per line. 3-6 items.
 
 ${themeBlock}
 
