@@ -47,7 +47,8 @@ function stripMarkdown(s: string): string {
     .replace(/__(.+?)__/g, '$1')
     .replace(/\*(.+?)\*/g, '$1')
     .replace(/_(.+?)_/g, '$1')
-    .replace(/^#{1,3}\s+/, '');
+    .replace(/^#{1,3}\s+/, '')
+    .replace(/\*/g, '');
 }
 
 function parseBodyLines(body: string): string[] {
@@ -1806,8 +1807,13 @@ function buildProblem(slide: SlideInput, p: ColorPalette, hasImage = false): str
   // Variant 1: Split diagonal — colored triangle zone + 2-column items
   if (probVariant === 1 && lines.length >= 3) {
     const dark = isDarkBackground(p.background);
+    // Filter lead sentence, cap items at 4
+    let probItems = lines;
+    if (lines.length > 2 && lines[0].length > 40 && !/^\d+[.)]/.test(lines[0])) {
+      probItems = lines.slice(1);
+    }
     const probCap2 = titleCountCap(slide.title);
-    const items = lines.slice(0, probCap2 || 6);
+    const items = probItems.slice(0, Math.min(probCap2 || 4, 4));
     const col1 = items.slice(0, Math.ceil(items.length / 2));
     const col2 = items.slice(Math.ceil(items.length / 2));
     const colW = Math.round((cW - PAD * 2 - 40) / 2);
@@ -1816,17 +1822,18 @@ function buildProblem(slide: SlideInput, p: ColorPalette, hasImage = false): str
     const pAccents = cardAccentColors(p);
     let itemsHtml = '';
 
-    // Render column items
-    const renderCol = (col: string[], startX: number) => {
+    // Render column items with numbered badges
+    const renderCol = (col: string[], startX: number, offset: number) => {
       let y = itemStartY;
       for (let i = 0; i < col.length; i++) {
-        const ic = pAccents[i % pAccents.length];
-        itemsHtml += `<div style="position:absolute;left:${startX}px;top:${y}px;width:${colW}px;max-height:${itemSpacing - 10}px;font-size:21px;line-height:1.35;color:${p.text};opacity:0.9;overflow:hidden;padding-left:12px;border-left:3px solid ${hexToRgba(ic, 0.7)}"><span style="font-weight:600;color:${ic}">${escHtml(stripMarkdown(col[i]).split(/\s+/).slice(0, 2).join(" "))}</span> ${escHtml(stripMarkdown(col[i]).split(/\s+/).slice(2).join(" "))}</div>`;
+        const ic = pAccents[(i + offset) % pAccents.length];
+        itemsHtml += `<div style="position:absolute;left:${startX}px;top:${y + 2}px;width:24px;height:24px;border-radius:50%;background:${hexToRgba(ic, 0.15)};display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:bold;color:${ic}">${i + offset + 1}</div>`;
+        itemsHtml += `<div style="position:absolute;left:${startX + 32}px;top:${y}px;width:${colW - 32}px;max-height:${itemSpacing - 14}px;font-size:18px;line-height:1.4;color:${p.text};opacity:0.9;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical"><span style="font-weight:600;color:${ic}">${escHtml(stripMarkdown(col[i]).split(/\s+/).slice(0, 3).join(" "))}</span> ${escHtml(stripMarkdown(col[i]).split(/\s+/).slice(3).join(" "))}</div>`;
         y += itemSpacing;
       }
     };
-    renderCol(col1, PAD + 20);
-    renderCol(col2, PAD + 20 + colW + 40);
+    renderCol(col1, PAD + 20, 0);
+    renderCol(col2, PAD + 20 + colW + 40, col1.length);
 
     const titleGlow = dark ? `;${textGlow(barColor, 0.3)}` : '';
     return `${SCOPED_RESET}
@@ -1844,32 +1851,39 @@ function buildProblem(slide: SlideInput, p: ColorPalette, hasImage = false): str
 </div>`;
   }
 
-  // Detect if first line looks like a table header (short, no numbers/dollar signs)
-  const isHeader = lines.length > 2 && !/\d/.test(lines[0]) && !/[$€£¥]/.test(lines[0]) && lines[0].length < 60;
-  const headerLine = isHeader ? lines[0] : null;
-  const probCap = titleCountCap(slide.title);
-  const dataLines = isHeader ? lines.slice(1, probCap ? probCap + 1 : 7) : lines.slice(0, probCap || 6);
+  // Separate lead sentence from bullet items
+  let leadLine = '';
+  let bulletLines = lines;
+  if (lines.length > 2 && lines[0].length > 40 && !/^\d+[.)]/.test(lines[0])) {
+    leadLine = lines[0];
+    bulletLines = lines.slice(1);
+  }
 
-  // Dynamic spacing: fit all items within available vertical space
-  const startY = PAD + 100 + (headerLine ? 32 : 0);
-  const availH = H - startY - PAD - 10;
-  const itemSpacing = Math.min(130, Math.round(availH / dataLines.length));
-  const itemMaxH = itemSpacing - 8;
-  const itemFontSz = dataLines.length > 4 ? 22 : 26;
+  const probCap = titleCountCap(slide.title);
+  const dataLines = bulletLines.slice(0, Math.min(probCap || 4, 4)); // Cap at 4 items max
+
+  // Layout with lead sentence as subtitle
+  const leadY = PAD + 80;
+  const itemStartY = leadLine ? leadY + 50 : PAD + 100;
+  const availH = H - itemStartY - PAD - 10;
+  const itemSpacing = Math.min(120, Math.round(availH / dataLines.length));
+  const itemMaxH = itemSpacing - 12;
+  const itemFontSz = 20;
 
   const probAccents = cardAccentColors(p);
   let bodyHtml = '';
-  let ty = PAD + 100;
 
-  // Render header label if detected
-  if (headerLine) {
-    bodyHtml += `<div style="position:absolute;left:${PAD + 32}px;top:${ty}px;width:${cW - PAD * 2 - 80}px;font-size:11px;line-height:1.6;color:${p.text};opacity:0.6;padding-left:12px;text-transform:uppercase;letter-spacing:0.08em;font-weight:bold">${escHtml(stripMarkdown(headerLine))}</div>`;
-    ty += 32;
+  // Render lead sentence as a subtitle
+  if (leadLine) {
+    bodyHtml += `<div style="position:absolute;left:${PAD + 32}px;top:${leadY}px;width:${cW - PAD * 2 - 80}px;font-size:16px;line-height:1.5;color:${p.text};opacity:0.65;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">${escHtml(leadLine)}</div>`;
   }
 
+  let ty = itemStartY;
   for (let pi = 0; pi < dataLines.length; pi++) {
     const itemColor = probAccents[pi % probAccents.length];
-    bodyHtml += `<div style="position:absolute;left:${PAD + 32}px;top:${ty}px;width:${cW - PAD * 2 - 80}px;max-height:${itemMaxH}px;font-size:${itemFontSz}px;line-height:1.45;color:${p.text};opacity:0.9;padding-left:12px;border-left:3px solid ${hexToRgba(itemColor, 0.7)};overflow:hidden"><span style=\"font-weight:600;color:${itemColor}\">${escHtml(stripMarkdown(dataLines[pi]).split(/\s+/).slice(0, 2).join(" "))}</span> ${escHtml(stripMarkdown(dataLines[pi]).split(/\s+/).slice(2).join(" "))}</div>`;
+    // Numbered circle badge + text
+    bodyHtml += `<div style="position:absolute;left:${PAD + 20}px;top:${ty + 2}px;width:24px;height:24px;border-radius:50%;background:${hexToRgba(itemColor, 0.15)};display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:bold;color:${itemColor}">${pi + 1}</div>`;
+    bodyHtml += `<div style="position:absolute;left:${PAD + 52}px;top:${ty}px;width:${cW - PAD * 2 - 100}px;max-height:${itemMaxH}px;font-size:${itemFontSz}px;line-height:1.4;color:${p.text};opacity:0.9;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical"><span style="font-weight:600;color:${itemColor}">${escHtml(stripMarkdown(dataLines[pi]).split(/\s+/).slice(0, 3).join(" "))}</span> ${escHtml(stripMarkdown(dataLines[pi]).split(/\s+/).slice(3).join(" "))}</div>`;
     ty += itemSpacing;
   }
 
@@ -1896,7 +1910,12 @@ function buildSolution(slide: SlideInput, p: ColorPalette, hasImage = false): st
   const barColor = p.success || p.accent;
 
   const solCap = titleCountCap(slide.title);
-  const solutionItems = lines.slice(0, solCap || 6);
+  // Filter lead sentence, cap at 5 items
+  let solLines = lines;
+  if (lines.length > 2 && lines[0].length > 40 && !/^\d+[.)]/.test(lines[0])) {
+    solLines = lines.slice(1);
+  }
+  const solutionItems = solLines.slice(0, Math.min(solCap || 5, 5));
   const solVariant = layoutVariant(slide.title, slide.body, 2);
 
   // Variant 1: Checkmark cascade — SVG checkmark circles + staircase indent
