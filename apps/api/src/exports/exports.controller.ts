@@ -7,7 +7,6 @@ import {
   Res,
   UseGuards,
   BadRequestException,
-  ForbiddenException,
 } from '@nestjs/common';
 import type { HttpResponse } from '../types/express.js';
 import { ExportsService } from './exports.service.js';
@@ -142,14 +141,4 @@ export class ExportsController {
     res.send(result.buffer);
   }
 
-  @SkipThrottle()
-  @UseGuards(JwtAuthGuard)
-  @Post('admin/showcase/upload')
-  async uploadShowcaseImage(
-    @Body() body: { themeSlug: string; slideNumber: number; data: string },
-  ) {
-    const buffer = Buffer.from(body.data, 'base64');
-    await this.exportsService.uploadShowcaseImage(body.themeSlug, body.slideNumber, buffer);
-    return { ok: true, key: `showcase/${body.themeSlug}/${body.slideNumber}.jpeg` };
-  }
 }

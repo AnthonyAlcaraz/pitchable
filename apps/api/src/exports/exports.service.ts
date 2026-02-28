@@ -1217,30 +1217,28 @@ export class ExportsService {
     themeSlug: string,
     slideNumber: number,
   ): Promise<{ url: string } | { buffer: Buffer } | null> {
-    const s3Key = `showcase/${themeSlug}/${slideNumber}.jpeg`;
+    const paddedNum = String(slideNumber).padStart(3, '0');
 
-    if (!this.s3.isAvailable()) {
-      // Try local fallback
-      const localPath = join(this.tempDir, '..', s3Key);
+    // Serve from bundled public/showcase/ files (included in Docker image)
+    const publicPath = join(__dirname, '..', '..', 'public', 'showcase', themeSlug, `${paddedNum}.jpeg`);
+    try {
+      const buffer = await readFile(publicPath);
+      return { buffer };
+    } catch {
+      // Not found in public/, try S3
+    }
+
+    if (this.s3.isAvailable()) {
       try {
-        const buffer = await readFile(localPath);
-        return { buffer };
+        const s3Key = `showcase/${themeSlug}/${slideNumber}.jpeg`;
+        const url = await this.s3.getSignedDownloadUrl(s3Key, 86400);
+        return { url };
       } catch {
-        return null;
+        // Not in S3 either
       }
     }
 
-    try {
-      const url = await this.s3.getSignedDownloadUrl(s3Key, 86400);
-      return { url };
-    } catch {
-      return null;
-    }
-  }
-
-  async uploadShowcaseImage(themeSlug: string, slideNumber: number, buffer: Buffer): Promise<void> {
-    const s3Key = `showcase/${themeSlug}/${slideNumber}.jpeg`;
-    await this.s3.upload(s3Key, buffer, 'image/jpeg');
+    return null;
   }
 
   /**

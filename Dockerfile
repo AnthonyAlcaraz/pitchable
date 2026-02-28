@@ -77,6 +77,7 @@ COPY --from=build /app/apps/api/generated ./apps/api/generated
 COPY --from=build /app/apps/web/dist ./apps/web/dist
 COPY --from=build /app/apps/api/prisma ./apps/api/prisma
 COPY --from=build /app/apps/api/prisma.config.ts ./apps/api/prisma.config.ts
+COPY --from=build /app/apps/api/public ./apps/api/public
 
 # Copy node_modules (production deps)
 COPY --from=build /app/node_modules ./node_modules
