@@ -178,8 +178,11 @@ function cardShadow(level: 1 | 2 | 3, dark: boolean): string {
 }
 
 // Per-card accent color rotation — uses palette diversity for visual variety
-function cardAccentColors(p: ColorPalette): string[] {
-  return [p.accent, p.primary, p.secondary, p.success, p.warning, p.error].filter(Boolean);
+function cardAccentColors(p: ColorPalette, rotateOffset = 0): string[] {
+  const base = [p.accent, p.primary, p.secondary, p.success, p.warning, p.error].filter(Boolean);
+  if (rotateOffset <= 0 || base.length <= 1) return base;
+  const off = rotateOffset % base.length;
+  return [...base.slice(off), ...base.slice(0, off)];
 }
 
 // Extract numeric count from title ("Four Decisions..." → 4, "3 Key Steps" → 3)
@@ -196,6 +199,15 @@ function titleCountCap(title: string): number | undefined {
     if (n >= 2 && n <= 8) return n;
   }
   return undefined;
+}
+
+// Deterministic color rotation offset from title — diversifies accent color placement across slides
+function colorOffset(title: string): number {
+  let h = 0;
+  for (let i = 0; i < title.length; i++) {
+    h = ((h << 5) - h + title.charCodeAt(i)) | 0;
+  }
+  return Math.abs(h) % 5;
 }
 
 // Deterministic variant selector: produces consistent 0-based index from content.
@@ -658,7 +670,7 @@ function buildTimeline(slide: SlideInput, p: ColorPalette, hasImage = false): st
     const zigSpacing = (zigEndX - zigStartX) / (count - 1 || 1);
     const zigCardW = Math.min(200, Math.round(zigSpacing - 16));
     const zigCardH = 130;
-    const zigAccents = cardAccentColors(p);
+    const zigAccents = cardAccentColors(p, colorOffset(slide.title));
     let zigHtml = '';
     let zigSvg = '';
 
@@ -726,7 +738,7 @@ function buildTimeline(slide: SlideInput, p: ColorPalette, hasImage = false): st
   const dateFontSz = count <= 3 ? 13 : 11;
   const textFontSz = count <= 3 ? 14 : 12;
 
-  const tlAccents = cardAccentColors(p);
+  const tlAccents = cardAccentColors(p, colorOffset(slide.title));
   let nodesSvg = '';
   let labelHtml = '';
 
@@ -1088,7 +1100,7 @@ function buildComparisonMultiCard(
   const cardW = Math.round((cW - PAD * 2 - (count - 1) * gap) / count);
   const cardY = PAD + 80;
   const cardH = H - cardY - PAD;
-  const accents = cardAccentColors(p);
+  const accents = cardAccentColors(p, colorOffset(slide.title));
 
   let cards = '';
   for (let i = 0; i < count; i++) {
@@ -1437,7 +1449,7 @@ function buildFeatureGrid(slide: SlideInput, p: ColorPalette, hasImage = false):
     const rowH = Math.min(80, Math.round((H - PAD * 2 - 90) / count));
     const rowW = cW - PAD * 2 - 20;
     const rowStartY = PAD + 85;
-    const fgAccV = cardAccentColors(p);
+    const fgAccV = cardAccentColors(p, colorOffset(slide.title));
     let rowHtml = '';
     for (let ri = 0; ri < count; ri++) {
       const ry = rowStartY + ri * (rowH + 8);
@@ -1464,7 +1476,7 @@ function buildFeatureGrid(slide: SlideInput, p: ColorPalette, hasImage = false):
   // Falls through to default grid variant which renders correctly
   if (false && fgVariant === 2 && count >= 3) {
     const dark = isDarkBackground(p.background);
-    const bentoAccents = cardAccentColors(p);
+    const bentoAccents = cardAccentColors(p, colorOffset(slide.title));
     const bentoGap = 16;
     const bentoStartY = PAD + 82;
     const bentoAvailW = cW - PAD * 2;
@@ -1535,7 +1547,7 @@ function buildFeatureGrid(slide: SlideInput, p: ColorPalette, hasImage = false):
   const titleFontSz = cardH >= 220 ? 22 : 20;
   const descFontSz = cardH >= 220 ? 18 : 16;
   const descMaxH = Math.max(20, cardH - 100);
-  const accents = cardAccentColors(p);
+  const accents = cardAccentColors(p, colorOffset(slide.title));
 
   const totalGridW = cols * cardW + (cols - 1) * gapX;
   const gridStartX = Math.round((cW - totalGridW) / 2);
@@ -1602,7 +1614,7 @@ function buildProcess(slide: SlideInput, p: ColorPalette, hasImage = false): str
   if (procVariant === 1 && steps.length >= 3 && steps.length <= 6) {
     const vtStartY = PAD + 80;
     const vtStepH = Math.min(90, Math.round((H - vtStartY - PAD) / steps.length));
-    const vtAccents = cardAccentColors(p);
+    const vtAccents = cardAccentColors(p, colorOffset(slide.title));
     const vtLineX = PAD + 40;
     let vtHtml = '';
     // Vertical line
@@ -1636,7 +1648,7 @@ function buildProcess(slide: SlideInput, p: ColorPalette, hasImage = false): str
     const circStartX = PAD + 80;
     const circEndX = (hasImage ? CONTENT_W_IMG : W) - PAD - 80;
     const circSpacing = (circEndX - circStartX) / (circCount - 1 || 1);
-    const circAccents = cardAccentColors(p);
+    const circAccents = cardAccentColors(p, colorOffset(slide.title));
     let circSvg = '';
     let circHtml = '';
 
@@ -1699,7 +1711,7 @@ function buildProcess(slide: SlideInput, p: ColorPalette, hasImage = false): str
   const totalW = cols * cardW + (cols - 1) * gapX;
   const startX = Math.round((cW - totalW) / 2);
 
-  const procAccents = cardAccentColors(p);
+  const procAccents = cardAccentColors(p, colorOffset(slide.title));
   let cardsHtml = '';
   let connectorsSvg = '';
 
@@ -1839,7 +1851,7 @@ function buildProblem(slide: SlideInput, p: ColorPalette, hasImage = false): str
     const colW = Math.round((cW - PAD * 2 - 40) / 2);
     const itemStartY = PAD + 110;
     const itemSpacing = Math.min(130, Math.round((H - itemStartY - PAD) / Math.max(col1.length, col2.length)));
-    const pAccents = cardAccentColors(p);
+    const pAccents = cardAccentColors(p, colorOffset(slide.title));
     let itemsHtml = '';
 
     // Render column items with numbered badges
@@ -1890,7 +1902,7 @@ function buildProblem(slide: SlideInput, p: ColorPalette, hasImage = false): str
   const itemMaxH = itemSpacing - 12;
   const itemFontSz = 20;
 
-  const probAccents = cardAccentColors(p);
+  const probAccents = cardAccentColors(p, colorOffset(slide.title));
   let bodyHtml = '';
 
   // Render lead sentence as a subtitle
@@ -1945,7 +1957,7 @@ function buildSolution(slide: SlideInput, p: ColorPalette, hasImage = false): st
     const cascAvailH = H - cascStartY - PAD - 10;
     const cascSpacing = Math.min(76, Math.round(cascAvailH / solutionItems.length));
     const cascFontSz = solutionItems.length > 4 ? 14 : 16;
-    const cascAccents = cardAccentColors(p);
+    const cascAccents = cardAccentColors(p, colorOffset(slide.title));
     let cascHtml = '';
 
     for (let ci = 0; ci < solutionItems.length; ci++) {
@@ -1985,7 +1997,7 @@ function buildSolution(slide: SlideInput, p: ColorPalette, hasImage = false): st
   const solMaxH = solSpacing - 8;
   const solFontSz = solutionItems.length > 4 ? 14 : 16;
 
-  const solAccents = cardAccentColors(p);
+  const solAccents = cardAccentColors(p, colorOffset(slide.title));
   let bodyHtml = '';
   let ty = solStartY;
   for (let si = 0; si < solutionItems.length; si++) {
@@ -2075,7 +2087,7 @@ function buildContent(slide: SlideInput, p: ColorPalette, hasImage = false): str
   const cardW = cW - PAD * 2 - 40;
   const fontSize = cardH >= 70 ? 26 : cardH >= 55 ? 22 : 18;
 
-  const contAccents = cardAccentColors(p);
+  const contAccents = cardAccentColors(p, colorOffset(slide.title));
   let bodyHtml = '';
   let ty = contentStartY;
 
@@ -2146,7 +2158,7 @@ function buildArchitecture(slide: SlideInput, p: ColorPalette, hasImage = false)
 
   const count = nodes.length;
   const dark = isDarkBackground(p.background);
-  const archAccents = cardAccentColors(p);
+  const archAccents = cardAccentColors(p, colorOffset(slide.title));
 
   // Parse nodes into title:desc pairs
   const parsed = nodes.map((n, i) => {
