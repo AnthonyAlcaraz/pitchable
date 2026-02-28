@@ -1238,6 +1238,11 @@ export class ExportsService {
     }
   }
 
+  async uploadShowcaseImage(themeSlug: string, slideNumber: number, buffer: Buffer): Promise<void> {
+    const s3Key = `showcase/${themeSlug}/${slideNumber}.jpeg`;
+    await this.s3.upload(s3Key, buffer, 'image/jpeg');
+  }
+
   /**
    * Generate per-slide preview images and save them.
    * Uses the same Marp markdown the export uses.
