@@ -11,29 +11,47 @@
  * Requires: .env with S3_ENDPOINT, S3_ACCESS_KEY, S3_SECRET_KEY, S3_BUCKET, S3_REGION
  */
 
-import 'dotenv/config';
+import fs from 'node:fs';
+import path from 'node:path';
+import os from 'node:os';
+import { fileURLToPath } from 'node:url';
+import { config } from 'dotenv';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+config({ path: path.resolve(__dirname, '../../../.env') });
 
 import { buildHtmlSlideContent } from '../dist/src/exports/html-slide-templates.js';
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 import { execSync } from 'node:child_process';
-import fs from 'node:fs';
-import path from 'node:path';
-import os from 'node:os';
 import { pipeline } from 'node:stream/promises';
 import { Readable } from 'node:stream';
 
 // ── S3 Configuration ──────────────────────────────────────────
+// Support both S3_* (Railway/production) and MINIO_* (local) env vars
+
+const s3Endpoint = process.env.S3_ENDPOINT
+  || (process.env.MINIO_ENDPOINT
+    ? `${process.env.MINIO_USE_SSL === 'true' ? 'https' : 'http'}://${process.env.MINIO_ENDPOINT}:${process.env.MINIO_PORT || '9000'}`
+    : null);
+const s3AccessKey = process.env.S3_ACCESS_KEY || process.env.MINIO_ROOT_USER;
+const s3SecretKey = process.env.S3_SECRET_KEY || process.env.MINIO_ROOT_PASSWORD;
+
+if (!s3Endpoint || !s3AccessKey || !s3SecretKey) {
+  console.error('ERROR: Missing S3 environment variables (S3_ENDPOINT/MINIO_ENDPOINT, S3_ACCESS_KEY/MINIO_ROOT_USER, S3_SECRET_KEY/MINIO_ROOT_PASSWORD)');
+  console.error('Load from .env or set them before running.');
+  process.exit(1);
+}
 
 const s3 = new S3Client({
-  endpoint: process.env.S3_ENDPOINT,
+  endpoint: s3Endpoint,
   region: process.env.S3_REGION || 'us-east-1',
   credentials: {
-    accessKeyId: process.env.S3_ACCESS_KEY,
-    secretAccessKey: process.env.S3_SECRET_KEY,
+    accessKeyId: s3AccessKey,
+    secretAccessKey: s3SecretKey,
   },
   forcePathStyle: true, // MinIO / R2 compatibility
 });
-const S3_BUCKET = process.env.S3_BUCKET || 'pitchable-documents';
+const S3_BUCKET = process.env.S3_BUCKET || process.env.MINIO_BUCKET || 'pitchable-documents';
 
 // ── Theme Definitions (all 16) ─────────────────────────────────
 
@@ -364,15 +382,16 @@ function buildCssPreamble(theme) {
   const { palette, headingFont, bodyFont } = theme;
   const dark = isDarkBg(palette.background);
 
-  // Google Fonts import for the fonts used
-  const fontsToImport = [...new Set([headingFont, bodyFont])];
+  // Google Fonts import for the fonts used (skip system fonts)
+  const systemFonts = new Set(['Georgia', 'Arial', 'Times New Roman', 'Helvetica', 'Verdana', 'Courier New']);
+  const fontsToImport = [...new Set([headingFont, bodyFont])].filter(f => !systemFonts.has(f));
   const fontImportUrl = fontsToImport
     .map((f) => f.replace(/ /g, '+'))
     .map((f) => `family=${f}:wght@400;600;700`)
     .join('&');
 
   return `<style>
-  @import url('https://fonts.googleapis.com/css2?${fontImportUrl}&display=swap');
+  ${fontImportUrl ? `@import url('https://fonts.googleapis.com/css2?${fontImportUrl}&display=swap');` : '/* System fonts only — no Google Fonts import */'}
 
   /* ── Base Section ─────────────────────────────── */
   section {
@@ -522,6 +541,27 @@ function buildCssPreamble(theme) {
 /**
  * Generate a single Marp markdown file for a theme containing all 8 slides.
  */
+/**
+ * Fix mood overlay HTML that buildHtmlSlideContent injects inside <style scoped> blocks.
+ * Moves any HTML elements (divs, SVGs) from inside <style scoped> to before it.
+ */
+function fixStyleBlocks(html) {
+  // Pattern: <style scoped> followed by HTML elements before CSS rules
+  return html.replace(/<style scoped>([\s\S]*?)<\/style>/g, (match, inner) => {
+    // Check if the style block contains HTML elements
+    const trimmed = inner.trim();
+    if (!trimmed.startsWith('<div') && !trimmed.startsWith('<svg')) {
+      return match; // Pure CSS, leave as-is
+    }
+    // Split: HTML part is everything before "section {", CSS part is from "section {" onwards
+    const cssStart = trimmed.indexOf('section {');
+    if (cssStart === -1) return match; // No CSS rules found, leave as-is
+    const htmlPart = trimmed.substring(0, cssStart).trim();
+    const cssPart = trimmed.substring(cssStart).trim();
+    return htmlPart + '\n<style scoped>\n' + cssPart + '\n</style>';
+  });
+}
+
 function generateMarpMarkdown(theme, slides) {
   const { palette } = theme;
   const lines = [];
@@ -577,7 +617,11 @@ function generateMarpMarkdown(theme, slides) {
         ...(slide.imageUrl ? { imageUrl: slide.imageUrl } : {}),
       };
 
-      const html = buildHtmlSlideContent(slideInput, palette, { accentColorDiversity: true });
+      let html = buildHtmlSlideContent(slideInput, palette, { accentColorDiversity: true });
+
+      // Post-process: fix mood overlay HTML injected inside <style scoped> blocks
+      html = fixStyleBlocks(html);
+
 
       // Inject the raw HTML directly into the Marp slide
       lines.push(html);
@@ -660,12 +704,7 @@ async function main() {
   const startTime = Date.now();
   console.log('=== Pitchable Showcase Generator ===\n');
 
-  // Verify S3 config
-  if (!process.env.S3_ENDPOINT || !process.env.S3_ACCESS_KEY || !process.env.S3_SECRET_KEY) {
-    console.error('ERROR: Missing S3 environment variables (S3_ENDPOINT, S3_ACCESS_KEY, S3_SECRET_KEY)');
-    console.error('Load from .env or set them before running.');
-    process.exit(1);
-  }
+  // S3 config validated at module level
 
   // Create temp directories
   const tmpBase = path.join(os.tmpdir(), 'pitchable-showcase');
@@ -717,8 +756,12 @@ async function main() {
         }
 
         const s3Key = `showcase/${theme.slug}/${s + 1}.jpeg`;
-        await uploadToS3(jpegPath, s3Key);
-        console.log(`  Uploaded: s3://${S3_BUCKET}/${s3Key} (${(fs.statSync(jpegPath).size / 1024).toFixed(0)} KB)`);
+        try {
+          await uploadToS3(jpegPath, s3Key);
+          console.log(`  Uploaded: s3://${S3_BUCKET}/${s3Key} (${(fs.statSync(jpegPath).size / 1024).toFixed(0)} KB)`);
+        } catch (s3Err) {
+          console.log(`  Local only: ${path.basename(jpegPath)} (${(fs.statSync(jpegPath).size / 1024).toFixed(0)} KB) — S3 upload skipped: ${s3Err.message || 'unavailable'}`);
+        }
 
         themeManifest.slides.push({
           slideNumber: s + 1,

@@ -1,0 +1,997 @@
+{
+  "generated": "2026-02-28T13:27:57.113Z",
+  "themes": [
+    {
+      "slug": "pitchable-dark",
+      "displayName": "Pitchable Dark",
+      "slides": [
+        {
+          "slideNumber": 1,
+          "slideType": "PROBLEM",
+          "title": "The Hidden Cost of Legacy Systems",
+          "hasImage": false,
+          "s3Key": "showcase/pitchable-dark/1.jpeg"
+        },
+        {
+          "slideNumber": 2,
+          "slideType": "METRICS_HIGHLIGHT",
+          "title": "$4.2M Annual Revenue Loss",
+          "hasImage": false,
+          "s3Key": "showcase/pitchable-dark/2.jpeg"
+        },
+        {
+          "slideNumber": 3,
+          "slideType": "TIMELINE",
+          "title": "Strategic Roadmap to Market Leadership",
+          "hasImage": false,
+          "s3Key": "showcase/pitchable-dark/3.jpeg"
+        },
+        {
+          "slideNumber": 4,
+          "slideType": "SOLUTION",
+          "title": "Intelligent Automation Platform",
+          "hasImage": true,
+          "s3Key": "showcase/pitchable-dark/4.jpeg"
+        },
+        {
+          "slideNumber": 5,
+          "slideType": "FEATURE_GRID",
+          "title": "Four Capabilities That Drive Results",
+          "hasImage": true,
+          "s3Key": "showcase/pitchable-dark/5.jpeg"
+        },
+        {
+          "slideNumber": 6,
+          "slideType": "ARCHITECTURE",
+          "title": "Cloud-Native Architecture",
+          "hasImage": true,
+          "s3Key": "showcase/pitchable-dark/6.jpeg"
+        },
+        {
+          "slideNumber": 7,
+          "slideType": "CTA",
+          "title": "Take the Next Step",
+          "hasImage": true,
+          "s3Key": "showcase/pitchable-dark/7.jpeg"
+        },
+        {
+          "slideNumber": 8,
+          "slideType": "CONTENT",
+          "title": "Deep Dive: AI-Driven Analytics",
+          "hasImage": true,
+          "s3Key": "showcase/pitchable-dark/8.jpeg"
+        }
+      ]
+    },
+    {
+      "slug": "dark-professional",
+      "displayName": "Dark Professional",
+      "slides": [
+        {
+          "slideNumber": 1,
+          "slideType": "PROBLEM",
+          "title": "The Hidden Cost of Legacy Systems",
+          "hasImage": false,
+          "s3Key": "showcase/dark-professional/1.jpeg"
+        },
+        {
+          "slideNumber": 2,
+          "slideType": "METRICS_HIGHLIGHT",
+          "title": "$4.2M Annual Revenue Loss",
+          "hasImage": false,
+          "s3Key": "showcase/dark-professional/2.jpeg"
+        },
+        {
+          "slideNumber": 3,
+          "slideType": "TIMELINE",
+          "title": "Strategic Roadmap to Market Leadership",
+          "hasImage": false,
+          "s3Key": "showcase/dark-professional/3.jpeg"
+        },
+        {
+          "slideNumber": 4,
+          "slideType": "SOLUTION",
+          "title": "Intelligent Automation Platform",
+          "hasImage": true,
+          "s3Key": "showcase/dark-professional/4.jpeg"
+        },
+        {
+          "slideNumber": 5,
+          "slideType": "FEATURE_GRID",
+          "title": "Four Capabilities That Drive Results",
+          "hasImage": true,
+          "s3Key": "showcase/dark-professional/5.jpeg"
+        },
+        {
+          "slideNumber": 6,
+          "slideType": "ARCHITECTURE",
+          "title": "Cloud-Native Architecture",
+          "hasImage": true,
+          "s3Key": "showcase/dark-professional/6.jpeg"
+        },
+        {
+          "slideNumber": 7,
+          "slideType": "CTA",
+          "title": "Take the Next Step",
+          "hasImage": true,
+          "s3Key": "showcase/dark-professional/7.jpeg"
+        },
+        {
+          "slideNumber": 8,
+          "slideType": "CONTENT",
+          "title": "Deep Dive: AI-Driven Analytics",
+          "hasImage": true,
+          "s3Key": "showcase/dark-professional/8.jpeg"
+        }
+      ]
+    },
+    {
+      "slug": "creative-warm",
+      "displayName": "Creative Warm",
+      "slides": [
+        {
+          "slideNumber": 1,
+          "slideType": "PROBLEM",
+          "title": "The Hidden Cost of Legacy Systems",
+          "hasImage": false,
+          "s3Key": "showcase/creative-warm/1.jpeg"
+        },
+        {
+          "slideNumber": 2,
+          "slideType": "METRICS_HIGHLIGHT",
+          "title": "$4.2M Annual Revenue Loss",
+          "hasImage": false,
+          "s3Key": "showcase/creative-warm/2.jpeg"
+        },
+        {
+          "slideNumber": 3,
+          "slideType": "TIMELINE",
+          "title": "Strategic Roadmap to Market Leadership",
+          "hasImage": false,
+          "s3Key": "showcase/creative-warm/3.jpeg"
+        },
+        {
+          "slideNumber": 4,
+          "slideType": "SOLUTION",
+          "title": "Intelligent Automation Platform",
+          "hasImage": true,
+          "s3Key": "showcase/creative-warm/4.jpeg"
+        },
+        {
+          "slideNumber": 5,
+          "slideType": "FEATURE_GRID",
+          "title": "Four Capabilities That Drive Results",
+          "hasImage": true,
+          "s3Key": "showcase/creative-warm/5.jpeg"
+        },
+        {
+          "slideNumber": 6,
+          "slideType": "ARCHITECTURE",
+          "title": "Cloud-Native Architecture",
+          "hasImage": true,
+          "s3Key": "showcase/creative-warm/6.jpeg"
+        },
+        {
+          "slideNumber": 7,
+          "slideType": "CTA",
+          "title": "Take the Next Step",
+          "hasImage": true,
+          "s3Key": "showcase/creative-warm/7.jpeg"
+        },
+        {
+          "slideNumber": 8,
+          "slideType": "CONTENT",
+          "title": "Deep Dive: AI-Driven Analytics",
+          "hasImage": true,
+          "s3Key": "showcase/creative-warm/8.jpeg"
+        }
+      ]
+    },
+    {
+      "slug": "technical-teal",
+      "displayName": "Technical Teal",
+      "slides": [
+        {
+          "slideNumber": 1,
+          "slideType": "PROBLEM",
+          "title": "The Hidden Cost of Legacy Systems",
+          "hasImage": false,
+          "s3Key": "showcase/technical-teal/1.jpeg"
+        },
+        {
+          "slideNumber": 2,
+          "slideType": "METRICS_HIGHLIGHT",
+          "title": "$4.2M Annual Revenue Loss",
+          "hasImage": false,
+          "s3Key": "showcase/technical-teal/2.jpeg"
+        },
+        {
+          "slideNumber": 3,
+          "slideType": "TIMELINE",
+          "title": "Strategic Roadmap to Market Leadership",
+          "hasImage": false,
+          "s3Key": "showcase/technical-teal/3.jpeg"
+        },
+        {
+          "slideNumber": 4,
+          "slideType": "SOLUTION",
+          "title": "Intelligent Automation Platform",
+          "hasImage": true,
+          "s3Key": "showcase/technical-teal/4.jpeg"
+        },
+        {
+          "slideNumber": 5,
+          "slideType": "FEATURE_GRID",
+          "title": "Four Capabilities That Drive Results",
+          "hasImage": true,
+          "s3Key": "showcase/technical-teal/5.jpeg"
+        },
+        {
+          "slideNumber": 6,
+          "slideType": "ARCHITECTURE",
+          "title": "Cloud-Native Architecture",
+          "hasImage": true,
+          "s3Key": "showcase/technical-teal/6.jpeg"
+        },
+        {
+          "slideNumber": 7,
+          "slideType": "CTA",
+          "title": "Take the Next Step",
+          "hasImage": true,
+          "s3Key": "showcase/technical-teal/7.jpeg"
+        },
+        {
+          "slideNumber": 8,
+          "slideType": "CONTENT",
+          "title": "Deep Dive: AI-Driven Analytics",
+          "hasImage": true,
+          "s3Key": "showcase/technical-teal/8.jpeg"
+        }
+      ]
+    },
+    {
+      "slug": "light-minimal",
+      "displayName": "Light Minimal",
+      "slides": [
+        {
+          "slideNumber": 1,
+          "slideType": "PROBLEM",
+          "title": "The Hidden Cost of Legacy Systems",
+          "hasImage": false,
+          "s3Key": "showcase/light-minimal/1.jpeg"
+        },
+        {
+          "slideNumber": 2,
+          "slideType": "METRICS_HIGHLIGHT",
+          "title": "$4.2M Annual Revenue Loss",
+          "hasImage": false,
+          "s3Key": "showcase/light-minimal/2.jpeg"
+        },
+        {
+          "slideNumber": 3,
+          "slideType": "TIMELINE",
+          "title": "Strategic Roadmap to Market Leadership",
+          "hasImage": false,
+          "s3Key": "showcase/light-minimal/3.jpeg"
+        },
+        {
+          "slideNumber": 4,
+          "slideType": "SOLUTION",
+          "title": "Intelligent Automation Platform",
+          "hasImage": true,
+          "s3Key": "showcase/light-minimal/4.jpeg"
+        },
+        {
+          "slideNumber": 5,
+          "slideType": "FEATURE_GRID",
+          "title": "Four Capabilities That Drive Results",
+          "hasImage": true,
+          "s3Key": "showcase/light-minimal/5.jpeg"
+        },
+        {
+          "slideNumber": 6,
+          "slideType": "ARCHITECTURE",
+          "title": "Cloud-Native Architecture",
+          "hasImage": true,
+          "s3Key": "showcase/light-minimal/6.jpeg"
+        },
+        {
+          "slideNumber": 7,
+          "slideType": "CTA",
+          "title": "Take the Next Step",
+          "hasImage": true,
+          "s3Key": "showcase/light-minimal/7.jpeg"
+        },
+        {
+          "slideNumber": 8,
+          "slideType": "CONTENT",
+          "title": "Deep Dive: AI-Driven Analytics",
+          "hasImage": true,
+          "s3Key": "showcase/light-minimal/8.jpeg"
+        }
+      ]
+    },
+    {
+      "slug": "corporate-blue",
+      "displayName": "Corporate Blue",
+      "slides": [
+        {
+          "slideNumber": 1,
+          "slideType": "PROBLEM",
+          "title": "The Hidden Cost of Legacy Systems",
+          "hasImage": false,
+          "s3Key": "showcase/corporate-blue/1.jpeg"
+        },
+        {
+          "slideNumber": 2,
+          "slideType": "METRICS_HIGHLIGHT",
+          "title": "$4.2M Annual Revenue Loss",
+          "hasImage": false,
+          "s3Key": "showcase/corporate-blue/2.jpeg"
+        },
+        {
+          "slideNumber": 3,
+          "slideType": "TIMELINE",
+          "title": "Strategic Roadmap to Market Leadership",
+          "hasImage": false,
+          "s3Key": "showcase/corporate-blue/3.jpeg"
+        },
+        {
+          "slideNumber": 4,
+          "slideType": "SOLUTION",
+          "title": "Intelligent Automation Platform",
+          "hasImage": true,
+          "s3Key": "showcase/corporate-blue/4.jpeg"
+        },
+        {
+          "slideNumber": 5,
+          "slideType": "FEATURE_GRID",
+          "title": "Four Capabilities That Drive Results",
+          "hasImage": true,
+          "s3Key": "showcase/corporate-blue/5.jpeg"
+        },
+        {
+          "slideNumber": 6,
+          "slideType": "ARCHITECTURE",
+          "title": "Cloud-Native Architecture",
+          "hasImage": true,
+          "s3Key": "showcase/corporate-blue/6.jpeg"
+        },
+        {
+          "slideNumber": 7,
+          "slideType": "CTA",
+          "title": "Take the Next Step",
+          "hasImage": true,
+          "s3Key": "showcase/corporate-blue/7.jpeg"
+        },
+        {
+          "slideNumber": 8,
+          "slideType": "CONTENT",
+          "title": "Deep Dive: AI-Driven Analytics",
+          "hasImage": true,
+          "s3Key": "showcase/corporate-blue/8.jpeg"
+        }
+      ]
+    },
+    {
+      "slug": "mckinsey-executive",
+      "displayName": "McKinsey Executive",
+      "slides": [
+        {
+          "slideNumber": 1,
+          "slideType": "PROBLEM",
+          "title": "The Hidden Cost of Legacy Systems",
+          "hasImage": false,
+          "s3Key": "showcase/mckinsey-executive/1.jpeg"
+        },
+        {
+          "slideNumber": 2,
+          "slideType": "METRICS_HIGHLIGHT",
+          "title": "$4.2M Annual Revenue Loss",
+          "hasImage": false,
+          "s3Key": "showcase/mckinsey-executive/2.jpeg"
+        },
+        {
+          "slideNumber": 3,
+          "slideType": "TIMELINE",
+          "title": "Strategic Roadmap to Market Leadership",
+          "hasImage": false,
+          "s3Key": "showcase/mckinsey-executive/3.jpeg"
+        },
+        {
+          "slideNumber": 4,
+          "slideType": "SOLUTION",
+          "title": "Intelligent Automation Platform",
+          "hasImage": true,
+          "s3Key": "showcase/mckinsey-executive/4.jpeg"
+        },
+        {
+          "slideNumber": 5,
+          "slideType": "FEATURE_GRID",
+          "title": "Four Capabilities That Drive Results",
+          "hasImage": true,
+          "s3Key": "showcase/mckinsey-executive/5.jpeg"
+        },
+        {
+          "slideNumber": 6,
+          "slideType": "ARCHITECTURE",
+          "title": "Cloud-Native Architecture",
+          "hasImage": true,
+          "s3Key": "showcase/mckinsey-executive/6.jpeg"
+        },
+        {
+          "slideNumber": 7,
+          "slideType": "CTA",
+          "title": "Take the Next Step",
+          "hasImage": true,
+          "s3Key": "showcase/mckinsey-executive/7.jpeg"
+        },
+        {
+          "slideNumber": 8,
+          "slideType": "CONTENT",
+          "title": "Deep Dive: AI-Driven Analytics",
+          "hasImage": true,
+          "s3Key": "showcase/mckinsey-executive/8.jpeg"
+        }
+      ]
+    },
+    {
+      "slug": "apple-keynote",
+      "displayName": "Apple Keynote",
+      "slides": [
+        {
+          "slideNumber": 1,
+          "slideType": "PROBLEM",
+          "title": "The Hidden Cost of Legacy Systems",
+          "hasImage": false,
+          "s3Key": "showcase/apple-keynote/1.jpeg"
+        },
+        {
+          "slideNumber": 2,
+          "slideType": "METRICS_HIGHLIGHT",
+          "title": "$4.2M Annual Revenue Loss",
+          "hasImage": false,
+          "s3Key": "showcase/apple-keynote/2.jpeg"
+        },
+        {
+          "slideNumber": 3,
+          "slideType": "TIMELINE",
+          "title": "Strategic Roadmap to Market Leadership",
+          "hasImage": false,
+          "s3Key": "showcase/apple-keynote/3.jpeg"
+        },
+        {
+          "slideNumber": 4,
+          "slideType": "SOLUTION",
+          "title": "Intelligent Automation Platform",
+          "hasImage": true,
+          "s3Key": "showcase/apple-keynote/4.jpeg"
+        },
+        {
+          "slideNumber": 5,
+          "slideType": "FEATURE_GRID",
+          "title": "Four Capabilities That Drive Results",
+          "hasImage": true,
+          "s3Key": "showcase/apple-keynote/5.jpeg"
+        },
+        {
+          "slideNumber": 6,
+          "slideType": "ARCHITECTURE",
+          "title": "Cloud-Native Architecture",
+          "hasImage": true,
+          "s3Key": "showcase/apple-keynote/6.jpeg"
+        },
+        {
+          "slideNumber": 7,
+          "slideType": "CTA",
+          "title": "Take the Next Step",
+          "hasImage": true,
+          "s3Key": "showcase/apple-keynote/7.jpeg"
+        },
+        {
+          "slideNumber": 8,
+          "slideType": "CONTENT",
+          "title": "Deep Dive: AI-Driven Analytics",
+          "hasImage": true,
+          "s3Key": "showcase/apple-keynote/8.jpeg"
+        }
+      ]
+    },
+    {
+      "slug": "ted-talk",
+      "displayName": "TED Talk",
+      "slides": [
+        {
+          "slideNumber": 1,
+          "slideType": "PROBLEM",
+          "title": "The Hidden Cost of Legacy Systems",
+          "hasImage": false,
+          "s3Key": "showcase/ted-talk/1.jpeg"
+        },
+        {
+          "slideNumber": 2,
+          "slideType": "METRICS_HIGHLIGHT",
+          "title": "$4.2M Annual Revenue Loss",
+          "hasImage": false,
+          "s3Key": "showcase/ted-talk/2.jpeg"
+        },
+        {
+          "slideNumber": 3,
+          "slideType": "TIMELINE",
+          "title": "Strategic Roadmap to Market Leadership",
+          "hasImage": false,
+          "s3Key": "showcase/ted-talk/3.jpeg"
+        },
+        {
+          "slideNumber": 4,
+          "slideType": "SOLUTION",
+          "title": "Intelligent Automation Platform",
+          "hasImage": true,
+          "s3Key": "showcase/ted-talk/4.jpeg"
+        },
+        {
+          "slideNumber": 5,
+          "slideType": "FEATURE_GRID",
+          "title": "Four Capabilities That Drive Results",
+          "hasImage": true,
+          "s3Key": "showcase/ted-talk/5.jpeg"
+        },
+        {
+          "slideNumber": 6,
+          "slideType": "ARCHITECTURE",
+          "title": "Cloud-Native Architecture",
+          "hasImage": true,
+          "s3Key": "showcase/ted-talk/6.jpeg"
+        },
+        {
+          "slideNumber": 7,
+          "slideType": "CTA",
+          "title": "Take the Next Step",
+          "hasImage": true,
+          "s3Key": "showcase/ted-talk/7.jpeg"
+        },
+        {
+          "slideNumber": 8,
+          "slideType": "CONTENT",
+          "title": "Deep Dive: AI-Driven Analytics",
+          "hasImage": true,
+          "s3Key": "showcase/ted-talk/8.jpeg"
+        }
+      ]
+    },
+    {
+      "slug": "yc-startup",
+      "displayName": "YC Startup",
+      "slides": [
+        {
+          "slideNumber": 1,
+          "slideType": "PROBLEM",
+          "title": "The Hidden Cost of Legacy Systems",
+          "hasImage": false,
+          "s3Key": "showcase/yc-startup/1.jpeg"
+        },
+        {
+          "slideNumber": 2,
+          "slideType": "METRICS_HIGHLIGHT",
+          "title": "$4.2M Annual Revenue Loss",
+          "hasImage": false,
+          "s3Key": "showcase/yc-startup/2.jpeg"
+        },
+        {
+          "slideNumber": 3,
+          "slideType": "TIMELINE",
+          "title": "Strategic Roadmap to Market Leadership",
+          "hasImage": false,
+          "s3Key": "showcase/yc-startup/3.jpeg"
+        },
+        {
+          "slideNumber": 4,
+          "slideType": "SOLUTION",
+          "title": "Intelligent Automation Platform",
+          "hasImage": true,
+          "s3Key": "showcase/yc-startup/4.jpeg"
+        },
+        {
+          "slideNumber": 5,
+          "slideType": "FEATURE_GRID",
+          "title": "Four Capabilities That Drive Results",
+          "hasImage": true,
+          "s3Key": "showcase/yc-startup/5.jpeg"
+        },
+        {
+          "slideNumber": 6,
+          "slideType": "ARCHITECTURE",
+          "title": "Cloud-Native Architecture",
+          "hasImage": true,
+          "s3Key": "showcase/yc-startup/6.jpeg"
+        },
+        {
+          "slideNumber": 7,
+          "slideType": "CTA",
+          "title": "Take the Next Step",
+          "hasImage": true,
+          "s3Key": "showcase/yc-startup/7.jpeg"
+        },
+        {
+          "slideNumber": 8,
+          "slideType": "CONTENT",
+          "title": "Deep Dive: AI-Driven Analytics",
+          "hasImage": true,
+          "s3Key": "showcase/yc-startup/8.jpeg"
+        }
+      ]
+    },
+    {
+      "slug": "sequoia-capital",
+      "displayName": "Sequoia Capital",
+      "slides": [
+        {
+          "slideNumber": 1,
+          "slideType": "PROBLEM",
+          "title": "The Hidden Cost of Legacy Systems",
+          "hasImage": false,
+          "s3Key": "showcase/sequoia-capital/1.jpeg"
+        },
+        {
+          "slideNumber": 2,
+          "slideType": "METRICS_HIGHLIGHT",
+          "title": "$4.2M Annual Revenue Loss",
+          "hasImage": false,
+          "s3Key": "showcase/sequoia-capital/2.jpeg"
+        },
+        {
+          "slideNumber": 3,
+          "slideType": "TIMELINE",
+          "title": "Strategic Roadmap to Market Leadership",
+          "hasImage": false,
+          "s3Key": "showcase/sequoia-capital/3.jpeg"
+        },
+        {
+          "slideNumber": 4,
+          "slideType": "SOLUTION",
+          "title": "Intelligent Automation Platform",
+          "hasImage": true,
+          "s3Key": "showcase/sequoia-capital/4.jpeg"
+        },
+        {
+          "slideNumber": 5,
+          "slideType": "FEATURE_GRID",
+          "title": "Four Capabilities That Drive Results",
+          "hasImage": true,
+          "s3Key": "showcase/sequoia-capital/5.jpeg"
+        },
+        {
+          "slideNumber": 6,
+          "slideType": "ARCHITECTURE",
+          "title": "Cloud-Native Architecture",
+          "hasImage": true,
+          "s3Key": "showcase/sequoia-capital/6.jpeg"
+        },
+        {
+          "slideNumber": 7,
+          "slideType": "CTA",
+          "title": "Take the Next Step",
+          "hasImage": true,
+          "s3Key": "showcase/sequoia-capital/7.jpeg"
+        },
+        {
+          "slideNumber": 8,
+          "slideType": "CONTENT",
+          "title": "Deep Dive: AI-Driven Analytics",
+          "hasImage": true,
+          "s3Key": "showcase/sequoia-capital/8.jpeg"
+        }
+      ]
+    },
+    {
+      "slug": "airbnb-story",
+      "displayName": "Airbnb Story",
+      "slides": [
+        {
+          "slideNumber": 1,
+          "slideType": "PROBLEM",
+          "title": "The Hidden Cost of Legacy Systems",
+          "hasImage": false,
+          "s3Key": "showcase/airbnb-story/1.jpeg"
+        },
+        {
+          "slideNumber": 2,
+          "slideType": "METRICS_HIGHLIGHT",
+          "title": "$4.2M Annual Revenue Loss",
+          "hasImage": false,
+          "s3Key": "showcase/airbnb-story/2.jpeg"
+        },
+        {
+          "slideNumber": 3,
+          "slideType": "TIMELINE",
+          "title": "Strategic Roadmap to Market Leadership",
+          "hasImage": false,
+          "s3Key": "showcase/airbnb-story/3.jpeg"
+        },
+        {
+          "slideNumber": 4,
+          "slideType": "SOLUTION",
+          "title": "Intelligent Automation Platform",
+          "hasImage": true,
+          "s3Key": "showcase/airbnb-story/4.jpeg"
+        },
+        {
+          "slideNumber": 5,
+          "slideType": "FEATURE_GRID",
+          "title": "Four Capabilities That Drive Results",
+          "hasImage": true,
+          "s3Key": "showcase/airbnb-story/5.jpeg"
+        },
+        {
+          "slideNumber": 6,
+          "slideType": "ARCHITECTURE",
+          "title": "Cloud-Native Architecture",
+          "hasImage": true,
+          "s3Key": "showcase/airbnb-story/6.jpeg"
+        },
+        {
+          "slideNumber": 7,
+          "slideType": "CTA",
+          "title": "Take the Next Step",
+          "hasImage": true,
+          "s3Key": "showcase/airbnb-story/7.jpeg"
+        },
+        {
+          "slideNumber": 8,
+          "slideType": "CONTENT",
+          "title": "Deep Dive: AI-Driven Analytics",
+          "hasImage": true,
+          "s3Key": "showcase/airbnb-story/8.jpeg"
+        }
+      ]
+    },
+    {
+      "slug": "stripe-fintech",
+      "displayName": "Stripe Fintech",
+      "slides": [
+        {
+          "slideNumber": 1,
+          "slideType": "PROBLEM",
+          "title": "The Hidden Cost of Legacy Systems",
+          "hasImage": false,
+          "s3Key": "showcase/stripe-fintech/1.jpeg"
+        },
+        {
+          "slideNumber": 2,
+          "slideType": "METRICS_HIGHLIGHT",
+          "title": "$4.2M Annual Revenue Loss",
+          "hasImage": false,
+          "s3Key": "showcase/stripe-fintech/2.jpeg"
+        },
+        {
+          "slideNumber": 3,
+          "slideType": "TIMELINE",
+          "title": "Strategic Roadmap to Market Leadership",
+          "hasImage": false,
+          "s3Key": "showcase/stripe-fintech/3.jpeg"
+        },
+        {
+          "slideNumber": 4,
+          "slideType": "SOLUTION",
+          "title": "Intelligent Automation Platform",
+          "hasImage": true,
+          "s3Key": "showcase/stripe-fintech/4.jpeg"
+        },
+        {
+          "slideNumber": 5,
+          "slideType": "FEATURE_GRID",
+          "title": "Four Capabilities That Drive Results",
+          "hasImage": true,
+          "s3Key": "showcase/stripe-fintech/5.jpeg"
+        },
+        {
+          "slideNumber": 6,
+          "slideType": "ARCHITECTURE",
+          "title": "Cloud-Native Architecture",
+          "hasImage": true,
+          "s3Key": "showcase/stripe-fintech/6.jpeg"
+        },
+        {
+          "slideNumber": 7,
+          "slideType": "CTA",
+          "title": "Take the Next Step",
+          "hasImage": true,
+          "s3Key": "showcase/stripe-fintech/7.jpeg"
+        },
+        {
+          "slideNumber": 8,
+          "slideType": "CONTENT",
+          "title": "Deep Dive: AI-Driven Analytics",
+          "hasImage": true,
+          "s3Key": "showcase/stripe-fintech/8.jpeg"
+        }
+      ]
+    },
+    {
+      "slug": "bcg-strategy",
+      "displayName": "BCG Strategy",
+      "slides": [
+        {
+          "slideNumber": 1,
+          "slideType": "PROBLEM",
+          "title": "The Hidden Cost of Legacy Systems",
+          "hasImage": false,
+          "s3Key": "showcase/bcg-strategy/1.jpeg"
+        },
+        {
+          "slideNumber": 2,
+          "slideType": "METRICS_HIGHLIGHT",
+          "title": "$4.2M Annual Revenue Loss",
+          "hasImage": false,
+          "s3Key": "showcase/bcg-strategy/2.jpeg"
+        },
+        {
+          "slideNumber": 3,
+          "slideType": "TIMELINE",
+          "title": "Strategic Roadmap to Market Leadership",
+          "hasImage": false,
+          "s3Key": "showcase/bcg-strategy/3.jpeg"
+        },
+        {
+          "slideNumber": 4,
+          "slideType": "SOLUTION",
+          "title": "Intelligent Automation Platform",
+          "hasImage": true,
+          "s3Key": "showcase/bcg-strategy/4.jpeg"
+        },
+        {
+          "slideNumber": 5,
+          "slideType": "FEATURE_GRID",
+          "title": "Four Capabilities That Drive Results",
+          "hasImage": true,
+          "s3Key": "showcase/bcg-strategy/5.jpeg"
+        },
+        {
+          "slideNumber": 6,
+          "slideType": "ARCHITECTURE",
+          "title": "Cloud-Native Architecture",
+          "hasImage": true,
+          "s3Key": "showcase/bcg-strategy/6.jpeg"
+        },
+        {
+          "slideNumber": 7,
+          "slideType": "CTA",
+          "title": "Take the Next Step",
+          "hasImage": true,
+          "s3Key": "showcase/bcg-strategy/7.jpeg"
+        },
+        {
+          "slideNumber": 8,
+          "slideType": "CONTENT",
+          "title": "Deep Dive: AI-Driven Analytics",
+          "hasImage": true,
+          "s3Key": "showcase/bcg-strategy/8.jpeg"
+        }
+      ]
+    },
+    {
+      "slug": "z4-dark-premium",
+      "displayName": "Z4 Dark Premium",
+      "slides": [
+        {
+          "slideNumber": 1,
+          "slideType": "PROBLEM",
+          "title": "The Hidden Cost of Legacy Systems",
+          "hasImage": false,
+          "s3Key": "showcase/z4-dark-premium/1.jpeg"
+        },
+        {
+          "slideNumber": 2,
+          "slideType": "METRICS_HIGHLIGHT",
+          "title": "$4.2M Annual Revenue Loss",
+          "hasImage": false,
+          "s3Key": "showcase/z4-dark-premium/2.jpeg"
+        },
+        {
+          "slideNumber": 3,
+          "slideType": "TIMELINE",
+          "title": "Strategic Roadmap to Market Leadership",
+          "hasImage": false,
+          "s3Key": "showcase/z4-dark-premium/3.jpeg"
+        },
+        {
+          "slideNumber": 4,
+          "slideType": "SOLUTION",
+          "title": "Intelligent Automation Platform",
+          "hasImage": true,
+          "s3Key": "showcase/z4-dark-premium/4.jpeg"
+        },
+        {
+          "slideNumber": 5,
+          "slideType": "FEATURE_GRID",
+          "title": "Four Capabilities That Drive Results",
+          "hasImage": true,
+          "s3Key": "showcase/z4-dark-premium/5.jpeg"
+        },
+        {
+          "slideNumber": 6,
+          "slideType": "ARCHITECTURE",
+          "title": "Cloud-Native Architecture",
+          "hasImage": true,
+          "s3Key": "showcase/z4-dark-premium/6.jpeg"
+        },
+        {
+          "slideNumber": 7,
+          "slideType": "CTA",
+          "title": "Take the Next Step",
+          "hasImage": true,
+          "s3Key": "showcase/z4-dark-premium/7.jpeg"
+        },
+        {
+          "slideNumber": 8,
+          "slideType": "CONTENT",
+          "title": "Deep Dive: AI-Driven Analytics",
+          "hasImage": true,
+          "s3Key": "showcase/z4-dark-premium/8.jpeg"
+        }
+      ]
+    },
+    {
+      "slug": "academic-research",
+      "displayName": "Academic Research",
+      "slides": [
+        {
+          "slideNumber": 1,
+          "slideType": "PROBLEM",
+          "title": "The Hidden Cost of Legacy Systems",
+          "hasImage": false,
+          "s3Key": "showcase/academic-research/1.jpeg"
+        },
+        {
+          "slideNumber": 2,
+          "slideType": "METRICS_HIGHLIGHT",
+          "title": "$4.2M Annual Revenue Loss",
+          "hasImage": false,
+          "s3Key": "showcase/academic-research/2.jpeg"
+        },
+        {
+          "slideNumber": 3,
+          "slideType": "TIMELINE",
+          "title": "Strategic Roadmap to Market Leadership",
+          "hasImage": false,
+          "s3Key": "showcase/academic-research/3.jpeg"
+        },
+        {
+          "slideNumber": 4,
+          "slideType": "SOLUTION",
+          "title": "Intelligent Automation Platform",
+          "hasImage": true,
+          "s3Key": "showcase/academic-research/4.jpeg"
+        },
+        {
+          "slideNumber": 5,
+          "slideType": "FEATURE_GRID",
+          "title": "Four Capabilities That Drive Results",
+          "hasImage": true,
+          "s3Key": "showcase/academic-research/5.jpeg"
+        },
+        {
+          "slideNumber": 6,
+          "slideType": "ARCHITECTURE",
+          "title": "Cloud-Native Architecture",
+          "hasImage": true,
+          "s3Key": "showcase/academic-research/6.jpeg"
+        },
+        {
+          "slideNumber": 7,
+          "slideType": "CTA",
+          "title": "Take the Next Step",
+          "hasImage": true,
+          "s3Key": "showcase/academic-research/7.jpeg"
+        },
+        {
+          "slideNumber": 8,
+          "slideType": "CONTENT",
+          "title": "Deep Dive: AI-Driven Analytics",
+          "hasImage": true,
+          "s3Key": "showcase/academic-research/8.jpeg"
+        }
+      ]
+    }
+  ]
+}
