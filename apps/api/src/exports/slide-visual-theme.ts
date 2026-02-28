@@ -48,14 +48,31 @@ type SlideType =
   | 'PRODUCT_SHOWCASE'
   | 'LOGO_WALL'
   | 'MARKET_SIZING'
-  | 'SPLIT_STATEMENT';
+  | 'SPLIT_STATEMENT'
+  | 'MATRIX_2X2'
+  | 'WATERFALL'
+  | 'FUNNEL'
+  | 'COMPETITIVE_MATRIX'
+  | 'ROADMAP'
+  | 'PRICING_TABLE'
+  | 'UNIT_ECONOMICS'
+  | 'SWOT'
+  | 'THREE_PILLARS'
+  | 'HOOK'
+  | 'BEFORE_AFTER'
+  | 'SOCIAL_PROOF'
+  | 'OBJECTION_HANDLER'
+  | 'FAQ'
+  | 'VERDICT'
+  | 'COHORT_TABLE'
+  | 'PROGRESS_TRACKER';
 
 // ── Dark Theme Tier System ───────────────────────────────────────
 
 type DarkTier = 'hero' | 'callout' | 'content';
 
-const HERO_TYPES: Set<string> = new Set(['TITLE', 'CTA', 'SECTION_DIVIDER']);
-const CALLOUT_TYPES: Set<string> = new Set(['QUOTE', 'METRICS_HIGHLIGHT', 'DATA_METRICS']);
+const HERO_TYPES: Set<string> = new Set(['TITLE', 'CTA', 'SECTION_DIVIDER', 'HOOK']);
+const CALLOUT_TYPES: Set<string> = new Set(['QUOTE', 'METRICS_HIGHLIGHT', 'DATA_METRICS', 'UNIT_ECONOMICS', 'VERDICT', 'SOCIAL_PROOF']);
 
 export function getDarkTier(slideType: string): DarkTier {
   if (HERO_TYPES.has(slideType)) return 'hero';
@@ -99,6 +116,23 @@ const TYPE_TO_VARIANT: Record<SlideType, number | 'cycle'> = {
   LOGO_WALL: 5,          // bg-corner-accent
   MARKET_SIZING: 4,      // bg-circuit (data-oriented)
   SPLIT_STATEMENT: 1,    // bg-diagonal-lines (editorial feel)
+  MATRIX_2X2: 3,          // bg-subtle-grid
+  WATERFALL: 'cycle',     // deep-gradient (rotates)
+  FUNNEL: 'cycle',        // deep-gradient (rotates)
+  COMPETITIVE_MATRIX: 3,  // bg-subtle-grid
+  ROADMAP: 'cycle',       // deep-gradient (rotates)
+  PRICING_TABLE: 5,       // bg-corner-accent (accent-pop)
+  UNIT_ECONOMICS: 4,      // bg-circuit (hero-stat)
+  SWOT: 3,                // bg-subtle-grid
+  THREE_PILLARS: 'cycle', // deep-gradient (rotates)
+  HOOK: 4,                // bg-circuit (hero-stat)
+  BEFORE_AFTER: 3,        // bg-subtle-grid
+  SOCIAL_PROOF: 4,        // bg-circuit (hero-stat)
+  OBJECTION_HANDLER: 5,   // bg-corner-accent (accent-pop)
+  FAQ: 3,                 // bg-subtle-grid
+  VERDICT: 4,             // bg-circuit (hero-stat)
+  COHORT_TABLE: 3,        // bg-subtle-grid
+  PROGRESS_TRACKER: 'cycle', // deep-gradient (rotates)
 };
 
 // ── Light-Background Variant Pool (McKinsey / Consulting) ───
@@ -133,6 +167,23 @@ const LIGHT_TYPE_TO_VARIANT: Record<SlideType, number> = {
   LOGO_WALL: 0,           // bg-clean
   MARKET_SIZING: 5,       // bg-accent-tint
   SPLIT_STATEMENT: 4,     // bg-soft-gradient
+  MATRIX_2X2: 3,          // bg-warm-cream (warm-minimal)
+  WATERFALL: 5,           // bg-accent-tint (clean-accent)
+  FUNNEL: 5,              // bg-accent-tint (clean-accent)
+  COMPETITIVE_MATRIX: 3,  // bg-warm-cream (warm-minimal)
+  ROADMAP: 4,             // bg-soft-gradient (soft-wash)
+  PRICING_TABLE: 5,       // bg-accent-tint (clean-accent)
+  UNIT_ECONOMICS: 2,      // bg-callout (hero-stat)
+  SWOT: 3,                // bg-warm-cream (warm-minimal)
+  THREE_PILLARS: 4,       // bg-soft-gradient (soft-wash)
+  HOOK: 2,                // bg-callout (hero-stat)
+  BEFORE_AFTER: 3,        // bg-warm-cream (warm-minimal)
+  SOCIAL_PROOF: 2,        // bg-callout (hero-stat)
+  OBJECTION_HANDLER: 5,   // bg-accent-tint (clean-accent)
+  FAQ: 3,                 // bg-warm-cream (warm-minimal)
+  VERDICT: 2,             // bg-callout (hero-stat)
+  COHORT_TABLE: 3,        // bg-warm-cream (warm-minimal)
+  PROGRESS_TRACKER: 5,    // bg-accent-tint (clean-accent)
 };
 
 
