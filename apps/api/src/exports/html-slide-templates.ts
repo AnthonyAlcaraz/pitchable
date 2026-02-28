@@ -581,11 +581,24 @@ function buildMarketSizing(slide: SlideInput, p: ColorPalette, hasImage = false)
     { label: 'SOM', dy: -6 },
   ];
 
+  // Parse lines into label:value pairs for better display
+  const parsedLines = lines.slice(0, 5).map((line) => {
+    const sep = line.indexOf(':');
+    if (sep > -1 && sep < 40) return { label: stripMarkdown(line.slice(0, sep).trim()), value: stripMarkdown(line.slice(sep + 1).trim()) };
+    return { label: '', value: stripMarkdown(line) };
+  });
+  const textColW = Math.round(cW * 0.38);
+  const lineSpacing = Math.min(60, Math.round((H - PAD * 2 - 80) / Math.max(parsedLines.length, 1)));
   let bodyHtml = '';
   let ty = PAD + 80;
-  for (const line of lines) {
-    bodyHtml += `<div style="position:absolute;left:${PAD}px;top:${ty}px;width:${Math.round(cW * 0.4)}px;font-size:22px;line-height:1.4;opacity:0.85;color:${p.text}">${escHtml(line)}</div>`;
-    ty += 48;
+  for (const item of parsedLines) {
+    if (item.label) {
+      bodyHtml += `<div style="position:absolute;left:${PAD}px;top:${ty}px;width:${textColW}px;font-size:12px;font-weight:bold;text-transform:uppercase;letter-spacing:1px;color:${p.accent};opacity:0.7">${escHtml(item.label)}</div>`;
+      bodyHtml += `<div style="position:absolute;left:${PAD}px;top:${ty + 18}px;width:${textColW}px;font-size:18px;line-height:1.35;color:${p.text};opacity:0.9;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">${escHtml(item.value)}</div>`;
+    } else {
+      bodyHtml += `<div style="position:absolute;left:${PAD}px;top:${ty}px;width:${textColW}px;font-size:17px;line-height:1.4;color:${p.text};opacity:0.85;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">${escHtml(item.value)}</div>`;
+    }
+    ty += lineSpacing;
   }
 
   const circlesSvg = circles.map((c) =>
@@ -597,12 +610,12 @@ function buildMarketSizing(slide: SlideInput, p: ColorPalette, hasImage = false)
   ).join('');
 
   return `${SCOPED_RESET}
-<div style="position:relative;width:${W}px;height:${H}px;background:${p.background};">
+<div style="position:relative;width:${W}px;height:${H}px;background:${p.background};overflow:hidden">
   ${bgGradientOverlay(cW, H, p.primary, 0.04, '50%')}
   <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${Math.round(cW * 0.45)}px;font-size:${titleFontSize(slide.title)}px;font-weight:bold;overflow-wrap:break-word;word-wrap:break-word;color:${p.text};line-height:1.2">${escHtml(slide.title)}</div>
   <div style="position:absolute;left:${PAD}px;top:${PAD + 56}px;width:50px;height:3px;background:${p.accent};border-radius:2px"></div>
   ${bodyHtml}
-  <svg style="position:absolute;left:0;top:0" width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg">
+  <svg style="position:absolute;left:0;top:0" width="${cW}" height="${H}" xmlns="http://www.w3.org/2000/svg">
     ${circlesSvg}
     ${labelsSvg}
   </svg>
@@ -641,7 +654,7 @@ function buildTimeline(slide: SlideInput, p: ColorPalette, hasImage = false): st
     const dark = isDarkBackground(p.background);
     const zigLineY = Math.round(H * 0.48);
     const zigStartX = PAD + 60;
-    const zigEndX = (hasImage ? Math.round(W * 0.7) : W) - PAD - 60;
+    const zigEndX = cW - PAD - 60;
     const zigSpacing = (zigEndX - zigStartX) / (count - 1 || 1);
     const zigCardW = Math.min(200, Math.round(zigSpacing - 16));
     const zigCardH = 130;
@@ -700,7 +713,7 @@ function buildTimeline(slide: SlideInput, p: ColorPalette, hasImage = false): st
 </div>`;
   }
 
-  const visibleW = hasImage ? Math.round(W * 0.7) : W;
+  const visibleW = cW;
   const lineY = Math.round(H * 0.42);
   const lineStartX = PAD + 40;
   const lineEndX = visibleW - PAD - 40;
@@ -1440,7 +1453,7 @@ function buildFeatureGrid(slide: SlideInput, p: ColorPalette, hasImage = false):
         rowHtml += '<div style="position:absolute;left:' + (PAD + 56 + Math.round(rowW * 0.32)) + 'px;top:' + (ry + 6) + 'px;width:' + Math.round(rowW * 0.62) + 'px;font-size:17px;line-height:1.35;color:' + p.text + ';opacity:0.8;overflow:hidden;max-height:' + (rowH - 12) + 'px">' + escHtml(features[ri].desc) + '</div>';
       }
     }
-    return SCOPED_RESET + '\n<div style="position:relative;width:' + W + 'px;height:' + H + 'px;background:' + p.background + ';">' +
+    return SCOPED_RESET + '\n<div style="position:relative;width:' + W + 'px;height:' + H + 'px;background:' + p.background + ';overflow:hidden">' +
       bgGradientOverlay(cW, H, p.accent, 0.04) +
       '<div style="position:absolute;left:' + PAD + 'px;top:' + PAD + 'px;width:' + (cW - PAD * 2) + 'px;font-size:' + titleFontSize(slide.title) + 'px;font-weight:bold;overflow-wrap:break-word;word-wrap:break-word;color:' + p.text + ';line-height:1.2">' + escHtml(slide.title) + '</div>' +
       '<div style="position:absolute;left:' + PAD + 'px;top:' + (PAD + 48) + 'px;width:60px;height:3px;background:' + p.accent + ';border-radius:2px"></div>' +
@@ -1524,11 +1537,13 @@ function buildFeatureGrid(slide: SlideInput, p: ColorPalette, hasImage = false):
   const descMaxH = Math.max(20, cardH - 100);
   const accents = cardAccentColors(p);
 
+  const totalGridW = cols * cardW + (cols - 1) * gapX;
+  const gridStartX = Math.round((cW - totalGridW) / 2);
   let html = '';
   for (let i = 0; i < count; i++) {
     const col = i % cols;
     const row = Math.floor(i / cols);
-    const cx = PAD + col * (cardW + gapX);
+    const cx = gridStartX + col * (cardW + gapX);
     const cy = startY + row * (cardH + gapY);
     const cardColor = accents[i % accents.length];
 
@@ -1544,7 +1559,7 @@ function buildFeatureGrid(slide: SlideInput, p: ColorPalette, hasImage = false):
   }
 
   return `${SCOPED_RESET}
-<div style="position:relative;width:${W}px;height:${H}px;background:${p.background};">
+<div style="position:relative;width:${W}px;height:${H}px;background:${p.background};overflow:hidden">
   ${bgGradientOverlay(cW, H, p.accent, 0.04)}
   <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;text-align:center;font-size:${titleFontSize(slide.title)}px;font-weight:bold;overflow-wrap:break-word;word-wrap:break-word;color:${p.text};line-height:1.2">${escHtml(slide.title)}</div>
   <div style="position:absolute;left:${Math.round((cW - 60) / 2)}px;top:${PAD + 56}px;width:60px;height:3px;background:${p.accent};border-radius:2px"></div>
@@ -1604,7 +1619,7 @@ function buildProcess(slide: SlideInput, p: ColorPalette, hasImage = false): str
         vtHtml += '<div style="position:absolute;left:' + (vtLineX + 30) + 'px;top:' + (vy + 24) + 'px;width:' + (cW - vtLineX - 30 - PAD) + 'px;font-size:13px;line-height:1.4;color:' + p.text + ';opacity:0.8;overflow:hidden;max-height:' + (vtStepH - 32) + 'px">' + escHtml(steps[vi].desc) + '</div>';
       }
     }
-    return SCOPED_RESET + '\n<div style="position:relative;width:' + W + 'px;height:' + H + 'px;background:' + p.background + ';">' +
+    return SCOPED_RESET + '\n<div style="position:relative;width:' + W + 'px;height:' + H + 'px;background:' + p.background + ';overflow:hidden">' +
       bgGradientOverlay(cW, H, p.primary, 0.04) +
       '<div style="position:absolute;left:' + PAD + 'px;top:' + PAD + 'px;width:' + (cW - PAD * 2) + 'px;font-size:' + titleFontSize(slide.title) + 'px;font-weight:bold;overflow-wrap:break-word;word-wrap:break-word;color:' + p.text + ';line-height:1.2">' + escHtml(slide.title) + '</div>' +
       '<div style="position:absolute;left:' + PAD + 'px;top:' + (PAD + 48) + 'px;width:60px;height:3px;background:' + p.accent + ';border-radius:2px"></div>' +
@@ -1650,7 +1665,7 @@ function buildProcess(slide: SlideInput, p: ColorPalette, hasImage = false): str
 
     const titleGlow = dark ? `;${textGlow(p.accent, 0.25)}` : '';
     return `${SCOPED_RESET}
-<div style="position:relative;width:${W}px;height:${H}px;background:${p.background};">
+<div style="position:relative;width:${W}px;height:${H}px;background:${p.background};overflow:hidden">
   ${bgGradientOverlay(cW, H, p.primary, 0.04)}
   <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;text-align:center;font-size:${titleFontSize(slide.title)}px;font-weight:bold;overflow-wrap:break-word;word-wrap:break-word;color:${p.text};line-height:1.2${titleGlow}">${escHtml(slide.title)}</div>
   <div style="position:absolute;left:${Math.round((cW - 60) / 2)}px;top:${PAD + 56}px;width:60px;height:3px;background:${p.accent};border-radius:2px"></div>
@@ -1678,10 +1693,11 @@ function buildProcess(slide: SlideInput, p: ColorPalette, hasImage = false): str
   const maxCardW = Math.round((cW - PAD * 2 - (cols - 1) * gapX) / cols);
   const cardW = Math.min(300, maxCardW);
   const gapY = 20;
-  const cardH = useRows ? 220 : (count <= 3 ? 340 : 300);
+  const cardY = Math.round(PAD + 90);
+  const maxCardH = Math.round((H - cardY - PAD - (rows - 1) * gapY) / rows);
+  const cardH = Math.min(useRows ? 220 : (count <= 3 ? 340 : 300), maxCardH);
   const totalW = cols * cardW + (cols - 1) * gapX;
   const startX = Math.round((cW - totalW) / 2);
-  const cardY = Math.round(PAD + 90);
 
   const procAccents = cardAccentColors(p);
   let cardsHtml = '';
@@ -1713,7 +1729,7 @@ function buildProcess(slide: SlideInput, p: ColorPalette, hasImage = false): str
   }
 
   return `${SCOPED_RESET}
-<div style="position:relative;width:${W}px;height:${H}px;background:${p.background};">
+<div style="position:relative;width:${W}px;height:${H}px;background:${p.background};overflow:hidden">
   ${bgGradientOverlay(cW, H, p.primary, 0.04)}
   <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;text-align:center;font-size:${titleFontSize(slide.title)}px;font-weight:bold;overflow-wrap:break-word;word-wrap:break-word;color:${p.text};line-height:1.2">${escHtml(slide.title)}</div>
   <div style="position:absolute;left:${Math.round((cW - 60) / 2)}px;top:${PAD + 56}px;width:60px;height:3px;background:${p.accent};border-radius:2px"></div>
@@ -1997,7 +2013,8 @@ function buildSolution(slide: SlideInput, p: ColorPalette, hasImage = false): st
 
 function buildCta(slide: SlideInput, p: ColorPalette, hasImage = false): string {
   const lines = parseBodyLines(slide.body);
-  const visibleW = hasImage ? Math.round(W * 0.7) : W;
+  const cW = hasImage ? CONTENT_W_IMG : W;
+  const visibleW = cW;
   const cardW = hasImage ? 560 : 700;
   const cardH = 340;
   const cardX = Math.round((visibleW - cardW) / 2);
@@ -2122,71 +2139,83 @@ function buildArchitecture(slide: SlideInput, p: ColorPalette, hasImage = false)
 
   if (nodes.length === 0) {
     return `${SCOPED_RESET}
-<div style="position:relative;width:${W}px;height:${H}px;background:${p.background};">
+<div style="position:relative;width:${W}px;height:${H}px;background:${p.background};overflow:hidden">
   <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;text-align:center;font-size:${titleFontSize(slide.title)}px;font-weight:bold;overflow-wrap:break-word;word-wrap:break-word;color:${p.text}">${escHtml(slide.title)}</div>
 </div>`;
   }
 
   const count = nodes.length;
-  // 2-row grid for 5+ nodes; single row for 1-4
-  const useRows = count >= 5;
-  const cols = useRows ? Math.ceil(count / 2) : count;
-  const rowCount = useRows ? 2 : 1;
-  const gapX = 28;
-  const gapY = 24;
-  // Dynamic box width — fill available horizontal space
-  const boxW = Math.min(280, Math.round((cW - PAD * 2 - (cols - 1) * gapX) / cols));
-  const boxH = useRows ? 180 : (count <= 3 ? 260 : 180);
-  const totalW = cols * boxW + (cols - 1) * gapX;
-  const totalH = rowCount * boxH + (rowCount - 1) * gapY;
-  const startX = Math.round((cW - totalW) / 2);
-  const startY = Math.round(PAD + 90 + (H - PAD * 2 - 90 - totalH) / 2);
-
+  const dark = isDarkBackground(p.background);
   const archAccents = cardAccentColors(p);
-  let boxesHtml = '';
+
+  // Parse nodes into title:desc pairs
+  const parsed = nodes.map((n, i) => {
+    const sep = n.indexOf(':');
+    const title = sep > -1 && sep < 50 ? stripMarkdown(n.slice(0, sep).trim()) : stripMarkdown(n);
+    const desc = sep > -1 && sep < 50 ? stripMarkdown(n.slice(sep + 1).trim()) : '';
+    return { title, desc, color: archAccents[i % archAccents.length] };
+  });
+
+  // Layered architecture: horizontal bars stacked vertically with vertical connectors
+  const titleAreaH = 80;
+  const layerStartY = PAD + titleAreaH;
+  const connectorH = 20;
+  const layerGap = 4;
+  const totalConnH = (count - 1) * (connectorH + layerGap);
+  const availH = H - PAD - layerStartY - totalConnH;
+  const layerH = Math.min(80, Math.max(48, Math.round(availH / count)));
+  const accentW = 5;
+  const layerW = cW - PAD * 2;
+  const layerX = PAD;
+
+  let layersHtml = '';
   let connectorsSvg = '';
 
   for (let i = 0; i < count; i++) {
-    const col = useRows ? (i % cols) : i;
-    const row = useRows ? Math.floor(i / cols) : 0;
-    const cx = startX + col * (boxW + gapX);
-    const cy = startY + row * (boxH + gapY);
-    const sep = nodes[i].indexOf(':');
-    const title = sep > -1 && sep < 50 ? stripMarkdown(nodes[i].slice(0, sep).trim()) : stripMarkdown(nodes[i]);
-    const desc = sep > -1 && sep < 50 ? stripMarkdown(nodes[i].slice(sep + 1).trim()) : '';
-    const descMaxH = boxH - 56;
-    const titleFSz = boxH >= 140 ? 24 : 20;
-    const descFSz = boxH >= 140 ? 18 : 16;
-    const nodeColor = archAccents[i % archAccents.length];
+    const ly = layerStartY + i * (layerH + layerGap + connectorH);
+    const { title, desc, color } = parsed[i];
 
-    boxesHtml += `<div style="position:absolute;left:${cx}px;top:${cy}px;width:${boxW}px;height:${boxH}px;background:${p.surface};border:1px solid ${p.border};border-radius:12px;border-top:4px solid ${nodeColor};box-shadow:${cardShadow(2, isDarkBackground(p.background))};overflow:hidden"></div>`;
-    boxesHtml += `<div style="position:absolute;left:${cx + 14}px;top:${cy + (desc ? 14 : Math.round(boxH / 2 - 10))}px;width:${boxW - 28}px;text-align:center;font-size:${titleFSz}px;font-weight:bold;color:${nodeColor};overflow:hidden;max-height:38px;line-height:1.3">${escHtml(title)}</div>`;
+    // Layer background bar
+    layersHtml += `<div style="position:absolute;left:${layerX}px;top:${ly}px;width:${layerW}px;height:${layerH}px;background:${p.surface};border:1px solid ${p.border};border-radius:10px;border-left:${accentW}px solid ${color};box-shadow:${cardShadow(1, dark)};overflow:hidden"></div>`;
+
+    // Layer number badge
+    const badgeSize = 28;
+    const badgeX = layerX + accentW + 12;
+    const badgeY = ly + Math.round(layerH / 2 - badgeSize / 2);
+    layersHtml += `<div style="position:absolute;left:${badgeX}px;top:${badgeY}px;width:${badgeSize}px;height:${badgeSize}px;border-radius:50%;background:${color};text-align:center;line-height:${badgeSize}px;font-size:13px;font-weight:bold;color:#fff">${i + 1}</div>`;
+
+    // Title
+    const titleStartX = badgeX + badgeSize + 10;
+    const titleW = desc ? Math.min(Math.round(layerW * 0.30), 260) : layerW - (titleStartX - layerX) - 14;
+    const titleFSz = layerH >= 70 ? 18 : 16;
+    layersHtml += `<div style="position:absolute;left:${titleStartX}px;top:${ly + Math.round(layerH / 2 - titleFSz * 0.7)}px;width:${titleW}px;font-size:${titleFSz}px;font-weight:bold;color:${color};overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-height:1.3">${escHtml(title)}</div>`;
+
+    // Description (right side, separated by subtle divider)
     if (desc) {
-      boxesHtml += `<div style="position:absolute;left:${cx + 14}px;top:${cy + 42}px;width:${boxW - 28}px;text-align:center;font-size:${descFSz}px;color:${p.text};opacity:0.7;line-height:1.4;overflow:hidden;max-height:${descMaxH}px">${escHtml(desc)}</div>`;
+      const descX = titleStartX + titleW + 20;
+      const descW = layerX + layerW - descX - 14;
+      const descFSz = layerH >= 70 ? 14 : 13;
+      // Vertical separator
+      layersHtml += `<div style="position:absolute;left:${descX - 10}px;top:${ly + 10}px;width:1px;height:${layerH - 20}px;background:${hexToRgba(p.border, 0.4)}"></div>`;
+      layersHtml += `<div style="position:absolute;left:${descX}px;top:${ly + Math.round(layerH / 2 - descFSz * 0.7)}px;width:${descW}px;font-size:${descFSz}px;color:${p.text};opacity:0.75;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-height:1.4">${escHtml(desc)}</div>`;
     }
 
-    // Horizontal connector arrows within same row
-    if (!useRows && i < count - 1) {
-      const x1 = cx + boxW + 2;
-      const x2 = cx + boxW + gapX - 2;
-      const ay = cy + boxH / 2;
-      connectorsSvg += `<line x1="${x1}" y1="${ay}" x2="${x2}" y2="${ay}" stroke="${p.border}" stroke-width="2" marker-end="url(#arch-arrow)" />`;
-    }
-    if (useRows && col < cols - 1 && i + 1 < count && Math.floor((i + 1) / cols) === row) {
-      const x1 = cx + boxW + 2;
-      const x2 = cx + boxW + gapX - 2;
-      const ay = cy + boxH / 2;
-      connectorsSvg += `<line x1="${x1}" y1="${ay}" x2="${x2}" y2="${ay}" stroke="${p.border}" stroke-width="2" marker-end="url(#arch-arrow)" />`;
+    // Vertical connector arrow to next layer
+    if (i < count - 1) {
+      const arrowX = Math.round(cW / 2);
+      const arrowY1 = ly + layerH + 2;
+      const arrowY2 = arrowY1 + layerGap + connectorH - 4;
+      connectorsSvg += `<line x1="${arrowX}" y1="${arrowY1}" x2="${arrowX}" y2="${arrowY2}" stroke="${hexToRgba(p.border, 0.5)}" stroke-width="2" marker-end="url(#arch-arrow)" />`;
     }
   }
 
   return `${SCOPED_RESET}
-<div style="position:relative;width:${W}px;height:${H}px;background:${p.background};">
+<div style="position:relative;width:${W}px;height:${H}px;background:${p.background};overflow:hidden">
   ${bgGradientOverlay(cW, H, p.primary, 0.04, '45%')}
   <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;text-align:center;font-size:${titleFontSize(slide.title)}px;font-weight:bold;overflow-wrap:break-word;word-wrap:break-word;color:${p.text};line-height:1.2">${escHtml(slide.title)}</div>
   <div style="position:absolute;left:${Math.round((cW - 60) / 2)}px;top:${PAD + 56}px;width:60px;height:3px;background:${p.accent};border-radius:2px"></div>
-  ${boxesHtml}
-  <svg style="position:absolute;left:0;top:0" width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg">
+  ${layersHtml}
+  <svg style="position:absolute;left:0;top:0" width="${cW}" height="${H}" xmlns="http://www.w3.org/2000/svg">
     <defs><marker id="arch-arrow" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="${p.border}" /></marker></defs>
     ${connectorsSvg}
   </svg>
