@@ -25,8 +25,8 @@ COPY --from=deps /app/apps/web/node_modules ./apps/web/node_modules
 COPY --from=deps /app/packages/shared/node_modules ./packages/shared/node_modules
 COPY . .
 
-# Generate Prisma client (cache bust: 12-new-types-v1)
-RUN echo "enum-bust-1772368384" && cd apps/api && npx prisma generate && grep FLYWHEEL generated/prisma/enums.ts && echo "=== FLYWHEEL enum confirmed in generated client ==="
+# Generate Prisma client
+RUN cd apps/api && npx prisma generate
 
 # Prisma generate in Docker doesn't always create package.json with "type":"module".
 # Without it, tsc compiles the generated .ts files as CJS instead of ESM.
@@ -34,7 +34,7 @@ RUN echo "enum-bust-1772368384" && cd apps/api && npx prisma generate && grep FL
 RUN echo '{"type":"module"}' > apps/api/generated/prisma/package.json
 
 # Build only the packages we need (api + web)
-RUN npx turbo run build --force --filter='@deckpilot/api' --filter='@deckpilot/web'
+RUN npx turbo run build --filter='@deckpilot/api' --filter='@deckpilot/web'
 
 # tsc doesn't copy package.json files to dist/. Node.js needs it there
 # to treat the ESM-compiled .js files as ESM at runtime.
