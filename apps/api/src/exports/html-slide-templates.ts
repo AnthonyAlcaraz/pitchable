@@ -33,7 +33,7 @@ export const FIGMA_GRADE_TYPES: Set<string> = new Set([
   'HOOK', 'MATRIX_2X2', 'WATERFALL', 'FUNNEL', 'COMPETITIVE_MATRIX', 'ROADMAP',
   'PRICING_TABLE', 'UNIT_ECONOMICS', 'SWOT', 'THREE_PILLARS', 'BEFORE_AFTER',
   'SOCIAL_PROOF', 'OBJECTION_HANDLER', 'FAQ', 'VERDICT', 'COHORT_TABLE', 'PROGRESS_TRACKER',
-  'PRODUCT_SHOWCASE',
+  'PRODUCT_SHOWCASE', 'SPLIT_STATEMENT',
 ]);
 
 // ── Helpers ──────────────────────────────────────────────────
@@ -505,6 +505,8 @@ export function buildHtmlSlideContent(
       html = buildProgressTracker(cleaned, palette, !!cleaned.imageUrl); break;
     case 'PRODUCT_SHOWCASE':
       html = buildProductShowcase(cleaned, palette, !!cleaned.imageUrl); break;
+    case 'SPLIT_STATEMENT':
+      html = buildSplitStatement(cleaned, palette, !!cleaned.imageUrl); break;
     default:
       return '';
   }
@@ -641,13 +643,17 @@ function buildProductShowcase(slide: SlideInput, p: ColorPalette, hasImage = fal
   const rightX = leftW + 20;
   const rightW = cW - rightX - PAD;
 
-  // Feature bullets
+  // Feature bullets — clamp height to prevent spillover
   let featuresHtml = '';
   const featStartY = PAD + 100;
-  const featLineH = Math.min(50, Math.round((H - featStartY - PAD) / Math.max(lines.length, 1)));
-  for (let i = 0; i < Math.min(lines.length, 6); i++) {
-    const fy = featStartY + i * featLineH;
-    featuresHtml += `<div style="position:absolute;left:${PAD + 8}px;top:${fy}px;width:${leftW - 24}px;font-size:15px;line-height:1.4;color:${p.text};opacity:0.85;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical"><span style="color:${p.accent};margin-right:8px;font-weight:bold">&bull;</span>${escHtml(lines[i])}</div>`;
+  const maxFeats = Math.min(lines.length, 6);
+  const featAvailH = H - featStartY - PAD - 10;
+  const featGap = 8;
+  const featItemH = Math.min(56, Math.round((featAvailH - (maxFeats - 1) * featGap) / maxFeats));
+  const featFontSize = featItemH >= 50 ? 15 : featItemH >= 38 ? 13 : 12;
+  for (let i = 0; i < maxFeats; i++) {
+    const fy = featStartY + i * (featItemH + featGap);
+    featuresHtml += `<div style="position:absolute;left:${PAD + 8}px;top:${fy}px;width:${leftW - 24}px;height:${featItemH}px;font-size:${featFontSize}px;line-height:1.35;color:${p.text};opacity:0.85;overflow:hidden"><span style="color:${p.accent};margin-right:8px;font-weight:bold">&bull;</span>${escHtml(lines[i])}</div>`;
   }
 
   // Right panel: laptop bezel frame
@@ -696,6 +702,106 @@ function buildProductShowcase(slide: SlideInput, p: ColorPalette, hasImage = fal
   ${featuresHtml}
   ${bezelHtml}
   ${standHtml}
+</div>`;
+}
+
+// ── SPLIT_STATEMENT ──────────────────────────────────────────
+// Evidence/case-study cards: parses --- separated sections with bold headers + stat numbers.
+// Format: subtitle line, then "**Header**\n**Stat** description..." sections split by ---
+
+function buildSplitStatement(slide: SlideInput, p: ColorPalette, hasImage = false): string {
+  const cW = hasImage ? CONTENT_W_IMG : W;
+  const dark = isDarkBackground(p.background);
+
+  // Parse sections: split by --- separator, each section has a bold header + description
+  const rawSections = slide.body.split(/\n---\n|\n-{3,}\n/);
+  // First section may be a subtitle (no bold header)
+  let subtitle = '';
+  const sections: Array<{ header: string; stat: string; description: string }> = [];
+
+  for (const raw of rawSections) {
+    const trimmed = raw.trim();
+    if (!trimmed) continue;
+
+    // Try to extract **Header** and **Stat** + description
+    const headerMatch = trimmed.match(/^\*\*([^*]+)\*\*/);
+    if (headerMatch) {
+      const header = headerMatch[1].trim();
+      const rest = trimmed.slice(headerMatch[0].length).trim();
+      // Extract stat (next bold or first line)
+      const statMatch = rest.match(/^\*\*([^*]+)\*\*/);
+      let stat = '';
+      let description = rest;
+      if (statMatch) {
+        stat = statMatch[1].trim();
+        description = rest.slice(statMatch[0].length).trim();
+      }
+      // Clean description: remove leading "of " or similar
+      description = description.replace(/^of\s+/i, '').replace(/\n+/g, ' ');
+      sections.push({ header, stat, description });
+    } else {
+      // No bold header — treat as subtitle
+      subtitle = stripMarkdown(trimmed).replace(/\n+/g, ' ');
+    }
+  }
+
+  // If no --- sections found, try line-by-line parsing
+  if (sections.length === 0) {
+    const lines = parseBodyLines(slide.body);
+    for (const line of lines) {
+      sections.push({ header: '', stat: '', description: line });
+    }
+  }
+
+  // Layout: title + subtitle at top, then horizontally arranged evidence cards
+  const titleY = PAD;
+  const subtitleY = titleY + 52;
+  const cardStartY = subtitle ? subtitleY + 40 : titleY + 70;
+  const cardAvailH = H - cardStartY - PAD - 10;
+  const cardGap = 16;
+  const numCards = Math.min(sections.length, 4);
+  const cardW = Math.round((cW - PAD * 2 - (numCards - 1) * cardGap) / numCards);
+  const cardH = Math.min(cardAvailH, 380);
+  const cardBg = dark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.025)';
+  const cardBorder = dark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)';
+  const accentColors = cardAccentColors(p, colorOffset(slide.title));
+
+  let cardsHtml = '';
+  for (let i = 0; i < numCards; i++) {
+    const s = sections[i];
+    const cx = PAD + i * (cardW + cardGap);
+    const accent = accentColors[i % accentColors.length];
+
+    // Card container
+    cardsHtml += `<div style="position:absolute;left:${cx}px;top:${cardStartY}px;width:${cardW}px;height:${cardH}px;background:${cardBg};border:1px solid ${cardBorder};border-radius:12px;border-top:4px solid ${hexToRgba(accent, 0.8)};overflow:hidden"></div>`;
+
+    // Header label
+    if (s.header) {
+      cardsHtml += `<div style="position:absolute;left:${cx + 20}px;top:${cardStartY + 20}px;width:${cardW - 40}px;font-size:12px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:${accent};overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${escHtml(s.header)}</div>`;
+    }
+
+    // Stat number (big)
+    const statY = cardStartY + (s.header ? 50 : 20);
+    if (s.stat) {
+      const statFontSize = s.stat.length > 12 ? 28 : s.stat.length > 6 ? 36 : 44;
+      cardsHtml += `<div style="position:absolute;left:${cx + 20}px;top:${statY}px;width:${cardW - 40}px;font-size:${statFontSize}px;font-weight:bold;color:${p.text};line-height:1.1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${escHtml(s.stat)}</div>`;
+    }
+
+    // Description
+    const descY = s.stat ? statY + (s.stat.length > 12 ? 38 : s.stat.length > 6 ? 46 : 54) : statY;
+    const descAvailH = cardH - (descY - cardStartY) - 16;
+    if (s.description) {
+      cardsHtml += `<div style="position:absolute;left:${cx + 20}px;top:${descY}px;width:${cardW - 40}px;max-height:${descAvailH}px;font-size:14px;line-height:1.5;color:${p.text};opacity:0.75;overflow:hidden">${escHtml(s.description)}</div>`;
+    }
+  }
+
+  return `${SCOPED_RESET}
+<div style="position:relative;width:${W}px;height:${H}px;background:${p.background};overflow:hidden">
+  ${bgGradientOverlay(cW, H, p.accent, 0.04, '40%')}
+  <div style="position:absolute;left:${PAD}px;top:${titleY}px;width:${cW - PAD * 2}px;font-size:${titleFontSize(slide.title)}px;font-weight:bold;color:${p.text};line-height:1.2;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${escHtml(slide.title)}</div>
+  <div style="position:absolute;left:${PAD}px;top:${titleY + 48}px;width:50px;height:3px;background:${p.accent};border-radius:2px"></div>
+  ${subtitle ? `<div style="position:absolute;left:${PAD}px;top:${subtitleY}px;width:${cW - PAD * 2}px;font-size:16px;color:${p.text};opacity:0.65;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${escHtml(subtitle)}</div>` : ''}
+  ${cardsHtml}
 </div>`;
 }
 
