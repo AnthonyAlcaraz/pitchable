@@ -4225,7 +4225,7 @@ function buildProgressTracker(slide: SlideInput, p: ColorPalette, hasImage = fal
 
 
 // ── FLYWHEEL ────────────────────────────────────────────────
-// Circular SVG loop with gradient arcs, glow center, and labeled segments
+// Circular SVG loop with gradient arcs, glow center, multi-ring background, glass label cards
 
 function buildFlywheel(slide: SlideInput, p: ColorPalette, hasImage = false, accentDiversity = true): string {
   const cW = hasImage ? CONTENT_W_IMG : W;
@@ -4238,9 +4238,12 @@ function buildFlywheel(slide: SlideInput, p: ColorPalette, hasImage = false, acc
   const cx = Math.round(cW * 0.5);
   const cy = Math.round(H * 0.52);
   const R = Math.min(Math.round(cW * 0.21), 195);
-  const labelR = R + 70;
+  const labelR = R + 85;
 
+  // ── SVG defs: gradients, glow filter, dot mesh ──
   let svgDefs = '<defs>';
+  svgDefs += `<filter id="fwglo"><feGaussianBlur stdDeviation="6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>`;
+  svgDefs += `<pattern id="fwdot" width="20" height="20" patternUnits="userSpaceOnUse"><circle cx="10" cy="10" r="0.7" fill="${hexToRgba(p.text, 0.06)}"/></pattern>`;
   for (let i = 0; i < n; i++) {
     const col = accents[i % accents.length];
     const col2 = accents[(i + 1) % accents.length];
@@ -4249,7 +4252,17 @@ function buildFlywheel(slide: SlideInput, p: ColorPalette, hasImage = false, acc
   svgDefs += '</defs>';
 
   let svgInner = svgDefs;
-  const arcGap = 0.08; // gap between arcs (radians)
+
+  // Dot mesh background
+  svgInner += `<rect x="${PAD}" y="${PAD}" width="${cW - PAD * 2}" height="${H - PAD * 2}" fill="url(#fwdot)" opacity="0.5"/>`;
+
+  // ── Concentric background rings (3 decorative rings with dashes) ──
+  svgInner += `<circle cx="${cx}" cy="${cy}" r="${R + 40}" fill="none" stroke="${hexToRgba(p.accent, 0.04)}" stroke-width="1" stroke-dasharray="6,8"/>`;
+  svgInner += `<circle cx="${cx}" cy="${cy}" r="${R + 25}" fill="none" stroke="${hexToRgba(p.accent, 0.06)}" stroke-width="1" stroke-dasharray="4,10"/>`;
+  svgInner += `<circle cx="${cx}" cy="${cy}" r="${R - 25}" fill="none" stroke="${hexToRgba(p.accent, 0.05)}" stroke-width="1" stroke-dasharray="3,6"/>`;
+
+  // ── Arc segments with glow backing + particle dots ──
+  const arcGap = 0.08;
   const arcSpan = (2 * Math.PI / n) - arcGap;
   for (let i = 0; i < n; i++) {
     const a1 = (i / n) * Math.PI * 2 - Math.PI / 2 + arcGap / 2;
@@ -4257,52 +4270,80 @@ function buildFlywheel(slide: SlideInput, p: ColorPalette, hasImage = false, acc
     const x1 = cx + R * Math.cos(a1), y1 = cy + R * Math.sin(a1);
     const x2 = cx + R * Math.cos(a2), y2 = cy + R * Math.sin(a2);
     const large = arcSpan > Math.PI ? 1 : 0;
-    svgInner += `<path d="M${x1.toFixed(1)},${y1.toFixed(1)} A${R},${R} 0 ${large},1 ${x2.toFixed(1)},${y2.toFixed(1)}" fill="none" stroke="url(#fwg${i})" stroke-width="10" stroke-linecap="round" opacity="0.85"/>`;
-    // Arrowhead at end of arc
-    const aDelta = 0.12;
-    const tipX = cx + R * Math.cos(a2 + aDelta), tipY = cy + R * Math.sin(a2 + aDelta);
-    const tangentX = -Math.sin(a2), tangentY = Math.cos(a2);
     const col = accents[i % accents.length];
-    svgInner += `<polygon points="${x2.toFixed(1)},${y2.toFixed(1)} ${(x2 - tangentX * 8 + Math.cos(a2) * 14).toFixed(1)},${(y2 - tangentY * 8 + Math.sin(a2) * 14).toFixed(1)} ${(x2 + tangentX * 8 + Math.cos(a2) * 14).toFixed(1)},${(y2 + tangentY * 8 + Math.sin(a2) * 14).toFixed(1)}" fill="${col}" opacity="0.9"/>`;
+
+    // 22px glow backing at 0.1 opacity
+    svgInner += `<path d="M${x1.toFixed(1)},${y1.toFixed(1)} A${R},${R} 0 ${large},1 ${x2.toFixed(1)},${y2.toFixed(1)}" fill="none" stroke="${hexToRgba(col, 0.1)}" stroke-width="22" stroke-linecap="round"/>`;
+    // 14px main arc
+    svgInner += `<path d="M${x1.toFixed(1)},${y1.toFixed(1)} A${R},${R} 0 ${large},1 ${x2.toFixed(1)},${y2.toFixed(1)}" fill="none" stroke="url(#fwg${i})" stroke-width="14" stroke-linecap="round" opacity="0.9"/>`;
+
+    // Particle dots along the arc (3 dots per segment)
+    for (let d = 0; d < 3; d++) {
+      const t = 0.2 + d * 0.3;
+      const pa = a1 + arcSpan * t;
+      const pr = R + (d % 2 === 0 ? 22 : -18);
+      const px = cx + pr * Math.cos(pa), py = cy + pr * Math.sin(pa);
+      svgInner += `<circle cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" r="${1.5 + d * 0.3}" fill="${hexToRgba(col, 0.25)}"/>`;
+    }
+
+    // Arrowhead (sz=16, filled with next accent)
+    const sz = 16;
+    const aDelta = 0.12;
+    const tangentX = -Math.sin(a2), tangentY = Math.cos(a2);
+    const col2 = accents[(i + 1) % accents.length];
+    svgInner += `<polygon points="${x2.toFixed(1)},${y2.toFixed(1)} ${(x2 - tangentX * sz * 0.6 + Math.cos(a2) * sz).toFixed(1)},${(y2 - tangentY * sz * 0.6 + Math.sin(a2) * sz).toFixed(1)} ${(x2 + tangentX * sz * 0.6 + Math.cos(a2) * sz).toFixed(1)},${(y2 + tangentY * sz * 0.6 + Math.sin(a2) * sz).toFixed(1)}" fill="${col2}" opacity="0.9"/>`;
   }
 
-  // Center glow ring + icon
-  svgInner += `<circle cx="${cx}" cy="${cy}" r="32" fill="none" stroke="${p.accent}" stroke-width="2" opacity="0.2"/>`;
-  svgInner += `<circle cx="${cx}" cy="${cy}" r="20" fill="${hexToRgba(p.accent, 0.15)}"/>`;
-  svgInner += `<circle cx="${cx}" cy="${cy}" r="10" fill="${p.accent}"/>`;
+  // ── Center: 3 concentric circles + infinity + GROWTH label ──
+  svgInner += `<circle cx="${cx}" cy="${cy}" r="45" fill="${hexToRgba(p.accent, 0.04)}" stroke="${hexToRgba(p.accent, 0.12)}" stroke-width="2"/>`;
+  svgInner += `<circle cx="${cx}" cy="${cy}" r="34" fill="${hexToRgba(p.accent, 0.08)}" stroke="${hexToRgba(p.accent, 0.18)}" stroke-width="1.5"/>`;
+  svgInner += `<circle cx="${cx}" cy="${cy}" r="22" fill="${p.accent}" opacity="0.2" filter="url(#fwglo)"/>`;
 
-  // Labels with connector lines
+  // ── Labels: glass cards with connector lines ──
   let labelsHtml = '';
   for (let i = 0; i < n; i++) {
     const a = (i / n) * Math.PI * 2 - Math.PI / 2;
     const lx = cx + labelR * Math.cos(a);
     const ly = cy + labelR * Math.sin(a);
     const col = accents[i % accents.length];
-    // Connector line from arc to label
-    const innerX = cx + (R + 18) * Math.cos(a), innerY = cy + (R + 18) * Math.sin(a);
-    const outerX = cx + (labelR - 10) * Math.cos(a), outerY = cy + (labelR - 10) * Math.sin(a);
-    svgInner += `<line x1="${innerX.toFixed(1)}" y1="${innerY.toFixed(1)}" x2="${outerX.toFixed(1)}" y2="${outerY.toFixed(1)}" stroke="${hexToRgba(col, 0.3)}" stroke-width="1" stroke-dasharray="3,3"/>`;
+
+    // Dashed connector line from arc to label card
+    const innerX = cx + (R + 20) * Math.cos(a), innerY = cy + (R + 20) * Math.sin(a);
+    const outerX = cx + (labelR - 14) * Math.cos(a), outerY = cy + (labelR - 14) * Math.sin(a);
+    svgInner += `<line x1="${innerX.toFixed(1)}" y1="${innerY.toFixed(1)}" x2="${outerX.toFixed(1)}" y2="${outerY.toFixed(1)}" stroke="${hexToRgba(col, 0.3)}" stroke-width="1.5" stroke-dasharray="4,4"/>`;
+
     const align = lx < cx ? 'right' : 'left';
-    const boxW = 160;
+    const boxW = 170;
     const left = align === 'right' ? lx - boxW : lx;
-    labelsHtml += `<div style="position:absolute;left:${Math.round(left)}px;top:${Math.round(ly - 14)}px;width:${boxW}px;text-align:${align}">`;
-    labelsHtml += `<div style="font-size:13px;font-weight:700;color:${col};line-height:1.3">${escHtml(steps[i] || 'Step ' + (i + 1))}</div>`;
-    labelsHtml += `</div>`;
+    const cardBg = dark ? hexToRgba(p.surface, 0.25) : hexToRgba(p.surface, 0.92);
+    const glassBorder = dark ? 'border:1px solid rgba(255,255,255,0.12);' : `border:1px solid ${hexToRgba(col, 0.15)};`;
+    const blurCSS = dark ? 'backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);' : '';
+    labelsHtml += `<div style="position:absolute;left:${Math.round(left)}px;top:${Math.round(ly - 18)}px;width:${boxW}px;padding:8px 12px;background:${cardBg};${glassBorder}${blurCSS}border-left:3px solid ${col};border-radius:10px;box-shadow:${cardShadow(2, dark)};text-align:${align}">`;
+    labelsHtml += `<div style="display:flex;align-items:center;${align === 'right' ? 'flex-direction:row-reverse;' : ''}gap:6px">`;
+    labelsHtml += `<div style="width:8px;height:8px;border-radius:50%;background:linear-gradient(135deg,${col},${hexToRgba(col, 0.6)});flex-shrink:0"></div>`;
+    labelsHtml += `<span style="font-size:13px;font-weight:800;color:${col};letter-spacing:0.5px;line-height:1.3">${escHtml(steps[i] || 'Step ' + (i + 1))}</span>`;
+    labelsHtml += `</div></div>`;
   }
+
+  // Center HTML overlay: infinity + GROWTH
+  const centerHtml = `<div style="position:absolute;left:${cx - 35}px;top:${cy - 18}px;width:70px;text-align:center">` +
+    `<div style="font-size:22px;font-weight:bold;color:${p.accent};${dark ? textGlow(p.accent, 0.3) : ''}">\u221E</div>` +
+    `<div style="font-size:8px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:${p.accent};opacity:0.6;margin-top:-3px">GROWTH</div></div>`;
 
   return `${SCOPED_RESET}
 <div style="position:relative;width:${W}px;height:${H}px;background:${p.background};overflow:hidden">
   ${bgGradientOverlay(cW, H, p.accent, 0.05)}
-  <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;font-size:${titleFontSize(slide.title)}px;font-weight:bold;color:${p.text};line-height:1.2;${dark ? textGlow(p.accent, 0.15) : ''}">${escHtml(slide.title)}</div>
-  <div style="position:absolute;left:${PAD}px;top:${PAD + 56}px;width:50px;height:3px;background:${p.accent};border-radius:2px"></div>
+  <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;font-size:${titleFontSize(slide.title)}px;font-weight:800;color:${p.text};line-height:1.2;letter-spacing:1px;${dark ? textGlow(p.accent, 0.2) : ''}">${escHtml(slide.title)}</div>
+  <div style="position:absolute;left:${PAD}px;top:${PAD + 56}px;width:50px;height:4px;background:${p.accent};border-radius:2px"></div>
   <svg style="position:absolute;left:0;top:0;width:${cW}px;height:${H}px;pointer-events:none" viewBox="0 0 ${cW} ${H}">${svgInner}</svg>
   ${labelsHtml}
+  ${centerHtml}
 </div>`;
 }
 
 
 // ── REVENUE_MODEL ──────────────────────────────────────────────
-// Left: channel cards with progress bars, Right: SVG donut with gap segments + center total
+// Glass channel cards with gradient borders + thick donut with glow ring + center total
 
 function buildRevenueModel(slide: SlideInput, p: ColorPalette, hasImage = false, accentDiversity = true): string {
   const cW = hasImage ? CONTENT_W_IMG : W;
@@ -4315,7 +4356,7 @@ function buildRevenueModel(slide: SlideInput, p: ColorPalette, hasImage = false,
   let totalLabel = '';
   for (const line of lines) {
     const m = line.match(/^(.+?):\s*(\$[\d.,]+[MmKkBb]?)\s*\((\d+)%?\)/);
-    if (m) { channels.push({ name: m[1].trim(), amount: m[2], pct: parseInt(m[3], 10) }); totalLabel = totalLabel || ''; }
+    if (m) { channels.push({ name: m[1].trim(), amount: m[2], pct: parseInt(m[3], 10) }); }
     else {
       const totalMatch = line.match(/total.*?(\$[\d.,]+[MmKkBb]?)/i);
       if (totalMatch) totalLabel = totalMatch[1];
@@ -4327,66 +4368,87 @@ function buildRevenueModel(slide: SlideInput, p: ColorPalette, hasImage = false,
 
   const leftW = Math.round(cW * 0.52);
   const startY = PAD + 95;
-  const cardH = Math.min(64, Math.round((H - startY - PAD - 10) / channels.length) - 10);
+  const cardH = Math.min(72, Math.round((H - startY - PAD - 10) / channels.length) - 10);
   const cardW = leftW - PAD - 16;
 
+  // ── SVG defs: glow filter, dot mesh ──
+  let svgDefs = `<defs>`;
+  svgDefs += `<filter id="rmglo"><feGaussianBlur stdDeviation="6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>`;
+  svgDefs += `<pattern id="rmdot" width="20" height="20" patternUnits="userSpaceOnUse"><circle cx="10" cy="10" r="0.7" fill="${hexToRgba(p.text, 0.06)}"/></pattern>`;
+  svgDefs += `</defs>`;
+
+  let svgInner = svgDefs;
+  // Dot mesh over card area
+  svgInner += `<rect x="${PAD}" y="${startY - 10}" width="${leftW - PAD}" height="${H - startY - PAD + 10}" fill="url(#rmdot)" opacity="0.5"/>`;
+
+  // ── Channel cards: glass style, gradient border, icon circle, progress bar ──
   let cardsHtml = '';
   for (let i = 0; i < channels.length; i++) {
     const ch = channels[i];
     const col = accents[i % accents.length];
     const cy = startY + i * (cardH + 10);
-    const cardBg = dark ? hexToRgba(p.surface, 0.3) : p.surface;
-    cardsHtml += `<div style="position:absolute;left:${PAD}px;top:${cy}px;width:${cardW}px;height:${cardH}px;background:${cardBg};border-left:4px solid ${col};border-radius:10px;box-shadow:${cardShadow(1, dark)};padding:8px 14px">`;
-    cardsHtml += `<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">`;
-    cardsHtml += `<span style="font-size:13px;font-weight:700;color:${p.text}">${escHtml(ch.name)}</span>`;
-    cardsHtml += `<span style="font-size:14px;font-weight:bold;color:${col}">${escHtml(ch.amount)}</span>`;
+    const cardBg = dark ? hexToRgba(p.surface, 0.25) : p.surface;
+    const glassBorder = dark ? 'border:1px solid rgba(255,255,255,0.12);' : `border:1px solid ${hexToRgba(col, 0.1)};`;
+    const blurCSS = dark ? 'backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);' : '';
+
+    cardsHtml += `<div style="position:absolute;left:${PAD}px;top:${cy}px;width:${cardW}px;height:${cardH}px;background:${cardBg};border-left:4px solid ${col};${glassBorder}${blurCSS}border-radius:12px;box-shadow:${cardShadow(2, dark)};padding:8px 14px">`;
+    cardsHtml += `<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">`;
+    // Icon circle with gradient fill (30px)
+    cardsHtml += `<div style="width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,${col},${hexToRgba(col, 0.6)});display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;flex-shrink:0">${escHtml(ch.name.charAt(0).toUpperCase())}</div>`;
+    cardsHtml += `<span style="font-size:14px;font-weight:800;color:${p.text};letter-spacing:0.5px">${escHtml(ch.name)}</span>`;
+    cardsHtml += `<span style="margin-left:auto;font-size:15px;font-weight:bold;color:${col}">${escHtml(ch.amount)}</span>`;
     cardsHtml += `</div>`;
-    cardsHtml += `<div style="height:6px;background:${hexToRgba(p.border, 0.12)};border-radius:3px;overflow:hidden"><div style="width:${ch.pct}%;height:100%;background:linear-gradient(90deg,${col},${hexToRgba(col, 0.6)});border-radius:3px"></div></div>`;
-    cardsHtml += `<div style="font-size:10px;color:${p.text};opacity:0.5;margin-top:3px">${ch.pct}% of revenue</div>`;
+    // Progress bar (8px height)
+    cardsHtml += `<div style="height:8px;background:${hexToRgba(p.border, 0.12)};border-radius:4px;overflow:hidden"><div style="width:${ch.pct}%;height:100%;background:linear-gradient(90deg,${col},${hexToRgba(col, 0.6)});border-radius:4px"></div></div>`;
+    // Percentage label
+    cardsHtml += `<div style="font-size:11px;color:${p.text};opacity:0.5;margin-top:3px;font-weight:600">${ch.pct}% of revenue</div>`;
     cardsHtml += `</div>`;
   }
 
-  // Donut chart with gap segments
+  // ── Donut chart: thicker stroke (38px), glow ring, rounded caps ──
   const donutCx = Math.round(cW * 0.78);
   const donutCy = Math.round(H * 0.52);
-  const donutR = 95;
-  const sw = 30;
+  const donutR = 100;
+  const sw = 38;
   const circumference = 2 * Math.PI * donutR;
-  const gapPct = 1.5; // gap between segments in %
+  const gapPct = 1.5;
   let offset = 0;
-  let donutSvg = '';
-  // Subtle shadow ring behind donut
-  donutSvg += `<circle cx="${donutCx}" cy="${donutCy}" r="${donutR}" fill="none" stroke="${hexToRgba(p.border, 0.08)}" stroke-width="${sw + 4}"/>`;
+
+  // Glow ring behind donut (sw+6 at 0.08)
+  svgInner += `<circle cx="${donutCx}" cy="${donutCy}" r="${donutR}" fill="none" stroke="${hexToRgba(p.accent, 0.08)}" stroke-width="${sw + 6}" filter="url(#rmglo)"/>`;
+  // Shadow ring
+  svgInner += `<circle cx="${donutCx}" cy="${donutCy}" r="${donutR}" fill="none" stroke="${hexToRgba(p.border, 0.06)}" stroke-width="${sw + 4}"/>`;
+
   for (let i = 0; i < channels.length; i++) {
     const ch = channels[i];
     const col = accents[i % accents.length];
     const segPct = Math.max(ch.pct - gapPct, 0.5);
     const dash = (segPct / 100) * circumference;
     const gapDash = (gapPct / 100) * circumference;
-    donutSvg += `<circle cx="${donutCx}" cy="${donutCy}" r="${donutR}" fill="none" stroke="${col}" stroke-width="${sw}" stroke-dasharray="${dash} ${circumference - dash}" stroke-dashoffset="${-offset}" stroke-linecap="round" transform="rotate(-90 ${donutCx} ${donutCy})" opacity="0.85"/>`;
+    svgInner += `<circle cx="${donutCx}" cy="${donutCy}" r="${donutR}" fill="none" stroke="${col}" stroke-width="${sw}" stroke-dasharray="${dash} ${circumference - dash}" stroke-dashoffset="${-offset}" stroke-linecap="round" transform="rotate(-90 ${donutCx} ${donutCy})" opacity="0.88"/>`;
     offset += dash + gapDash;
   }
 
-  // Center text
-  const centerTotal = totalLabel || channels.reduce((s, c) => s, 'Revenue');
-  const centerHtml = `<div style="position:absolute;left:${donutCx - 50}px;top:${donutCy - 22}px;width:100px;text-align:center">` +
-    `<div style="font-size:${totalLabel ? 22 : 14}px;font-weight:bold;color:${p.text}">${escHtml(typeof centerTotal === 'string' ? centerTotal : 'Revenue')}</div>` +
-    `<div style="font-size:10px;color:${p.text};opacity:0.5;margin-top:2px">Total</div></div>`;
+  // Center text: larger (24px), bold total, "Total" subtitle
+  const centerTotal = totalLabel || 'Revenue';
+  const centerHtml = `<div style="position:absolute;left:${donutCx - 55}px;top:${donutCy - 26}px;width:110px;text-align:center">` +
+    `<div style="font-size:24px;font-weight:800;color:${p.text};${dark ? textGlow(p.accent, 0.15) : ''}">${escHtml(typeof centerTotal === 'string' ? centerTotal : 'Revenue')}</div>` +
+    `<div style="font-size:11px;font-weight:600;color:${p.text};opacity:0.5;margin-top:2px;letter-spacing:0.5px">Total</div></div>`;
 
   return `${SCOPED_RESET}
 <div style="position:relative;width:${W}px;height:${H}px;background:${p.background};overflow:hidden">
   ${bgGradientOverlay(cW, H, p.accent, 0.05)}
-  <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;font-size:${titleFontSize(slide.title)}px;font-weight:bold;color:${p.text};line-height:1.2">${escHtml(slide.title)}</div>
-  <div style="position:absolute;left:${PAD}px;top:${PAD + 56}px;width:50px;height:3px;background:${p.accent};border-radius:2px"></div>
+  <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;font-size:${titleFontSize(slide.title)}px;font-weight:800;color:${p.text};line-height:1.2;letter-spacing:1px;${dark ? textGlow(p.accent, 0.2) : ''}">${escHtml(slide.title)}</div>
+  <div style="position:absolute;left:${PAD}px;top:${PAD + 56}px;width:50px;height:4px;background:${p.accent};border-radius:2px"></div>
+  <svg style="position:absolute;left:0;top:0;width:${cW}px;height:${H}px;pointer-events:none" viewBox="0 0 ${cW} ${H}">${svgInner}</svg>
   ${cardsHtml}
-  <svg style="position:absolute;left:0;top:0;width:${cW}px;height:${H}px;pointer-events:none" viewBox="0 0 ${cW} ${H}">${donutSvg}</svg>
   ${centerHtml}
 </div>`;
 }
 
 
 // ── CUSTOMER_JOURNEY ──────────────────────────────────────────────
-// Horizontal funnel with shrinking bars, conversion drops, and stage detail cards
+// Bold horizontal funnel with taller bars, glow shadows, glass conversion badges, glass detail cards
 
 function buildCustomerJourney(slide: SlideInput, p: ColorPalette, hasImage = false, accentDiversity = true): string {
   const cW = hasImage ? CONTENT_W_IMG : W;
@@ -4427,17 +4489,24 @@ function buildCustomerJourney(slide: SlideInput, p: ColorPalette, hasImage = fal
   const barAreaW = cW - PAD * 2 - 20;
   const barMaxW = Math.round(barAreaW * 0.92);
   const barMinW = Math.round(barAreaW * 0.12);
-  const barH = 42;
+  const barH = 54;
   const barGap = 10;
   const totalBarHeight = n * barH + (n - 1) * barGap;
-  const detailCardTop = barAreaTop + totalBarHeight + 24;
+  const detailCardTop = barAreaTop + totalBarHeight + 28;
 
+  // ── SVG defs: gradients, glow filter, blur, dot mesh ──
   let svgInner = '<defs>';
+  svgInner += `<filter id="cjglo"><feGaussianBlur stdDeviation="6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>`;
+  svgInner += `<filter id="cjblur"><feGaussianBlur stdDeviation="4"/></filter>`;
+  svgInner += `<pattern id="cjdot" width="20" height="20" patternUnits="userSpaceOnUse"><circle cx="10" cy="10" r="0.7" fill="${hexToRgba(p.text, 0.06)}"/></pattern>`;
   for (let i = 0; i < n; i++) {
     const col = accents[i % accents.length];
-    svgInner += `<linearGradient id="cjbar${i}" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="${col}"/><stop offset="100%" stop-color="${hexToRgba(col, 0.5)}"/></linearGradient>`;
+    svgInner += `<linearGradient id="cjbar${i}" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="${col}"/><stop offset="100%" stop-color="${hexToRgba(col, 0.4)}"/></linearGradient>`;
   }
   svgInner += '</defs>';
+
+  // Dot mesh background
+  svgInner += `<rect x="${PAD}" y="${barAreaTop - 10}" width="${barAreaW + 20}" height="${H - barAreaTop - PAD + 10}" fill="url(#cjdot)" opacity="0.5"/>`;
 
   let labelsHtml = '';
   for (let i = 0; i < n; i++) {
@@ -4445,61 +4514,62 @@ function buildCustomerJourney(slide: SlideInput, p: ColorPalette, hasImage = fal
     const col = accents[i % accents.length];
     const barW = Math.round(barMinW + (barMaxW - barMinW) * (pcts[i] / maxPct));
     const by = barAreaTop + i * (barH + barGap);
-    const bx = barAreaLeft + Math.round((barAreaW - barW) / 2); // centered
+    const bx = barAreaLeft + Math.round((barAreaW - barW) / 2);
 
-    // Bar with gradient
-    svgInner += `<rect x="${bx}" y="${by}" width="${barW}" height="${barH}" rx="8" fill="url(#cjbar${i})" opacity="0.85"/>`;
-    // Glow shadow under bar
-    svgInner += `<rect x="${bx + 4}" y="${by + barH - 2}" width="${barW - 8}" height="6" rx="3" fill="${col}" opacity="0.15" filter="url(#blur)"/>`;
+    // Glow shadow under bar (blur filter, 0.15 opacity)
+    svgInner += `<rect x="${bx + 6}" y="${by + barH - 4}" width="${barW - 12}" height="10" rx="5" fill="${col}" opacity="0.15" filter="url(#cjblur)"/>`;
+    // Bar with gradient (taller: 54px)
+    svgInner += `<rect x="${bx}" y="${by}" width="${barW}" height="${barH}" rx="10" fill="url(#cjbar${i})" opacity="0.88"/>`;
 
-    // Stage name + metric inside bar
+    // Text inside bars: larger (15px name, 13px metric)
     if (barW > 120) {
-      svgInner += `<text x="${bx + 16}" y="${by + barH / 2 + 5}" fill="#fff" font-size="13" font-weight="bold">${escHtml(st.name)}</text>`;
-      svgInner += `<text x="${bx + barW - 16}" y="${by + barH / 2 + 5}" text-anchor="end" fill="rgba(255,255,255,0.85)" font-size="12">${escHtml(st.metric)}</text>`;
+      svgInner += `<text x="${bx + 18}" y="${by + barH / 2 + 5}" fill="#fff" font-size="15" font-weight="bold">${escHtml(st.name)}</text>`;
+      svgInner += `<text x="${bx + barW - 18}" y="${by + barH / 2 + 5}" text-anchor="end" fill="rgba(255,255,255,0.85)" font-size="13">${escHtml(st.metric)}</text>`;
     } else {
-      svgInner += `<text x="${bx + barW / 2}" y="${by + barH / 2 + 5}" text-anchor="middle" fill="#fff" font-size="12" font-weight="bold">${escHtml(st.name.slice(0, 10))}</text>`;
+      svgInner += `<text x="${bx + barW / 2}" y="${by + barH / 2 + 5}" text-anchor="middle" fill="#fff" font-size="13" font-weight="bold">${escHtml(st.name.slice(0, 12))}</text>`;
     }
 
-    // Conversion % badge on the right
-    const badgeX = bx + barW + 12;
+    // Glass conversion badge on right with glow border
+    const badgeX = bx + barW + 14;
     const badgeY = by + barH / 2;
-    labelsHtml += `<div style="position:absolute;left:${badgeX}px;top:${badgeY - 12}px;padding:3px 10px;background:${hexToRgba(col, dark ? 0.15 : 0.08)};border:1px solid ${hexToRgba(col, 0.25)};border-radius:12px;font-size:12px;font-weight:700;color:${col}">${escHtml(st.conversion || st.metric)}</div>`;
+    const badgeBg = dark ? hexToRgba(p.surface, 0.25) : hexToRgba(p.surface, 0.92);
+    const glassB = dark ? 'backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.12);' : `border:1px solid ${hexToRgba(col, 0.2)};`;
+    labelsHtml += `<div style="position:absolute;left:${badgeX}px;top:${badgeY - 14}px;padding:4px 12px;background:${badgeBg};${glassB}border-radius:14px;font-size:13px;font-weight:800;color:${col};box-shadow:0 0 10px ${hexToRgba(col, 0.3)},${cardShadow(2, dark)}">${escHtml(st.conversion || st.metric)}</div>`;
 
-    // Drop-off arrow between bars
+    // Drop-off arrows: larger text (12px), bolder color
     if (i < n - 1) {
       const dropPct = pcts[i] > 0 ? Math.round((1 - pcts[i + 1] / pcts[i]) * 100) : 0;
       if (dropPct > 0) {
-        const arrowX = barAreaLeft - 4;
+        const arrowX = barAreaLeft - 6;
         const arrowY = by + barH + barGap / 2;
-        labelsHtml += `<div style="position:absolute;left:${arrowX}px;top:${arrowY - 10}px;font-size:10px;color:${p.error || '#ef4444'};font-weight:600;opacity:0.7">\u2193 -${dropPct}%</div>`;
+        labelsHtml += `<div style="position:absolute;left:${arrowX}px;top:${arrowY - 10}px;font-size:12px;color:${p.error || '#ef4444'};font-weight:800;opacity:0.8">\u2193 -${dropPct}%</div>`;
       }
     }
   }
 
-  // Add a blur filter for bar shadows
-  svgInner = svgInner.replace('<defs>', '<defs><filter id="blur"><feGaussianBlur stdDeviation="3"/></filter>');
-
-  // Detail cards below
+  // ── Glass detail cards below ──
   const cardW = Math.round((barAreaW - (n - 1) * 12) / n);
-  const cardH = Math.min(100, H - detailCardTop - PAD - 10);
+  const cardH = Math.min(105, H - detailCardTop - PAD - 10);
   let cardsHtml = '';
   for (let i = 0; i < n; i++) {
     const st = stages[i];
     const col = accents[i % accents.length];
-    const cx = barAreaLeft + i * (cardW + 12);
-    const cardBg = dark ? hexToRgba(p.surface, 0.25) : p.surface;
-    cardsHtml += `<div style="position:absolute;left:${cx}px;top:${detailCardTop}px;width:${cardW}px;height:${cardH}px;background:${cardBg};border-radius:12px;border-top:3px solid ${col};box-shadow:${cardShadow(1, dark)};padding:10px 12px;text-align:center">`;
-    cardsHtml += `<div style="width:28px;height:28px;border-radius:50%;background:${hexToRgba(col, 0.15)};border:2px solid ${col};display:inline-flex;align-items:center;justify-content:center;font-size:14px;font-weight:bold;color:${col};margin-bottom:6px">${i + 1}</div>`;
-    cardsHtml += `<div style="font-size:12px;font-weight:700;color:${col};margin-bottom:4px">${escHtml(st.name)}</div>`;
-    if (st.metric) cardsHtml += `<div style="font-size:16px;font-weight:bold;color:${p.text}">${escHtml(st.metric)}</div>`;
+    const cardX = barAreaLeft + i * (cardW + 12);
+    const cardBg = dark ? hexToRgba(p.surface, 0.2) : p.surface;
+    const glassCard = dark ? 'backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.12);' : `border:1px solid ${hexToRgba(col, 0.1)};`;
+    cardsHtml += `<div style="position:absolute;left:${cardX}px;top:${detailCardTop}px;width:${cardW}px;height:${cardH}px;background:${cardBg};border-radius:12px;border-top:4px solid ${col};${glassCard}box-shadow:${cardShadow(2, dark)};padding:10px 12px;text-align:center">`;
+    // Larger numbered circle (36px) with gradient fill
+    cardsHtml += `<div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,${col},${hexToRgba(col, 0.6)});display:inline-flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;color:#fff;margin-bottom:6px">${i + 1}</div>`;
+    cardsHtml += `<div style="font-size:13px;font-weight:800;color:${col};margin-bottom:4px;letter-spacing:0.5px">${escHtml(st.name)}</div>`;
+    if (st.metric) cardsHtml += `<div style="font-size:17px;font-weight:bold;color:${p.text}">${escHtml(st.metric)}</div>`;
     cardsHtml += `</div>`;
   }
 
   return `${SCOPED_RESET}
 <div style="position:relative;width:${W}px;height:${H}px;background:${p.background};overflow:hidden">
   ${bgGradientOverlay(cW, H, p.accent, 0.05, '35%')}
-  <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;font-size:${titleFontSize(slide.title)}px;font-weight:bold;color:${p.text};line-height:1.2">${escHtml(slide.title)}</div>
-  <div style="position:absolute;left:${PAD}px;top:${PAD + 56}px;width:50px;height:3px;background:${p.accent};border-radius:2px"></div>
+  <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;font-size:${titleFontSize(slide.title)}px;font-weight:800;color:${p.text};line-height:1.2;letter-spacing:1px;${dark ? textGlow(p.accent, 0.2) : ''}">${escHtml(slide.title)}</div>
+  <div style="position:absolute;left:${PAD}px;top:${PAD + 56}px;width:50px;height:4px;background:${p.accent};border-radius:2px"></div>
   <svg style="position:absolute;left:0;top:0;width:${cW}px;height:${H}px;pointer-events:none" viewBox="0 0 ${cW} ${H}">${svgInner}</svg>
   ${labelsHtml}
   ${cardsHtml}
@@ -4508,7 +4578,7 @@ function buildCustomerJourney(slide: SlideInput, p: ColorPalette, hasImage = fal
 
 
 // ── TECH_STACK ──────────────────────────────────────────────
-// Layered architecture diagram with 3D-depth bands, prominent labels, and tech badges
+// Bold layered architecture with diamond badges, hex-inspired pills, glass shimmer, dot mesh
 
 function buildTechStack(slide: SlideInput, p: ColorPalette, hasImage = false, accentDiversity = true): string {
   const cW = hasImage ? CONTENT_W_IMG : W;
@@ -4540,14 +4610,22 @@ function buildTechStack(slide: SlideInput, p: ColorPalette, hasImage = false, ac
   const bandGap = 12;
   const bandH = Math.min(88, Math.round((availH - (n - 1) * bandGap) / n));
   const bandW = cW - PAD * 2;
-  const labelColW = 150;
+  const labelColW = 155;
 
+  // ── SVG defs: gradients, glow, dot mesh, glass shimmer ──
   let svgInner = '<defs>';
+  svgInner += `<filter id="tsglo"><feGaussianBlur stdDeviation="6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>`;
+  svgInner += `<pattern id="tsdot" width="20" height="20" patternUnits="userSpaceOnUse"><circle cx="10" cy="10" r="0.7" fill="${hexToRgba(p.text, 0.06)}"/></pattern>`;
   for (let i = 0; i < n; i++) {
     const col = accents[i % accents.length];
     svgInner += `<linearGradient id="tsg${i}" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="${hexToRgba(col, dark ? 0.2 : 0.12)}"/><stop offset="100%" stop-color="${hexToRgba(col, 0.02)}"/></linearGradient>`;
+    // Glass shimmer gradient per band (vertical: white 6% to transparent)
+    svgInner += `<linearGradient id="tsshim${i}" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="rgba(255,255,255,0.06)"/><stop offset="100%" stop-color="rgba(255,255,255,0)"/></linearGradient>`;
   }
   svgInner += '</defs>';
+
+  // Dot mesh background
+  svgInner += `<rect x="${PAD}" y="${startY - 10}" width="${bandW}" height="${availH + 20}" fill="url(#tsdot)" opacity="0.5"/>`;
 
   let bandsHtml = '';
   // Render bottom-to-top: layers[0] = bottom = infra
@@ -4556,74 +4634,89 @@ function buildTechStack(slide: SlideInput, p: ColorPalette, hasImage = false, ac
     const col = accents[(n - 1 - i) % accents.length];
     const by = startY + i * (bandH + bandGap);
     const cardBg = dark ? hexToRgba(p.surface, 0.2) : p.surface;
+    const glassBorder = dark ? `border:1px solid rgba(255,255,255,0.12);` : `border:1px solid ${hexToRgba(p.border, 0.1)};`;
 
-    // Band background
-    svgInner += `<rect x="${PAD}" y="${by}" width="${bandW}" height="${bandH}" rx="14" fill="${cardBg}" stroke="${hexToRgba(p.border, 0.1)}" stroke-width="1"/>`;
-    // Gradient overlay
+    // Band background (glass card style)
+    svgInner += `<rect x="${PAD}" y="${by}" width="${bandW}" height="${bandH}" rx="14" fill="${cardBg}" stroke="${hexToRgba(p.border, 0.08)}" stroke-width="1"/>`;
+    // Horizontal gradient overlay
     svgInner += `<rect x="${PAD}" y="${by}" width="${bandW}" height="${bandH}" rx="14" fill="url(#tsg${n - 1 - i})"/>`;
-    // Left accent stripe
-    svgInner += `<rect x="${PAD}" y="${by}" width="6" height="${bandH}" rx="3" fill="${col}" opacity="0.9"/>`;
+    // Glass shimmer overlay
+    svgInner += `<rect x="${PAD}" y="${by}" width="${bandW}" height="${bandH}" rx="14" fill="url(#tsshim${n - 1 - i})"/>`;
+    // Left accent bar (thicker: 7px)
+    svgInner += `<rect x="${PAD}" y="${by}" width="7" height="${bandH}" rx="3.5" fill="${col}" opacity="0.9"/>`;
     // Shadow at bottom of band
-    svgInner += `<rect x="${PAD + 10}" y="${by + bandH}" width="${bandW - 20}" height="4" rx="2" fill="${hexToRgba(col, 0.08)}"/>`;
+    svgInner += `<rect x="${PAD + 10}" y="${by + bandH}" width="${bandW - 20}" height="5" rx="2.5" fill="${hexToRgba(col, 0.1)}"/>`;
 
-    // Layer label area with icon circle
-    const iconCx = PAD + 32;
+    // ── Diamond-shaped layer number badge (SVG polygon) ──
+    const iconCx = PAD + 34;
     const iconCy = by + bandH / 2;
-    bandsHtml += `<div style="position:absolute;left:${iconCx - 16}px;top:${iconCy - 16}px;width:32px;height:32px;border-radius:50%;background:${hexToRgba(col, 0.15)};border:2px solid ${col};display:flex;align-items:center;justify-content:center">`;
-    bandsHtml += `<div style="font-size:14px;font-weight:bold;color:${col}">${n - i}</div>`;
+    const ds = 18; // diamond half-size
+    svgInner += `<polygon points="${iconCx},${iconCy - ds} ${iconCx + ds},${iconCy} ${iconCx},${iconCy + ds} ${iconCx - ds},${iconCy}" fill="linear-gradient(135deg,${col},${hexToRgba(col, 0.6)})" opacity="0.15"/>`;
+    svgInner += `<polygon points="${iconCx},${iconCy - ds} ${iconCx + ds},${iconCy} ${iconCx},${iconCy + ds} ${iconCx - ds},${iconCy}" fill="none" stroke="${col}" stroke-width="2"/>`;
+    svgInner += `<text x="${iconCx}" y="${iconCy + 5}" text-anchor="middle" fill="${col}" font-size="15" font-weight="800">${n - i}</text>`;
+
+    // Layer name (bolder)
+    bandsHtml += `<div style="position:absolute;left:${PAD + 58}px;top:${iconCy - 12}px;width:${labelColW - 40}px">`;
+    bandsHtml += `<div style="font-size:14px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:${col}">${escHtml(layer.name)}</div>`;
     bandsHtml += `</div>`;
 
-    // Layer name
-    bandsHtml += `<div style="position:absolute;left:${PAD + 56}px;top:${iconCy - 10}px;width:${labelColW - 40}px">`;
-    bandsHtml += `<div style="font-size:14px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;color:${col}">${escHtml(layer.name)}</div>`;
-    bandsHtml += `</div>`;
-
-    // Component badges — each with an initial circle + name
-    const badgeLeft = PAD + labelColW + 16;
+    // ── Hexagonal-inspired pill component badges with gradient initial circles (32px) ──
+    const badgeLeft = PAD + labelColW + 20;
     let bx = badgeLeft;
-    const badgeY = by + Math.round((bandH - 36) / 2);
+    const badgeY = by + Math.round((bandH - 40) / 2);
     const maxBadgeW = PAD + bandW - 16;
     for (const comp of layer.components.slice(0, 5)) {
-      const textW = comp.length * 7.5 + 46;
-      const bw = Math.min(140, textW);
+      const textW = comp.length * 7.5 + 52;
+      const bw = Math.min(148, textW);
       if (bx + bw > maxBadgeW) break;
-      bandsHtml += `<div style="position:absolute;left:${bx}px;top:${badgeY}px;height:36px;padding:0 12px 0 6px;background:${dark ? hexToRgba(p.surface, 0.4) : '#fff'};border:1px solid ${hexToRgba(col, 0.2)};border-radius:18px;display:flex;align-items:center;box-shadow:${cardShadow(1, dark)}">`;
-      // Initial circle
-      bandsHtml += `<div style="width:24px;height:24px;border-radius:50%;background:${hexToRgba(col, 0.15)};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:bold;color:${col};margin-right:6px">${escHtml(comp.charAt(0).toUpperCase())}</div>`;
-      bandsHtml += `<span style="font-size:12px;font-weight:600;color:${dark ? '#fff' : p.text};white-space:nowrap">${escHtml(comp)}</span>`;
+      const pillBg = dark ? hexToRgba(p.surface, 0.35) : '#fff';
+      const pillBorder = dark ? 'border:1px solid rgba(255,255,255,0.12);' : `border:1px solid ${hexToRgba(col, 0.2)};`;
+      const blurCSS = dark ? 'backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);' : '';
+      bandsHtml += `<div style="position:absolute;left:${bx}px;top:${badgeY}px;height:40px;padding:0 14px 0 6px;background:${pillBg};${pillBorder}${blurCSS}border-radius:20px;display:flex;align-items:center;box-shadow:${cardShadow(2, dark)}">`;
+      // Gradient initial circle (32px)
+      bandsHtml += `<div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,${col},${hexToRgba(col, 0.6)});display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#fff;margin-right:8px">${escHtml(comp.charAt(0).toUpperCase())}</div>`;
+      bandsHtml += `<span style="font-size:12px;font-weight:700;color:${dark ? '#fff' : p.text};white-space:nowrap;letter-spacing:0.3px">${escHtml(comp)}</span>`;
       bandsHtml += `</div>`;
       bx += bw + 10;
     }
 
-    // SVG vertical connector between layers
+    // ── Vertical flow connector dots between layers ──
     if (i < n - 1) {
-      const connX1 = PAD + bandW * 0.35;
-      const connX2 = PAD + bandW * 0.65;
+      const connMid = PAD + bandW * 0.5;
       const connY1 = by + bandH + 2;
       const connY2 = connY1 + bandGap - 4;
       const nextCol = accents[(n - 2 - i) % accents.length];
-      // Multiple connector lines for visual richness
-      svgInner += `<line x1="${connX1}" y1="${connY1}" x2="${connX1}" y2="${connY2}" stroke="${hexToRgba(p.border, 0.15)}" stroke-width="2" stroke-dasharray="3,3"/>`;
-      svgInner += `<line x1="${PAD + bandW * 0.5}" y1="${connY1}" x2="${PAD + bandW * 0.5}" y2="${connY2}" stroke="${hexToRgba(nextCol, 0.2)}" stroke-width="2"/>`;
-      svgInner += `<line x1="${connX2}" y1="${connY1}" x2="${connX2}" y2="${connY2}" stroke="${hexToRgba(p.border, 0.15)}" stroke-width="2" stroke-dasharray="3,3"/>`;
-      // Down arrow
-      const mid = PAD + bandW * 0.5;
-      svgInner += `<polygon points="${mid - 5},${connY2 - 2} ${mid + 5},${connY2 - 2} ${mid},${connY2 + 3}" fill="${hexToRgba(nextCol, 0.25)}"/>`;
+      // Three dots vertically
+      const dotSpacing = (connY2 - connY1) / 4;
+      for (let d = 1; d <= 3; d++) {
+        svgInner += `<circle cx="${connMid}" cy="${connY1 + dotSpacing * d}" r="2.5" fill="${hexToRgba(nextCol, 0.35)}"/>`;
+      }
+      // Side connector lines
+      svgInner += `<line x1="${PAD + bandW * 0.35}" y1="${connY1}" x2="${PAD + bandW * 0.35}" y2="${connY2}" stroke="${hexToRgba(p.border, 0.12)}" stroke-width="1.5" stroke-dasharray="3,3"/>`;
+      svgInner += `<line x1="${PAD + bandW * 0.65}" y1="${connY1}" x2="${PAD + bandW * 0.65}" y2="${connY2}" stroke="${hexToRgba(p.border, 0.12)}" stroke-width="1.5" stroke-dasharray="3,3"/>`;
     }
   }
 
-  // Side labels
-  const sideX = cW - PAD - 5;
-  const topLabelY = startY + 2;
-  const botLabelY = startY + n * (bandH + bandGap) - bandGap - 14;
-  bandsHtml += `<div style="position:absolute;left:${sideX - 70}px;top:${topLabelY}px;width:70px;text-align:right;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:${p.text};opacity:0.35">\u2191 Users</div>`;
-  bandsHtml += `<div style="position:absolute;left:${sideX - 70}px;top:${botLabelY}px;width:70px;text-align:right;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:${p.text};opacity:0.35">\u2193 Infra</div>`;
+  // ── "ARCHITECTURE" rotated text annotation on right edge ──
+  const archX = cW - PAD + 8;
+  const archY = startY + Math.round(n * (bandH + bandGap) / 2);
+  svgInner += `<text x="${archX}" y="${archY}" text-anchor="middle" fill="${hexToRgba(p.text, 0.08)}" font-size="12" font-weight="800" letter-spacing="3" transform="rotate(-90 ${archX} ${archY})">ARCHITECTURE</text>`;
+
+  // ── Vertical arrow with labels (Users up, Infra down) on left edge ──
+  const arrowX = PAD - 16;
+  const arrowTop = startY + 10;
+  const arrowBot = startY + n * (bandH + bandGap) - bandGap - 10;
+  svgInner += `<line x1="${arrowX}" y1="${arrowTop}" x2="${arrowX}" y2="${arrowBot}" stroke="${hexToRgba(p.text, 0.12)}" stroke-width="2"/>`;
+  svgInner += `<polygon points="${arrowX - 4},${arrowTop + 6} ${arrowX + 4},${arrowTop + 6} ${arrowX},${arrowTop}" fill="${hexToRgba(p.text, 0.15)}"/>`;
+  svgInner += `<polygon points="${arrowX - 4},${arrowBot - 6} ${arrowX + 4},${arrowBot - 6} ${arrowX},${arrowBot}" fill="${hexToRgba(p.text, 0.15)}"/>`;
+  bandsHtml += `<div style="position:absolute;left:${arrowX - 20}px;top:${arrowTop - 16}px;width:40px;text-align:center;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:${p.text};opacity:0.35">\u2191 Users</div>`;
+  bandsHtml += `<div style="position:absolute;left:${arrowX - 20}px;top:${arrowBot + 6}px;width:40px;text-align:center;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:${p.text};opacity:0.35">\u2193 Infra</div>`;
 
   return `${SCOPED_RESET}
 <div style="position:relative;width:${W}px;height:${H}px;background:${p.background};overflow:hidden">
   ${bgGradientOverlay(cW, H, p.accent, 0.05, '50%')}
-  <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;font-size:${titleFontSize(slide.title)}px;font-weight:bold;color:${p.text};line-height:1.2">${escHtml(slide.title)}</div>
-  <div style="position:absolute;left:${PAD}px;top:${PAD + 56}px;width:50px;height:3px;background:${p.accent};border-radius:2px"></div>
+  <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;font-size:${titleFontSize(slide.title)}px;font-weight:800;color:${p.text};line-height:1.2;letter-spacing:1px;${dark ? textGlow(p.accent, 0.2) : ''}">${escHtml(slide.title)}</div>
+  <div style="position:absolute;left:${PAD}px;top:${PAD + 56}px;width:50px;height:4px;background:${p.accent};border-radius:2px"></div>
   <svg style="position:absolute;left:0;top:0;width:${cW}px;height:${H}px;pointer-events:none" viewBox="0 0 ${cW} ${H}">${svgInner}</svg>
   ${bandsHtml}
 </div>`;
@@ -4631,7 +4724,7 @@ function buildTechStack(slide: SlideInput, p: ColorPalette, hasImage = false, ac
 
 
 // ── GROWTH_LOOPS ──────────────────────────────────────────────
-// Large circular node cards with thick gradient arcs, prominent arrows, and center metric
+// Orbital ring system with glow arcs, satellite nodes, glass label cards, particle trails
 
 function buildGrowthLoops(slide: SlideInput, p: ColorPalette, hasImage = false, accentDiversity = true): string {
   const cW = hasImage ? CONTENT_W_IMG : W;
@@ -4645,88 +4738,120 @@ function buildGrowthLoops(slide: SlideInput, p: ColorPalette, hasImage = false, 
   const cy = Math.round(H * 0.52);
   const R = Math.min(Math.round(cW * 0.22), 195);
 
-  // SVG defs: gradients for arcs + glow filters
+  // ── SVG defs: gradients, glow filters, dot mesh ──
   let svgDefs = '<defs>';
+  svgDefs += `<filter id="glglo"><feGaussianBlur stdDeviation="6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>`;
+  svgDefs += `<filter id="glorng"><feGaussianBlur stdDeviation="8"/></filter>`;
+  svgDefs += `<pattern id="gldot" width="20" height="20" patternUnits="userSpaceOnUse"><circle cx="10" cy="10" r="0.7" fill="${hexToRgba(p.text, 0.06)}"/></pattern>`;
   for (let i = 0; i < n; i++) {
     const col = accents[i % accents.length];
     const col2 = accents[(i + 1) % accents.length];
     svgDefs += `<linearGradient id="glg${i}" gradientUnits="userSpaceOnUse" x1="${(cx + R * Math.cos((i / n) * Math.PI * 2 - Math.PI / 2)).toFixed(0)}" y1="${(cy + R * Math.sin((i / n) * Math.PI * 2 - Math.PI / 2)).toFixed(0)}" x2="${(cx + R * Math.cos(((i + 1) / n) * Math.PI * 2 - Math.PI / 2)).toFixed(0)}" y2="${(cy + R * Math.sin(((i + 1) / n) * Math.PI * 2 - Math.PI / 2)).toFixed(0)}"><stop offset="0%" stop-color="${col}"/><stop offset="100%" stop-color="${col2}"/></linearGradient>`;
+    // Radial gradient for node fill
+    svgDefs += `<radialGradient id="glnf${i}" cx="40%" cy="40%"><stop offset="0%" stop-color="${col}"/><stop offset="100%" stop-color="${hexToRgba(col, 0.7)}"/></radialGradient>`;
   }
-  svgDefs += '<filter id="glglow"><feGaussianBlur stdDeviation="4" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>';
   svgDefs += '</defs>';
 
   let svgInner = svgDefs;
 
-  // Outer ambient ring
-  svgInner += `<circle cx="${cx}" cy="${cy}" r="${R + 8}" fill="none" stroke="${hexToRgba(p.accent, 0.06)}" stroke-width="20"/>`;
+  // Dot mesh background
+  svgInner += `<rect x="${PAD}" y="${PAD}" width="${cW - PAD * 2}" height="${H - PAD * 2}" fill="url(#gldot)" opacity="0.5"/>`;
 
-  // Thick arc paths between nodes
+  // ── 4 concentric orbital rings ──
+  svgInner += `<circle cx="${cx}" cy="${cy}" r="${R + 40}" fill="none" stroke="${hexToRgba(p.accent, 0.04)}" stroke-width="1" stroke-dasharray="6,10"/>`;
+  svgInner += `<circle cx="${cx}" cy="${cy}" r="${R + 25}" fill="none" stroke="${hexToRgba(p.accent, 0.06)}" stroke-width="1" stroke-dasharray="4,8"/>`;
+  svgInner += `<circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="${hexToRgba(p.accent, 0.03)}" stroke-width="1" stroke-dasharray="2,6"/>`;
+  svgInner += `<circle cx="${cx}" cy="${cy}" r="${R - 25}" fill="none" stroke="${hexToRgba(p.accent, 0.05)}" stroke-width="1" stroke-dasharray="3,6"/>`;
+
+  // ── Outer glow ring: thick blurred ring ──
+  svgInner += `<circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="${hexToRgba(p.accent, 0.08)}" stroke-width="18" filter="url(#glorng)"/>`;
+
+  // ── Arc segments: 6px main + 16px glow backing, with gap ──
+  const arcGap = 0.10;
+  const arcSpan = (2 * Math.PI / n) - arcGap;
   for (let i = 0; i < n; i++) {
-    const a1 = (i / n) * Math.PI * 2 - Math.PI / 2;
-    const a2 = ((i + 1) / n) * Math.PI * 2 - Math.PI / 2;
-    // Offset arc slightly inward to create visual depth
-    const arcR = R;
-    const x1 = cx + arcR * Math.cos(a1), y1 = cy + arcR * Math.sin(a1);
-    const x2 = cx + arcR * Math.cos(a2), y2 = cy + arcR * Math.sin(a2);
-    // Bezier control point pulled inward
-    const cpFactor = 0.5;
-    const midA = (a1 + a2) / 2;
-    const cpx = cx + arcR * cpFactor * Math.cos(midA);
-    const cpy = cy + arcR * cpFactor * Math.sin(midA);
+    const a1 = (i / n) * Math.PI * 2 - Math.PI / 2 + arcGap / 2;
+    const a2 = a1 + arcSpan;
+    const x1 = cx + R * Math.cos(a1), y1 = cy + R * Math.sin(a1);
+    const x2 = cx + R * Math.cos(a2), y2 = cy + R * Math.sin(a2);
+    const large = arcSpan > Math.PI ? 1 : 0;
     const col = accents[i % accents.length];
 
-    // Thick background arc for depth
-    svgInner += `<path d="M${x1.toFixed(1)},${y1.toFixed(1)} Q${cpx.toFixed(1)},${cpy.toFixed(1)} ${x2.toFixed(1)},${y2.toFixed(1)}" fill="none" stroke="${hexToRgba(col, 0.08)}" stroke-width="12"/>`;
-    // Main arc
-    svgInner += `<path d="M${x1.toFixed(1)},${y1.toFixed(1)} Q${cpx.toFixed(1)},${cpy.toFixed(1)} ${x2.toFixed(1)},${y2.toFixed(1)}" fill="none" stroke="url(#glg${i})" stroke-width="5" stroke-linecap="round" opacity="0.8"/>`;
+    // 16px glow backing
+    svgInner += `<path d="M${x1.toFixed(1)},${y1.toFixed(1)} A${R},${R} 0 ${large},1 ${x2.toFixed(1)},${y2.toFixed(1)}" fill="none" stroke="${hexToRgba(col, 0.1)}" stroke-width="16" stroke-linecap="round"/>`;
+    // 6px main arc
+    svgInner += `<path d="M${x1.toFixed(1)},${y1.toFixed(1)} A${R},${R} 0 ${large},1 ${x2.toFixed(1)},${y2.toFixed(1)}" fill="none" stroke="url(#glg${i})" stroke-width="6" stroke-linecap="round" opacity="0.85"/>`;
 
-    // Large arrowhead at destination
-    const sz = 12;
-    const dx = x2 - cpx, dy = y2 - cpy;
+    // Particle trail dots (2-3 along each arc)
+    for (let d = 0; d < 3; d++) {
+      const t = 0.15 + d * 0.3;
+      const pa = a1 + arcSpan * t;
+      const pr = R + (d % 2 === 0 ? 20 : -16);
+      const px = cx + pr * Math.cos(pa), py = cy + pr * Math.sin(pa);
+      svgInner += `<circle cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" r="${1.2 + d * 0.4}" fill="${hexToRgba(col, 0.22)}"/>`;
+    }
+
+    // Arrowhead at end
+    const sz = 14;
+    const dx = x2 - (cx + R * Math.cos(a2 - 0.1)), dy = y2 - (cy + R * Math.sin(a2 - 0.1));
     const dl = Math.sqrt(dx * dx + dy * dy) || 1;
     const ux = dx / dl, uy = dy / dl;
     const col2 = accents[(i + 1) % accents.length];
     svgInner += `<polygon points="${x2.toFixed(1)},${y2.toFixed(1)} ${(x2 - ux * sz - uy * sz * 0.5).toFixed(1)},${(y2 - uy * sz + ux * sz * 0.5).toFixed(1)} ${(x2 - ux * sz + uy * sz * 0.5).toFixed(1)},${(y2 - uy * sz - ux * sz * 0.5).toFixed(1)}" fill="${col2}" opacity="0.9"/>`;
   }
 
-  // Node cards positioned around the circle
+  // ── Satellite node circles: outer glow (r+6), ring (r=34), inner filled (r=26) with radial gradient + glow filter ──
   let nodesHtml = '';
-  const nodeCardR = R + 50;
+  const nodeCardR = R + 65;
   for (let i = 0; i < n; i++) {
     const a = (i / n) * Math.PI * 2 - Math.PI / 2;
     const nx = cx + R * Math.cos(a), ny = cy + R * Math.sin(a);
     const col = accents[i % accents.length];
 
-    // SVG node: large filled circle with glow
-    svgInner += `<circle cx="${nx.toFixed(1)}" cy="${ny.toFixed(1)}" r="30" fill="${hexToRgba(col, 0.12)}" stroke="${col}" stroke-width="2.5"/>`;
-    svgInner += `<circle cx="${nx.toFixed(1)}" cy="${ny.toFixed(1)}" r="16" fill="${col}" filter="url(#glglow)"/>`;
+    // Outer glow halo
+    svgInner += `<circle cx="${nx.toFixed(1)}" cy="${ny.toFixed(1)}" r="40" fill="${hexToRgba(col, 0.06)}" filter="url(#glglo)"/>`;
+    // Ring (r=34)
+    svgInner += `<circle cx="${nx.toFixed(1)}" cy="${ny.toFixed(1)}" r="34" fill="none" stroke="${hexToRgba(col, 0.2)}" stroke-width="2"/>`;
+    // Inner filled (r=26) with radial gradient + glow
+    svgInner += `<circle cx="${nx.toFixed(1)}" cy="${ny.toFixed(1)}" r="26" fill="url(#glnf${i})" filter="url(#glglo)"/>`;
     // Step number inside
-    svgInner += `<text x="${nx.toFixed(1)}" y="${(ny + 5).toFixed(1)}" text-anchor="middle" fill="#fff" font-size="14" font-weight="bold">${i + 1}</text>`;
+    svgInner += `<text x="${nx.toFixed(1)}" y="${(ny + 6).toFixed(1)}" text-anchor="middle" fill="#fff" font-size="16" font-weight="800">${i + 1}</text>`;
 
-    // Label card
+    // ── Glass label card with connector ──
     const lx = cx + nodeCardR * Math.cos(a);
     const ly = cy + nodeCardR * Math.sin(a);
     const align = lx < cx ? 'right' : 'left';
-    const cardW = 165;
+    const cardW = 170;
     const leftPos = align === 'right' ? lx - cardW : lx;
-    const cardBg = dark ? hexToRgba(p.surface, 0.3) : hexToRgba(p.surface, 0.9);
-    nodesHtml += `<div style="position:absolute;left:${Math.round(leftPos)}px;top:${Math.round(ly - 20)}px;width:${cardW}px;padding:6px 12px;background:${cardBg};border:1px solid ${hexToRgba(col, 0.2)};border-left:3px solid ${col};border-radius:10px;box-shadow:${cardShadow(1, dark)};text-align:${align === 'right' ? 'right' : 'left'}">`;
-    nodesHtml += `<div style="font-size:13px;font-weight:700;color:${col};line-height:1.3">${escHtml(nodes[i] || 'Step ' + (i + 1))}</div>`;
-    nodesHtml += `</div>`;
+    const cardBg = dark ? hexToRgba(p.surface, 0.22) : hexToRgba(p.surface, 0.92);
+    const glassBorder = dark ? 'border:1px solid rgba(255,255,255,0.12);' : `border:1px solid ${hexToRgba(col, 0.15)};`;
+    const blurCSS = dark ? 'backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);' : '';
+
+    // Dashed connector from node to label card
+    const connInnerX = cx + (R + 38) * Math.cos(a), connInnerY = cy + (R + 38) * Math.sin(a);
+    const connOuterX = cx + (nodeCardR - 14) * Math.cos(a), connOuterY = cy + (nodeCardR - 14) * Math.sin(a);
+    svgInner += `<line x1="${connInnerX.toFixed(1)}" y1="${connInnerY.toFixed(1)}" x2="${connOuterX.toFixed(1)}" y2="${connOuterY.toFixed(1)}" stroke="${hexToRgba(col, 0.25)}" stroke-width="1.5" stroke-dasharray="4,4"/>`;
+
+    nodesHtml += `<div style="position:absolute;left:${Math.round(leftPos)}px;top:${Math.round(ly - 20)}px;width:${cardW}px;padding:8px 12px;background:${cardBg};${glassBorder}${blurCSS}border-left:3px solid ${col};border-radius:10px;box-shadow:${cardShadow(2, dark)};text-align:${align === 'right' ? 'right' : 'left'}">`;
+    nodesHtml += `<div style="display:flex;align-items:center;${align === 'right' ? 'flex-direction:row-reverse;' : ''}gap:6px">`;
+    nodesHtml += `<div style="width:8px;height:8px;border-radius:50%;background:linear-gradient(135deg,${col},${hexToRgba(col, 0.6)});flex-shrink:0"></div>`;
+    nodesHtml += `<span style="font-size:13px;font-weight:800;color:${col};letter-spacing:0.5px;line-height:1.3">${escHtml(nodes[i] || 'Step ' + (i + 1))}</span>`;
+    nodesHtml += `</div></div>`;
   }
 
-  // Center: large ring + label
-  svgInner += `<circle cx="${cx}" cy="${cy}" r="40" fill="${hexToRgba(p.accent, 0.06)}" stroke="${hexToRgba(p.accent, 0.15)}" stroke-width="2"/>`;
-  svgInner += `<circle cx="${cx}" cy="${cy}" r="28" fill="${hexToRgba(p.accent, 0.1)}" stroke="${hexToRgba(p.accent, 0.2)}" stroke-width="1"/>`;
-  const centerHtml = `<div style="position:absolute;left:${cx - 35}px;top:${cy - 16}px;width:70px;text-align:center">` +
-    `<div style="font-size:18px;font-weight:bold;color:${p.accent}">\u221E</div>` +
-    `<div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:${p.accent};opacity:0.6;margin-top:-2px">LOOP</div></div>`;
+  // ── Center: 3 rings (r=46,34,22) + infinity + GROWTH label ──
+  svgInner += `<circle cx="${cx}" cy="${cy}" r="46" fill="${hexToRgba(p.accent, 0.04)}" stroke="${hexToRgba(p.accent, 0.1)}" stroke-width="2"/>`;
+  svgInner += `<circle cx="${cx}" cy="${cy}" r="34" fill="${hexToRgba(p.accent, 0.08)}" stroke="${hexToRgba(p.accent, 0.15)}" stroke-width="1.5"/>`;
+  svgInner += `<circle cx="${cx}" cy="${cy}" r="22" fill="${p.accent}" opacity="0.2" filter="url(#glglo)"/>`;
+  const centerHtml = `<div style="position:absolute;left:${cx - 38}px;top:${cy - 18}px;width:76px;text-align:center">` +
+    `<div style="font-size:22px;font-weight:bold;color:${p.accent};${dark ? textGlow(p.accent, 0.3) : ''}">\u221E</div>` +
+    `<div style="font-size:8px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:${p.accent};opacity:0.6;margin-top:-3px">GROWTH</div></div>`;
 
   return `${SCOPED_RESET}
 <div style="position:relative;width:${W}px;height:${H}px;background:${p.background};overflow:hidden">
   ${bgGradientOverlay(cW, H, p.accent, 0.05)}
-  <div style="position:absolute;left:${PAD}px;top:${PAD - 6}px;width:${cW - PAD * 2}px;font-size:${titleFontSize(slide.title)}px;font-weight:bold;color:${p.text};line-height:1.2">${escHtml(slide.title)}</div>
-  <div style="position:absolute;left:${PAD}px;top:${PAD + 48}px;width:50px;height:3px;background:${p.accent};border-radius:2px"></div>
+  <div style="position:absolute;left:${PAD}px;top:${PAD - 6}px;width:${cW - PAD * 2}px;font-size:${titleFontSize(slide.title)}px;font-weight:800;color:${p.text};line-height:1.2;letter-spacing:1px;${dark ? textGlow(p.accent, 0.2) : ''}">${escHtml(slide.title)}</div>
+  <div style="position:absolute;left:${PAD}px;top:${PAD + 48}px;width:50px;height:4px;background:${p.accent};border-radius:2px"></div>
   <svg style="position:absolute;left:0;top:0;width:${cW}px;height:${H}px;pointer-events:none" viewBox="0 0 ${cW} ${H}">${svgInner}</svg>
   ${nodesHtml}
   ${centerHtml}
@@ -4735,7 +4860,7 @@ function buildGrowthLoops(slide: SlideInput, p: ColorPalette, hasImage = false, 
 
 
 // ── CASE_STUDY ──────────────────────────────────────────────
-// Client brand bar + decorative quote block + KPI stat cards with shadows
+// Glass client bar + giant decorative quote mark + bold KPI cards with glow
 
 function buildCaseStudy(slide: SlideInput, p: ColorPalette, hasImage = false): string {
   const cW = hasImage ? CONTENT_W_IMG : W;
@@ -4758,41 +4883,64 @@ function buildCaseStudy(slide: SlideInput, p: ColorPalette, hasImage = false): s
     }
   }
 
-  const quoteY = PAD + 155;
-  const kpiY = H - PAD - 110;
+  const quoteY = PAD + 165;
+  const kpiY = H - PAD - 120;
   const kpiCount = Math.min(kpis.length, 4);
   const kpiGap = 14;
   const kpiW = kpiCount > 0 ? Math.round((cW - PAD * 2 - (kpiCount - 1) * kpiGap) / kpiCount) : 0;
   const accents = cardAccentColors(p, colorOffset(slide.title));
 
-  // Client name bar
-  const clientBarHtml = `<div style="position:absolute;left:${PAD}px;top:${PAD + 78}px;width:${cW - PAD * 2}px;height:50px;background:${hexToRgba(p.accent, dark ? 0.12 : 0.06)};border-radius:12px;display:flex;align-items:center;padding:0 20px">` +
-    `<div style="width:36px;height:36px;border-radius:50%;background:${p.accent};display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:bold;color:#fff">${escHtml(clientName.charAt(0).toUpperCase())}</div>` +
-    `<div style="margin-left:14px;font-size:18px;font-weight:700;color:${p.text}">${escHtml(clientName)}</div></div>`;
+  // ── SVG defs: glow filter, dot mesh ──
+  const svgDefs = `<defs>` +
+    `<filter id="csglo"><feGaussianBlur stdDeviation="6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>` +
+    `<pattern id="csdot" width="20" height="20" patternUnits="userSpaceOnUse"><circle cx="10" cy="10" r="0.7" fill="${hexToRgba(p.text, 0.06)}"/></pattern>` +
+    `</defs>`;
+  let svgInner = svgDefs;
+  // Dot mesh background
+  svgInner += `<rect x="${PAD}" y="${PAD}" width="${cW - PAD * 2}" height="${H - PAD * 2}" fill="url(#csdot)" opacity="0.5"/>`;
+  // SVG horizontal separator line between quote and KPIs
+  svgInner += `<line x1="${PAD + 20}" y1="${kpiY - 20}" x2="${cW - PAD - 20}" y2="${kpiY - 20}" stroke="${hexToRgba(p.accent, 0.15)}" stroke-width="2" stroke-dasharray="8,6"/>`;
 
-  // Quote with decorative SVG quotation mark
-  const quoteHtml = `<div style="position:absolute;left:${PAD + 8}px;top:${quoteY}px;width:${cW - PAD * 2 - 30}px">` +
-    `<svg width="36" height="28" viewBox="0 0 36 28" style="margin-bottom:-4px"><path d="M0 18C0 8 6 2 14 0l2 4C10 6 8 10 8 14h6v14H0V18zm20 0C20 8 26 2 34 0l2 4C30 6 28 10 28 14h6v14H20V18z" fill="${hexToRgba(p.accent, 0.2)}"/></svg>` +
-    `<div style="font-size:16px;font-style:italic;color:${p.text};opacity:0.85;line-height:1.6;padding-left:4px">${escHtml(quote)}</div></div>`;
+  // ── Client bar: glass style with gradient fill, larger avatar (44px) ──
+  const clientBarBg = dark ? hexToRgba(p.surface, 0.2) : hexToRgba(p.accent, 0.06);
+  const clientGlass = dark ? 'backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.12);' : `border:1px solid ${hexToRgba(p.accent, 0.12)};`;
+  const clientBarHtml = `<div style="position:absolute;left:${PAD}px;top:${PAD + 78}px;width:${cW - PAD * 2}px;height:56px;background:linear-gradient(135deg,${clientBarBg},${hexToRgba(p.accent, dark ? 0.08 : 0.03)});${clientGlass}border-radius:14px;display:flex;align-items:center;padding:0 20px;box-shadow:${cardShadow(2, dark)}">` +
+    `<div style="width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,${p.accent},${hexToRgba(p.accent, 0.6)});display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;color:#fff">${escHtml(clientName.charAt(0).toUpperCase())}</div>` +
+    `<div style="margin-left:14px;font-size:20px;font-weight:800;color:${p.text};letter-spacing:0.5px">${escHtml(clientName)}</div></div>`;
 
-  // KPI stat cards
+  // ── Giant decorative SVG quotation mark (100px tall, accent at 0.06 opacity) positioned top-right of quote area ──
+  const quoteMarkX = cW - PAD - 120;
+  const quoteMarkY = quoteY - 10;
+  svgInner += `<text x="${quoteMarkX}" y="${quoteMarkY + 80}" font-size="100" font-weight="900" fill="${hexToRgba(p.accent, 0.06)}" font-family="Georgia,serif">\u201C</text>`;
+
+  // ── Quote text: larger (18px), italic, line-height 1.8 ──
+  const quoteHtml = `<div style="position:absolute;left:${PAD + 12}px;top:${quoteY}px;width:${cW - PAD * 2 - 40}px">` +
+    `<svg width="40" height="30" viewBox="0 0 36 28" style="margin-bottom:-4px"><path d="M0 18C0 8 6 2 14 0l2 4C10 6 8 10 8 14h6v14H0V18zm20 0C20 8 26 2 34 0l2 4C30 6 28 10 28 14h6v14H20V18z" fill="${hexToRgba(p.accent, 0.25)}"/></svg>` +
+    `<div style="font-size:18px;font-style:italic;color:${p.text};opacity:0.88;line-height:1.8;padding-left:6px">${escHtml(quote)}</div></div>`;
+
+  // ── KPI cards: glass style, cardShadow(2), larger value (30px, weight 800), glow on stat, gradient top border ──
   let kpiHtml = '';
   for (let i = 0; i < kpiCount; i++) {
     const kpi = kpis[i];
     const kx = PAD + i * (kpiW + kpiGap);
     const col = accents[i % accents.length];
-    const cardBg = dark ? hexToRgba(p.surface, 0.3) : p.surface;
-    kpiHtml += `<div style="position:absolute;left:${kx}px;top:${kpiY}px;width:${kpiW}px;height:100px;background:${cardBg};border-top:3px solid ${col};border-radius:12px;box-shadow:${cardShadow(1, dark)};padding:12px 16px">`;
-    kpiHtml += `<div style="font-size:26px;font-weight:bold;color:${col}">${escHtml(kpi.value)}</div>`;
-    kpiHtml += `<div style="font-size:12px;color:${p.text};opacity:0.6;margin-top:4px">${escHtml(kpi.label)}</div>`;
+    const cardBg = dark ? hexToRgba(p.surface, 0.22) : p.surface;
+    const glassKpi = dark ? 'backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.12);' : `border:1px solid ${hexToRgba(col, 0.1)};`;
+    kpiHtml += `<div style="position:absolute;left:${kx}px;top:${kpiY}px;width:${kpiW}px;height:110px;background:${cardBg};border-top:4px solid transparent;background-clip:padding-box;${glassKpi}border-radius:14px;box-shadow:${cardShadow(2, dark)};padding:14px 16px;position:relative;overflow:hidden">`;
+    // Gradient accent top border (via pseudo overlay)
+    kpiHtml += `<div style="position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,${col},${hexToRgba(col, 0.6)});border-radius:14px 14px 0 0"></div>`;
+    // Value with glow
+    kpiHtml += `<div style="font-size:30px;font-weight:800;color:${col};${dark ? `text-shadow:0 0 12px ${hexToRgba(col, 0.3)}` : ''};margin-top:4px">${escHtml(kpi.value)}</div>`;
+    kpiHtml += `<div style="font-size:12px;font-weight:600;color:${p.text};opacity:0.6;margin-top:6px;letter-spacing:0.3px">${escHtml(kpi.label)}</div>`;
     kpiHtml += `</div>`;
   }
 
   return `${SCOPED_RESET}
 <div style="position:relative;width:${W}px;height:${H}px;background:${p.background};overflow:hidden">
   ${bgGradientOverlay(cW, H, p.accent, 0.05, '30%')}
-  <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;font-size:${titleFontSize(slide.title)}px;font-weight:bold;color:${p.text};line-height:1.2">${escHtml(slide.title)}</div>
-  <div style="position:absolute;left:${PAD}px;top:${PAD + 56}px;width:50px;height:3px;background:${p.accent};border-radius:2px"></div>
+  <svg style="position:absolute;left:0;top:0;width:${cW}px;height:${H}px;pointer-events:none" viewBox="0 0 ${cW} ${H}">${svgInner}</svg>
+  <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;font-size:${titleFontSize(slide.title)}px;font-weight:800;color:${p.text};line-height:1.2;letter-spacing:1px;${dark ? textGlow(p.accent, 0.2) : ''}">${escHtml(slide.title)}</div>
+  <div style="position:absolute;left:${PAD}px;top:${PAD + 56}px;width:50px;height:4px;background:${p.accent};border-radius:2px"></div>
   ${clientBarHtml}
   ${quoteHtml}
   ${kpiHtml}
@@ -4801,7 +4949,7 @@ function buildCaseStudy(slide: SlideInput, p: ColorPalette, hasImage = false): s
 
 
 // ── HIRING_PLAN ──────────────────────────────────────────────
-// Vertical column timeline with quarter cards and role badges
+// Vertical column timeline with quarter cards and role badges — BOLD edition
 
 function buildHiringPlan(slide: SlideInput, p: ColorPalette, hasImage = false, accentDiversity = true): string {
   const cW = hasImage ? CONTENT_W_IMG : W;
@@ -4830,14 +4978,38 @@ function buildHiringPlan(slide: SlideInput, p: ColorPalette, hasImage = false, a
   const colTop = PAD + 95;
   const colH = H - colTop - PAD - 10;
 
+  // ── SVG defs: glow filter, gradient timeline line, dot mesh ──
+  let svgDefs = `<defs>`;
+  svgDefs += `<filter id="hpglo"><feGaussianBlur stdDeviation="6"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>`;
+  svgDefs += `<linearGradient id="hpLineGrad" x1="0" y1="0" x2="1" y2="0">`;
+  for (let i = 0; i < count; i++) {
+    svgDefs += `<stop offset="${Math.round(i / Math.max(count - 1, 1) * 100)}%" stop-color="${accents[i % accents.length]}"/>`;
+  }
+  svgDefs += `</linearGradient>`;
+  svgDefs += `<pattern id="hpDots" width="20" height="20" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r="1" fill="${hexToRgba(p.text, 0.06)}"/></pattern>`;
+  svgDefs += `</defs>`;
+
   let html = '';
-  // Horizontal timeline line at top of columns
+  // Dot mesh background
+  html += `<svg style="position:absolute;left:${PAD}px;top:${colTop}px;width:${cW - PAD * 2}px;height:${colH + 20}px;pointer-events:none"><rect width="100%" height="100%" fill="url(#hpDots)"/></svg>`;
+
+  // Horizontal timeline line at top of columns — gradient + glow
   html += `<svg style="position:absolute;left:0;top:0;width:${cW}px;height:${H}px;pointer-events:none">`;
+  html += svgDefs;
   const lineY = colTop - 4;
-  html += `<line x1="${PAD + colW / 2}" y1="${lineY}" x2="${PAD + (count - 1) * (colW + colGap) + colW / 2}" y2="${lineY}" stroke="${hexToRgba(p.border, 0.25)}" stroke-width="2"/>`;
+  // Glow line behind
+  html += `<line x1="${PAD + colW / 2}" y1="${lineY}" x2="${PAD + (count - 1) * (colW + colGap) + colW / 2}" y2="${lineY}" stroke="${hexToRgba(p.accent, 0.25)}" stroke-width="8" filter="url(#hpglo)"/>`;
+  // Main gradient line
+  html += `<line x1="${PAD + colW / 2}" y1="${lineY}" x2="${PAD + (count - 1) * (colW + colGap) + colW / 2}" y2="${lineY}" stroke="url(#hpLineGrad)" stroke-width="3"/>`;
   for (let i = 0; i < count; i++) {
     const dotX = PAD + i * (colW + colGap) + colW / 2;
-    html += `<circle cx="${dotX}" cy="${lineY}" r="6" fill="${accents[i % accents.length]}"/>`;
+    const col = accents[i % accents.length];
+    // Glow halo ring
+    html += `<circle cx="${dotX}" cy="${lineY}" r="14" fill="${hexToRgba(col, 0.15)}" filter="url(#hpglo)"/>`;
+    // Main node
+    html += `<circle cx="${dotX}" cy="${lineY}" r="10" fill="${col}"/>`;
+    // Inner dot
+    html += `<circle cx="${dotX}" cy="${lineY}" r="4" fill="#fff" opacity="0.9"/>`;
   }
   html += `</svg>`;
 
@@ -4845,40 +5017,45 @@ function buildHiringPlan(slide: SlideInput, p: ColorPalette, hasImage = false, a
     const q = quarters[i];
     const color = accents[i % accents.length];
     const cx = PAD + i * (colW + colGap);
-    const cardBg = dark ? hexToRgba(p.surface, 0.25) : p.surface;
+    const glassProps = dark
+      ? `background:${hexToRgba(p.surface, 0.18)};backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.12)`
+      : `background:${p.surface};border:1px solid ${hexToRgba(p.border, 0.15)}`;
 
-    // Quarter card
-    html += `<div style="position:absolute;left:${cx}px;top:${colTop + 8}px;width:${colW}px;height:${colH - 8}px;background:${cardBg};border-radius:12px;border-top:3px solid ${color};box-shadow:${cardShadow(1, dark)}"></div>`;
+    // Quarter card — glass style
+    html += `<div style="position:absolute;left:${cx}px;top:${colTop + 8}px;width:${colW}px;height:${colH - 8}px;${glassProps};border-radius:14px;border-top:4px solid ${color};box-shadow:${cardShadow(2, dark)}">`;
+    // Top accent stripe
+    html += `<div style="position:absolute;top:0;left:0;width:100%;height:6px;background:linear-gradient(90deg,${hexToRgba(color, 0.15)},transparent);border-radius:14px 14px 0 0;pointer-events:none"></div>`;
+    html += `</div>`;
 
-    // Quarter label
-    html += `<div style="position:absolute;left:${cx}px;top:${colTop + 18}px;width:${colW}px;text-align:center;font-size:14px;font-weight:bold;color:${color}">${escHtml(q.label)}</div>`;
+    // Quarter label — bold
+    html += `<div style="position:absolute;left:${cx}px;top:${colTop + 20}px;width:${colW}px;text-align:center;font-size:16px;font-weight:800;letter-spacing:1px;color:${color};${dark ? `text-shadow:${textGlow(color, 0.6)}` : ''}">${escHtml(q.label)}</div>`;
 
-    // Headcount badge
-    html += `<div style="position:absolute;left:${cx + colW - 36}px;top:${colTop + 16}px;width:28px;height:18px;background:${hexToRgba(color, 0.15)};border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:bold;color:${color}">${q.roles.length}</div>`;
+    // Headcount badge — glass gradient
+    html += `<div style="position:absolute;left:${cx + colW - 42}px;top:${colTop + 18}px;width:34px;height:22px;background:linear-gradient(135deg,${color},${hexToRgba(color, 0.6)});border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff;box-shadow:0 2px 8px ${hexToRgba(color, 0.35)}">${q.roles.length}</div>`;
 
-    // Role pills
-    const pillTop = colTop + 48;
-    const pillH = 30;
+    // Role pills — gradient fills
+    const pillTop = colTop + 52;
+    const pillH = 36;
     const pillGap = 8;
     for (let r = 0; r < Math.min(q.roles.length, 6); r++) {
       const py = pillTop + r * (pillH + pillGap);
       if (py + pillH > colTop + colH - 10) break;
-      html += `<div style="position:absolute;left:${cx + 10}px;top:${py}px;width:${colW - 20}px;height:${pillH}px;background:${hexToRgba(color, dark ? 0.15 : 0.08)};border:1px solid ${hexToRgba(color, 0.2)};border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:${dark ? '#fff' : color};overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${escHtml(q.roles[r])}</div>`;
+      html += `<div style="position:absolute;left:${cx + 10}px;top:${py}px;width:${colW - 20}px;height:${pillH}px;background:linear-gradient(135deg,${hexToRgba(color, dark ? 0.22 : 0.12)},${hexToRgba(color, dark ? 0.08 : 0.03)});border:1px solid ${hexToRgba(color, 0.25)};border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:${dark ? '#fff' : color};overflow:hidden;white-space:nowrap;text-overflow:ellipsis;box-shadow:${cardShadow(1, dark)}">${escHtml(q.roles[r])}</div>`;
     }
   }
 
   return `${SCOPED_RESET}
 <div style="position:relative;width:${W}px;height:${H}px;background:${p.background};overflow:hidden">
-  ${bgGradientOverlay(cW, H, p.accent, 0.05, '45%')}
-  <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;font-size:${titleFontSize(slide.title)}px;font-weight:bold;overflow-wrap:break-word;word-wrap:break-word;color:${p.text};line-height:1.2">${escHtml(slide.title)}</div>
-  <div style="position:absolute;left:${PAD}px;top:${PAD + 56}px;width:50px;height:3px;background:${p.accent};border-radius:2px"></div>
+  ${bgGradientOverlay(cW, H, p.accent, 0.07, '45%')}
+  <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;font-size:${titleFontSize(slide.title)}px;font-weight:800;overflow-wrap:break-word;word-wrap:break-word;color:${p.text};line-height:1.2;letter-spacing:0.5px;${dark ? `text-shadow:${textGlow(p.accent, 0.4)}` : ''}">${escHtml(slide.title)}</div>
+  <div style="position:absolute;left:${PAD}px;top:${PAD + 56}px;width:60px;height:4px;background:linear-gradient(90deg,${p.accent},${hexToRgba(p.accent, 0.3)});border-radius:2px"></div>
   ${html}
 </div>`;
 }
 
 
 // ── USE_OF_FUNDS ─────────────────────────────────────────────
-// Wide horizontal stacked bar with gradient segments + category cards
+// Wide horizontal stacked bar with gradient segments + category cards — BOLD edition
 
 function buildUseOfFunds(slide: SlideInput, p: ColorPalette, hasImage = false, accentDiversity = true): string {
   const cW = hasImage ? CONTENT_W_IMG : W;
@@ -4905,63 +5082,91 @@ function buildUseOfFunds(slide: SlideInput, p: ColorPalette, hasImage = false, a
   }
 
   const count = Math.min(items.length, 8);
-  const barTop = PAD + 105;
-  const barH = 44;
+  const barTop = PAD + 115;
+  const barH = 56;
   const barLeft = PAD + 10;
   const barW = cW - PAD * 2 - 20;
   const totalPct = items.slice(0, count).reduce((s, it) => s + it.pct, 0) || 100;
+  const totalAmount = items.slice(0, count).map(it => it.amount).filter(Boolean).join(' + ');
 
-  // Stacked bar SVG with rounded ends
-  let barSvg = `<svg style="position:absolute;left:${barLeft}px;top:${barTop}px;width:${barW}px;height:${barH}px" viewBox="0 0 ${barW} ${barH}">`;
-  // Shadow under bar
-  barSvg += `<rect x="2" y="4" width="${barW - 4}" height="${barH}" rx="10" fill="${hexToRgba('#000', 0.08)}"/>`;
+  // ── SVG defs ──
+  let svgDefs = `<defs>`;
+  svgDefs += `<filter id="uofglo"><feGaussianBlur stdDeviation="6"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>`;
+  svgDefs += `<pattern id="uofDots" width="20" height="20" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r="1" fill="${hexToRgba(p.text, 0.06)}"/></pattern>`;
+  for (let i = 0; i < count; i++) {
+    const col = accents[i % accents.length];
+    svgDefs += `<linearGradient id="uofSeg${i}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${col}"/><stop offset="100%" stop-color="${hexToRgba(col, 0.7)}"/></linearGradient>`;
+  }
+  svgDefs += `</defs>`;
+
+  // Dot mesh background
+  let html = '';
+  html += `<svg style="position:absolute;left:${PAD}px;top:${barTop - 10}px;width:${cW - PAD * 2}px;height:${H - barTop + 10 - PAD}px;pointer-events:none"><rect width="100%" height="100%" fill="url(#uofDots)"/></svg>`;
+
+  // Total sum above bar
+  if (totalAmount) {
+    html += `<div style="position:absolute;left:${barLeft}px;top:${barTop - 30}px;font-size:22px;font-weight:800;color:${p.accent};letter-spacing:0.5px;${dark ? `text-shadow:${textGlow(p.accent, 0.5)}` : ''}">${escHtml(totalAmount)}</div>`;
+  }
+
+  // Stacked bar SVG — taller with glow edges
+  let barSvg = `<svg style="position:absolute;left:${barLeft}px;top:${barTop}px;width:${barW}px;height:${barH + 8}px" viewBox="0 0 ${barW} ${barH + 8}">`;
+  barSvg += svgDefs;
+  // 3D shadow bar behind
+  barSvg += `<rect x="2" y="4" width="${barW - 4}" height="${barH}" rx="12" fill="${hexToRgba('#000', 0.1)}"/>`;
   let bx = 0;
   for (let i = 0; i < count; i++) {
     const segW = Math.round(barW * items[i].pct / totalPct);
-    const color = accents[i % accents.length];
     const isFirst = i === 0, isLast = i === count - 1;
-    // Clip for rounded ends
-    if (isFirst || isLast) {
-      barSvg += `<clipPath id="uofclip${i}"><rect x="${bx}" y="0" width="${segW}" height="${barH}" rx="${isFirst && isLast ? 10 : 0}" ${isFirst ? 'rx="10"' : ''} /></clipPath>`;
+    barSvg += `<rect x="${bx}" y="0" width="${segW}" height="${barH}" fill="url(#uofSeg${i})" ${isFirst ? 'rx="12"' : ''} ${isLast ? 'rx="12"' : ''}/>`;
+    // Glow edge between segments
+    if (i > 0) {
+      barSvg += `<line x1="${bx}" y1="0" x2="${bx}" y2="${barH}" stroke="#fff" stroke-width="1" opacity="0.4"/>`;
     }
-    barSvg += `<rect x="${bx}" y="0" width="${segW}" height="${barH}" fill="${color}" ${isFirst ? 'rx="10"' : ''} ${isLast ? 'rx="10"' : ''} opacity="0.9"/>`;
+    // Percentage label
     if (segW > 50) {
-      barSvg += `<text x="${bx + segW / 2}" y="${barH / 2 + 5}" text-anchor="middle" fill="#fff" font-size="13" font-weight="bold">${items[i].pct}%</text>`;
+      barSvg += `<text x="${bx + segW / 2}" y="${barH / 2 + 6}" text-anchor="middle" fill="#fff" font-size="15" font-weight="bold">${items[i].pct}%</text>`;
     }
     bx += segW;
   }
   barSvg += `</svg>`;
 
   // Category cards below bar
-  const cardTop = barTop + barH + 30;
+  const cardTop = barTop + barH + 36;
   const cardGap = 12;
   const cols = Math.min(count, 4);
   const rows = Math.ceil(count / cols);
   const cardW = Math.round((barW - (cols - 1) * cardGap) / cols);
-  const cardH = Math.min(90, Math.round((H - cardTop - PAD - (rows - 1) * cardGap) / rows));
+  const cardH = Math.min(96, Math.round((H - cardTop - PAD - (rows - 1) * cardGap) / rows));
 
   let cardsHtml = '';
   for (let i = 0; i < count; i++) {
     const it = items[i];
-    const col = i % cols;
+    const col_idx = i % cols;
     const row = Math.floor(i / cols);
-    const cx = barLeft + col * (cardW + cardGap);
+    const cx = barLeft + col_idx * (cardW + cardGap);
     const cy = cardTop + row * (cardH + cardGap);
     const color = accents[i % accents.length];
-    const cardBg = dark ? hexToRgba(p.surface, 0.3) : p.surface;
+    const glassProps = dark
+      ? `background:${hexToRgba(p.surface, 0.18)};backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.12)`
+      : `background:${p.surface};border:1px solid ${hexToRgba(p.border, 0.15)}`;
 
-    cardsHtml += `<div style="position:absolute;left:${cx}px;top:${cy}px;width:${cardW}px;height:${cardH}px;background:${cardBg};border:1px solid ${hexToRgba(p.border, 0.12)};border-radius:12px;border-top:3px solid ${color};box-shadow:${cardShadow(1, dark)};padding:10px 14px">`;
-    cardsHtml += `<div style="display:flex;align-items:center;margin-bottom:6px"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${color};margin-right:8px"></span><span style="font-size:13px;font-weight:700;color:${p.text}">${escHtml(it.name)}</span></div>`;
-    if (it.amount) cardsHtml += `<div style="font-size:20px;font-weight:bold;color:${color}">${escHtml(it.amount)}</div>`;
-    cardsHtml += `<div style="font-size:11px;color:${p.text};opacity:0.5;margin-top:2px">${it.pct}% of total</div>`;
+    cardsHtml += `<div style="position:absolute;left:${cx}px;top:${cy}px;width:${cardW}px;height:${cardH}px;${glassProps};border-radius:14px;box-shadow:${cardShadow(2, dark)};padding:10px 14px;overflow:hidden">`;
+    // Top accent stripe
+    cardsHtml += `<div style="position:absolute;top:0;left:0;width:100%;height:5px;background:linear-gradient(90deg,${color},${hexToRgba(color, 0.2)});border-radius:14px 14px 0 0;pointer-events:none"></div>`;
+    // Header row
+    cardsHtml += `<div style="display:flex;align-items:center;margin-bottom:6px;margin-top:2px"><span style="display:inline-block;width:14px;height:14px;border-radius:50%;background:linear-gradient(135deg,${color},${hexToRgba(color, 0.6)});margin-right:8px;flex-shrink:0"></span><span style="font-size:13px;font-weight:800;color:${p.text};letter-spacing:0.5px">${escHtml(it.name)}</span></div>`;
+    if (it.amount) cardsHtml += `<div style="font-size:22px;font-weight:800;color:${color};${dark ? `text-shadow:${textGlow(color, 0.4)}` : ''}">${escHtml(it.amount)}</div>`;
+    // Progress bar inside card
+    cardsHtml += `<div style="position:absolute;bottom:10px;left:14px;right:14px;height:8px;background:${hexToRgba(color, 0.1)};border-radius:4px;overflow:hidden"><div style="width:${it.pct}%;height:100%;background:linear-gradient(90deg,${color},${hexToRgba(color, 0.6)});border-radius:4px"></div></div>`;
+    cardsHtml += `<div style="font-size:11px;color:${p.text};opacity:0.6;margin-top:2px;font-weight:600">${it.pct}% of total</div>`;
     cardsHtml += `</div>`;
   }
 
   return `${SCOPED_RESET}
 <div style="position:relative;width:${W}px;height:${H}px;background:${p.background};overflow:hidden">
-  ${bgGradientOverlay(cW, H, p.accent, 0.05, '35%')}
-  <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;font-size:${titleFontSize(slide.title)}px;font-weight:bold;overflow-wrap:break-word;word-wrap:break-word;color:${p.text};line-height:1.2">${escHtml(slide.title)}</div>
-  <div style="position:absolute;left:${PAD}px;top:${PAD + 56}px;width:50px;height:3px;background:${p.accent};border-radius:2px"></div>
+  ${bgGradientOverlay(cW, H, p.accent, 0.07, '35%')}
+  <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;font-size:${titleFontSize(slide.title)}px;font-weight:800;overflow-wrap:break-word;word-wrap:break-word;color:${p.text};line-height:1.2;letter-spacing:0.5px;${dark ? `text-shadow:${textGlow(p.accent, 0.4)}` : ''}">${escHtml(slide.title)}</div>
+  <div style="position:absolute;left:${PAD}px;top:${PAD + 56}px;width:60px;height:4px;background:linear-gradient(90deg,${p.accent},${hexToRgba(p.accent, 0.3)});border-radius:2px"></div>
   ${barSvg}
   ${cardsHtml}
 </div>`;
@@ -4969,7 +5174,7 @@ function buildUseOfFunds(slide: SlideInput, p: ColorPalette, hasImage = false, a
 
 
 // ── RISK_MITIGATION ──────────────────────────────────────────
-// Two columns: risk cards (red) with SVG arrow to mitigation cards (green)
+// Two columns: risk cards (red) with SVG arrow to mitigation cards (green) — BOLD edition
 
 function buildRiskMitigation(slide: SlideInput, p: ColorPalette, hasImage = false): string {
   const cW = hasImage ? CONTENT_W_IMG : W;
@@ -4990,11 +5195,10 @@ function buildRiskMitigation(slide: SlideInput, p: ColorPalette, hasImage = fals
   }
 
   const count = Math.min(pairs.length, 5);
-  // Column headers
   const headerY = PAD + 80;
-  const rowTop = headerY + 30;
+  const rowTop = headerY + 44;
   const totalW = cW - PAD * 2;
-  const arrowZone = 56;
+  const arrowZone = 64;
   const colW = Math.round((totalW - arrowZone) / 2);
   const rowGap = 10;
   const rowH = Math.min(90, Math.round((H - rowTop - PAD - (count - 1) * rowGap) / count));
@@ -5004,51 +5208,79 @@ function buildRiskMitigation(slide: SlideInput, p: ColorPalette, hasImage = fals
   const riskColor = p.error || '#ef4444';
   const mitigColor = p.success || '#22c55e';
 
-  // Column headers
-  let html = `<div style="position:absolute;left:${leftX}px;top:${headerY}px;width:${colW}px;text-align:center;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:${riskColor}">Risk</div>`;
-  html += `<div style="position:absolute;left:${rightX}px;top:${headerY}px;width:${colW}px;text-align:center;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:${mitigColor}">Mitigation</div>`;
+  // ── SVG defs: glow, arrow gradient, dot mesh ──
+  let svgBlock = `<svg style="position:absolute;left:0;top:0;width:${cW}px;height:${H}px;pointer-events:none" viewBox="0 0 ${cW} ${H}">`;
+  svgBlock += `<defs>`;
+  svgBlock += `<filter id="rmglo"><feGaussianBlur stdDeviation="6"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>`;
+  svgBlock += `<linearGradient id="rmArrowGrad" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="${riskColor}"/><stop offset="100%" stop-color="${mitigColor}"/></linearGradient>`;
+  svgBlock += `<pattern id="rmDots" width="20" height="20" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r="1" fill="${hexToRgba(p.text, 0.06)}"/></pattern>`;
+  svgBlock += `</defs>`;
+  // Dot mesh
+  svgBlock += `<rect x="${PAD}" y="${rowTop}" width="${totalW}" height="${H - rowTop - PAD}" fill="url(#rmDots)"/>`;
+
+  // Arrow connectors for each row
+  for (let i = 0; i < count; i++) {
+    const ry = rowTop + i * (rowH + rowGap);
+    const arrowCx = leftX + colW;
+    const arrowCy = ry + rowH / 2;
+    // Glow shadow line behind
+    svgBlock += `<line x1="${arrowCx + 6}" y1="${arrowCy}" x2="${arrowCx + arrowZone - 10}" y2="${arrowCy}" stroke="${hexToRgba(mitigColor, 0.2)}" stroke-width="8" filter="url(#rmglo)"/>`;
+    // Main gradient arrow line — thicker
+    svgBlock += `<line x1="${arrowCx + 6}" y1="${arrowCy}" x2="${arrowCx + arrowZone - 14}" y2="${arrowCy}" stroke="url(#rmArrowGrad)" stroke-width="3"/>`;
+    svgBlock += `<polygon points="${arrowCx + arrowZone - 14},${arrowCy - 6} ${arrowCx + arrowZone - 4},${arrowCy} ${arrowCx + arrowZone - 14},${arrowCy + 6}" fill="${mitigColor}"/>`;
+  }
+  svgBlock += `</svg>`;
+
+  let html = svgBlock;
+
+  // Column headers — badge-style chips with SVG icon + bold text
+  // Risk header
+  html += `<div style="position:absolute;left:${leftX}px;top:${headerY}px;display:inline-flex;align-items:center;padding:5px 16px;background:${hexToRgba(riskColor, dark ? 0.15 : 0.08)};border-radius:12px;border:1px solid ${hexToRgba(riskColor, 0.25)};${dark ? 'backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)' : ''}">`;
+  html += `<svg width="14" height="14" viewBox="0 0 24 24" style="margin-right:6px"><path d="M12 2L1 21h22L12 2zm0 4l7.5 13h-15L12 6z" fill="${riskColor}"/><rect x="11" y="10" width="2" height="5" fill="${riskColor}"/><rect x="11" y="16" width="2" height="2" fill="${riskColor}"/></svg>`;
+  html += `<span style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:${riskColor}">Risk</span>`;
+  html += `</div>`;
+  // Mitigation header
+  html += `<div style="position:absolute;left:${rightX}px;top:${headerY}px;display:inline-flex;align-items:center;padding:5px 16px;background:${hexToRgba(mitigColor, dark ? 0.15 : 0.08)};border-radius:12px;border:1px solid ${hexToRgba(mitigColor, 0.25)};${dark ? 'backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)' : ''}">`;
+  html += `<svg width="14" height="14" viewBox="0 0 24 24" style="margin-right:6px"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15l-5-5 1.41-1.41L11 14.17l7.59-7.59L20 8l-9 9z" fill="${mitigColor}"/></svg>`;
+  html += `<span style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:${mitigColor}">Mitigation</span>`;
+  html += `</div>`;
 
   for (let i = 0; i < count; i++) {
     const pair = pairs[i];
     const ry = rowTop + i * (rowH + rowGap);
-    const riskBg = dark ? hexToRgba(riskColor, 0.08) : hexToRgba(riskColor, 0.04);
-    const mitigBg = dark ? hexToRgba(mitigColor, 0.08) : hexToRgba(mitigColor, 0.04);
-    const cardBgR = dark ? hexToRgba(p.surface, 0.2) : p.surface;
-    const cardBgM = dark ? hexToRgba(p.surface, 0.2) : p.surface;
+    const glassProps = dark
+      ? `backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.12)`
+      : `border:1px solid ${hexToRgba(p.border, 0.15)}`;
 
-    // Risk card
-    html += `<div style="position:absolute;left:${leftX}px;top:${ry}px;width:${colW}px;height:${rowH}px;background:${cardBgR};border-left:4px solid ${riskColor};border-radius:10px;box-shadow:${cardShadow(1, dark)}">`;
-    html += `<div style="position:absolute;left:0;top:0;width:100%;height:100%;background:linear-gradient(90deg,${hexToRgba(riskColor, 0.06)},transparent);border-radius:10px;pointer-events:none"></div>`;
+    // Risk card — glass with red wash gradient
+    html += `<div style="position:absolute;left:${leftX}px;top:${ry}px;width:${colW}px;height:${rowH}px;background:${dark ? hexToRgba(p.surface, 0.18) : p.surface};border-left:5px solid ${riskColor};border-radius:12px;box-shadow:${cardShadow(2, dark)};${glassProps}">`;
+    html += `<div style="position:absolute;left:0;top:0;width:100%;height:100%;background:linear-gradient(90deg,${hexToRgba(riskColor, 0.1)},transparent);border-radius:12px;pointer-events:none"></div>`;
     html += `</div>`;
-    html += `<div style="position:absolute;left:${leftX + 16}px;top:${ry + Math.round((rowH - 20) / 2)}px;width:${colW - 32}px;font-size:13px;line-height:1.4;color:${p.text};overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical"><span style="color:${riskColor};margin-right:6px;font-size:14px">\u26A0</span>${escHtml(pair.risk)}</div>`;
+    html += `<div style="position:absolute;left:${leftX + 20}px;top:${ry + Math.round((rowH - 22) / 2)}px;width:${colW - 40}px;display:flex;align-items:center;font-size:14px;line-height:1.4;color:${p.text};overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">`;
+    html += `<span style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:${hexToRgba(riskColor, 0.15)};margin-right:8px;flex-shrink:0;font-size:12px;color:${riskColor}">\u26A0</span>`;
+    html += `${escHtml(pair.risk)}</div>`;
 
-    // Arrow SVG
-    const arrowCx = leftX + colW + arrowZone / 2;
-    const arrowCy = ry + rowH / 2;
-    html += `<svg style="position:absolute;left:${arrowCx - 20}px;top:${arrowCy - 10}px;width:40px;height:20px" viewBox="0 0 40 20">`;
-    html += `<line x1="0" y1="10" x2="30" y2="10" stroke="${hexToRgba(p.text, 0.25)}" stroke-width="2"/>`;
-    html += `<polygon points="30,4 40,10 30,16" fill="${hexToRgba(mitigColor, 0.5)}"/>`;
-    html += `</svg>`;
-
-    // Mitigation card
-    html += `<div style="position:absolute;left:${rightX}px;top:${ry}px;width:${colW}px;height:${rowH}px;background:${cardBgM};border-left:4px solid ${mitigColor};border-radius:10px;box-shadow:${cardShadow(1, dark)}">`;
-    html += `<div style="position:absolute;left:0;top:0;width:100%;height:100%;background:linear-gradient(90deg,${hexToRgba(mitigColor, 0.06)},transparent);border-radius:10px;pointer-events:none"></div>`;
+    // Mitigation card — glass with green wash gradient
+    html += `<div style="position:absolute;left:${rightX}px;top:${ry}px;width:${colW}px;height:${rowH}px;background:${dark ? hexToRgba(p.surface, 0.18) : p.surface};border-left:5px solid ${mitigColor};border-radius:12px;box-shadow:${cardShadow(2, dark)};${glassProps}">`;
+    html += `<div style="position:absolute;left:0;top:0;width:100%;height:100%;background:linear-gradient(90deg,${hexToRgba(mitigColor, 0.1)},transparent);border-radius:12px;pointer-events:none"></div>`;
     html += `</div>`;
-    html += `<div style="position:absolute;left:${rightX + 16}px;top:${ry + Math.round((rowH - 20) / 2)}px;width:${colW - 32}px;font-size:13px;line-height:1.4;color:${p.text};overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical"><span style="color:${mitigColor};margin-right:6px;font-size:14px">\u2713</span>${escHtml(pair.mitigation)}</div>`;
+    html += `<div style="position:absolute;left:${rightX + 20}px;top:${ry + Math.round((rowH - 22) / 2)}px;width:${colW - 40}px;display:flex;align-items:center;font-size:14px;line-height:1.4;color:${p.text};overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">`;
+    html += `<span style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:${hexToRgba(mitigColor, 0.15)};margin-right:8px;flex-shrink:0;font-size:12px;color:${mitigColor}">\u2713</span>`;
+    html += `${escHtml(pair.mitigation)}</div>`;
   }
 
   return `${SCOPED_RESET}
 <div style="position:relative;width:${W}px;height:${H}px;background:${p.background};overflow:hidden">
-  ${bgGradientOverlay(cW, H, p.primary, 0.05, '45%')}
-  <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;font-size:${titleFontSize(slide.title)}px;font-weight:bold;overflow-wrap:break-word;word-wrap:break-word;color:${p.text};line-height:1.2">${escHtml(slide.title)}</div>
-  <div style="position:absolute;left:${PAD}px;top:${PAD + 56}px;width:50px;height:3px;background:${p.accent};border-radius:2px"></div>
+  ${bgGradientOverlay(cW, H, p.primary, 0.07, '45%')}
+  <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;font-size:${titleFontSize(slide.title)}px;font-weight:800;overflow-wrap:break-word;word-wrap:break-word;color:${p.text};line-height:1.2;letter-spacing:0.5px;${dark ? `text-shadow:${textGlow(p.accent, 0.4)}` : ''}">${escHtml(slide.title)}</div>
+  <div style="position:absolute;left:${PAD}px;top:${PAD + 56}px;width:60px;height:4px;background:linear-gradient(90deg,${p.accent},${hexToRgba(p.accent, 0.3)});border-radius:2px"></div>
   ${html}
 </div>`;
 }
 
 
 // ── DEMO_SCREENSHOT ──────────────────────────────────────────
-// Browser bezel frame with image + numbered callout pins with connecting lines
+// Browser bezel frame with image + numbered callout pins with connecting lines — BOLD edition
 
 function buildDemoScreenshot(slide: SlideInput, p: ColorPalette, hasImage = false): string {
   const cW = hasImage ? CONTENT_W_IMG : W;
@@ -5072,63 +5304,78 @@ function buildDemoScreenshot(slide: SlideInput, p: ColorPalette, hasImage = fals
   const imgH = H - imgTop - PAD - 10;
   const imgW = Math.round((cW - PAD * 2) * 0.6);
   const imgLeft = PAD;
-  const bezelH = 28;
+  const bezelH = 34;
   const bezelColor = dark ? hexToRgba(p.surface, 0.5) : hexToRgba(p.border, 0.15);
+
+  // ── SVG defs ──
+  let svgDefs = `<defs>`;
+  svgDefs += `<filter id="dsglo"><feGaussianBlur stdDeviation="6"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>`;
+  svgDefs += `<pattern id="dsDots" width="20" height="20" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r="1" fill="${hexToRgba(p.text, 0.06)}"/></pattern>`;
+  svgDefs += `<linearGradient id="dsConnGrad" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="${p.accent}"/><stop offset="100%" stop-color="${hexToRgba(p.accent, 0.3)}"/></linearGradient>`;
+  svgDefs += `</defs>`;
 
   let html = '';
 
-  // Browser bezel frame
-  html += `<div style="position:absolute;left:${imgLeft}px;top:${imgTop}px;width:${imgW}px;height:${bezelH}px;background:${bezelColor};border-radius:12px 12px 0 0;display:flex;align-items:center;padding:0 12px">`;
-  // Window dots
-  html += `<div style="width:10px;height:10px;border-radius:50%;background:${p.error || '#ef4444'};margin-right:6px;opacity:0.7"></div>`;
-  html += `<div style="width:10px;height:10px;border-radius:50%;background:${p.warning || '#eab308'};margin-right:6px;opacity:0.7"></div>`;
-  html += `<div style="width:10px;height:10px;border-radius:50%;background:${p.success || '#22c55e'};opacity:0.7"></div>`;
-  html += `<div style="flex:1;height:16px;background:${hexToRgba(p.border, 0.1)};border-radius:8px;margin-left:14px"></div>`;
+  // Dot mesh background over feature text area
+  const labelLeft = imgLeft + imgW + 24;
+  html += `<svg style="position:absolute;left:${labelLeft - 10}px;top:${imgTop}px;width:${cW - labelLeft + 10 - PAD}px;height:${imgH}px;pointer-events:none"><rect width="100%" height="100%" fill="url(#dsDots)"/></svg>`;
+
+  // Browser bezel frame — gradient toolbar
+  html += `<div style="position:absolute;left:${imgLeft}px;top:${imgTop}px;width:${imgW}px;height:${bezelH}px;background:linear-gradient(180deg,${dark ? hexToRgba(p.surface, 0.5) : hexToRgba(p.border, 0.15)},${dark ? hexToRgba(p.surface, 0.3) : hexToRgba(p.border, 0.08)});border-radius:14px 14px 0 0;display:flex;align-items:center;padding:0 14px;border:1px solid ${hexToRgba(p.border, 0.1)};border-bottom:none">`;
+  // Traffic light dots — larger with glow
+  html += `<div style="width:12px;height:12px;border-radius:50%;background:${p.error || '#ef4444'};margin-right:7px;box-shadow:0 0 6px ${hexToRgba(p.error || '#ef4444', 0.5)}"></div>`;
+  html += `<div style="width:12px;height:12px;border-radius:50%;background:${p.warning || '#eab308'};margin-right:7px;box-shadow:0 0 6px ${hexToRgba(p.warning || '#eab308', 0.5)}"></div>`;
+  html += `<div style="width:12px;height:12px;border-radius:50%;background:${p.success || '#22c55e'};box-shadow:0 0 6px ${hexToRgba(p.success || '#22c55e', 0.5)}"></div>`;
+  html += `<div style="flex:1;height:18px;background:${hexToRgba(p.border, 0.1)};border-radius:9px;margin-left:16px"></div>`;
   html += `</div>`;
 
-  // Image content area
+  // Image content area — cardShadow(3)
   const contentTop = imgTop + bezelH;
   const contentH = imgH - bezelH;
   if (slide.imageUrl) {
-    html += `<div style="position:absolute;left:${imgLeft}px;top:${contentTop}px;width:${imgW}px;height:${contentH}px;border-radius:0 0 12px 12px;overflow:hidden;border:1px solid ${hexToRgba(p.border, 0.12)};border-top:none;box-shadow:${cardShadow(2, dark)}"><img src="${escHtml(slide.imageUrl)}" style="width:100%;height:100%;object-fit:cover"/></div>`;
+    html += `<div style="position:absolute;left:${imgLeft}px;top:${contentTop}px;width:${imgW}px;height:${contentH}px;border-radius:0 0 14px 14px;overflow:hidden;border:1px solid ${hexToRgba(p.border, 0.15)};border-top:none;box-shadow:${cardShadow(3, dark)}"><img src="${escHtml(slide.imageUrl)}" style="width:100%;height:100%;object-fit:cover"/></div>`;
   } else {
-    html += `<div style="position:absolute;left:${imgLeft}px;top:${contentTop}px;width:${imgW}px;height:${contentH}px;background:${dark ? hexToRgba(p.surface, 0.15) : hexToRgba(p.border, 0.05)};border-radius:0 0 12px 12px;border:1px solid ${hexToRgba(p.border, 0.12)};border-top:none;box-shadow:${cardShadow(2, dark)};display:flex;align-items:center;justify-content:center">`;
-    // Placeholder mockup lines
-    html += `<div style="width:80%;opacity:0.15">`;
-    for (let i = 0; i < 4; i++) {
-      const w = 40 + (i * 17) % 50;
-      html += `<div style="height:8px;width:${w}%;background:${p.text};border-radius:4px;margin-bottom:12px"></div>`;
+    // Placeholder mockup — grid pattern with accent-tinted rectangles
+    html += `<div style="position:absolute;left:${imgLeft}px;top:${contentTop}px;width:${imgW}px;height:${contentH}px;background:${dark ? hexToRgba(p.surface, 0.12) : hexToRgba(p.border, 0.04)};border-radius:0 0 14px 14px;border:1px solid ${hexToRgba(p.border, 0.15)};border-top:none;box-shadow:${cardShadow(3, dark)};overflow:hidden">`;
+    html += `<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:16px;height:100%;box-sizing:border-box">`;
+    for (let g = 0; g < 6; g++) {
+      const tint = hexToRgba(p.accent, 0.04 + (g % 3) * 0.02);
+      html += `<div style="background:${tint};border:1px solid ${hexToRgba(p.accent, 0.08)};border-radius:8px"></div>`;
     }
-    html += `<div style="height:60px;width:90%;background:${p.text};border-radius:8px;margin-top:16px"></div>`;
     html += `</div></div>`;
   }
 
-  // Feature callouts on right side with connecting lines
-  const labelLeft = imgLeft + imgW + 24;
+  // Feature callouts — connector lines SVG
   const labelW = cW - labelLeft - PAD;
-  const labelGap = Math.min(75, Math.round(contentH / Math.max(count, 1)));
-  const circleD = 34;
+  const labelGap = Math.min(80, Math.round(contentH / Math.max(count, 1)));
+  const circleD = 40;
 
-  let svgLines = '';
+  let svgLines = svgDefs;
   for (let i = 0; i < count; i++) {
     const feat = features[i];
     const fy = contentTop + 16 + i * labelGap;
-    // Pin circle
-    html += `<div style="position:absolute;left:${labelLeft}px;top:${fy}px;width:${circleD}px;height:${circleD}px;border-radius:50%;background:${p.accent};box-shadow:0 3px 10px ${hexToRgba(p.accent, 0.35)};display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:bold;color:#fff">${feat.num}</div>`;
-    // Feature text
-    html += `<div style="position:absolute;left:${labelLeft + circleD + 12}px;top:${fy + 3}px;width:${labelW - circleD - 12}px">`;
-    html += `<div style="font-size:13px;font-weight:600;color:${p.text};line-height:1.4">${escHtml(feat.text)}</div>`;
-    html += `</div>`;
-    // Connecting line from image edge to pin
     const lineY = fy + circleD / 2;
-    svgLines += `<line x1="${imgLeft + imgW + 2}" y1="${lineY}" x2="${labelLeft - 4}" y2="${lineY}" stroke="${hexToRgba(p.accent, 0.2)}" stroke-width="1" stroke-dasharray="4,3"/>`;
+
+    // Gradient connector lines — 2px
+    svgLines += `<line x1="${imgLeft + imgW + 2}" y1="${lineY}" x2="${labelLeft - 4}" y2="${lineY}" stroke="url(#dsConnGrad)" stroke-width="2"/>`;
+
+    // Callout pin — larger circle, gradient fill, glow shadow
+    html += `<div style="position:absolute;left:${labelLeft}px;top:${fy}px;width:${circleD}px;height:${circleD}px;border-radius:50%;background:linear-gradient(135deg,${p.accent},${hexToRgba(p.accent, 0.7)});box-shadow:0 4px 16px ${hexToRgba(p.accent, 0.4)};display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;color:#fff">${feat.num}</div>`;
+
+    // Feature text — glass card containers with border-left accent
+    const glassProps = dark
+      ? `background:${hexToRgba(p.surface, 0.15)};backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.1)`
+      : `background:${hexToRgba(p.surface, 0.8)};border:1px solid ${hexToRgba(p.border, 0.12)}`;
+    html += `<div style="position:absolute;left:${labelLeft + circleD + 12}px;top:${fy + 2}px;width:${labelW - circleD - 16}px;min-height:${circleD - 4}px;border-left:3px solid ${p.accent};border-radius:8px;padding:6px 12px;box-shadow:${cardShadow(1, dark)};${glassProps};display:flex;align-items:center">`;
+    html += `<div style="font-size:14px;font-weight:600;color:${p.text};line-height:1.4">${escHtml(feat.text)}</div>`;
+    html += `</div>`;
   }
 
   return `${SCOPED_RESET}
 <div style="position:relative;width:${W}px;height:${H}px;background:${p.background};overflow:hidden">
-  ${bgGradientOverlay(cW, H, p.accent, 0.05, '50%')}
-  <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;font-size:${titleFontSize(slide.title)}px;font-weight:bold;overflow-wrap:break-word;word-wrap:break-word;color:${p.text};line-height:1.2">${escHtml(slide.title)}</div>
-  <div style="position:absolute;left:${PAD}px;top:${PAD + 56}px;width:50px;height:3px;background:${p.accent};border-radius:2px"></div>
+  ${bgGradientOverlay(cW, H, p.accent, 0.07, '50%')}
+  <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;font-size:${titleFontSize(slide.title)}px;font-weight:800;overflow-wrap:break-word;word-wrap:break-word;color:${p.text};line-height:1.2;letter-spacing:0.5px;${dark ? `text-shadow:${textGlow(p.accent, 0.4)}` : ''}">${escHtml(slide.title)}</div>
+  <div style="position:absolute;left:${PAD}px;top:${PAD + 56}px;width:60px;height:4px;background:linear-gradient(90deg,${p.accent},${hexToRgba(p.accent, 0.3)});border-radius:2px"></div>
   ${html}
   <svg style="position:absolute;left:0;top:0;width:${cW}px;height:${H}px;pointer-events:none" viewBox="0 0 ${cW} ${H}">${svgLines}</svg>
 </div>`;
@@ -5136,7 +5383,7 @@ function buildDemoScreenshot(slide: SlideInput, p: ColorPalette, hasImage = fals
 
 
 // ── MILESTONE_TIMELINE ───────────────────────────────────────
-// Vertical timeline with progress indicator, glow dots, and milestone cards
+// Vertical timeline with progress indicator, glow dots, and milestone cards — BOLD edition
 
 function buildMilestoneTimeline(slide: SlideInput, p: ColorPalette, hasImage = false, accentDiversity = true): string {
   const cW = hasImage ? CONTENT_W_IMG : W;
@@ -5171,22 +5418,32 @@ function buildMilestoneTimeline(slide: SlideInput, p: ColorPalette, hasImage = f
   const lineX = Math.round(cW * 0.22);
   const topY = PAD + 95;
   const itemGap = Math.min(80, Math.round((H - topY - PAD - 10) / Math.max(count, 1)));
-  const dotR = 12;
+  const dotR = 16;
   const endY = topY + (count - 1) * itemGap;
 
-  // SVG: vertical line with progress coloring
-  let svgInner = '';
-  // Background line (full)
-  svgInner += `<line x1="${lineX}" y1="${topY}" x2="${lineX}" y2="${endY}" stroke="${hexToRgba(p.border, 0.15)}" stroke-width="3"/>`;
-  // Progress line (done portion)
+  // ── SVG defs: glow, gradient progress, dot mesh ──
+  let svgInner = `<defs>`;
+  svgInner += `<filter id="mtglo"><feGaussianBlur stdDeviation="6"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>`;
+  svgInner += `<linearGradient id="mtProgGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${p.accent}"/><stop offset="100%" stop-color="${p.secondary || p.accent}"/></linearGradient>`;
+  svgInner += `<pattern id="mtDots" width="20" height="20" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r="1" fill="${hexToRgba(p.text, 0.06)}"/></pattern>`;
+  svgInner += `</defs>`;
+
+  // Dot mesh
+  svgInner += `<rect x="${PAD}" y="${topY - 10}" width="${cW - PAD * 2}" height="${H - topY - PAD + 20}" fill="url(#mtDots)"/>`;
+
+  // Background line (full) — thicker
+  svgInner += `<line x1="${lineX}" y1="${topY}" x2="${lineX}" y2="${endY}" stroke="${hexToRgba(p.border, 0.15)}" stroke-width="5"/>`;
+  // Progress glow — blurred line behind progress portion
   if (doneCount > 0) {
     const progressY = topY + (Math.min(doneCount, count) - 1) * itemGap;
-    svgInner += `<line x1="${lineX}" y1="${topY}" x2="${lineX}" y2="${progressY}" stroke="${p.accent}" stroke-width="3" opacity="0.5"/>`;
+    svgInner += `<line x1="${lineX}" y1="${topY}" x2="${lineX}" y2="${progressY}" stroke="${hexToRgba(p.accent, 0.3)}" stroke-width="12" filter="url(#mtglo)"/>`;
+    // Main progress line — gradient
+    svgInner += `<line x1="${lineX}" y1="${topY}" x2="${lineX}" y2="${progressY}" stroke="url(#mtProgGrad)" stroke-width="5"/>`;
   }
 
   let html = '';
-  // Progress label
-  html += `<div style="position:absolute;left:${PAD}px;top:${PAD + 70}px;font-size:11px;color:${p.text};opacity:0.5">${doneCount}/${count} completed</div>`;
+  // Progress label — accent pill
+  html += `<div style="position:absolute;left:${PAD}px;top:${PAD + 66}px;display:inline-flex;align-items:center;padding:4px 14px;background:${hexToRgba(p.accent, dark ? 0.15 : 0.08)};border-radius:12px;border:1px solid ${hexToRgba(p.accent, 0.2)}"><span style="font-size:12px;font-weight:800;color:${p.accent}">${doneCount}/${count} completed</span></div>`;
 
   for (let i = 0; i < count; i++) {
     const ms = milestones[i];
@@ -5194,35 +5451,39 @@ function buildMilestoneTimeline(slide: SlideInput, p: ColorPalette, hasImage = f
     const color = accents[i % accents.length];
 
     if (ms.done) {
-      // Filled circle with glow
-      html += `<div style="position:absolute;left:${lineX - dotR}px;top:${my - dotR}px;width:${dotR * 2}px;height:${dotR * 2}px;border-radius:50%;background:${color};box-shadow:0 0 12px ${hexToRgba(color, 0.4)},0 0 24px ${hexToRgba(color, 0.15)}"></div>`;
-      // Checkmark inside
-      html += `<div style="position:absolute;left:${lineX - dotR}px;top:${my - dotR}px;width:${dotR * 2}px;height:${dotR * 2}px;display:flex;align-items:center;justify-content:center;font-size:12px;color:#fff;font-weight:bold">\u2713</div>`;
+      // Done node — larger, gradient fill, glow halo
+      svgInner += `<circle cx="${lineX}" cy="${my}" r="${dotR + 4}" fill="${hexToRgba(color, 0.15)}" filter="url(#mtglo)"/>`;
+      html += `<div style="position:absolute;left:${lineX - dotR}px;top:${my - dotR}px;width:${dotR * 2}px;height:${dotR * 2}px;border-radius:50%;background:linear-gradient(135deg,${color},${hexToRgba(color, 0.7)});box-shadow:0 0 16px ${hexToRgba(color, 0.5)},0 0 32px ${hexToRgba(color, 0.2)}"></div>`;
+      html += `<div style="position:absolute;left:${lineX - dotR}px;top:${my - dotR}px;width:${dotR * 2}px;height:${dotR * 2}px;display:flex;align-items:center;justify-content:center;font-size:14px;color:#fff;font-weight:800">\u2713</div>`;
     } else {
-      // Outlined circle
-      html += `<div style="position:absolute;left:${lineX - dotR}px;top:${my - dotR}px;width:${dotR * 2}px;height:${dotR * 2}px;border-radius:50%;background:${p.background};border:2px dashed ${hexToRgba(color, 0.4)}"></div>`;
+      // Future node — larger, dashed border, subtle inner dot
+      html += `<div style="position:absolute;left:${lineX - dotR}px;top:${my - dotR}px;width:${dotR * 2}px;height:${dotR * 2}px;border-radius:50%;background:${p.background};border:2.5px dashed ${hexToRgba(color, 0.4)}"></div>`;
+      html += `<div style="position:absolute;left:${lineX - 4}px;top:${my - 4}px;width:8px;height:8px;border-radius:50%;background:${hexToRgba(color, 0.25)}"></div>`;
     }
 
-    // Milestone card
-    const cardLeft = lineX + dotR + 20;
+    // Milestone card — glass style, cardShadow(2), left border accent 4px
+    const cardLeft = lineX + dotR + 24;
     const cardW = cW - cardLeft - PAD;
-    const cardH = Math.min(60, itemGap - 10);
-    const cardBg = dark ? hexToRgba(p.surface, ms.done ? 0.3 : 0.15) : ms.done ? p.surface : hexToRgba(p.surface, 0.6);
-    html += `<div style="position:absolute;left:${cardLeft}px;top:${my - cardH / 2}px;width:${cardW}px;height:${cardH}px;background:${cardBg};border-radius:10px;border-left:3px solid ${color};box-shadow:${ms.done ? cardShadow(1, dark) : 'none'};padding:8px 14px;opacity:${ms.done ? 1 : 0.7}">`;
+    const cardH = Math.min(64, itemGap - 10);
+    const glassProps = dark
+      ? `background:${hexToRgba(p.surface, ms.done ? 0.2 : 0.1)};backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.1)`
+      : `background:${ms.done ? p.surface : hexToRgba(p.surface, 0.6)};border:1px solid ${hexToRgba(p.border, 0.12)}`;
+    html += `<div style="position:absolute;left:${cardLeft}px;top:${my - cardH / 2}px;width:${cardW}px;height:${cardH}px;border-radius:12px;border-left:4px solid ${color};box-shadow:${ms.done ? cardShadow(2, dark) : 'none'};padding:8px 14px;opacity:${ms.done ? 1 : 0.7};${glassProps}">`;
     if (ms.date) {
-      html += `<div style="font-size:13px;font-weight:bold;color:${color}">${escHtml(ms.date)}</div>`;
-      html += `<div style="font-size:12px;color:${p.text};opacity:0.8;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;margin-top:2px">${escHtml(ms.desc)}</div>`;
+      // Date as badge pill
+      html += `<div style="display:inline-flex;align-items:center;padding:2px 10px;background:${hexToRgba(color, dark ? 0.15 : 0.08)};border-radius:8px;margin-bottom:4px"><span style="font-size:14px;font-weight:800;color:${color}">${escHtml(ms.date)}</span></div>`;
+      html += `<div style="font-size:13px;color:${p.text};opacity:0.85;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;margin-top:2px;line-height:1.5">${escHtml(ms.desc)}</div>`;
     } else {
-      html += `<div style="font-size:13px;color:${p.text};line-height:1.4;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">${escHtml(ms.desc)}</div>`;
+      html += `<div style="font-size:13px;color:${p.text};line-height:1.5;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">${escHtml(ms.desc)}</div>`;
     }
     html += `</div>`;
   }
 
   return `${SCOPED_RESET}
 <div style="position:relative;width:${W}px;height:${H}px;background:${p.background};overflow:hidden">
-  ${bgGradientOverlay(cW, H, p.accent, 0.05, '40%')}
-  <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;font-size:${titleFontSize(slide.title)}px;font-weight:bold;overflow-wrap:break-word;word-wrap:break-word;color:${p.text};line-height:1.2">${escHtml(slide.title)}</div>
-  <div style="position:absolute;left:${PAD}px;top:${PAD + 56}px;width:50px;height:3px;background:${p.accent};border-radius:2px"></div>
+  ${bgGradientOverlay(cW, H, p.accent, 0.07, '40%')}
+  <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;font-size:${titleFontSize(slide.title)}px;font-weight:800;overflow-wrap:break-word;word-wrap:break-word;color:${p.text};line-height:1.2;letter-spacing:0.5px;${dark ? `text-shadow:${textGlow(p.accent, 0.4)}` : ''}">${escHtml(slide.title)}</div>
+  <div style="position:absolute;left:${PAD}px;top:${PAD + 56}px;width:60px;height:4px;background:linear-gradient(90deg,${p.accent},${hexToRgba(p.accent, 0.3)});border-radius:2px"></div>
   <svg style="position:absolute;left:0;top:0;width:${cW}px;height:${H}px;pointer-events:none" viewBox="0 0 ${cW} ${H}">${svgInner}</svg>
   ${html}
 </div>`;
@@ -5230,7 +5491,7 @@ function buildMilestoneTimeline(slide: SlideInput, p: ColorPalette, hasImage = f
 
 
 // ── PARTNERSHIP_LOGOS ─────────────────────────────────────────
-// Categorized partner grid with logo-style badges and colored category chips
+// Categorized partner grid with logo-style badges and colored category chips — BOLD edition
 
 function buildPartnershipLogos(slide: SlideInput, p: ColorPalette, hasImage = false, accentDiversity = true): string {
   const cW = hasImage ? CONTENT_W_IMG : W;
@@ -5259,47 +5520,71 @@ function buildPartnershipLogos(slide: SlideInput, p: ColorPalette, hasImage = fa
   const catH = Math.round((availH - (catCount - 1) * catGap) / catCount);
   const contentW = cW - PAD * 2;
 
-  let html = '';
+  // ── SVG defs ──
+  let svgDefs = `<svg style="position:absolute;left:0;top:0;width:0;height:0"><defs>`;
+  svgDefs += `<filter id="plglo"><feGaussianBlur stdDeviation="6"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>`;
+  svgDefs += `<pattern id="plDots" width="20" height="20" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r="1" fill="${hexToRgba(p.text, 0.06)}"/></pattern>`;
+  svgDefs += `</defs></svg>`;
+
+  let html = svgDefs;
+
+  // Dot mesh background
+  html += `<svg style="position:absolute;left:${PAD}px;top:${startY - 10}px;width:${contentW}px;height:${availH + 20}px;pointer-events:none"><rect width="100%" height="100%" fill="url(#plDots)"/></svg>`;
 
   for (let ci = 0; ci < catCount; ci++) {
     const cat = categories[ci];
     const color = accents[ci % accents.length];
     const cy = startY + ci * (catH + catGap);
+    const glassProps = dark
+      ? `backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.1)`
+      : `border:1px solid ${hexToRgba(p.border, 0.12)}`;
 
-    // Category chip
-    html += `<div style="position:absolute;left:${PAD}px;top:${cy}px;display:inline-flex;align-items:center;padding:3px 12px;background:${hexToRgba(color, dark ? 0.15 : 0.08)};border-radius:12px;border:1px solid ${hexToRgba(color, 0.2)}">`;
-    html += `<span style="font-size:11px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;color:${color}">${escHtml(cat.label)}</span>`;
+    // Full-width glass category panel bar
+    html += `<div style="position:absolute;left:${PAD}px;top:${cy}px;width:${contentW}px;height:36px;background:${hexToRgba(color, dark ? 0.08 : 0.04)};border-radius:12px;box-shadow:${cardShadow(1, dark)};display:flex;align-items:center;padding:0 16px;${glassProps}">`;
+    // Accent dot
+    html += `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${color};margin-right:10px;box-shadow:0 0 6px ${hexToRgba(color, 0.4)}"></span>`;
+    // Category label — bold uppercase
+    html += `<span style="font-size:13px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:${color}">${escHtml(cat.label)}</span>`;
+    // Count badge
+    html += `<span style="margin-left:10px;display:inline-flex;align-items:center;justify-content:center;width:24px;height:20px;background:${hexToRgba(color, 0.15)};border-radius:10px;font-size:11px;font-weight:800;color:${color}">${cat.names.length}</span>`;
     html += `</div>`;
 
     // Partner badges grid
-    const badgeTop = cy + 30;
+    const badgeTop = cy + 44;
     const maxPerRow = 4;
     const badgeGap = 10;
     const nameCount = Math.min(cat.names.length, 8);
     const badgeW = Math.min(160, Math.round((contentW - (maxPerRow - 1) * badgeGap) / maxPerRow));
-    const badgeH = 40;
-    const cardBg = dark ? hexToRgba(p.surface, 0.25) : p.surface;
+    const badgeH = 44;
 
     for (let ni = 0; ni < nameCount; ni++) {
-      const col = ni % maxPerRow;
+      const col_idx = ni % maxPerRow;
       const row = Math.floor(ni / maxPerRow);
-      const bx = PAD + col * (badgeW + badgeGap);
+      const bx = PAD + col_idx * (badgeW + badgeGap);
       const by = badgeTop + row * (badgeH + 10);
+      const badgeGlass = dark
+        ? `background:${hexToRgba(p.surface, 0.18)};backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.12)`
+        : `background:${p.surface};border:1px solid ${hexToRgba(p.border, 0.15)}`;
 
-      html += `<div style="position:absolute;left:${bx}px;top:${by}px;width:${badgeW}px;height:${badgeH}px;background:${cardBg};border:1px solid ${hexToRgba(p.border, 0.15)};border-radius:10px;box-shadow:${cardShadow(1, dark)};display:flex;align-items:center;padding:0 12px">`;
-      // Logo placeholder circle
-      html += `<div style="width:26px;height:26px;border-radius:50%;background:${hexToRgba(color, 0.12)};border:1px solid ${hexToRgba(color, 0.2)};display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:bold;color:${color};flex-shrink:0">${escHtml(cat.names[ni].charAt(0))}</div>`;
-      html += `<span style="margin-left:10px;font-size:12px;font-weight:600;color:${p.text};overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${escHtml(cat.names[ni])}</span>`;
+      html += `<div style="position:absolute;left:${bx}px;top:${by}px;width:${badgeW}px;height:${badgeH}px;${badgeGlass};border-radius:12px;box-shadow:${cardShadow(2, dark)};display:flex;align-items:center;padding:0 12px">`;
+      // Logo initial circle — gradient fill, bold white letter
+      html += `<div style="width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,${color},${hexToRgba(color, 0.6)});display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#fff;flex-shrink:0;box-shadow:0 2px 8px ${hexToRgba(color, 0.3)}">${escHtml(cat.names[ni].charAt(0))}</div>`;
+      html += `<span style="margin-left:10px;font-size:13px;font-weight:600;color:${p.text};overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${escHtml(cat.names[ni])}</span>`;
       html += `</div>`;
+    }
+
+    // Decorative horizontal SVG line between categories
+    if (ci < catCount - 1) {
+      const lineY = cy + catH + catGap / 2;
+      html += `<svg style="position:absolute;left:${PAD + 20}px;top:${lineY}px;width:${contentW - 40}px;height:2px;pointer-events:none"><line x1="0" y1="1" x2="${contentW - 40}" y2="1" stroke="${hexToRgba(p.border, 0.1)}" stroke-width="1" stroke-dasharray="6,4"/></svg>`;
     }
   }
 
   return `${SCOPED_RESET}
 <div style="position:relative;width:${W}px;height:${H}px;background:${p.background};overflow:hidden">
-  ${bgGradientOverlay(cW, H, p.accent, 0.05, '45%')}
-  <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;font-size:${titleFontSize(slide.title)}px;font-weight:bold;overflow-wrap:break-word;word-wrap:break-word;color:${p.text};line-height:1.2">${escHtml(slide.title)}</div>
-  <div style="position:absolute;left:${PAD}px;top:${PAD + 56}px;width:50px;height:3px;background:${p.accent};border-radius:2px"></div>
+  ${bgGradientOverlay(cW, H, p.accent, 0.07, '45%')}
+  <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;font-size:${titleFontSize(slide.title)}px;font-weight:800;overflow-wrap:break-word;word-wrap:break-word;color:${p.text};line-height:1.2;letter-spacing:0.5px;${dark ? `text-shadow:${textGlow(p.accent, 0.4)}` : ''}">${escHtml(slide.title)}</div>
+  <div style="position:absolute;left:${PAD}px;top:${PAD + 56}px;width:60px;height:4px;background:linear-gradient(90deg,${p.accent},${hexToRgba(p.accent, 0.3)});border-radius:2px"></div>
   ${html}
 </div>`;
 }
-
