@@ -38,3 +38,4 @@ const prisma = new PrismaClient({ datasourceUrl: process.env.DATABASE_URL });
 " 2>&1 || echo "=== Schema fixes failed ==="
 
 exec node /app/apps/api/dist/src/main.js
+# rebuild trigger
