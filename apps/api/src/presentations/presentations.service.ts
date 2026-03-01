@@ -661,21 +661,44 @@ export class PresentationsService {
   }
 
   async diagExport(userId: string): Promise<string> {
-    // Test the full export pipeline on a recent presentation
+    const results: string[] = [];
+
+    // Fix missing accentColorDiversity column
+    try {
+      await this.prisma.$executeRawUnsafe(
+        `ALTER TABLE "PitchLens" ADD COLUMN IF NOT EXISTS "accentColorDiversity" BOOLEAN NOT NULL DEFAULT true`
+      );
+      results.push('accentColorDiversity column: ADDED/EXISTS');
+    } catch (e: unknown) {
+      results.push(`accentColorDiversity fix: ${e instanceof Error ? e.message : String(e)}`);
+    }
+
+    // Verify pitch lens now works
+    try {
+      const lenses = await this.prisma.pitchLens.findMany({
+        where: { userId },
+        take: 1,
+      });
+      results.push(`pitchLens findMany after fix: OK (${lenses.length} returned)`);
+    } catch (e: unknown) {
+      results.push(`pitchLens findMany after fix: ${e instanceof Error ? e.message.slice(0, 100) : String(e)}`);
+    }
+
+    // Test export job
     const pres = await this.prisma.presentation.findFirst({
       where: { userId, status: 'COMPLETED' },
       orderBy: { updatedAt: 'desc' },
-      include: { slides: { take: 1 } },
     });
-    if (!pres) return 'no completed presentations';
-
-    // Test creating an export job
-    try {
-      const job = await this.exportsService.createExportJob(pres.id, 'PDF');
-      return `export job created: ${job.id}`;
-    } catch (e: unknown) {
-      return `createExportJob error: ${e instanceof Error ? e.message : String(e)}`;
+    if (pres) {
+      try {
+        const job = await this.exportsService.createExportJob(pres.id, 'PDF');
+        results.push(`export job: ${job.id}`);
+      } catch (e: unknown) {
+        results.push(`export job error: ${e instanceof Error ? e.message : String(e)}`);
+      }
     }
+
+    return results.join('\n');
   }
 
   /**
