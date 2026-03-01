@@ -60,13 +60,14 @@ function useCountUp(target: number, duration = 2000) {
 
 // ── Showcase Slides (16 themes x 29 types, 4 content sets, max visual diversity) ──
 const SHOWCASE_SLIDES = [
-  // Round 1 — Visual Gaps Demo (6 enhancements: device mockup, team photos, charts, press cards, logo, percentage circles)
-  { themeSlug: 'visual-gaps-demo', slideNumber: 1, title: 'AI-Powered Decision Intelligence', deck: 'Visual Gaps Demo' },
-  { themeSlug: 'visual-gaps-demo', slideNumber: 5, title: 'Product Showcase (Device Mockup)', deck: 'Visual Gaps Demo' },
-  { themeSlug: 'visual-gaps-demo', slideNumber: 11, title: 'Team with Photo Headshots', deck: 'Visual Gaps Demo' },
-  { themeSlug: 'visual-gaps-demo', slideNumber: 7, title: '16x Revenue Growth (Chart)', deck: 'Visual Gaps Demo' },
-  { themeSlug: 'visual-gaps-demo', slideNumber: 8, title: 'Press Coverage (Clipping Cards)', deck: 'Visual Gaps Demo' },
-  { themeSlug: 'visual-gaps-demo', slideNumber: 9, title: 'Three Competitive Moats', deck: 'Visual Gaps Demo' },
+  // Round 1 — Visual Gaps Demo (7 enhancements: device mockup, evidence cards, team photos, charts, press cards, pillars, process)
+  { themeSlug: 'visual-gaps-demo', slideNumber: 5, title: 'Predictive AI at Scale', deck: 'Visual Gaps Demo' },
+  { themeSlug: 'visual-gaps-demo', slideNumber: 6, title: 'SoftBank: Built Better In-House', deck: 'Visual Gaps Demo' },
+  { themeSlug: 'visual-gaps-demo', slideNumber: 11, title: 'The Team Behind the Platform', deck: 'Visual Gaps Demo' },
+  { themeSlug: 'visual-gaps-demo', slideNumber: 7, title: '16x Revenue Growth to $19.2M', deck: 'Visual Gaps Demo' },
+  { themeSlug: 'visual-gaps-demo', slideNumber: 8, title: 'Validated by Leading Publications', deck: 'Visual Gaps Demo' },
+  { themeSlug: 'visual-gaps-demo', slideNumber: 9, title: 'Three Moats Competitors Can\'t Replicate', deck: 'Visual Gaps Demo' },
+  { themeSlug: 'visual-gaps-demo', slideNumber: 10, title: 'Pilot to Production in 12 Weeks', deck: 'Visual Gaps Demo' },
   { themeSlug: 'pitchable-dark', slideNumber: 1, title: 'The Developer Productivity Crisis', deck: 'Pitchable Dark' },
   { themeSlug: 'mckinsey-executive', slideNumber: 2, title: '$2.1B Revenue Opportunity', deck: 'McKinsey Executive' },
   { themeSlug: 'apple-keynote', slideNumber: 3, title: 'Traditional Media vs Creator-Led', deck: 'Apple Keynote' },
