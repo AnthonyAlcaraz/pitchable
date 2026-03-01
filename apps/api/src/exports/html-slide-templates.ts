@@ -1,7 +1,7 @@
 /**
  * Figma-grade HTML+SVG slide templates for complex slide types.
  *
- * These 6 types produce superior visuals via absolute-positioned HTML+SVG
+ * These 32 types produce superior visuals via absolute-positioned HTML+SVG
  * compared to Marp CSS alone. Marp CLI --html renders them natively via
  * its internal Puppeteer/Chromium.
  *
