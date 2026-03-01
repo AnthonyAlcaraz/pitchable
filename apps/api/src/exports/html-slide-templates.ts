@@ -713,14 +713,18 @@ function buildSplitStatement(slide: SlideInput, p: ColorPalette, hasImage = fals
   const cW = hasImage ? CONTENT_W_IMG : W;
   const dark = isDarkBackground(p.background);
 
-  // Parse sections: split by --- separator, each section has a bold header + description
-  const rawSections = slide.body.split(/\n---\n|\n-{3,}\n/);
-  // First section may be a subtitle (no bold header)
+  // Parse sections: split by --- AND by blank-line + **Bold** patterns
+  const roughSections = slide.body.split(/\n---\n|\n-{3,}\n/);
+  const splitSections: string[] = [];
+  for (const rs of roughSections) {
+    const subParts = rs.split(/\n\n(?=\*\*[^*]+\*\*)/);
+    for (const sp of subParts) { if (sp.trim()) splitSections.push(sp.trim()); }
+  }
+
   let subtitle = '';
   const sections: Array<{ header: string; stat: string; description: string }> = [];
 
-  for (const raw of rawSections) {
-    const trimmed = raw.trim();
+  for (const trimmed of splitSections) {
     if (!trimmed) continue;
 
     // Try to extract **Header** and **Stat** + description
@@ -728,16 +732,23 @@ function buildSplitStatement(slide: SlideInput, p: ColorPalette, hasImage = fals
     if (headerMatch) {
       const header = headerMatch[1].trim();
       const rest = trimmed.slice(headerMatch[0].length).trim();
-      // Extract stat (next bold or first line)
-      const statMatch = rest.match(/^\*\*([^*]+)\*\*/);
+      // Lines after header
+      const restLines = rest.split('\n').map(l => l.trim()).filter(Boolean);
       let stat = '';
-      let description = rest;
+      let descParts: string[] = [];
+      // Extract stat: next bold value or a numeric-heavy first line
+      const statMatch = rest.match(/^\*\*([^*]+)\*\*/);
       if (statMatch) {
         stat = statMatch[1].trim();
-        description = rest.slice(statMatch[0].length).trim();
+        const afterStat = rest.slice(statMatch[0].length).trim();
+        descParts = afterStat.split('\n').map(l => l.trim()).filter(Boolean);
+      } else if (restLines.length > 0 && /^[\d$%,.:+]/.test(restLines[0])) {
+        stat = stripMarkdown(restLines[0]);
+        descParts = restLines.slice(1);
+      } else {
+        descParts = restLines;
       }
-      // Clean description: remove leading "of " or similar
-      description = description.replace(/^of\s+/i, '').replace(/\n+/g, ' ');
+      const description = descParts.map(l => stripMarkdown(l)).join(' ').replace(/^of\s+/i, '');
       sections.push({ header, stat, description });
     } else {
       // No bold header — treat as subtitle
