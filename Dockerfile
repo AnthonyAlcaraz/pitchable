@@ -26,7 +26,7 @@ COPY --from=deps /app/packages/shared/node_modules ./packages/shared/node_module
 COPY . .
 
 # Generate Prisma client (cache bust: 12-new-types-v1)
-RUN cd apps/api && npx prisma generate
+RUN echo "enum-bust-1772368384" && cd apps/api && npx prisma generate && grep FLYWHEEL generated/prisma/enums.ts && echo "=== FLYWHEEL enum confirmed in generated client ==="
 
 # Prisma generate in Docker doesn't always create package.json with "type":"module".
 # Without it, tsc compiles the generated .ts files as CJS instead of ESM.
