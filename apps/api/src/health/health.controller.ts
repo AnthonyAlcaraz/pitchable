@@ -1,6 +1,7 @@
 import { Controller, Get } from '@nestjs/common';
 import { HealthCheck, HealthCheckService } from '@nestjs/terminus';
 import { PrismaHealthIndicator } from './prisma.health.js';
+import { SlideType } from '../../generated/prisma/enums.js';
 
 @Controller('health')
 export class HealthController {
@@ -15,5 +16,14 @@ export class HealthController {
     return this.health.check([
       () => this.prismaHealth.isHealthy('database'),
     ]);
+  }
+
+  @Get('enums')
+  enumCheck() {
+    return {
+      slideTypes: Object.keys(SlideType),
+      hasFlywheel: 'FLYWHEEL' in SlideType,
+      buildTime: '__BUILD_TIME__',
+    };
   }
 }
