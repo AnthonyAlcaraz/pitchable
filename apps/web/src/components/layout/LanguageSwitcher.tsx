@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { Globe } from 'lucide-react';
 
-export function LanguageSwitcher({ compact }: { compact?: boolean }) {
+export function LanguageSwitcher(_props: { compact?: boolean }) {
   const { i18n } = useTranslation();
   const current = i18n.language?.startsWith('fr') ? 'fr' : 'en';
   const next = current === 'en' ? 'fr' : 'en';
@@ -9,11 +9,11 @@ export function LanguageSwitcher({ compact }: { compact?: boolean }) {
   return (
     <button
       onClick={() => void i18n.changeLanguage(next)}
-      className="flex items-center gap-1.5 rounded-md px-2 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+      className="flex items-center gap-1.5 rounded-lg border border-white/15 bg-white/5 px-2.5 py-1.5 text-sm font-semibold text-white/80 transition-all hover:border-orange-500/40 hover:bg-orange-500/10 hover:text-white"
       title={current === 'en' ? 'Passer en français' : 'Switch to English'}
     >
-      <Globe className="h-3.5 w-3.5" />
-      {!compact && <span>{current.toUpperCase()}</span>}
+      <Globe className="h-4 w-4" />
+      <span>{current.toUpperCase()}</span>
     </button>
   );
 }
