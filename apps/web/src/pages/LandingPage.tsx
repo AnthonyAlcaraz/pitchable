@@ -60,19 +60,19 @@ function useCountUp(target: number, duration = 2000) {
 
 // ── Showcase Slides (16 themes x 29 types, 4 content sets, max visual diversity) ──
 const SHOWCASE_SLIDES = [
-  // Round 1 — all 12 slide types, alternating dark/light themes
+  // Round 1 — Visual Gaps Demo (6 enhancements: device mockup, team photos, charts, press cards, logo, percentage circles)
+  { themeSlug: 'visual-gaps-demo', slideNumber: 1, title: 'AI-Powered Decision Intelligence', deck: 'Visual Gaps Demo' },
+  { themeSlug: 'visual-gaps-demo', slideNumber: 5, title: 'Product Showcase (Device Mockup)', deck: 'Visual Gaps Demo' },
+  { themeSlug: 'visual-gaps-demo', slideNumber: 11, title: 'Team with Photo Headshots', deck: 'Visual Gaps Demo' },
+  { themeSlug: 'visual-gaps-demo', slideNumber: 7, title: '16x Revenue Growth (Chart)', deck: 'Visual Gaps Demo' },
+  { themeSlug: 'visual-gaps-demo', slideNumber: 8, title: 'Press Coverage (Clipping Cards)', deck: 'Visual Gaps Demo' },
+  { themeSlug: 'visual-gaps-demo', slideNumber: 9, title: 'Three Competitive Moats', deck: 'Visual Gaps Demo' },
   { themeSlug: 'pitchable-dark', slideNumber: 1, title: 'The Developer Productivity Crisis', deck: 'Pitchable Dark' },
   { themeSlug: 'mckinsey-executive', slideNumber: 2, title: '$2.1B Revenue Opportunity', deck: 'McKinsey Executive' },
   { themeSlug: 'apple-keynote', slideNumber: 3, title: 'Traditional Media vs Creator-Led', deck: 'Apple Keynote' },
   { themeSlug: 'sequoia-capital', slideNumber: 4, title: 'Transformation Roadmap', deck: 'Sequoia Capital' },
   { themeSlug: 'stripe-fintech', slideNumber: 5, title: 'Developer Platform Capabilities', deck: 'Stripe Fintech' },
   { themeSlug: 'airbnb-story', slideNumber: 6, title: 'Creator Success Journey', deck: 'Airbnb Story' },
-  { themeSlug: 'z4-dark-premium', slideNumber: 7, title: 'Developer Tools Market', deck: 'Z4 Dark Premium' },
-  { themeSlug: 'corporate-blue', slideNumber: 8, title: 'Executive Perspective', deck: 'Corporate Blue' },
-  { themeSlug: 'technical-teal', slideNumber: 9, title: 'Cloud-Native Architecture', deck: 'Technical Teal' },
-  { themeSlug: 'yc-startup', slideNumber: 10, title: 'Research Leadership', deck: 'YC Startup' },
-  { themeSlug: 'dark-professional', slideNumber: 11, title: 'Unlock Your Research Potential', deck: 'Dark Professional' },
-  { themeSlug: 'light-minimal', slideNumber: 12, title: 'AI-Augmented Research Platform', deck: 'Light Minimal' },
   // Round 2 — shifted types, different themes
   { themeSlug: 'creative-warm', slideNumber: 2, title: '12.4M Monthly Active Creators', deck: 'Creative Warm' },
   { themeSlug: 'bcg-strategy', slideNumber: 1, title: 'Margin Erosion in Core Business', deck: 'BCG Strategy' },

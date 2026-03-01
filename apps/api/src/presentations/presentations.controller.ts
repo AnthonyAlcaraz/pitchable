@@ -86,28 +86,6 @@ export class PresentationsController {
   }
 
   /**
-   * GET /presentations/diag
-   * Temporary diagnostic — surfaces actual error messages for debugging.
-   */
-  @Get('diag')
-  async diag(@CurrentUser() user: RequestUser) {
-    const results: Record<string, string> = {};
-    try {
-      const lenses = await this.presentationsService.diagPitchLens(user.userId);
-      results['pitchLens'] = `OK: ${lenses} lenses`;
-    } catch (e: unknown) {
-      results['pitchLens'] = `ERROR: ${e instanceof Error ? e.message : String(e)}`;
-    }
-    try {
-      const count = await this.presentationsService.diagExport(user.userId);
-      results['export'] = `OK: ${count}`;
-    } catch (e: unknown) {
-      results['export'] = `ERROR: ${e instanceof Error ? e.message : String(e)}`;
-    }
-    return results;
-  }
-
-  /**
    * GET /presentations
    * List all presentations for the authenticated user.
    */
