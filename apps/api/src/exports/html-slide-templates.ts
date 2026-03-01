@@ -17,6 +17,7 @@ interface SlideInput {
   body: string;
   slideType: string;
   imageUrl?: string;
+  logoUrl?: string;
 }
 
 // ── Constants ────────────────────────────────────────────────
@@ -426,6 +427,9 @@ export function buildHtmlSlideContent(
   palette: ColorPalette,
   options?: { accentColorDiversity?: boolean },
 ): string {
+  // Skip logo types (full-bleed slides where logo would clash)
+  const NO_LOGO_TYPES = new Set(['TITLE', 'CTA', 'SECTION_DIVIDER']);
+
   // Strip markdown from title at entry point; body is passed raw so
   // builders like parseMarkdownTable() can detect **bold** markers.
   const cleaned: SlideInput = {
@@ -605,6 +609,16 @@ export function buildHtmlSlideContent(
     const closingIdx = html.lastIndexOf('</div>');
     if (closingIdx > -1) {
       html = html.slice(0, closingIdx) + buildImageOverlay(cleaned.imageUrl, palette) + html.slice(closingIdx);
+    }
+  }
+
+  // Inject company logo on every slide (except TITLE/CTA/SECTION_DIVIDER)
+  if (cleaned.logoUrl && html && !NO_LOGO_TYPES.has(cleaned.slideType)) {
+    const logoDark = isDarkBackground(palette.background);
+    const logoDiv = `<div style="position:absolute;bottom:16px;right:24px;width:40px;height:40px;z-index:10;opacity:0.6"><img src="${cleaned.logoUrl}" style="width:100%;height:100%;object-fit:contain;filter:${logoDark ? 'brightness(1.2)' : 'none'}" /></div>`;
+    const closingDivIdx = html.lastIndexOf('</div>');
+    if (closingDivIdx > -1) {
+      html = html.slice(0, closingDivIdx) + logoDiv + html.slice(closingDivIdx);
     }
   }
 
@@ -914,6 +928,37 @@ function buildMetricsHighlight(slide: SlideInput, p: ColorPalette, hasImage = fa
     }
   }
 
+  // Multi-circle mode: when supportLines contain 2-4 percentage values,
+  // render a horizontal row of donut charts below the hero metric
+  const pctSupportLines = supportLines.filter((l) => /^\d+(\.\d+)?\s*%/.test(l.trim()));
+  if (pctSupportLines.length >= 2 && pctSupportLines.length <= 4 && metricLines.length < 2) {
+    const circleCount = Math.min(pctSupportLines.length, 4);
+    const circleR = 50;
+    const circleStroke = 5;
+    const circleGap = 40;
+    const totalCirclesW = circleCount * (circleR * 2 + circleStroke * 2) + (circleCount - 1) * circleGap;
+    const circlesStartX = Math.round((cW - totalCirclesW) / 2);
+    const circlesY = Math.round(H * 0.62);
+    const circleSvgH = (circleR + circleStroke + 2) * 2 + 30;
+
+    let multiCircleSvg = `<svg style="position:absolute;left:0;top:${circlesY}px" width="${cW}" height="${circleSvgH}" xmlns="http://www.w3.org/2000/svg">`;
+    for (let ci = 0; ci < circleCount; ci++) {
+      const line = pctSupportLines[ci].trim();
+      const pctM = line.match(/(\d+(?:\.\d+)?)\s*%/);
+      const pct = pctM ? parseFloat(pctM[1]) : 0;
+      const label = line.replace(pctM ? pctM[0] : '', '').replace(/^[:\-\s]+|[:\-\s]+$/g, '').trim();
+      const cxPos = circlesStartX + ci * (circleR * 2 + circleStroke * 2 + circleGap) + circleR + circleStroke;
+      const cyPos = circleR + circleStroke + 2;
+      multiCircleSvg += generatePercentageCircleSVG(pct, cxPos, cyPos, circleR, circleStroke, p.accent, p.border);
+      multiCircleSvg += `<text x="${cxPos}" y="${cyPos + 5}" text-anchor="middle" fill="${p.primary}" font-size="18" font-weight="bold">${Math.round(pct)}%</text>`;
+      if (label) {
+        multiCircleSvg += `<text x="${cxPos}" y="${cyPos + circleR + circleStroke + 18}" text-anchor="middle" fill="${p.text}" font-size="12" opacity="0.7">${escHtml(label.slice(0, 20))}</text>`;
+      }
+    }
+    multiCircleSvg += '</svg>';
+    secondaryHtml += multiCircleSvg;
+  }
+
   // When secondary metrics are shown, skip support text to prevent stacking
   const displaySupport = metricLines.length >= 2 ? '' : (nonMetricLines.length > 0 ? nonMetricLines.join(' ') : supportText);
 
@@ -939,14 +984,11 @@ function buildMetricsHighlight(slide: SlideInput, p: ColorPalette, hasImage = fa
     const svgSize = (ringR + ringPad) * 2;
     const svgCx = ringR + ringPad;
     const svgCy = svgCx;
-    const circumference = Math.round(2 * Math.PI * ringR);
-    const dashOffset = Math.round(circumference * (1 - pctValue / 100));
     const svgLeft = centerX - svgCx;
     const svgTop = textCenterY - svgCy;
 
     circleSvg = `<svg style="position:absolute;left:${svgLeft}px;top:${svgTop}px" width="${svgSize}" height="${svgSize}" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="${svgCx}" cy="${svgCy}" r="${ringR}" fill="${hexToRgba(p.accent, 0.03)}" stroke="${hexToRgba(p.border, 0.12)}" stroke-width="${ringStroke}" />
-      <circle cx="${svgCx}" cy="${svgCy}" r="${ringR}" fill="none" stroke="${p.accent}" stroke-width="${ringStroke}" stroke-linecap="round" stroke-dasharray="${circumference}" stroke-dashoffset="${dashOffset}" transform="rotate(-90 ${svgCx} ${svgCy})" opacity="0.65" />
+      ${generatePercentageCircleSVG(pctValue, svgCx, svgCy, ringR, ringStroke, p.accent, p.border)}
     </svg>`;
     contentBottomY = textCenterY + ringR + ringPad + 12;
   } else {
@@ -1064,6 +1106,25 @@ function isDarkBackground(bg: string): boolean {
   const g = parseInt(c.slice(2, 4), 16);
   const b = parseInt(c.slice(4, 6), 16);
   return (r * 299 + g * 587 + b * 114) / 1000 < 128;
+}
+
+// ── Reusable SVG Percentage Circle ──────────────────────────
+// Generates a donut-style progress ring SVG for percentage values.
+// Used by buildMetricsHighlight for single-hero and multi-circle modes.
+
+function generatePercentageCircleSVG(
+  pctValue: number,
+  cx: number,
+  cy: number,
+  radius: number,
+  strokeWidth: number,
+  accentColor: string,
+  borderColor: string,
+): string {
+  const circumference = Math.round(2 * Math.PI * radius);
+  const dashOffset = Math.round(circumference * (1 - Math.min(pctValue, 100) / 100));
+  return `<circle cx="${cx}" cy="${cy}" r="${radius}" fill="${hexToRgba(accentColor, 0.03)}" stroke="${hexToRgba(borderColor, 0.12)}" stroke-width="${strokeWidth}" />` +
+    `<circle cx="${cx}" cy="${cy}" r="${radius}" fill="none" stroke="${accentColor}" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-dasharray="${circumference}" stroke-dashoffset="${dashOffset}" transform="rotate(-90 ${cx} ${cy})" opacity="0.65" />`;
 }
 
 // ── COMPARISON ───────────────────────────────────────────────
@@ -2838,7 +2899,8 @@ function buildRoadmap(slide: SlideInput, p: ColorPalette, hasImage = false, acce
 
 function buildPricingTable(slide: SlideInput, p: ColorPalette, hasImage = false, accentDiversity = true): string {
   const cW = hasImage ? CONTENT_W_IMG : W;
-  const lines = parseBodyLines(slide.body);
+  // Use direct split to avoid parseBodyLines 8-line limit (pricing tables can have 15+ lines)
+  const lines = slide.body.split('\n').map(l => l.replace(/^[-\u2022*\u2192\u25ba\u25b8\u279c]\s*/, '').replace(/<[^>]*>/g, '').trim()).filter(Boolean);
   const dark = isDarkBackground(p.background);
   const accents = cardAccentColors(p, accentDiversity ? colorOffset(slide.title) : 0);
 
@@ -2847,7 +2909,7 @@ function buildPricingTable(slide: SlideInput, p: ColorPalette, hasImage = false,
   let currentTier: { name: string; price: string; features: string[]; recommended: boolean } | null = null;
 
   for (const line of lines) {
-    const tierMatch = line.match(/^(Basic|Free|Starter|Pro|Professional|Plus|Enterprise|Business|Premium|Growth)\s*[-:]?\s*(.*)/i);
+    const tierMatch = line.match(/^(Basic|Free|Starter|Pro|Professional|Plus|Enterprise|Business|Premium|Growth)\s*:\s*(.*)/i);
     if (tierMatch) {
       if (currentTier) tiers.push(currentTier);
       const priceMatch = tierMatch[2].match(/\$[\d,.]+(?:\/\w+)?/);
@@ -2941,20 +3003,29 @@ function buildUnitEconomics(slide: SlideInput, p: ColorPalette, hasImage = false
 
   // First line = hero metric, rest = supporting
   const heroLine = lines.length > 0 ? lines[0] : '3.5x LTV:CAC';
-  const supporting = lines.slice(1, 7);
+  // Split pipe-separated supporting metrics into individual items
+  const supporting: string[] = [];
+  for (const supportLine of lines.slice(1, 7)) {
+    if (supportLine.includes('|')) {
+      supporting.push(...supportLine.split('|').map(s => s.trim()).filter(Boolean));
+    } else {
+      supporting.push(supportLine);
+    }
+  }
 
-  // Parse hero metric
-  const heroSep = heroLine.indexOf(':');
+  // Parse hero metric — prefer = over : to handle LTV:CAC = 4.2x correctly
+  const heroEqIdx = heroLine.indexOf('=');
+  const heroSep = heroEqIdx > 0 ? heroEqIdx : heroLine.indexOf(':');
   let heroLabel = '';
   let heroValue = heroLine;
-  if (heroSep > 0 && heroSep < 30) {
+  if (heroSep > 0 && heroSep < 50) {
     heroLabel = heroLine.slice(0, heroSep).trim();
     heroValue = heroLine.slice(heroSep + 1).trim();
   }
 
   // Central hero
   const heroCx = Math.round(cW * 0.5);
-  const heroCy = Math.round(H * 0.45);
+  const heroCy = Math.round(H * 0.52);
   const heroR = 110;
 
   let heroHtml = '';

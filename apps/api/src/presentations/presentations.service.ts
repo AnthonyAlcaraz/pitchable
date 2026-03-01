@@ -588,6 +588,46 @@ export class PresentationsService {
   }
 
   /**
+   * Update the logo URL for a presentation.
+   */
+  async updateLogoUrl(id: string, userId: string, logoUrl: string): Promise<{ id: string; logoUrl: string | null }> {
+    const presentation = await this.prisma.presentation.findUnique({
+      where: { id },
+      select: { userId: true },
+    });
+    if (!presentation) throw new NotFoundException(`Presentation with id "${id}" not found`);
+    if (presentation.userId !== userId) throw new ForbiddenException('You do not have access to this presentation');
+
+    const updated = await this.prisma.presentation.update({
+      where: { id },
+      data: { logoUrl },
+      select: { id: true, logoUrl: true },
+    });
+    this.logger.log(`Updated logo for presentation ${id}`);
+    return updated;
+  }
+
+  /**
+   * Clear the logo URL for a presentation.
+   */
+  async clearLogoUrl(id: string, userId: string): Promise<{ id: string; logoUrl: string | null }> {
+    const presentation = await this.prisma.presentation.findUnique({
+      where: { id },
+      select: { userId: true },
+    });
+    if (!presentation) throw new NotFoundException(`Presentation with id "${id}" not found`);
+    if (presentation.userId !== userId) throw new ForbiddenException('You do not have access to this presentation');
+
+    const updated = await this.prisma.presentation.update({
+      where: { id },
+      data: { logoUrl: null },
+      select: { id: true, logoUrl: true },
+    });
+    this.logger.log(`Cleared logo for presentation ${id}`);
+    return updated;
+  }
+
+  /**
    * Duplicate a presentation with all its slides.
    */
   async duplicate(

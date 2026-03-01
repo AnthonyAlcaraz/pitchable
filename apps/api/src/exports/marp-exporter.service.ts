@@ -524,13 +524,14 @@ export class MarpExporterService {
     for (const slide of sortedSlides) {
       const rendererOverride = rendererOverrides?.get(slide.slideNumber);
       const figmaBg = figmaBackgrounds?.get(slide.slideNumber);
-      slideSections.push(this.buildSlideMarkdown(slide, bg, safePrimary, profile, palette, rendererOverride, figmaBg, figmaContrastOverrides?.get(slide.slideNumber), totalSlides, accentColorDiversity));
+      const logoUrl = (presentation as Record<string, unknown>).logoUrl as string | undefined;
+      slideSections.push(this.buildSlideMarkdown(slide, bg, safePrimary, profile, palette, rendererOverride, figmaBg, figmaContrastOverrides?.get(slide.slideNumber), totalSlides, accentColorDiversity, logoUrl));
     }
 
     return frontmatter.join('\n') + '\n\n' + slideSections.join('\n\n---\n\n');
   }
 
-  private buildSlideMarkdown(slide: SlideModel, bgColor?: string, primaryColor?: string, profile?: LayoutProfileConfig, palette?: ColorPalette, rendererOverride?: string, figmaBackground?: string, figmaContrast?: { isDark: boolean; textColor: string }, totalSlides?: number, accentColorDiversity?: boolean): string {
+  private buildSlideMarkdown(slide: SlideModel, bgColor?: string, primaryColor?: string, profile?: LayoutProfileConfig, palette?: ColorPalette, rendererOverride?: string, figmaBackground?: string, figmaContrast?: { isDark: boolean; textColor: string }, totalSlides?: number, accentColorDiversity?: boolean, logoUrl?: string): string {
     const lines: string[] = [];
     const type = slide.slideType;
     const bgVariant = getSlideBackground(type, slide.slideNumber, bgColor);
@@ -571,7 +572,7 @@ export class MarpExporterService {
         }
       }
       let figmaHtml = buildHtmlSlideContent(
-        { title: slide.title, body: slide.body || '', slideType: figmaType, imageUrl: slide.imageUrl ?? undefined },
+        { title: slide.title, body: slide.body || '', slideType: figmaType, imageUrl: slide.imageUrl ?? undefined, logoUrl },
         palette,
         { accentColorDiversity: accentColorDiversity !== false },
       );

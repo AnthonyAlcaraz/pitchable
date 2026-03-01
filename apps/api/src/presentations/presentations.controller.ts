@@ -21,7 +21,7 @@ import { ForkPresentationDto } from './dto/fork-presentation.dto.js';
 
 // ── Export Request DTO ──────────────────────────────────────
 
-import { IsString, IsOptional, IsUUID, IsBoolean } from 'class-validator';
+import { IsString, IsOptional, IsUUID, IsBoolean, IsUrl } from 'class-validator';
 
 class ExportRequestDto {
   @IsString({ each: true })
@@ -45,6 +45,11 @@ class QuickCreateDto {
 class VisibilityDto {
   @IsBoolean()
   isPublic: boolean;
+}
+
+class LogoUrlDto {
+  @IsUrl()
+  logoUrl: string;
 }
 
 // ── Controller ──────────────────────────────────────────────
@@ -180,6 +185,32 @@ export class PresentationsController {
     @Param('slideId', ParseUUIDPipe) slideId: string,
   ) {
     return this.presentationsService.regenerateSlideImage(slideId, user.userId);
+  }
+
+  /**
+   * PATCH /presentations/:id/logo
+   * Set the logo URL for a presentation.
+   */
+  @Patch(':id/logo')
+  async updateLogo(
+    @CurrentUser() user: RequestUser,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: LogoUrlDto,
+  ) {
+    return this.presentationsService.updateLogoUrl(id, user.userId, dto.logoUrl);
+  }
+
+  /**
+   * DELETE /presentations/:id/logo
+   * Clear the logo from a presentation.
+   */
+  @Delete(':id/logo')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async deleteLogo(
+    @CurrentUser() user: RequestUser,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    await this.presentationsService.clearLogoUrl(id, user.userId);
   }
 
   /**
