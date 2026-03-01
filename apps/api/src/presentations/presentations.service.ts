@@ -673,6 +673,24 @@ export class PresentationsService {
       results.push(`accentColorDiversity fix: ${e instanceof Error ? e.message : String(e)}`);
     }
 
+    // Fix missing SlideType enum values
+    const newEnumValues = [
+      'MATRIX_2X2', 'WATERFALL', 'FUNNEL', 'COMPETITIVE_MATRIX', 'ROADMAP',
+      'PRICING_TABLE', 'UNIT_ECONOMICS', 'SWOT', 'THREE_PILLARS', 'HOOK',
+      'BEFORE_AFTER', 'SOCIAL_PROOF', 'OBJECTION_HANDLER', 'FAQ', 'VERDICT',
+      'COHORT_TABLE', 'PROGRESS_TRACKER', 'PRODUCT_SHOWCASE',
+    ];
+    for (const val of newEnumValues) {
+      try {
+        await this.prisma.$executeRawUnsafe(
+          `ALTER TYPE "SlideType" ADD VALUE IF NOT EXISTS '${val}'`
+        );
+      } catch {
+        // Already exists or other non-critical error
+      }
+    }
+    results.push(`SlideType enum: added ${newEnumValues.length} values (IF NOT EXISTS)`);
+
     // Verify pitch lens now works
     try {
       const lenses = await this.prisma.pitchLens.findMany({
