@@ -36,6 +36,9 @@ export const FIGMA_GRADE_TYPES: Set<string> = new Set([
   'PRODUCT_SHOWCASE', 'SPLIT_STATEMENT',
   'FLYWHEEL', 'REVENUE_MODEL', 'CUSTOMER_JOURNEY', 'TECH_STACK', 'GROWTH_LOOPS', 'CASE_STUDY',
   'HIRING_PLAN', 'USE_OF_FUNDS', 'RISK_MITIGATION', 'DEMO_SCREENSHOT', 'MILESTONE_TIMELINE', 'PARTNERSHIP_LOGOS',
+  'FINANCIAL_PROJECTION', 'GO_TO_MARKET', 'PERSONA', 'TESTIMONIAL_WALL', 'THANK_YOU', 'SCENARIO_ANALYSIS',
+  'VALUE_CHAIN', 'GEOGRAPHIC_MAP', 'IMPACT_SCORECARD', 'EXIT_STRATEGY', 'ORG_CHART', 'FEATURE_COMPARISON',
+  'DATA_TABLE', 'ECOSYSTEM_MAP', 'KPI_DASHBOARD', 'REFERENCES', 'ABSTRACT',
 ]);
 
 // ── Helpers ──────────────────────────────────────────────────
@@ -533,6 +536,40 @@ export function buildHtmlSlideContent(
       html = buildMilestoneTimeline(cleaned, palette, !!cleaned.imageUrl, accentDiversity); break;
     case 'PARTNERSHIP_LOGOS':
       html = buildPartnershipLogos(cleaned, palette, !!cleaned.imageUrl, accentDiversity); break;
+    case 'FINANCIAL_PROJECTION':
+      html = buildFinancialProjection(cleaned, palette, !!cleaned.imageUrl, accentDiversity); break;
+    case 'GO_TO_MARKET':
+      html = buildGoToMarket(cleaned, palette, !!cleaned.imageUrl, accentDiversity); break;
+    case 'PERSONA':
+      html = buildPersona(cleaned, palette, !!cleaned.imageUrl, accentDiversity); break;
+    case 'TESTIMONIAL_WALL':
+      html = buildTestimonialWall(cleaned, palette, !!cleaned.imageUrl); break;
+    case 'THANK_YOU':
+      html = buildThankYou(cleaned, palette, !!cleaned.imageUrl); break;
+    case 'SCENARIO_ANALYSIS':
+      html = buildScenarioAnalysis(cleaned, palette, !!cleaned.imageUrl, accentDiversity); break;
+    case 'VALUE_CHAIN':
+      html = buildValueChain(cleaned, palette, !!cleaned.imageUrl, accentDiversity); break;
+    case 'GEOGRAPHIC_MAP':
+      html = buildGeographicMap(cleaned, palette, !!cleaned.imageUrl, accentDiversity); break;
+    case 'IMPACT_SCORECARD':
+      html = buildImpactScorecard(cleaned, palette, !!cleaned.imageUrl, accentDiversity); break;
+    case 'EXIT_STRATEGY':
+      html = buildExitStrategy(cleaned, palette, !!cleaned.imageUrl, accentDiversity); break;
+    case 'ORG_CHART':
+      html = buildOrgChart(cleaned, palette, !!cleaned.imageUrl, accentDiversity); break;
+    case 'FEATURE_COMPARISON':
+      html = buildFeatureComparison(cleaned, palette, !!cleaned.imageUrl, accentDiversity); break;
+    case 'DATA_TABLE':
+      html = buildDataTable(cleaned, palette, !!cleaned.imageUrl, accentDiversity); break;
+    case 'ECOSYSTEM_MAP':
+      html = buildEcosystemMap(cleaned, palette, !!cleaned.imageUrl, accentDiversity); break;
+    case 'KPI_DASHBOARD':
+      html = buildKpiDashboard(cleaned, palette, !!cleaned.imageUrl, accentDiversity); break;
+    case 'REFERENCES':
+      html = buildReferences(cleaned, palette, !!cleaned.imageUrl); break;
+    case 'ABSTRACT':
+      html = buildAbstract(cleaned, palette, !!cleaned.imageUrl, accentDiversity); break;
     default:
       return '';
   }
@@ -5609,5 +5646,1644 @@ function buildPartnershipLogos(slide: SlideInput, p: ColorPalette, hasImage = fa
   <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;font-size:${titleFontSize(slide.title)}px;font-weight:800;overflow-wrap:break-word;word-wrap:break-word;color:${p.text};line-height:1.2;letter-spacing:0.5px;${dark ? `text-shadow:${textGlow(p.accent, 0.4)}` : ''}">${escHtml(slide.title)}</div>
   <div style="position:absolute;left:${PAD}px;top:${PAD + 56}px;width:60px;height:4px;background:linear-gradient(90deg,${p.accent},${hexToRgba(p.accent, 0.3)});border-radius:2px"></div>
   ${html}
+</div>`;
+}
+
+function buildFinancialProjection(slide: SlideInput, p: ColorPalette, hasImage = false, accentDiversity = true): string {
+  const cW = hasImage ? CONTENT_W_IMG : W;
+  const lines = parseBodyLines(slide.body);
+  const dark = isDarkBackground(p.background);
+  const accents = cardAccentColors(p, accentDiversity ? colorOffset(slide.title) : 0);
+
+  // Parse "Year: $Revenue, $Cost, $Profit" lines
+  const rows: { label: string; revenue: number; cost: number; profit: number }[] = [];
+  for (const line of lines) {
+    const sep = line.indexOf(':');
+    if (sep > 0 && sep < 30) {
+      const label = line.slice(0, sep).trim();
+      const vals = line.slice(sep + 1).trim().split(/[,;]+/).map(v => {
+        const num = parseFloat(v.replace(/[^0-9.\-]/g, ''));
+        return isNaN(num) ? 0 : num;
+      });
+      rows.push({
+        label,
+        revenue: vals[0] || 0,
+        cost: vals[1] || 0,
+        profit: vals[2] || (vals[0] || 0) - (vals[1] || 0),
+      });
+    }
+  }
+  if (rows.length === 0) {
+    rows.push({ label: '2024', revenue: 2, cost: 1.2, profit: 0.8 });
+    rows.push({ label: '2025', revenue: 5, cost: 2.5, profit: 2.5 });
+    rows.push({ label: '2026', revenue: 12, cost: 5, profit: 7 });
+  }
+
+  const contentTop = PAD + 90;
+  const totalW = cW - PAD * 2;
+  const leftW = Math.round(totalW * 0.52);
+  const rightW = totalW - leftW - 24;
+  const rightX = PAD + leftW + 24;
+
+  // ── Left: Table ──
+  let html = '';
+  const tableH = H - contentTop - PAD;
+  const rowH = Math.min(48, Math.round(tableH / (rows.length + 1)));
+  const colW = Math.round((leftW - 80) / 3);
+
+  // Table header
+  const headerBg = dark ? hexToRgba(p.surface, 0.35) : hexToRgba(p.surface, 0.8);
+  html += `<div style="position:absolute;left:${PAD}px;top:${contentTop}px;width:${leftW}px;height:${rowH}px;background:${headerBg};border-radius:10px 10px 0 0;box-shadow:${cardShadow(1, dark)}"></div>`;
+  const headers = ['Revenue', 'Cost', 'Profit'];
+  html += `<div style="position:absolute;left:${PAD + 8}px;top:${contentTop}px;width:70px;height:${rowH}px;line-height:${rowH}px;font-size:11px;font-weight:800;color:${p.text};opacity:0.5;text-transform:uppercase;letter-spacing:0.5px">Year</div>`;
+  for (let hi = 0; hi < 3; hi++) {
+    const hx = PAD + 80 + hi * colW;
+    html += `<div style="position:absolute;left:${hx}px;top:${contentTop}px;width:${colW}px;height:${rowH}px;line-height:${rowH}px;text-align:center;font-size:11px;font-weight:800;color:${accents[hi % accents.length]};text-transform:uppercase;letter-spacing:0.5px">${headers[hi]}</div>`;
+  }
+
+  // Data rows
+  for (let ri = 0; ri < rows.length; ri++) {
+    const row = rows[ri];
+    const ry = contentTop + (ri + 1) * rowH;
+    const isAlt = ri % 2 === 0;
+    const rowBg = isAlt ? (dark ? hexToRgba(p.surface, 0.15) : hexToRgba(p.surface, 0.5)) : 'transparent';
+    const isLast = ri === rows.length - 1;
+    html += `<div style="position:absolute;left:${PAD}px;top:${ry}px;width:${leftW}px;height:${rowH}px;background:${rowBg};${isLast ? 'border-radius:0 0 10px 10px' : ''};border-bottom:1px solid ${hexToRgba(p.border, 0.1)}"></div>`;
+    html += `<div style="position:absolute;left:${PAD + 8}px;top:${ry}px;width:70px;height:${rowH}px;line-height:${rowH}px;font-size:13px;font-weight:700;color:${p.text}">${escHtml(row.label)}</div>`;
+    const vals = [row.revenue, row.cost, row.profit];
+    for (let ci = 0; ci < 3; ci++) {
+      const cx = PAD + 80 + ci * colW;
+      html += `<div style="position:absolute;left:${cx}px;top:${ry}px;width:${colW}px;height:${rowH}px;line-height:${rowH}px;text-align:center;font-size:13px;font-weight:600;color:${p.text};opacity:0.85">${vals[ci].toLocaleString()}</div>`;
+    }
+  }
+
+  // ── Right: SVG bar chart ──
+  const chartTop = contentTop + 10;
+  const chartH = H - chartTop - PAD - 30;
+  const chartW = rightW - 20;
+  const maxVal = Math.max(...rows.flatMap(r => [r.revenue, r.cost, r.profit]), 1);
+  const groupW = Math.round(chartW / rows.length);
+  const barW = Math.max(12, Math.round(groupW * 0.22));
+  const barGap = Math.max(3, Math.round(groupW * 0.04));
+  const barColors = [accents[0] || p.accent, accents[1] || p.secondary, accents[2] || p.primary];
+
+  html += `<svg style="position:absolute;left:${rightX}px;top:${chartTop}px;width:${chartW + 20}px;height:${chartH + 30}px" viewBox="0 0 ${chartW + 20} ${chartH + 30}">`;
+  // Grid lines
+  for (let g = 0; g <= 4; g++) {
+    const gy = Math.round((chartH * g) / 4);
+    html += `<line x1="10" y1="${gy}" x2="${chartW + 10}" y2="${gy}" stroke="${hexToRgba(p.border, 0.12)}" stroke-width="1"/>`;
+  }
+  // Bars
+  for (let ri = 0; ri < rows.length; ri++) {
+    const row = rows[ri];
+    const vals = [row.revenue, row.cost, row.profit];
+    const gx = 10 + ri * groupW + Math.round((groupW - 3 * barW - 2 * barGap) / 2);
+    for (let bi = 0; bi < 3; bi++) {
+      const bh = Math.max(4, Math.round((vals[bi] / maxVal) * chartH));
+      const bx = gx + bi * (barW + barGap);
+      const by = chartH - bh;
+      html += `<rect x="${bx}" y="${by}" width="${barW}" height="${bh}" rx="4" fill="${barColors[bi]}" opacity="0.85"/>`;
+    }
+    // Label
+    html += `<text x="${gx + Math.round((3 * barW + 2 * barGap) / 2)}" y="${chartH + 18}" text-anchor="middle" font-size="11" font-weight="600" fill="${p.text}" opacity="0.6">${escHtml(row.label)}</text>`;
+  }
+  html += `</svg>`;
+
+  // Legend
+  const legendY = H - PAD - 10;
+  for (let li = 0; li < 3; li++) {
+    const lx = rightX + li * 90;
+    html += `<div style="position:absolute;left:${lx}px;top:${legendY}px;display:flex;align-items:center">`;
+    html += `<span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:${barColors[li]};margin-right:6px"></span>`;
+    html += `<span style="font-size:10px;font-weight:600;color:${p.text};opacity:0.6">${headers[li]}</span>`;
+    html += `</div>`;
+  }
+
+  return `${SCOPED_RESET}
+<div style="position:relative;width:${W}px;height:${H}px;background:${p.background};overflow:hidden">
+  ${bgGradientOverlay(cW, H, p.accent, 0.07, '40%')}
+  <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;font-size:${titleFontSize(slide.title)}px;font-weight:800;overflow-wrap:break-word;word-wrap:break-word;color:${p.text};line-height:1.2;letter-spacing:0.5px;${dark ? `text-shadow:${textGlow(p.accent, 0.4)}` : ''}">${escHtml(slide.title)}</div>
+  <div style="position:absolute;left:${PAD}px;top:${PAD + 56}px;width:60px;height:4px;background:linear-gradient(90deg,${p.accent},${hexToRgba(p.accent, 0.3)});border-radius:2px"></div>
+  ${html}
+</div>`;
+}
+
+
+// ── GO_TO_MARKET ──────────────────────────────────────────
+// Horizontal channel cards with strategy text and timeline badges
+
+function buildGoToMarket(slide: SlideInput, p: ColorPalette, hasImage = false, accentDiversity = true): string {
+  const cW = hasImage ? CONTENT_W_IMG : W;
+  const lines = parseBodyLines(slide.body);
+  const dark = isDarkBackground(p.background);
+  const accents = cardAccentColors(p, accentDiversity ? colorOffset(slide.title) : 0);
+
+  // Parse "Channel: Strategy (timeline)" lines
+  const channels: { name: string; strategy: string; timeline: string }[] = [];
+  for (const line of lines) {
+    const sep = line.indexOf(':');
+    if (sep > 0 && sep < 40) {
+      const name = line.slice(0, sep).trim();
+      let rest = line.slice(sep + 1).trim();
+      let timeline = '';
+      const tmMatch = rest.match(/\(([^)]+)\)\s*$/);
+      if (tmMatch) {
+        timeline = tmMatch[1].trim();
+        rest = rest.slice(0, rest.lastIndexOf('(')).trim();
+      }
+      channels.push({ name, strategy: rest, timeline });
+    } else {
+      channels.push({ name: line, strategy: '', timeline: '' });
+    }
+  }
+  if (channels.length === 0) {
+    channels.push({ name: 'Direct Sales', strategy: 'Enterprise outbound with dedicated AEs', timeline: 'Q1-Q2' });
+    channels.push({ name: 'Content Marketing', strategy: 'Thought leadership and SEO-driven inbound', timeline: 'Ongoing' });
+    channels.push({ name: 'Partnerships', strategy: 'Channel partner program with co-selling', timeline: 'Q3-Q4' });
+  }
+
+  const contentTop = PAD + 90;
+  const totalW = cW - PAD * 2;
+  const count = Math.min(channels.length, 4);
+  const cardGap = 16;
+  const cardW = Math.round((totalW - (count - 1) * cardGap) / count);
+  const cardH = H - contentTop - PAD;
+
+  let html = '';
+  for (let i = 0; i < count; i++) {
+    const ch = channels[i];
+    const cx = PAD + i * (cardW + cardGap);
+    const color = accents[i % accents.length];
+    const cardBg = dark ? hexToRgba(p.surface, 0.25) : p.surface;
+
+    // Card container
+    html += `<div style="position:absolute;left:${cx}px;top:${contentTop}px;width:${cardW}px;height:${cardH}px;background:${cardBg};border:1px solid ${hexToRgba(p.border, 0.15)};border-radius:14px;box-shadow:${cardShadow(2, dark)};overflow:hidden;${dark ? 'backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)' : ''}">`;
+    // Accent stripe header
+    html += `<div style="position:absolute;left:0;top:0;width:100%;height:52px;background:linear-gradient(135deg,${hexToRgba(color, dark ? 0.2 : 0.1)},transparent);border-bottom:1px solid ${hexToRgba(color, 0.15)}"></div>`;
+    html += `</div>`;
+
+    // Channel name with accent dot
+    html += `<div style="position:absolute;left:${cx + 14}px;top:${contentTop + 14}px;width:${cardW - 28}px;display:flex;align-items:center">`;
+    html += `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${color};margin-right:8px;box-shadow:0 0 8px ${hexToRgba(color, 0.5)};flex-shrink:0"></span>`;
+    html += `<span style="font-size:14px;font-weight:800;color:${color};overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${escHtml(ch.name)}</span>`;
+    html += `</div>`;
+
+    // Strategy text
+    if (ch.strategy) {
+      html += `<div style="position:absolute;left:${cx + 14}px;top:${contentTop + 62}px;width:${cardW - 28}px;font-size:13px;line-height:1.5;color:${p.text};opacity:0.85;overflow:hidden;display:-webkit-box;-webkit-line-clamp:${Math.max(3, Math.floor((cardH - 110) / 20))};-webkit-box-orient:vertical">${escHtml(ch.strategy)}</div>`;
+    }
+
+    // Timeline badge at bottom right
+    if (ch.timeline) {
+      html += `<div style="position:absolute;left:${cx + cardW - 14}px;top:${contentTop + cardH - 14}px;transform:translate(-100%,-100%);padding:4px 12px;background:${hexToRgba(color, dark ? 0.15 : 0.1)};border:1px solid ${hexToRgba(color, 0.2)};border-radius:20px;font-size:11px;font-weight:700;color:${color};white-space:nowrap">${escHtml(ch.timeline)}</div>`;
+    }
+  }
+
+  return `${SCOPED_RESET}
+<div style="position:relative;width:${W}px;height:${H}px;background:${p.background};overflow:hidden">
+  ${bgGradientOverlay(cW, H, p.accent, 0.07, '45%')}
+  <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;font-size:${titleFontSize(slide.title)}px;font-weight:800;overflow-wrap:break-word;word-wrap:break-word;color:${p.text};line-height:1.2;letter-spacing:0.5px;${dark ? `text-shadow:${textGlow(p.accent, 0.4)}` : ''}">${escHtml(slide.title)}</div>
+  <div style="position:absolute;left:${PAD}px;top:${PAD + 56}px;width:60px;height:4px;background:linear-gradient(90deg,${p.accent},${hexToRgba(p.accent, 0.3)});border-radius:2px"></div>
+  ${html}
+</div>`;
+}
+
+
+// ── PERSONA ───────────────────────────────────────────────
+// Avatar with initials, pain points (red) and goals (green)
+
+function buildPersona(slide: SlideInput, p: ColorPalette, hasImage = false, accentDiversity = true): string {
+  const cW = hasImage ? CONTENT_W_IMG : W;
+  const lines = parseBodyLines(slide.body);
+  const dark = isDarkBackground(p.background);
+  const accents = cardAccentColors(p, accentDiversity ? colorOffset(slide.title) : 0);
+
+  // Parse body: Name, Role, then Pain:/Goal: lines
+  let personaName = 'Alex Johnson';
+  let personaRole = 'Product Manager, Acme Corp';
+  const pains: string[] = [];
+  const goals: string[] = [];
+
+  if (lines.length > 0) personaName = lines[0];
+  if (lines.length > 1) personaRole = lines[1];
+  for (let i = 2; i < lines.length; i++) {
+    const line = lines[i];
+    if (/^pain\s*[-:]/i.test(line)) {
+      pains.push(line.replace(/^pain\s*[-:]\s*/i, '').trim());
+    } else if (/^goal\s*[-:]/i.test(line)) {
+      goals.push(line.replace(/^goal\s*[-:]\s*/i, '').trim());
+    } else if (pains.length <= goals.length) {
+      pains.push(line);
+    } else {
+      goals.push(line);
+    }
+  }
+  if (pains.length === 0) pains.push('Manual processes slow down decisions');
+  if (goals.length === 0) goals.push('Automate reporting workflows');
+
+  const contentTop = PAD + 90;
+  const totalW = cW - PAD * 2;
+  const leftW = Math.round(totalW * 0.28);
+  const rightW = totalW - leftW - 24;
+  const rightX = PAD + leftW + 24;
+
+  let html = '';
+
+  // ── Left: Avatar circle with initials ──
+  const avatarSize = Math.min(120, leftW - 20);
+  const avatarX = PAD + Math.round((leftW - avatarSize) / 2);
+  const avatarY = contentTop + 10;
+  const initials = personaName.split(/\s+/).map(w => w.charAt(0).toUpperCase()).slice(0, 2).join('');
+  const gradColor1 = accents[0] || p.accent;
+  const gradColor2 = accents[1] || p.primary;
+
+  html += `<div style="position:absolute;left:${avatarX}px;top:${avatarY}px;width:${avatarSize}px;height:${avatarSize}px;border-radius:50%;background:linear-gradient(135deg,${gradColor1},${gradColor2});display:flex;align-items:center;justify-content:center;box-shadow:0 8px 32px ${hexToRgba(gradColor1, 0.3)},${cardShadow(3, dark)}">`;
+  html += `<span style="font-size:${Math.round(avatarSize * 0.38)}px;font-weight:800;color:#fff;letter-spacing:2px">${escHtml(initials)}</span>`;
+  html += `</div>`;
+
+  // Name
+  const nameY = avatarY + avatarSize + 16;
+  html += `<div style="position:absolute;left:${PAD}px;top:${nameY}px;width:${leftW}px;text-align:center;font-size:18px;font-weight:800;color:${p.text};overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${escHtml(personaName)}</div>`;
+
+  // Role
+  html += `<div style="position:absolute;left:${PAD}px;top:${nameY + 26}px;width:${leftW}px;text-align:center;font-size:12px;color:${p.text};opacity:0.65;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${escHtml(personaRole)}</div>`;
+
+  // ── Right: Pain Points + Goals ──
+  const sectionGap = 16;
+  const painColor = p.error || '#ef4444';
+  const goalColor = p.success || '#22c55e';
+  const painCount = Math.min(pains.length, 3);
+  const goalCount = Math.min(goals.length, 3);
+  const cardH = 44;
+  const cardGap = 8;
+  const painSectionH = 24 + painCount * (cardH + cardGap);
+
+  // Pain Points header
+  html += `<div style="position:absolute;left:${rightX}px;top:${contentTop}px;font-size:13px;font-weight:800;color:${painColor};letter-spacing:0.5px;text-transform:uppercase">Pain Points</div>`;
+
+  for (let pi = 0; pi < painCount; pi++) {
+    const cy = contentTop + 24 + pi * (cardH + cardGap);
+    const cardBg = dark ? hexToRgba(painColor, 0.08) : hexToRgba(painColor, 0.05);
+    html += `<div style="position:absolute;left:${rightX}px;top:${cy}px;width:${rightW}px;height:${cardH}px;background:${cardBg};border:1px solid ${hexToRgba(painColor, 0.15)};border-left:3px solid ${painColor};border-radius:10px;box-shadow:${cardShadow(1, dark)};display:flex;align-items:center;padding:0 12px">`;
+    html += `<span style="font-size:16px;margin-right:8px;flex-shrink:0;color:${painColor}">!</span>`;
+    html += `<span style="font-size:13px;color:${p.text};opacity:0.85;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${escHtml(pains[pi])}</span>`;
+    html += `</div>`;
+  }
+
+  // Goals header
+  const goalsTop = contentTop + painSectionH + sectionGap;
+  html += `<div style="position:absolute;left:${rightX}px;top:${goalsTop}px;font-size:13px;font-weight:800;color:${goalColor};letter-spacing:0.5px;text-transform:uppercase">Goals</div>`;
+
+  for (let gi = 0; gi < goalCount; gi++) {
+    const cy = goalsTop + 24 + gi * (cardH + cardGap);
+    const cardBg = dark ? hexToRgba(goalColor, 0.08) : hexToRgba(goalColor, 0.05);
+    html += `<div style="position:absolute;left:${rightX}px;top:${cy}px;width:${rightW}px;height:${cardH}px;background:${cardBg};border:1px solid ${hexToRgba(goalColor, 0.15)};border-left:3px solid ${goalColor};border-radius:10px;box-shadow:${cardShadow(1, dark)};display:flex;align-items:center;padding:0 12px">`;
+    html += `<span style="font-size:14px;margin-right:8px;flex-shrink:0;color:${goalColor}">\u2713</span>`;
+    html += `<span style="font-size:13px;color:${p.text};opacity:0.85;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${escHtml(goals[gi])}</span>`;
+    html += `</div>`;
+  }
+
+  return `${SCOPED_RESET}
+<div style="position:relative;width:${W}px;height:${H}px;background:${p.background};overflow:hidden">
+  ${bgGradientOverlay(cW, H, p.accent, 0.07, '45%')}
+  <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;font-size:${titleFontSize(slide.title)}px;font-weight:800;overflow-wrap:break-word;word-wrap:break-word;color:${p.text};line-height:1.2;letter-spacing:0.5px;${dark ? `text-shadow:${textGlow(p.accent, 0.4)}` : ''}">${escHtml(slide.title)}</div>
+  <div style="position:absolute;left:${PAD}px;top:${PAD + 56}px;width:60px;height:4px;background:linear-gradient(90deg,${p.accent},${hexToRgba(p.accent, 0.3)});border-radius:2px"></div>
+  ${html}
+</div>`;
+}
+
+
+// ── TESTIMONIAL_WALL ──────────────────────────────────────
+// 2x2 grid of glass-effect quote cards
+
+function buildTestimonialWall(slide: SlideInput, p: ColorPalette, hasImage = false): string {
+  const cW = hasImage ? CONTENT_W_IMG : W;
+  const dark = isDarkBackground(p.background);
+
+  // Parse blocks separated by blank lines: "Quote" - Name, Company
+  const rawBody = slide.body || '';
+  const blocks = rawBody.split(/\n\s*\n/).filter(Boolean);
+  const quotes: { text: string; name: string; company: string }[] = [];
+
+  for (const block of blocks) {
+    const trimmed = block.trim();
+    if (!trimmed) continue;
+    // Try to find "- Name, Company" or "— Name, Company" at end
+    const attrMatch = trimmed.match(/[-\u2014\u2013]\s*([^,\n]+?)(?:\s*[,|]\s*(.+?))?\s*$/);
+    if (attrMatch && attrMatch.index && attrMatch.index > 5) {
+      const quoteText = trimmed.slice(0, attrMatch.index).replace(/^["\u201C\u201D]+|["\u201C\u201D]+$/g, '').trim();
+      quotes.push({
+        text: stripMarkdown(quoteText),
+        name: stripMarkdown(attrMatch[1].trim()),
+        company: attrMatch[2] ? stripMarkdown(attrMatch[2].trim()) : '',
+      });
+    } else {
+      quotes.push({ text: stripMarkdown(trimmed.replace(/^["\u201C\u201D]+|["\u201C\u201D]+$/g, '')), name: '', company: '' });
+    }
+  }
+  // Fallback: parse line-by-line if no blocks found
+  if (quotes.length === 0) {
+    const lines = parseBodyLines(slide.body);
+    for (const line of lines) {
+      quotes.push({ text: line, name: '', company: '' });
+    }
+  }
+  if (quotes.length === 0) {
+    quotes.push({ text: 'This product transformed our workflow.', name: 'Jane Doe', company: 'Acme Corp' });
+    quotes.push({ text: 'Best investment we made this year.', name: 'John Smith', company: 'Beta Inc' });
+  }
+
+  const contentTop = PAD + 90;
+  const totalW = cW - PAD * 2;
+  const count = Math.min(quotes.length, 4);
+  const cols = count <= 2 ? count : 2;
+  const rows = Math.ceil(count / cols);
+  const cardGap = 16;
+  const cardW = Math.round((totalW - (cols - 1) * cardGap) / cols);
+  const cardH = Math.min(240, Math.round((H - contentTop - PAD - (rows - 1) * cardGap) / rows));
+
+  let html = '';
+  for (let i = 0; i < count; i++) {
+    const q = quotes[i];
+    const col = i % cols;
+    const row = Math.floor(i / cols);
+    const cx = PAD + col * (cardW + cardGap);
+    const cy = contentTop + row * (cardH + cardGap);
+
+    // Glass card
+    const glassBg = dark ? hexToRgba(p.surface, 0.2) : hexToRgba(p.surface, 0.85);
+    html += glassCard(cardW, cardH, cx, cy, glassBg, 12);
+    html += `</div>`;
+
+    // Large decorative quote mark
+    html += `<div style="position:absolute;left:${cx + 14}px;top:${cy + 8}px;font-size:42px;font-weight:900;color:${hexToRgba(p.accent, dark ? 0.3 : 0.2)};line-height:1;pointer-events:none">\u201C</div>`;
+
+    // Quote text (italic)
+    html += `<div style="position:absolute;left:${cx + 16}px;top:${cy + 42}px;width:${cardW - 32}px;font-size:13px;font-style:italic;line-height:1.55;color:${p.text};opacity:0.85;overflow:hidden;display:-webkit-box;-webkit-line-clamp:${Math.max(3, Math.floor((cardH - 100) / 20))};-webkit-box-orient:vertical">${escHtml(q.text)}</div>`;
+
+    // Attribution
+    if (q.name) {
+      const attrY = cy + cardH - 32;
+      html += `<div style="position:absolute;left:${cx + 16}px;top:${attrY}px;width:${cardW - 32}px;font-size:12px;color:${p.text};opacity:0.7;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">\u2014 <strong>${escHtml(q.name)}</strong>${q.company ? `, ${escHtml(q.company)}` : ''}</div>`;
+    }
+  }
+
+  return `${SCOPED_RESET}
+<div style="position:relative;width:${W}px;height:${H}px;background:${p.background};overflow:hidden">
+  ${bgGradientOverlay(cW, H, p.accent, 0.07, '45%')}
+  <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;font-size:${titleFontSize(slide.title)}px;font-weight:800;overflow-wrap:break-word;word-wrap:break-word;color:${p.text};line-height:1.2;letter-spacing:0.5px;${dark ? `text-shadow:${textGlow(p.accent, 0.4)}` : ''}">${escHtml(slide.title)}</div>
+  <div style="position:absolute;left:${PAD}px;top:${PAD + 56}px;width:60px;height:4px;background:linear-gradient(90deg,${p.accent},${hexToRgba(p.accent, 0.3)});border-radius:2px"></div>
+  ${html}
+</div>`;
+}
+
+
+// ── THANK_YOU ─────────────────────────────────────────────
+// Centered layout with contact info lines and optional CTA button
+
+function buildThankYou(slide: SlideInput, p: ColorPalette, hasImage = false): string {
+  const cW = hasImage ? CONTENT_W_IMG : W;
+  const dark = isDarkBackground(p.background);
+
+  const lines = parseBodyLines(slide.body);
+
+  // Separate contact lines from CTA
+  const contactLines: { icon: string; text: string }[] = [];
+  let ctaText = '';
+
+  for (const line of lines) {
+    if (/^CTA\s*[-:]/i.test(line)) {
+      ctaText = line.replace(/^CTA\s*[-:]\s*/i, '').trim();
+      continue;
+    }
+    // Auto-detect icon based on label
+    let icon = '\u25CF'; // bullet
+    const lower = line.toLowerCase();
+    if (/email|@/.test(lower)) icon = '@';
+    else if (/web|url|http|site/.test(lower)) icon = '\uD83C\uDF10';
+    else if (/phone|call|tel/.test(lower)) icon = '\u260E';
+    else if (/linked|social/.test(lower)) icon = 'in';
+    else if (/twitter|x\.com/.test(lower)) icon = 'X';
+    else if (/github/.test(lower)) icon = '<>';
+    else if (/address|location|office/.test(lower)) icon = '\uD83D\uDCCD';
+    contactLines.push({ icon, text: line });
+  }
+
+  const centerX = Math.round(cW / 2);
+  let html = '';
+
+  // Large centered title (override normal title positioning)
+  const titleY = Math.round(H * 0.22);
+  html += `<div style="position:absolute;left:${PAD}px;top:${titleY}px;width:${cW - PAD * 2}px;text-align:center;font-size:${Math.min(48, titleFontSize(slide.title, 48))}px;font-weight:800;color:${p.text};line-height:1.2;letter-spacing:0.5px;${dark ? `text-shadow:${textGlow(p.accent, 0.4)}` : ''}">${escHtml(slide.title)}</div>`;
+
+  // Accent divider
+  const dividerY = titleY + 60;
+  const dividerW = 80;
+  html += `<div style="position:absolute;left:${centerX - dividerW / 2}px;top:${dividerY}px;width:${dividerW}px;height:4px;background:linear-gradient(90deg,${p.accent},${hexToRgba(p.accent, 0.3)});border-radius:2px"></div>`;
+
+  // Contact lines
+  let cy = dividerY + 30;
+  for (const item of contactLines.slice(0, 5)) {
+    html += `<div style="position:absolute;left:${PAD}px;top:${cy}px;width:${cW - PAD * 2}px;display:flex;align-items:center;justify-content:center">`;
+    html += `<span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:${hexToRgba(p.accent, dark ? 0.15 : 0.1)};margin-right:12px;font-size:13px;font-weight:700;color:${p.accent};flex-shrink:0">${escHtml(item.icon)}</span>`;
+    html += `<span style="font-size:15px;color:${p.text};opacity:0.85">${escHtml(item.text)}</span>`;
+    html += `</div>`;
+    cy += 40;
+  }
+
+  // CTA button
+  if (ctaText) {
+    const btnY = cy + 20;
+    const btnW = Math.min(280, ctaText.length * 12 + 48);
+    html += `<div style="position:absolute;left:${centerX - btnW / 2}px;top:${btnY}px;width:${btnW}px;height:48px;background:linear-gradient(135deg,${p.accent},${hexToRgba(p.accent, 0.8)});border-radius:24px;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 24px ${hexToRgba(p.accent, 0.3)};cursor:pointer">`;
+    html += `<span style="font-size:15px;font-weight:700;color:#fff;letter-spacing:0.5px">${escHtml(ctaText)}</span>`;
+    html += `</div>`;
+  }
+
+  return `${SCOPED_RESET}
+<div style="position:relative;width:${W}px;height:${H}px;background:${p.background};overflow:hidden">
+  ${bgGradientOverlay(cW, H, p.accent, 0.07, '50%')}
+  ${html}
+</div>`;
+}
+
+
+// ── SCENARIO_ANALYSIS ─────────────────────────────────────
+// Three columns: Bear / Base / Bull scenarios with colored headers
+
+function buildScenarioAnalysis(slide: SlideInput, p: ColorPalette, hasImage = false, accentDiversity = true): string {
+  const cW = hasImage ? CONTENT_W_IMG : W;
+  const lines = parseBodyLines(slide.body);
+  const dark = isDarkBackground(p.background);
+  const accents = cardAccentColors(p, accentDiversity ? colorOffset(slide.title) : 0);
+
+  // Parse "Scenario: metric1, metric2, metric3" lines
+  const scenarios: { label: string; metrics: string[] }[] = [];
+  for (const line of lines) {
+    const sep = line.indexOf(':');
+    if (sep > 0 && sep < 30) {
+      const label = line.slice(0, sep).trim();
+      const metrics = line.slice(sep + 1).trim().split(/[,;]+/).map(m => m.trim()).filter(Boolean);
+      scenarios.push({ label, metrics });
+    }
+  }
+  // Default 3 scenarios
+  if (scenarios.length === 0) {
+    scenarios.push({ label: 'Bear', metrics: ['$2M Revenue', '15% Growth', '18mo Runway'] });
+    scenarios.push({ label: 'Base', metrics: ['$5M Revenue', '40% Growth', '24mo Runway'] });
+    scenarios.push({ label: 'Bull', metrics: ['$12M Revenue', '80% Growth', '36mo Runway'] });
+  }
+
+  // Scenario colors: bear=red-ish, base=blue, bull=green
+  const scenarioColors: string[] = [];
+  for (let i = 0; i < scenarios.length; i++) {
+    const label = scenarios[i].label.toLowerCase();
+    if (/bear|worst|pessimist|down/i.test(label)) {
+      scenarioColors.push(p.error || '#ef4444');
+    } else if (/bull|best|optimist|up/i.test(label)) {
+      scenarioColors.push(p.success || '#22c55e');
+    } else {
+      scenarioColors.push(accents[i % accents.length] || p.primary);
+    }
+  }
+
+  const contentTop = PAD + 90;
+  const totalW = cW - PAD * 2;
+  const count = Math.min(scenarios.length, 3);
+  const colGap = 16;
+  const colW = Math.round((totalW - (count - 1) * colGap) / count);
+  const colH = H - contentTop - PAD;
+  const headerH = 52;
+
+  let html = '';
+  for (let i = 0; i < count; i++) {
+    const sc = scenarios[i];
+    const color = scenarioColors[i];
+    const cx = PAD + i * (colW + colGap);
+    const cardBg = dark ? hexToRgba(p.surface, 0.2) : p.surface;
+
+    // Column card
+    html += `<div style="position:absolute;left:${cx}px;top:${contentTop}px;width:${colW}px;height:${colH}px;background:${cardBg};border:1px solid ${hexToRgba(p.border, 0.15)};border-radius:14px;box-shadow:${cardShadow(2, dark)};overflow:hidden;${dark ? 'backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)' : ''}">`;
+    // Colored header
+    html += `<div style="position:absolute;left:0;top:0;width:100%;height:${headerH}px;background:linear-gradient(135deg,${hexToRgba(color, dark ? 0.25 : 0.15)},${hexToRgba(color, dark ? 0.1 : 0.05)});border-bottom:2px solid ${hexToRgba(color, 0.3)};display:flex;align-items:center;justify-content:center">`;
+    html += `<span style="font-size:16px;font-weight:800;color:${color};letter-spacing:0.5px;text-transform:uppercase">${escHtml(sc.label)}</span>`;
+    html += `</div>`;
+    html += `</div>`;
+
+    // Metric rows
+    const metricCount = Math.min(sc.metrics.length, 6);
+    const metricH = Math.min(46, Math.round((colH - headerH - 16) / Math.max(metricCount, 1)));
+    for (let mi = 0; mi < metricCount; mi++) {
+      const my = contentTop + headerH + 10 + mi * metricH;
+      const isAlt = mi % 2 === 0;
+      const metricBg = isAlt ? hexToRgba(color, dark ? 0.04 : 0.03) : 'transparent';
+
+      html += `<div style="position:absolute;left:${cx + 8}px;top:${my}px;width:${colW - 16}px;height:${metricH - 4}px;background:${metricBg};border-radius:8px;display:flex;align-items:center;padding:0 10px">`;
+      html += `<span style="font-size:13px;font-weight:600;color:${p.text};opacity:0.85;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${escHtml(sc.metrics[mi])}</span>`;
+      html += `</div>`;
+    }
+  }
+
+  return `${SCOPED_RESET}
+<div style="position:relative;width:${W}px;height:${H}px;background:${p.background};overflow:hidden">
+  ${bgGradientOverlay(cW, H, p.accent, 0.07, '45%')}
+  <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;font-size:${titleFontSize(slide.title)}px;font-weight:800;overflow-wrap:break-word;word-wrap:break-word;color:${p.text};line-height:1.2;letter-spacing:0.5px;${dark ? `text-shadow:${textGlow(p.accent, 0.4)}` : ''}">${escHtml(slide.title)}</div>
+  <div style="position:absolute;left:${PAD}px;top:${PAD + 56}px;width:60px;height:4px;background:linear-gradient(90deg,${p.accent},${hexToRgba(p.accent, 0.3)});border-radius:2px"></div>
+  ${html}
+</div>`;
+}
+
+function buildValueChain(slide: SlideInput, p: ColorPalette, hasImage = false, accentDiversity = true): string {
+  const cW = hasImage ? CONTENT_W_IMG : W;
+  const lines = parseBodyLines(slide.body);
+  const dark = isDarkBackground(p.background);
+  const accents = cardAccentColors(p, accentDiversity ? colorOffset(slide.title) : 0);
+
+  // Parse "Stage: value description"
+  const stages: { name: string; desc: string }[] = [];
+  for (const line of lines.slice(0, 7)) {
+    const sep = line.indexOf(':');
+    if (sep > 0 && sep < 40) {
+      stages.push({ name: line.slice(0, sep).trim(), desc: line.slice(sep + 1).trim() });
+    } else {
+      stages.push({ name: line.trim(), desc: '' });
+    }
+  }
+  if (stages.length === 0) {
+    stages.push({ name: 'Inbound', desc: 'Raw materials' }, { name: 'Operations', desc: 'Manufacturing' },
+      { name: 'Outbound', desc: 'Distribution' }, { name: 'Marketing', desc: 'Sales channels' }, { name: 'Service', desc: 'Support' });
+  }
+
+  const count = stages.length;
+  const chevronTop = PAD + 100;
+  const chevronH = 120;
+  const totalW = cW - PAD * 2;
+  const arrowW = 30;
+  const chevW = Math.round((totalW - arrowW) / count);
+  const centerY = chevronTop + Math.round(chevronH / 2);
+
+  let svgContent = '';
+  let labelsHtml = '';
+
+  for (let i = 0; i < count; i++) {
+    const x = PAD + i * chevW;
+    const color = accents[i % accents.length];
+
+    // Chevron polygon: flat left (or indented for non-first), pointed right
+    const x1 = i === 0 ? x : x + arrowW;
+    const x2 = x + chevW;
+    const x3 = x + chevW + arrowW;
+    const y1 = chevronTop;
+    const y2 = chevronTop + chevronH;
+
+    const points = i === 0
+      ? `${x1},${y1} ${x2},${y1} ${x3},${centerY} ${x2},${y2} ${x1},${y2}`
+      : `${x},${y1} ${x2},${y1} ${x3},${centerY} ${x2},${y2} ${x},${y2} ${x + arrowW},${centerY}`;
+
+    svgContent += `<polygon points="${points}" fill="${hexToRgba(color, dark ? 0.35 : 0.2)}" stroke="${color}" stroke-width="2" />`;
+
+    // Stage number circle inside chevron
+    const labelCenterX = i === 0 ? x + Math.round(chevW / 2) : x + arrowW + Math.round((chevW - arrowW) / 2);
+    svgContent += `<circle cx="${labelCenterX}" cy="${centerY - 20}" r="14" fill="${color}" />`;
+    svgContent += `<text x="${labelCenterX}" y="${centerY - 16}" text-anchor="middle" fill="#fff" font-size="12" font-weight="bold">${i + 1}</text>`;
+
+    // Name + description labels below chevron
+    labelsHtml += `<div style="position:absolute;left:${labelCenterX - Math.round(chevW / 2) + 5}px;top:${y2 + 14}px;width:${chevW - 10}px;text-align:center">`;
+    labelsHtml += `<div style="font-size:13px;font-weight:700;color:${color};overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${escHtml(stages[i].name)}</div>`;
+    if (stages[i].desc) {
+      labelsHtml += `<div style="font-size:11px;color:${p.text};opacity:0.7;margin-top:4px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">${escHtml(stages[i].desc)}</div>`;
+    }
+    labelsHtml += `</div>`;
+  }
+
+  return `${SCOPED_RESET}
+<div style="position:relative;width:${W}px;height:${H}px;background:${p.background};overflow:hidden">
+  ${bgGradientOverlay(cW, H, p.accent, 0.07, '45%')}
+  <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;font-size:${titleFontSize(slide.title)}px;font-weight:800;letter-spacing:0.5px;overflow-wrap:break-word;word-wrap:break-word;color:${p.text};line-height:1.2;${dark ? `text-shadow:${textGlow(p.accent, 0.4)}` : ''}">${escHtml(slide.title)}</div>
+  <div style="position:absolute;left:${PAD}px;top:${PAD + 56}px;width:50px;height:4px;background:${p.accent};border-radius:2px"></div>
+  ${labelsHtml}
+  <svg style="position:absolute;left:0;top:0" width="${cW}" height="${H}" xmlns="http://www.w3.org/2000/svg">
+    ${svgContent}
+  </svg>
+</div>`;
+}
+
+
+// ── GEOGRAPHIC_MAP ───────────────────────────────────────────
+// Simplified world regions as positioned rectangles with data labels
+
+function buildGeographicMap(slide: SlideInput, p: ColorPalette, hasImage = false, accentDiversity = true): string {
+  const cW = hasImage ? CONTENT_W_IMG : W;
+  const lines = parseBodyLines(slide.body);
+  const dark = isDarkBackground(p.background);
+  const accents = cardAccentColors(p, accentDiversity ? colorOffset(slide.title) : 0);
+
+  // Parse "Region: metric"
+  const regions: { name: string; metric: string; pct: number }[] = [];
+  for (const line of lines.slice(0, 8)) {
+    const sep = line.indexOf(':');
+    if (sep > 0 && sep < 40) {
+      const name = line.slice(0, sep).trim();
+      const metric = line.slice(sep + 1).trim();
+      const pctMatch = metric.match(/(\d+)%/);
+      regions.push({ name, metric, pct: pctMatch ? parseInt(pctMatch[1], 10) : 50 });
+    } else {
+      regions.push({ name: line.trim(), metric: '', pct: 50 });
+    }
+  }
+  if (regions.length === 0) {
+    regions.push({ name: 'North America', metric: '45%', pct: 45 }, { name: 'Europe', metric: '30%', pct: 30 },
+      { name: 'Asia-Pacific', metric: '20%', pct: 20 }, { name: 'Other', metric: '5%', pct: 5 });
+  }
+
+  // Geographical region positions (approximate, on 900x400 virtual canvas)
+  const geoPositions: { x: number; y: number; w: number; h: number; matchKeys: string[] }[] = [
+    { x: 80, y: 40, w: 240, h: 160, matchKeys: ['america', 'us', 'usa', 'north am', 'na', 'united states', 'canada'] },
+    { x: 120, y: 220, w: 200, h: 140, matchKeys: ['latin', 'south am', 'latam', 'brazil', 'mexico', 'sa'] },
+    { x: 400, y: 30, w: 200, h: 150, matchKeys: ['europe', 'eu', 'emea', 'uk', 'germany', 'france'] },
+    { x: 380, y: 200, w: 180, h: 140, matchKeys: ['africa', 'mea', 'middle east'] },
+    { x: 650, y: 30, w: 220, h: 160, matchKeys: ['asia', 'apac', 'pacific', 'china', 'japan', 'india', 'sea'] },
+    { x: 700, y: 220, w: 180, h: 130, matchKeys: ['oceania', 'australia', 'anz', 'new zealand'] },
+  ];
+
+  // Scale positions to fit within content area
+  const mapLeft = PAD + 20;
+  const mapTop = PAD + 90;
+  const mapW = cW - PAD * 2 - 40;
+  const mapH = H - mapTop - PAD - 20;
+  const scaleX = mapW / 900;
+  const scaleY = mapH / 400;
+
+  let mapHtml = '';
+  const maxPct = Math.max(...regions.map(r => r.pct), 1);
+
+  for (let i = 0; i < regions.length; i++) {
+    const region = regions[i];
+    const nameLower = region.name.toLowerCase();
+    // Match region to geo position
+    let geo = geoPositions[i % geoPositions.length];
+    for (const gp of geoPositions) {
+      if (gp.matchKeys.some(k => nameLower.includes(k))) { geo = gp; break; }
+    }
+
+    const rx = mapLeft + Math.round(geo.x * scaleX);
+    const ry = mapTop + Math.round(geo.y * scaleY);
+    const rw = Math.round(geo.w * scaleX);
+    const rh = Math.round(geo.h * scaleY);
+    const color = accents[i % accents.length];
+    const intensity = 0.15 + (region.pct / maxPct) * 0.35;
+
+    const glassProps = dark
+      ? `backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,0.12)`
+      : `border:1px solid ${hexToRgba(p.border, 0.2)}`;
+
+    mapHtml += `<div style="position:absolute;left:${rx}px;top:${ry}px;width:${rw}px;height:${rh}px;background:${hexToRgba(color, intensity)};border-radius:16px;${glassProps};box-shadow:${cardShadow(2, dark)};overflow:hidden">`;
+    mapHtml += accentStripe(rw, rh, color, 0.06);
+    mapHtml += `</div>`;
+
+    // Label card inside region
+    mapHtml += `<div style="position:absolute;left:${rx + 12}px;top:${ry + Math.round(rh / 2) - 22}px;width:${rw - 24}px;text-align:center">`;
+    mapHtml += `<div style="font-size:13px;font-weight:700;color:${color};letter-spacing:0.5px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${escHtml(region.name)}</div>`;
+    if (region.metric) {
+      mapHtml += `<div style="font-size:18px;font-weight:800;color:${p.text};margin-top:4px;${dark ? textGlow(color, 0.3) : ''}">${escHtml(region.metric)}</div>`;
+    }
+    mapHtml += `</div>`;
+  }
+
+  return `${SCOPED_RESET}
+<div style="position:relative;width:${W}px;height:${H}px;background:${p.background};overflow:hidden">
+  ${bgGradientOverlay(cW, H, p.accent, 0.07, '40%')}
+  <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;font-size:${titleFontSize(slide.title)}px;font-weight:800;letter-spacing:0.5px;overflow-wrap:break-word;word-wrap:break-word;color:${p.text};line-height:1.2;${dark ? `text-shadow:${textGlow(p.accent, 0.4)}` : ''}">${escHtml(slide.title)}</div>
+  <div style="position:absolute;left:${PAD}px;top:${PAD + 56}px;width:50px;height:4px;background:${p.accent};border-radius:2px"></div>
+  ${mapHtml}
+</div>`;
+}
+
+
+// ── IMPACT_SCORECARD ─────────────────────────────────────────
+// Grid with H/M/L cells colored green/yellow/red
+
+function buildImpactScorecard(slide: SlideInput, p: ColorPalette, hasImage = false, accentDiversity = true): string {
+  const cW = hasImage ? CONTENT_W_IMG : W;
+  const lines = parseBodyLines(slide.body);
+  const dark = isDarkBackground(p.background);
+  const accents = cardAccentColors(p, accentDiversity ? colorOffset(slide.title) : 0);
+
+  // Parse "Initiative: Dim1=H, Dim2=M, Dim3=L"
+  const rows: { name: string; scores: { dim: string; level: string }[] }[] = [];
+  for (const line of lines.slice(0, 8)) {
+    const sep = line.indexOf(':');
+    if (sep <= 0) continue;
+    const name = line.slice(0, sep).trim();
+    const rest = line.slice(sep + 1).trim();
+    const scores: { dim: string; level: string }[] = [];
+    const parts = rest.split(',').map(s => s.trim());
+    for (const part of parts) {
+      const eqMatch = part.match(/^(.+?)\s*=\s*([HMLhml])/);
+      if (eqMatch) {
+        scores.push({ dim: eqMatch[1].trim(), level: eqMatch[2].toUpperCase() });
+      }
+    }
+    if (scores.length > 0) rows.push({ name, scores });
+  }
+
+  if (rows.length === 0) {
+    rows.push(
+      { name: 'Initiative A', scores: [{ dim: 'Impact', level: 'H' }, { dim: 'Effort', level: 'M' }, { dim: 'Risk', level: 'L' }] },
+      { name: 'Initiative B', scores: [{ dim: 'Impact', level: 'M' }, { dim: 'Effort', level: 'H' }, { dim: 'Risk', level: 'M' }] },
+      { name: 'Initiative C', scores: [{ dim: 'Impact', level: 'H' }, { dim: 'Effort', level: 'L' }, { dim: 'Risk', level: 'H' }] },
+    );
+  }
+
+  // Extract column headers from first row
+  const dims = rows[0].scores.map(s => s.dim);
+  const colCount = dims.length;
+  const rowCount = rows.length;
+
+  const gridTop = PAD + 100;
+  const gridLeft = PAD + 10;
+  const nameColW = Math.round((cW - PAD * 2) * 0.28);
+  const availW = cW - PAD * 2 - nameColW - 20;
+  const cellW = Math.round(availW / Math.max(colCount, 1));
+  const cellH = Math.min(56, Math.round((H - gridTop - PAD - 50) / (rowCount + 1)));
+  const cellGap = 4;
+
+  const levelColor = (level: string): string => {
+    if (level === 'H') return p.success || '#22c55e';
+    if (level === 'M') return p.warning || '#f59e0b';
+    return p.error || '#ef4444';
+  };
+
+  let gridHtml = '';
+
+  // Glass card wrapper
+  const wrapW = nameColW + colCount * (cellW + cellGap) + 30;
+  const wrapH = (rowCount + 1) * (cellH + cellGap) + 20;
+  gridHtml += glassCard(wrapW, wrapH, gridLeft - 10, gridTop - 10, hexToRgba(p.surface, dark ? 0.15 : 0.4));
+  gridHtml += accentStripe(wrapW, wrapH, accents[0] || p.accent, 0.04);
+  gridHtml += `</div>`;
+
+  // Column headers
+  for (let c = 0; c < colCount; c++) {
+    const cx = gridLeft + nameColW + c * (cellW + cellGap);
+    gridHtml += `<div style="position:absolute;left:${cx}px;top:${gridTop}px;width:${cellW}px;height:${cellH}px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:${accents[c % accents.length]};background:${hexToRgba(accents[c % accents.length], 0.08)};border-radius:8px">${escHtml(dims[c])}</div>`;
+  }
+
+  // Data rows
+  for (let r = 0; r < rowCount; r++) {
+    const ry = gridTop + (r + 1) * (cellH + cellGap);
+    // Row name
+    gridHtml += `<div style="position:absolute;left:${gridLeft}px;top:${ry}px;width:${nameColW - 10}px;height:${cellH}px;display:flex;align-items:center;font-size:13px;font-weight:600;color:${p.text};overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${escHtml(rows[r].name)}</div>`;
+    // Score cells
+    for (let c = 0; c < Math.min(rows[r].scores.length, colCount); c++) {
+      const cx = gridLeft + nameColW + c * (cellW + cellGap);
+      const level = rows[r].scores[c].level;
+      const color = levelColor(level);
+      gridHtml += `<div style="position:absolute;left:${cx}px;top:${ry}px;width:${cellW}px;height:${cellH}px;display:flex;align-items:center;justify-content:center;background:${hexToRgba(color, dark ? 0.2 : 0.12)};border:1px solid ${hexToRgba(color, 0.3)};border-radius:10px;box-shadow:${cardShadow(1, dark)}">`;
+      gridHtml += `<span style="font-size:16px;font-weight:800;color:${color};${dark ? `text-shadow:0 0 8px ${hexToRgba(color, 0.4)}` : ''}">${escHtml(level)}</span>`;
+      gridHtml += `</div>`;
+    }
+  }
+
+  // Legend
+  const legendY = gridTop + (rowCount + 1) * (cellH + cellGap) + 16;
+  const legendItems = [{ l: 'H', label: 'High', color: levelColor('H') }, { l: 'M', label: 'Medium', color: levelColor('M') }, { l: 'L', label: 'Low', color: levelColor('L') }];
+  for (let li = 0; li < 3; li++) {
+    const lx = gridLeft + li * 110;
+    gridHtml += `<div style="position:absolute;left:${lx}px;top:${legendY}px;display:flex;align-items:center;gap:6px">`;
+    gridHtml += `<span style="width:12px;height:12px;border-radius:3px;background:${hexToRgba(legendItems[li].color, 0.3)};border:1px solid ${legendItems[li].color}"></span>`;
+    gridHtml += `<span style="font-size:11px;color:${p.text};opacity:0.6">${legendItems[li].label}</span></div>`;
+  }
+
+  return `${SCOPED_RESET}
+<div style="position:relative;width:${W}px;height:${H}px;background:${p.background};overflow:hidden">
+  ${bgGradientOverlay(cW, H, p.accent, 0.07, '45%')}
+  <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;font-size:${titleFontSize(slide.title)}px;font-weight:800;letter-spacing:0.5px;overflow-wrap:break-word;word-wrap:break-word;color:${p.text};line-height:1.2;${dark ? `text-shadow:${textGlow(p.accent, 0.4)}` : ''}">${escHtml(slide.title)}</div>
+  <div style="position:absolute;left:${PAD}px;top:${PAD + 56}px;width:50px;height:4px;background:${p.accent};border-radius:2px"></div>
+  ${gridHtml}
+</div>`;
+}
+
+
+// ── EXIT_STRATEGY ────────────────────────────────────────────
+// Horizontal timeline with option nodes connected by a dashed path
+
+function buildExitStrategy(slide: SlideInput, p: ColorPalette, hasImage = false, accentDiversity = true): string {
+  const cW = hasImage ? CONTENT_W_IMG : W;
+  const lines = parseBodyLines(slide.body);
+  const dark = isDarkBackground(p.background);
+  const accents = cardAccentColors(p, accentDiversity ? colorOffset(slide.title) : 0);
+
+  // Parse "Year: Exit Type - $Valuation"
+  const exits: { year: string; exitType: string; valuation: string }[] = [];
+  for (const line of lines.slice(0, 6)) {
+    const sep = line.indexOf(':');
+    if (sep <= 0) continue;
+    const year = line.slice(0, sep).trim();
+    const rest = line.slice(sep + 1).trim();
+    const dashSep = rest.indexOf('-');
+    if (dashSep > 0) {
+      exits.push({ year, exitType: rest.slice(0, dashSep).trim(), valuation: rest.slice(dashSep + 1).trim() });
+    } else {
+      exits.push({ year, exitType: rest, valuation: '' });
+    }
+  }
+
+  if (exits.length === 0) {
+    exits.push(
+      { year: 'Year 3', exitType: 'Secondary Sale', valuation: '$50M' },
+      { year: 'Year 5', exitType: 'M&A', valuation: '$200M' },
+      { year: 'Year 7', exitType: 'IPO', valuation: '$500M' },
+    );
+  }
+
+  const count = exits.length;
+  const timelineY = Math.round(H * 0.48);
+  const startX = PAD + 60;
+  const endX = cW - PAD - 60;
+  const span = endX - startX;
+  const nodeSpacing = count > 1 ? Math.round(span / (count - 1)) : 0;
+
+  const typeColor = (t: string): string => {
+    const tl = t.toLowerCase();
+    if (tl.includes('ipo')) return accents[0] || p.accent;
+    if (tl.includes('m&a') || tl.includes('acquisition') || tl.includes('merge')) return accents[1] || p.primary;
+    if (tl.includes('secondary') || tl.includes('buyback')) return accents[2] || p.secondary;
+    return accents[3] || p.warning;
+  };
+
+  // Dashed timeline line
+  let svgContent = `<line x1="${startX}" y1="${timelineY}" x2="${endX}" y2="${timelineY}" stroke="${hexToRgba(p.border, 0.4)}" stroke-width="2" stroke-dasharray="8,5" />`;
+
+  let nodesHtml = '';
+
+  for (let i = 0; i < count; i++) {
+    const cx = count === 1 ? Math.round((startX + endX) / 2) : startX + i * nodeSpacing;
+    const exit = exits[i];
+    const color = typeColor(exit.exitType);
+
+    // Connector dot on timeline
+    svgContent += `<circle cx="${cx}" cy="${timelineY}" r="6" fill="${color}" stroke="${p.background}" stroke-width="2" />`;
+
+    // Year label above
+    nodesHtml += `<div style="position:absolute;left:${cx - 50}px;top:${timelineY - 80}px;width:100px;text-align:center;font-size:14px;font-weight:700;color:${p.text};opacity:0.8">${escHtml(exit.year)}</div>`;
+
+    // Exit type node
+    const nodeW = 130;
+    const nodeH = 52;
+    const nodeX = cx - Math.round(nodeW / 2);
+    const nodeY = timelineY - 60;
+    const glassProps = dark
+      ? `backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1.5px solid ${hexToRgba(color, 0.5)}`
+      : `border:1.5px solid ${hexToRgba(color, 0.4)}`;
+    nodesHtml += `<div style="position:absolute;left:${nodeX}px;top:${nodeY}px;width:${nodeW}px;height:${nodeH}px;background:${hexToRgba(color, dark ? 0.15 : 0.08)};border-radius:12px;${glassProps};box-shadow:${cardShadow(2, dark)};display:flex;align-items:center;justify-content:center">`;
+    nodesHtml += `<span style="font-size:14px;font-weight:700;color:${color};${dark ? `text-shadow:0 0 10px ${hexToRgba(color, 0.4)}` : ''}">${escHtml(exit.exitType)}</span>`;
+    nodesHtml += `</div>`;
+
+    // Valuation below timeline
+    if (exit.valuation) {
+      nodesHtml += `<div style="position:absolute;left:${cx - 60}px;top:${timelineY + 20}px;width:120px;text-align:center">`;
+      nodesHtml += `<div style="font-size:20px;font-weight:800;color:${color};${dark ? textGlow(color, 0.3) : ''}">${escHtml(exit.valuation)}</div>`;
+      nodesHtml += `</div>`;
+    }
+
+    // Vertical connector from node to timeline dot
+    svgContent += `<line x1="${cx}" y1="${nodeY + nodeH}" x2="${cx}" y2="${timelineY - 6}" stroke="${hexToRgba(color, 0.4)}" stroke-width="1.5" stroke-dasharray="4,3" />`;
+  }
+
+  return `${SCOPED_RESET}
+<div style="position:relative;width:${W}px;height:${H}px;background:${p.background};overflow:hidden">
+  ${bgGradientOverlay(cW, H, p.accent, 0.07, '50%')}
+  <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;font-size:${titleFontSize(slide.title)}px;font-weight:800;letter-spacing:0.5px;overflow-wrap:break-word;word-wrap:break-word;color:${p.text};line-height:1.2;${dark ? `text-shadow:${textGlow(p.accent, 0.4)}` : ''}">${escHtml(slide.title)}</div>
+  <div style="position:absolute;left:${PAD}px;top:${PAD + 56}px;width:50px;height:4px;background:${p.accent};border-radius:2px"></div>
+  ${nodesHtml}
+  <svg style="position:absolute;left:0;top:0" width="${cW}" height="${H}" xmlns="http://www.w3.org/2000/svg">
+    ${svgContent}
+  </svg>
+</div>`;
+}
+
+
+// ── ORG_CHART ────────────────────────────────────────────────
+// Tree layout with absolute-positioned boxes and SVG connectors
+
+function buildOrgChart(slide: SlideInput, p: ColorPalette, hasImage = false, accentDiversity = true): string {
+  const cW = hasImage ? CONTENT_W_IMG : W;
+  const lines = parseBodyLines(slide.body);
+  const dark = isDarkBackground(p.background);
+  const accents = cardAccentColors(p, accentDiversity ? colorOffset(slide.title) : 0);
+
+  // Parse "Name - Role" or "Name - Role (reports to: Parent)"
+  interface OrgNode { name: string; role: string; parent: string; children: string[]; level: number; x: number; y: number }
+  const nodes: Map<string, OrgNode> = new Map();
+  const nameList: string[] = [];
+
+  for (const line of lines.slice(0, 12)) {
+    const dashSep = line.indexOf(' - ');
+    if (dashSep <= 0) continue;
+    const name = line.slice(0, dashSep).trim();
+    let rest = line.slice(dashSep + 3).trim();
+    let parent = '';
+    const reportsMatch = rest.match(/\(reports?\s*to:?\s*(.+?)\)/i);
+    if (reportsMatch) {
+      parent = reportsMatch[1].trim();
+      rest = rest.replace(reportsMatch[0], '').trim();
+    }
+    nodes.set(name, { name, role: rest, parent, children: [], level: 0, x: 0, y: 0 });
+    nameList.push(name);
+  }
+
+  if (nodes.size === 0) {
+    const defaults = [
+      { name: 'CEO', role: 'Chief Executive', parent: '' },
+      { name: 'CTO', role: 'Technology', parent: 'CEO' },
+      { name: 'CFO', role: 'Finance', parent: 'CEO' },
+      { name: 'COO', role: 'Operations', parent: 'CEO' },
+    ];
+    for (const d of defaults) {
+      nodes.set(d.name, { name: d.name, role: d.role, parent: d.parent, children: [], level: 0, x: 0, y: 0 });
+      nameList.push(d.name);
+    }
+  }
+
+  // Build parent-child relationships
+  let root: OrgNode | undefined;
+  for (const [, node] of nodes) {
+    if (node.parent && nodes.has(node.parent)) {
+      nodes.get(node.parent)!.children.push(node.name);
+    } else if (!node.parent) {
+      if (!root) root = node;
+    }
+  }
+  // If no explicit root, first node is root
+  if (!root) root = nodes.get(nameList[0]);
+  if (!root) return '';
+
+  // Assign levels via BFS
+  const queue: string[] = [root.name];
+  root.level = 0;
+  const visited = new Set<string>();
+  visited.add(root.name);
+  while (queue.length > 0) {
+    const curr = queue.shift()!;
+    const node = nodes.get(curr)!;
+    for (const childName of node.children) {
+      const child = nodes.get(childName);
+      if (child && !visited.has(childName)) {
+        child.level = node.level + 1;
+        visited.add(childName);
+        queue.push(childName);
+      }
+    }
+  }
+  // Add orphan nodes (not connected via parent) at level 1
+  for (const [name, node] of nodes) {
+    if (!visited.has(name)) {
+      node.level = 1;
+      node.parent = root.name;
+      root.children.push(name);
+    }
+  }
+
+  // Position nodes by level
+  const maxLevel = Math.min(3, Math.max(...Array.from(nodes.values()).map(n => n.level)));
+  const boxW = 150;
+  const boxH = 56;
+  const levelGap = 100;
+  const startY = PAD + 100;
+  const levels: Map<number, OrgNode[]> = new Map();
+  for (const [, node] of nodes) {
+    const lv = Math.min(node.level, maxLevel);
+    if (!levels.has(lv)) levels.set(lv, []);
+    levels.get(lv)!.push(node);
+  }
+
+  for (const [level, levelNodes] of levels) {
+    const count = levelNodes.length;
+    const totalRowW = count * boxW + (count - 1) * 20;
+    const rowStartX = Math.round((cW - totalRowW) / 2);
+    for (let i = 0; i < count; i++) {
+      levelNodes[i].x = rowStartX + i * (boxW + 20);
+      levelNodes[i].y = startY + level * levelGap;
+    }
+  }
+
+  let boxesHtml = '';
+  let connSvg = '';
+
+  for (const [, node] of nodes) {
+    const color = accents[node.level % accents.length];
+    const glassProps = dark
+      ? `backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid ${hexToRgba(color, 0.3)}`
+      : `border:1px solid ${hexToRgba(p.border, 0.2)}`;
+
+    boxesHtml += `<div style="position:absolute;left:${node.x}px;top:${node.y}px;width:${boxW}px;height:${boxH}px;background:${hexToRgba(p.surface, dark ? 0.2 : 0.6)};border-radius:12px;${glassProps};box-shadow:${cardShadow(2, dark)};border-top:3px solid ${color};padding:8px 12px;overflow:hidden">`;
+    boxesHtml += `<div style="font-size:13px;font-weight:700;color:${p.text};overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${escHtml(node.name)}</div>`;
+    boxesHtml += `<div style="font-size:11px;color:${color};margin-top:2px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${escHtml(node.role)}</div>`;
+    boxesHtml += `</div>`;
+
+    // Connector from parent
+    if (node.parent && nodes.has(node.parent)) {
+      const parentNode = nodes.get(node.parent)!;
+      const px = parentNode.x + Math.round(boxW / 2);
+      const py = parentNode.y + boxH;
+      const cx = node.x + Math.round(boxW / 2);
+      const cy = node.y;
+      const midY = Math.round((py + cy) / 2);
+      connSvg += `<path d="M${px},${py} L${px},${midY} L${cx},${midY} L${cx},${cy}" fill="none" stroke="${hexToRgba(p.border, 0.35)}" stroke-width="2" />`;
+    }
+  }
+
+  return `${SCOPED_RESET}
+<div style="position:relative;width:${W}px;height:${H}px;background:${p.background};overflow:hidden">
+  ${bgGradientOverlay(cW, H, p.accent, 0.07, '35%')}
+  <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;font-size:${titleFontSize(slide.title)}px;font-weight:800;letter-spacing:0.5px;overflow-wrap:break-word;word-wrap:break-word;color:${p.text};line-height:1.2;${dark ? `text-shadow:${textGlow(p.accent, 0.4)}` : ''}">${escHtml(slide.title)}</div>
+  <div style="position:absolute;left:${PAD}px;top:${PAD + 56}px;width:50px;height:4px;background:${p.accent};border-radius:2px"></div>
+  ${boxesHtml}
+  <svg style="position:absolute;left:0;top:0" width="${cW}" height="${H}" xmlns="http://www.w3.org/2000/svg">
+    ${connSvg}
+  </svg>
+</div>`;
+}
+
+
+// ── FEATURE_COMPARISON ───────────────────────────────────────
+// Table-like grid with star/circle ratings per product
+
+function buildFeatureComparison(slide: SlideInput, p: ColorPalette, hasImage = false, accentDiversity = true): string {
+  const cW = hasImage ? CONTENT_W_IMG : W;
+  const dark = isDarkBackground(p.background);
+  const accents = cardAccentColors(p, accentDiversity ? colorOffset(slide.title) : 0);
+
+  // Parse body: each line = "Feature: Product1=4, Product2=3"
+  // Alternate block format: blank-line separated blocks
+  const rawLines = slide.body.split('\n').map(l => l.replace(/^[-\u2022*\u2192\u25ba\u25b8\u279c]\s*/, '').replace(/<[^>]*>/g, '').trim());
+
+  const features: { name: string; ratings: Map<string, number> }[] = [];
+  const allProducts = new Set<string>();
+
+  // Try inline format: "Feature: Product1=4, Product2=3"
+  let inlineFormat = false;
+  for (const line of rawLines.filter(Boolean).slice(0, 8)) {
+    const sep = line.indexOf(':');
+    if (sep <= 0 || sep >= 40) continue;
+    const featureName = stripMarkdown(line.slice(0, sep).trim());
+    const rest = line.slice(sep + 1).trim();
+    const ratings = new Map<string, number>();
+    const parts = rest.split(',').map(s => s.trim());
+    for (const part of parts) {
+      const eqMatch = part.match(/^(.+?)\s*[=:]\s*(\d|[★⭐●]+)/);
+      if (eqMatch) {
+        const product = stripMarkdown(eqMatch[1].trim());
+        const rVal = eqMatch[2];
+        const rating = /^\d$/.test(rVal) ? parseInt(rVal, 10) : rVal.length;
+        ratings.set(product, Math.min(rating, 5));
+        allProducts.add(product);
+        inlineFormat = true;
+      }
+    }
+    if (ratings.size > 0) features.push({ name: featureName, ratings });
+  }
+
+  // Fallback: block format separated by blank lines
+  if (!inlineFormat) {
+    let currentFeature = '';
+    const currentRatings = new Map<string, number>();
+    for (const line of rawLines) {
+      if (!line) {
+        if (currentFeature && currentRatings.size > 0) {
+          features.push({ name: currentFeature, ratings: new Map(currentRatings) });
+          currentRatings.clear();
+        }
+        currentFeature = '';
+        continue;
+      }
+      if (!currentFeature) {
+        currentFeature = stripMarkdown(line);
+        continue;
+      }
+      const sep = line.indexOf(':');
+      if (sep > 0) {
+        const product = stripMarkdown(line.slice(0, sep).trim());
+        const valStr = line.slice(sep + 1).trim();
+        const stars = (valStr.match(/[★⭐●]/g) || []).length || parseInt(valStr, 10) || 3;
+        currentRatings.set(product, Math.min(stars, 5));
+        allProducts.add(product);
+      }
+    }
+    if (currentFeature && currentRatings.size > 0) {
+      features.push({ name: currentFeature, ratings: new Map(currentRatings) });
+    }
+  }
+
+  if (features.length === 0) {
+    const defaultProducts = ['Us', 'Competitor A', 'Competitor B'];
+    defaultProducts.forEach(pr => allProducts.add(pr));
+    features.push(
+      { name: 'Ease of Use', ratings: new Map([['Us', 5], ['Competitor A', 3], ['Competitor B', 4]]) },
+      { name: 'Performance', ratings: new Map([['Us', 4], ['Competitor A', 4], ['Competitor B', 3]]) },
+      { name: 'Pricing', ratings: new Map([['Us', 5], ['Competitor A', 2], ['Competitor B', 3]]) },
+    );
+  }
+
+  const products = Array.from(allProducts).slice(0, 5);
+  const featureCount = Math.min(features.length, 7);
+  const prodCount = products.length;
+
+  const gridTop = PAD + 100;
+  const gridLeft = PAD + 10;
+  const featureColW = Math.round((cW - PAD * 2) * 0.25);
+  const availW = cW - PAD * 2 - featureColW - 20;
+  const colW = Math.round(availW / Math.max(prodCount, 1));
+  const rowH = Math.min(50, Math.round((H - gridTop - PAD - 20) / (featureCount + 1)));
+
+  let tableHtml = '';
+
+  // Header row with product names
+  for (let pi = 0; pi < prodCount; pi++) {
+    const hx = gridLeft + featureColW + pi * colW;
+    const color = accents[pi % accents.length];
+    tableHtml += `<div style="position:absolute;left:${hx}px;top:${gridTop}px;width:${colW}px;height:${rowH}px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;background:${hexToRgba(color, 0.85)};border-radius:${pi === 0 ? '10px 0 0 0' : pi === prodCount - 1 ? '0 10px 0 0' : '0'};box-shadow:${cardShadow(1, dark)}">${escHtml(products[pi])}</div>`;
+  }
+
+  // Feature rows
+  for (let fi = 0; fi < featureCount; fi++) {
+    const fy = gridTop + (fi + 1) * rowH;
+    const feature = features[fi];
+    const isLast = fi === featureCount - 1;
+    const stripeBg = fi % 2 === 0 ? hexToRgba(p.surface, dark ? 0.08 : 0.3) : 'transparent';
+
+    // Feature name
+    tableHtml += `<div style="position:absolute;left:${gridLeft}px;top:${fy}px;width:${featureColW - 10}px;height:${rowH}px;display:flex;align-items:center;font-size:12px;font-weight:600;color:${p.text};background:${stripeBg};padding-left:10px;${isLast ? 'border-radius:0 0 0 10px' : ''};overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${escHtml(feature.name)}</div>`;
+
+    // Rating cells
+    for (let pi = 0; pi < prodCount; pi++) {
+      const cx = gridLeft + featureColW + pi * colW;
+      const rating = feature.ratings.get(products[pi]) || 0;
+      const color = accents[pi % accents.length];
+
+      // Generate filled/empty circles
+      let circles = '';
+      for (let s = 0; s < 5; s++) {
+        if (s < rating) {
+          circles += `<span style="color:${color};font-size:14px">&#9679;</span>`;
+        } else {
+          circles += `<span style="color:${hexToRgba(p.border, 0.3)};font-size:14px">&#9675;</span>`;
+        }
+      }
+
+      const cellBorderR = pi === prodCount - 1 && isLast ? 'border-radius:0 0 10px 0' : '';
+      tableHtml += `<div style="position:absolute;left:${cx}px;top:${fy}px;width:${colW}px;height:${rowH}px;display:flex;align-items:center;justify-content:center;gap:2px;background:${stripeBg};border-left:1px solid ${hexToRgba(p.border, 0.1)};${cellBorderR}">${circles}</div>`;
+    }
+  }
+
+  // Grid border
+  const totalGridW = featureColW + prodCount * colW;
+  const totalGridH = (featureCount + 1) * rowH;
+  tableHtml += `<div style="position:absolute;left:${gridLeft}px;top:${gridTop}px;width:${totalGridW}px;height:${totalGridH}px;border:1px solid ${hexToRgba(p.border, 0.15)};border-radius:10px;pointer-events:none"></div>`;
+
+  return `${SCOPED_RESET}
+<div style="position:relative;width:${W}px;height:${H}px;background:${p.background};overflow:hidden">
+  ${bgGradientOverlay(cW, H, p.accent, 0.07, '45%')}
+  <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;font-size:${titleFontSize(slide.title)}px;font-weight:800;letter-spacing:0.5px;overflow-wrap:break-word;word-wrap:break-word;color:${p.text};line-height:1.2;${dark ? `text-shadow:${textGlow(p.accent, 0.4)}` : ''}">${escHtml(slide.title)}</div>
+  <div style="position:absolute;left:${PAD}px;top:${PAD + 56}px;width:50px;height:4px;background:${p.accent};border-radius:2px"></div>
+  ${tableHtml}
+</div>`;
+}
+
+function buildDataTable(slide: SlideInput, p: ColorPalette, hasImage = false, accentDiversity = true): string {
+  const cW = hasImage ? CONTENT_W_IMG : W;
+  const dark = isDarkBackground(p.background);
+  const accents = cardAccentColors(p, accentDiversity ? colorOffset(slide.title) : 0);
+
+  // Parse markdown table: split on pipes, detect header separator row
+  const rawLines = slide.body.split('\n').filter(Boolean);
+  const headers: string[] = [];
+  const rows: string[][] = [];
+  let headerDone = false;
+
+  for (const line of rawLines) {
+    if (/^\s*\|[-:\s|]+\|\s*$/.test(line)) { headerDone = true; continue; }
+    if (!/\|/.test(line)) continue;
+    const cells = line.replace(/^\s*\|/, '').replace(/\|\s*$/, '').split('|').map(c => c.trim());
+    if (cells.length === 0) continue;
+    if (!headerDone && headers.length === 0) { headers.push(...cells); continue; }
+    rows.push(cells);
+  }
+
+  // Fallback: use parseBodyLines if no table detected
+  if (headers.length === 0 && rows.length === 0) {
+    const lines = parseBodyLines(slide.body);
+    for (const l of lines) {
+      const parts = l.split(/\s{2,}|\t/).map(s => s.trim()).filter(Boolean);
+      rows.push(parts.length > 1 ? parts : [l]);
+    }
+  }
+
+  const colCount = Math.max(headers.length, ...rows.map(r => r.length), 1);
+  const tableW = cW - PAD * 2;
+  const colW = Math.round(tableW / colCount);
+  const startY = PAD + 80;
+  const rowH = 40;
+  const headerH = 44;
+  const accentColor = accents[0];
+
+  // Detect numeric columns for right-alignment
+  const numericCols = new Set<number>();
+  for (const row of rows) {
+    for (let ci = 0; ci < row.length; ci++) {
+      if (/^[\d$%\u20AC\u00A3,.+\-]+$/.test(row[ci].replace(/\s/g, ''))) numericCols.add(ci);
+    }
+  }
+
+  let tableHtml = '';
+
+  // Header row
+  if (headers.length > 0) {
+    tableHtml += `<div style="position:absolute;left:${PAD}px;top:${startY}px;width:${tableW}px;height:${headerH}px;background:${accentColor};border-radius:10px 10px 0 0;display:flex;align-items:center">`;
+    for (let ci = 0; ci < colCount; ci++) {
+      const align = numericCols.has(ci) ? 'right' : 'left';
+      tableHtml += `<div style="width:${colW}px;padding:0 16px;font-size:13px;font-weight:800;color:#fff;text-transform:uppercase;letter-spacing:0.5px;text-align:${align};overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${escHtml(headers[ci] || '')}</div>`;
+    }
+    tableHtml += `</div>`;
+  }
+
+  // Data rows
+  const dataStartY = startY + (headers.length > 0 ? headerH : 0);
+  const maxRows = Math.min(rows.length, Math.floor((H - dataStartY - PAD) / rowH));
+  for (let ri = 0; ri < maxRows; ri++) {
+    const ry = dataStartY + ri * rowH;
+    const stripe = ri % 2 === 0 ? hexToRgba(p.surface, dark ? 0.15 : 0.6) : 'transparent';
+    const isLast = ri === maxRows - 1;
+    const radius = isLast ? 'border-radius:0 0 10px 10px' : '';
+    tableHtml += `<div style="position:absolute;left:${PAD}px;top:${ry}px;width:${tableW}px;height:${rowH}px;background:${stripe};${radius};display:flex;align-items:center;border-bottom:1px solid ${hexToRgba(p.border, 0.1)}">`;
+    for (let ci = 0; ci < colCount; ci++) {
+      const val = rows[ri]?.[ci] || '';
+      const align = numericCols.has(ci) ? 'right' : 'left';
+      const weight = ci === 0 ? '600' : '400';
+      tableHtml += `<div style="width:${colW}px;padding:0 16px;font-size:13px;font-weight:${weight};color:${p.text};opacity:0.88;text-align:${align};overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${escHtml(val)}</div>`;
+    }
+    tableHtml += `</div>`;
+  }
+
+  // Glass card border around entire table
+  const totalH = (headers.length > 0 ? headerH : 0) + maxRows * rowH;
+  const glassBorder = dark
+    ? `border:1px solid rgba(255,255,255,0.1);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)`
+    : `border:1px solid ${hexToRgba(p.border, 0.15)}`;
+  tableHtml += `<div style="position:absolute;left:${PAD}px;top:${startY}px;width:${tableW}px;height:${totalH}px;${glassBorder};border-radius:10px;pointer-events:none;box-shadow:${cardShadow(2, dark)}"></div>`;
+
+  return `${SCOPED_RESET}
+<div style="position:relative;width:${W}px;height:${H}px;background:${p.background};overflow:hidden">
+  ${bgGradientOverlay(cW, H, p.accent, 0.07, '45%')}
+  <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;font-size:${titleFontSize(slide.title)}px;font-weight:800;overflow-wrap:break-word;word-wrap:break-word;color:${p.text};line-height:1.2;letter-spacing:0.5px;${dark ? `text-shadow:${textGlow(p.accent, 0.4)}` : ''}">${escHtml(slide.title)}</div>
+  <div style="position:absolute;left:${PAD}px;top:${PAD + 56}px;width:50px;height:4px;background:${p.accent};border-radius:2px"></div>
+  ${tableHtml}
+</div>`;
+}
+
+
+// ── ECOSYSTEM_MAP ───────────────────────────────────────────
+// SVG radial layout with center product node and orbital partner rings.
+// Center: large circle with product name. Ring1/Ring2: partner nodes evenly distributed.
+
+function buildEcosystemMap(slide: SlideInput, p: ColorPalette, hasImage = false, accentDiversity = true): string {
+  const cW = hasImage ? CONTENT_W_IMG : W;
+  const dark = isDarkBackground(p.background);
+  const accents = cardAccentColors(p, accentDiversity ? colorOffset(slide.title) : 0);
+
+  // Parse body: "Center: ProductName", "Ring1: P1, P2, P3", "Ring2: P4, P5, P6"
+  const rawLines = slide.body.split('\n').map(l => l.trim()).filter(Boolean);
+  let centerLabel = escHtml(slide.title.split(/\s/).slice(0, 2).join(' '));
+  const ring1: string[] = [];
+  const ring2: string[] = [];
+
+  for (const line of rawLines) {
+    const sep = line.indexOf(':');
+    if (sep <= 0) continue;
+    const key = line.slice(0, sep).trim().toLowerCase();
+    const vals = line.slice(sep + 1).split(',').map(s => s.trim()).filter(Boolean);
+    if (key.includes('center') || key.includes('product') || key.includes('core')) {
+      centerLabel = escHtml(vals[0] || centerLabel);
+    } else if (key.includes('ring1') || key.includes('inner')) {
+      ring1.push(...vals);
+    } else if (key.includes('ring2') || key.includes('outer')) {
+      ring2.push(...vals);
+    } else {
+      // Auto-assign to rings
+      if (ring1.length <= ring2.length) ring1.push(...vals);
+      else ring2.push(...vals);
+    }
+  }
+
+  // Fallback: distribute parseBodyLines across rings
+  if (ring1.length === 0 && ring2.length === 0) {
+    const lines = parseBodyLines(slide.body);
+    for (let i = 0; i < lines.length; i++) {
+      if (i < Math.ceil(lines.length / 2)) ring1.push(lines[i]);
+      else ring2.push(lines[i]);
+    }
+  }
+
+  const cx = Math.round(cW * 0.48);
+  const cy = Math.round(H * 0.52);
+  const R1 = 180;
+  const R2 = 280;
+  const centerR = 80;
+  const nodeR = 30;
+  const accentColor = accents[0];
+
+  let svgContent = '';
+
+  // SVG defs
+  svgContent += `<defs>`;
+  svgContent += `<filter id="ecoGlow"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>`;
+  svgContent += `<radialGradient id="ecoCenterGrad" cx="40%" cy="40%"><stop offset="0%" stop-color="${accentColor}"/><stop offset="100%" stop-color="${hexToRgba(accentColor, 0.7)}"/></radialGradient>`;
+  svgContent += `</defs>`;
+
+  // Orbital ring guides
+  svgContent += `<circle cx="${cx}" cy="${cy}" r="${R1}" fill="none" stroke="${hexToRgba(p.text, 0.06)}" stroke-width="1" stroke-dasharray="6,8"/>`;
+  svgContent += `<circle cx="${cx}" cy="${cy}" r="${R2}" fill="none" stroke="${hexToRgba(p.text, 0.04)}" stroke-width="1" stroke-dasharray="4,10"/>`;
+
+  // Connector lines + nodes for Ring1
+  const ring1Count = Math.min(ring1.length, 8);
+  for (let i = 0; i < ring1Count; i++) {
+    const angle = (i / ring1Count) * Math.PI * 2 - Math.PI / 2;
+    const nx = cx + R1 * Math.cos(angle);
+    const ny = cy + R1 * Math.sin(angle);
+    const col = accents[i % accents.length];
+
+    // Connector line to center
+    svgContent += `<line x1="${cx}" y1="${cy}" x2="${nx.toFixed(1)}" y2="${ny.toFixed(1)}" stroke="${hexToRgba(col, 0.2)}" stroke-width="1.5" stroke-dasharray="4,4"/>`;
+    // Node circle
+    svgContent += `<circle cx="${nx.toFixed(1)}" cy="${ny.toFixed(1)}" r="${nodeR + 6}" fill="${hexToRgba(col, 0.06)}" filter="url(#ecoGlow)"/>`;
+    svgContent += `<circle cx="${nx.toFixed(1)}" cy="${ny.toFixed(1)}" r="${nodeR}" fill="${dark ? hexToRgba(p.surface, 0.3) : hexToRgba(p.surface, 0.9)}" stroke="${hexToRgba(col, 0.4)}" stroke-width="2"/>`;
+    // Label
+    const label = escHtml(ring1[i].length > 12 ? ring1[i].slice(0, 11) + '\u2026' : ring1[i]);
+    svgContent += `<text x="${nx.toFixed(1)}" y="${(ny + 4).toFixed(1)}" text-anchor="middle" fill="${col}" font-size="11" font-weight="700">${label}</text>`;
+  }
+
+  // Connector lines + nodes for Ring2
+  const ring2Count = Math.min(ring2.length, 10);
+  for (let i = 0; i < ring2Count; i++) {
+    const angle = (i / ring2Count) * Math.PI * 2 - Math.PI / 2 + (Math.PI / ring2Count);
+    const nx = cx + R2 * Math.cos(angle);
+    const ny = cy + R2 * Math.sin(angle);
+    const col = accents[(i + ring1Count) % accents.length];
+
+    // Connector line to center
+    svgContent += `<line x1="${cx}" y1="${cy}" x2="${nx.toFixed(1)}" y2="${ny.toFixed(1)}" stroke="${hexToRgba(col, 0.12)}" stroke-width="1" stroke-dasharray="3,6"/>`;
+    // Smaller outer node
+    const outerR = nodeR - 6;
+    svgContent += `<circle cx="${nx.toFixed(1)}" cy="${ny.toFixed(1)}" r="${outerR + 4}" fill="${hexToRgba(col, 0.04)}"/>`;
+    svgContent += `<circle cx="${nx.toFixed(1)}" cy="${ny.toFixed(1)}" r="${outerR}" fill="${dark ? hexToRgba(p.surface, 0.25) : hexToRgba(p.surface, 0.85)}" stroke="${hexToRgba(col, 0.3)}" stroke-width="1.5"/>`;
+    const label = escHtml(ring2[i].length > 10 ? ring2[i].slice(0, 9) + '\u2026' : ring2[i]);
+    svgContent += `<text x="${nx.toFixed(1)}" y="${(ny + 4).toFixed(1)}" text-anchor="middle" fill="${col}" font-size="10" font-weight="600">${label}</text>`;
+  }
+
+  // Center circle: layered glow + fill + label
+  svgContent += `<circle cx="${cx}" cy="${cy}" r="${centerR + 10}" fill="${hexToRgba(accentColor, 0.05)}" filter="url(#ecoGlow)"/>`;
+  svgContent += `<circle cx="${cx}" cy="${cy}" r="${centerR}" fill="url(#ecoCenterGrad)" opacity="0.9"/>`;
+  svgContent += `<circle cx="${cx}" cy="${cy}" r="${centerR}" fill="none" stroke="${hexToRgba(accentColor, 0.3)}" stroke-width="2"/>`;
+  // Center text (HTML overlay for wrapping)
+  const centerHtml = `<div style="position:absolute;left:${cx - centerR + 10}px;top:${cy - 16}px;width:${(centerR - 10) * 2}px;text-align:center;font-size:16px;font-weight:800;color:#fff;line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;${dark ? textGlow(accentColor, 0.3) : ''}">${centerLabel}</div>`;
+
+  return `${SCOPED_RESET}
+<div style="position:relative;width:${W}px;height:${H}px;background:${p.background};overflow:hidden">
+  ${bgGradientOverlay(cW, H, p.accent, 0.07, '50%')}
+  <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;font-size:${titleFontSize(slide.title)}px;font-weight:800;overflow-wrap:break-word;word-wrap:break-word;color:${p.text};line-height:1.2;letter-spacing:0.5px;${dark ? `text-shadow:${textGlow(p.accent, 0.4)}` : ''}">${escHtml(slide.title)}</div>
+  <div style="position:absolute;left:${PAD}px;top:${PAD + 56}px;width:50px;height:4px;background:${p.accent};border-radius:2px"></div>
+  <svg style="position:absolute;left:0;top:0;width:${cW}px;height:${H}px;pointer-events:none" viewBox="0 0 ${cW} ${H}" xmlns="http://www.w3.org/2000/svg">${svgContent}</svg>
+  ${centerHtml}
+</div>`;
+}
+
+
+// ── KPI_DASHBOARD ───────────────────────────────────────────
+// 2x3 grid of KPI cards with large values, trend arrows, and glass effect.
+
+function buildKpiDashboard(slide: SlideInput, p: ColorPalette, hasImage = false, accentDiversity = true): string {
+  const cW = hasImage ? CONTENT_W_IMG : W;
+  const dark = isDarkBackground(p.background);
+  const accents = cardAccentColors(p, accentDiversity ? colorOffset(slide.title) : 0);
+
+  // Parse body: each line = "KPI: Value (arrow%)" e.g. "Revenue: $2.4M (up12%)" or "Churn: 5.2% (down3%)"
+  const lines = parseBodyLines(slide.body);
+  const kpis: { label: string; value: string; trend: string; up: boolean }[] = [];
+
+  for (const line of lines.slice(0, 6)) {
+    const sep = line.indexOf(':');
+    if (sep > 0 && sep < 50) {
+      const label = line.slice(0, sep).trim();
+      let rest = line.slice(sep + 1).trim();
+      // Extract trend: (up12%) or (down5%) or (+12%) or (-5%)
+      const trendMatch = rest.match(/\(?\s*([\u2191\u2193+\-])?\s*(\d+[\d.]*%?)\s*\)?$/);
+      let trend = '';
+      let up = true;
+      if (trendMatch) {
+        rest = rest.slice(0, rest.indexOf(trendMatch[0])).trim();
+        const arrow = trendMatch[1] || '';
+        up = arrow !== '\u2193' && arrow !== '-';
+        trend = (up ? '\u2191' : '\u2193') + trendMatch[2];
+      }
+      kpis.push({ label, value: rest || label, trend, up });
+    } else {
+      kpis.push({ label: line, value: '', trend: '', up: true });
+    }
+  }
+
+  if (kpis.length === 0) {
+    kpis.push({ label: 'Revenue', value: '$2.4M', trend: '\u2191 12%', up: true });
+    kpis.push({ label: 'Users', value: '48K', trend: '\u2191 8%', up: true });
+    kpis.push({ label: 'Conversion', value: '3.2%', trend: '\u2191 0.4%', up: true });
+    kpis.push({ label: 'Churn', value: '2.1%', trend: '\u2193 0.3%', up: false });
+  }
+
+  const cols = Math.min(3, kpis.length);
+  const rowCount = Math.ceil(kpis.length / cols);
+  const gridW = cW - PAD * 2;
+  const cardGap = 16;
+  const cardW = Math.round((gridW - (cols - 1) * cardGap) / cols);
+  const cardH = Math.min(130, Math.round((H - PAD * 2 - 90 - (rowCount - 1) * cardGap) / rowCount));
+  const startY = PAD + 85;
+
+  let cardsHtml = '';
+
+  for (let i = 0; i < kpis.length; i++) {
+    const col = i % cols;
+    const row = Math.floor(i / cols);
+    const cardX = PAD + col * (cardW + cardGap);
+    const cardY = startY + row * (cardH + cardGap);
+    if (cardY + cardH > H - PAD) continue;
+
+    const kpi = kpis[i];
+    const accentCol = accents[i % accents.length];
+    const cardBg = dark ? hexToRgba(p.surface, 0.18) : p.surface;
+    const glassBorder = dark
+      ? `backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.1)`
+      : `border:1px solid ${hexToRgba(p.border, 0.12)}`;
+
+    cardsHtml += `<div style="position:absolute;left:${cardX}px;top:${cardY}px;width:${cardW}px;height:${cardH}px;background:${cardBg};${glassBorder};border-left:4px solid ${accentCol};border-radius:14px;box-shadow:${cardShadow(2, dark)};overflow:hidden">`;
+    // Accent stripe overlay
+    cardsHtml += accentStripe(cardW, cardH, accentCol, 0.06);
+    // Value (large)
+    cardsHtml += `<div style="position:absolute;left:18px;top:${Math.round(cardH * 0.2)}px;font-size:36px;font-weight:800;color:${p.text};line-height:1;${dark ? textGlow(accentCol, 0.2) : ''}">${escHtml(kpi.value)}</div>`;
+    // Label (below value)
+    cardsHtml += `<div style="position:absolute;left:18px;bottom:16px;font-size:13px;font-weight:500;color:${p.text};opacity:0.6;text-transform:uppercase;letter-spacing:0.5px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;max-width:${cardW - 80}px">${escHtml(kpi.label)}</div>`;
+    // Trend arrow in top-right
+    if (kpi.trend) {
+      const trendColor = kpi.up ? (p.success || '#22c55e') : (p.error || '#ef4444');
+      cardsHtml += `<div style="position:absolute;right:14px;top:14px;font-size:14px;font-weight:700;color:${trendColor};padding:3px 8px;background:${hexToRgba(trendColor, 0.1)};border-radius:8px">${escHtml(kpi.trend)}</div>`;
+    }
+    cardsHtml += `</div>`;
+  }
+
+  return `${SCOPED_RESET}
+<div style="position:relative;width:${W}px;height:${H}px;background:${p.background};overflow:hidden">
+  ${bgGradientOverlay(cW, H, p.accent, 0.07, '40%')}
+  <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;font-size:${titleFontSize(slide.title)}px;font-weight:800;overflow-wrap:break-word;word-wrap:break-word;color:${p.text};line-height:1.2;letter-spacing:0.5px;${dark ? `text-shadow:${textGlow(p.accent, 0.4)}` : ''}">${escHtml(slide.title)}</div>
+  <div style="position:absolute;left:${PAD}px;top:${PAD + 56}px;width:50px;height:4px;background:${p.accent};border-radius:2px"></div>
+  ${cardsHtml}
+</div>`;
+}
+
+
+// ── REFERENCES ──────────────────────────────────────────────
+// Numbered citation list with academic styling, serif fallback, and accent-colored brackets.
+
+function buildReferences(slide: SlideInput, p: ColorPalette, hasImage = false): string {
+  const cW = hasImage ? CONTENT_W_IMG : W;
+  const dark = isDarkBackground(p.background);
+
+  const rawLines = slide.body.split('\n').map(l => l.trim()).filter(Boolean);
+  const refs: { num: string; text: string }[] = [];
+
+  for (const line of rawLines.slice(0, 12)) {
+    // Match "[N] rest of citation" or "N. rest" or just plain text
+    const bracketMatch = line.match(/^\[(\d+)\]\s*(.*)/);
+    const dotMatch = line.match(/^(\d+)\.\s*(.*)/);
+    if (bracketMatch) {
+      refs.push({ num: bracketMatch[1], text: bracketMatch[2] });
+    } else if (dotMatch) {
+      refs.push({ num: dotMatch[1], text: dotMatch[2] });
+    } else if (line.length > 5) {
+      refs.push({ num: String(refs.length + 1), text: stripMarkdown(line) });
+    }
+  }
+
+  if (refs.length === 0) {
+    refs.push({ num: '1', text: 'Author, A. (2024). Title of the work. Journal Name, 12(3), 45-67.' });
+  }
+
+  const startY = PAD + 85;
+  const lineH = 28;
+  const contentW = cW - PAD * 2 - 60;
+  const maxRefs = Math.min(refs.length, Math.floor((H - startY - PAD) / lineH));
+
+  let refsHtml = '';
+
+  for (let i = 0; i < maxRefs; i++) {
+    const ry = startY + i * lineH;
+    const ref = refs[i];
+
+    // Number badge in accent color
+    refsHtml += `<div style="position:absolute;left:${PAD}px;top:${ry}px;width:40px;text-align:right">`;
+    refsHtml += `<span style="font-size:13px;font-weight:800;color:${p.accent};font-family:Georgia,'Times New Roman',serif">[${escHtml(ref.num)}]</span>`;
+    refsHtml += `</div>`;
+
+    // Citation text
+    refsHtml += `<div style="position:absolute;left:${PAD + 50}px;top:${ry}px;width:${contentW}px;font-size:13px;font-weight:400;color:${p.text};opacity:0.85;font-family:Georgia,'Times New Roman',serif;line-height:1.6;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${escHtml(ref.text)}</div>`;
+  }
+
+  // Subtle separator line below title
+  refsHtml += `<div style="position:absolute;left:${PAD}px;top:${startY - 12}px;width:${cW - PAD * 2}px;height:1px;background:${hexToRgba(p.border, 0.15)}"></div>`;
+
+  return `${SCOPED_RESET}
+<div style="position:relative;width:${W}px;height:${H}px;background:${p.background};overflow:hidden">
+  ${bgGradientOverlay(cW, H, p.accent, 0.05, '50%')}
+  <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;font-size:${titleFontSize(slide.title)}px;font-weight:800;overflow-wrap:break-word;word-wrap:break-word;color:${p.text};line-height:1.2;letter-spacing:0.5px;font-family:Georgia,'Times New Roman',serif;${dark ? `text-shadow:${textGlow(p.accent, 0.3)}` : ''}">${escHtml(slide.title)}</div>
+  <div style="position:absolute;left:${PAD}px;top:${PAD + 56}px;width:50px;height:4px;background:${p.accent};border-radius:2px"></div>
+  ${refsHtml}
+</div>`;
+}
+
+
+// ── ABSTRACT ────────────────────────────────────────────────
+// Structured sections with bold accent labels (Objective, Method, Results, Conclusion).
+// Optional Keywords line in italic at bottom.
+
+function buildAbstract(slide: SlideInput, p: ColorPalette, hasImage = false, accentDiversity = true): string {
+  const cW = hasImage ? CONTENT_W_IMG : W;
+  const dark = isDarkBackground(p.background);
+  const accents = cardAccentColors(p, accentDiversity ? colorOffset(slide.title) : 0);
+
+  // Parse body: each line = "Label: text paragraph" or "Keywords: term1, term2"
+  const rawLines = slide.body.split('\n').map(l => l.trim()).filter(Boolean);
+  const sections: { label: string; text: string }[] = [];
+  let keywords = '';
+
+  for (const line of rawLines) {
+    const sep = line.indexOf(':');
+    if (sep > 0 && sep < 40) {
+      const label = stripMarkdown(line.slice(0, sep).trim());
+      const text = stripMarkdown(line.slice(sep + 1).trim());
+      if (label.toLowerCase() === 'keywords' || label.toLowerCase() === 'keyword') {
+        keywords = text;
+      } else if (text.length > 0) {
+        sections.push({ label, text });
+      }
+    }
+  }
+
+  // Fallback: use parseBodyLines as generic sections
+  if (sections.length === 0) {
+    const lines = parseBodyLines(slide.body);
+    const labels = ['Objective', 'Method', 'Results', 'Conclusion'];
+    for (let i = 0; i < Math.min(lines.length, 4); i++) {
+      sections.push({ label: labels[i] || 'Section ' + (i + 1), text: lines[i] });
+    }
+  }
+
+  const startY = PAD + 85;
+  const sectionGap = 20;
+  const contentW = cW - PAD * 2 - 20;
+  const availH = H - startY - PAD - (keywords ? 36 : 0);
+  const sectionH = Math.min(120, Math.max(50, Math.round((availH - (sections.length - 1) * sectionGap) / sections.length)));
+
+  let sectionsHtml = '';
+
+  for (let i = 0; i < Math.min(sections.length, 5); i++) {
+    const sy = startY + i * (sectionH + sectionGap);
+    if (sy + 40 > H - PAD - (keywords ? 36 : 0)) break;
+    const section = sections[i];
+    const accentCol = accents[i % accents.length];
+
+    // Section label: uppercase, accent color, bold
+    sectionsHtml += `<div style="position:absolute;left:${PAD}px;top:${sy}px;display:flex;align-items:center;gap:10px">`;
+    // Accent dot
+    sectionsHtml += `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${accentCol};box-shadow:0 0 6px ${hexToRgba(accentCol, 0.4)};flex-shrink:0"></span>`;
+    sectionsHtml += `<span style="font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:1.2px;color:${accentCol}">${escHtml(section.label)}</span>`;
+    sectionsHtml += `</div>`;
+
+    // Section text paragraph
+    const textY = sy + 26;
+    const maxTextH = sectionH - 26;
+    sectionsHtml += `<div style="position:absolute;left:${PAD + 18}px;top:${textY}px;width:${contentW}px;max-height:${maxTextH}px;font-size:14px;font-weight:400;color:${p.text};opacity:0.85;line-height:1.6;overflow:hidden">${escHtml(section.text)}</div>`;
+  }
+
+  // Keywords line at bottom
+  if (keywords) {
+    const kwY = H - PAD - 20;
+    sectionsHtml += `<div style="position:absolute;left:${PAD}px;top:${kwY}px;width:${contentW + 20}px;font-size:12px;font-style:italic;color:${p.text};opacity:0.55;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">`;
+    sectionsHtml += `<span style="font-weight:700;color:${p.accent};font-style:normal;text-transform:uppercase;letter-spacing:0.5px;margin-right:8px">Keywords:</span>${escHtml(keywords)}`;
+    sectionsHtml += `</div>`;
+  }
+
+  return `${SCOPED_RESET}
+<div style="position:relative;width:${W}px;height:${H}px;background:${p.background};overflow:hidden">
+  ${bgGradientOverlay(cW, H, p.accent, 0.06, '45%')}
+  <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;font-size:${titleFontSize(slide.title)}px;font-weight:800;overflow-wrap:break-word;word-wrap:break-word;color:${p.text};line-height:1.2;letter-spacing:0.5px;${dark ? `text-shadow:${textGlow(p.accent, 0.3)}` : ''}">${escHtml(slide.title)}</div>
+  <div style="position:absolute;left:${PAD}px;top:${PAD + 56}px;width:50px;height:4px;background:${p.accent};border-radius:2px"></div>
+  ${sectionsHtml}
 </div>`;
 }

@@ -63,6 +63,25 @@ MCKINSEY FORMATTING (override standard formatting for this theme):
 `
     : '';
 
+  const academicBlock = (presentationType?.toUpperCase() === 'ACADEMIC' || themeName?.toLowerCase().includes('academic'))
+    ? `
+ACADEMIC FORMATTING (override standard formatting for this theme):
+- Title MUST be an action-oriented assertion, not a topic label (Hirshleifer rule)
+- BAD: "Literature Review" — this is a topic label, NOT a title
+- BAD: "Methodology" — generic heading, says nothing
+- GOOD: "Transformer attention mechanisms outperform RNNs on all benchmarks"
+- GOOD: "Three cognitive biases systematically distort investment decisions"
+- If the title does not make a claim, rewrite it until it does
+- Use SCR framework: Situation → Complication → Resolution in every narrative slide
+- One chart or data element per slide maximum — no visual clutter
+- REFERENCES slide MANDATORY as the last content slide before CTA/THANK_YOU
+- Citations: Author (Year) format in body text, full references on REFERENCES slide
+- Minimalist design: max 3 colors, no decorative elements, no emojis
+- Speaker notes carry methodology detail and statistical context
+- Prefer ABSTRACT as the second slide (after TITLE) for research presentations
+`
+    : '';
+
   const kbBlock = kbContext
     ? `KNOWLEDGE BASE GROUNDING (CRITICAL):
 The knowledge base content below contains verified facts, statistics, and claims from the user's own documents.
@@ -120,8 +139,25 @@ SLIDE TYPE DIVERSITY (CRITICAL — vary visual layouts):
   - Bold claim + evidence → SPLIT_STATEMENT
   - Customer quote → QUOTE
   - Tabular structured data (2+ columns with headers) → CONTENT with markdown table
+  - Financial projections/revenue → FINANCIAL_PROJECTION
+  - Go-to-market channels → GO_TO_MARKET
+  - User/buyer persona → PERSONA
+  - Multiple customer quotes → TESTIMONIAL_WALL
+  - Closing/thank-you slide → THANK_YOU
+  - Bear/base/bull scenarios → SCENARIO_ANALYSIS
+  - Supply chain/value stages → VALUE_CHAIN
+  - Regional/geographic data → GEOGRAPHIC_MAP
+  - Initiative prioritization grid → IMPACT_SCORECARD
+  - Exit/liquidity options → EXIT_STRATEGY
+  - Organization hierarchy → ORG_CHART
+  - Product feature ratings → FEATURE_COMPARISON
+  - Dense tabular data → DATA_TABLE
+  - Partner/integration ecosystem → ECOSYSTEM_MAP
+  - KPI dashboard with trends → KPI_DASHBOARD
+  - Academic references/bibliography → REFERENCES
+  - Research abstract/summary → ABSTRACT
   - General information → CONTENT (last resort)
-- CONTENT is the ONLY type that renders markdown tables (| col | col |). If data needs a table, use CONTENT.
+- CONTENT and DATA_TABLE render markdown tables (| col | col |). Use DATA_TABLE for dense data tables, CONTENT for general informational slides with tables.
 
 UNIVERSAL FORMATTING RULES:
 - Title: max 12 words, max 80 characters. Longer titles auto-shrink and hurt readability.
@@ -536,9 +572,152 @@ Integration: Slack, Notion, Figma, Zapier
 Channel: Deloitte, Accenture, McKinsey
 Strategic: Y Combinator, Sequoia, a16z"
 
+FINANCIAL_PROJECTION: Left table + right chart layout. Body lines: Year: $Revenue, $Cost, $Profit. First line is header. Plain text, rendered as table + SVG bar chart automatically.
+  Example body:
+  "2024: $2.1M, $1.4M, $700K
+2025: $5.8M, $3.2M, $2.6M
+2026: $12.4M, $6.1M, $6.3M
+2027: $24.0M, $10.8M, $13.2M"
+
+GO_TO_MARKET: Channel cards with adoption phase arrows. One channel per line. Format: Channel: Strategy (timeline). Plain text, rendered as horizontal channel cards automatically.
+  Example body:
+  "Direct Sales: Enterprise outbound with dedicated AEs (Q1-Q2)
+Partner Channel: SI and consulting firm reseller program (Q2-Q3)
+Product-Led: Self-serve freemium with usage-based upgrade (Q3-Q4)
+Community: Developer advocacy and open-source ecosystem (Ongoing)"
+
+PERSONA: Avatar + demographic card + pain/goal lists. Format: Name on first line, Role at Company on second, then Pain: and Goal: lines. Plain text, rendered as persona card automatically.
+  Example body:
+  "Sarah Chen
+VP of Engineering, Acme Corp
+Pain: Spends 6+ hours per week on presentation formatting
+Pain: Inconsistent branding across team decks
+Goal: Reduce deck creation time to under 10 minutes
+Goal: Maintain brand consistency without design team"
+
+TESTIMONIAL_WALL: 3-4 quote cards in masonry grid. One testimonial per block separated by blank lines. Format: "Quote" - Name, Company. Plain text, rendered as quote card grid automatically.
+  Example body:
+  "\"Cut our deck creation time from 6 hours to 10 minutes\" - Sarah Chen, VP Engineering at Stripe
+
+\"The AI understands our brand better than most designers\" - Mark Rivera, CMO at Linear
+
+\"Finally, presentations that look like they cost $10K\" - Lisa Park, CEO at Vercel
+
+\"Our close rate improved 23% after switching\" - James Wu, Sales Lead at Notion"
+
+THANK_YOU: Centered layout with contact info. Title is the thank-you message. Body has contact info lines with labels. Optional CTA as last line starting with CTA:.
+  Example body:
+  "Email: founders@acme.com
+Website: www.acme.com
+LinkedIn: /company/acme
+CTA: Schedule a Demo"
+
+SCENARIO_ANALYSIS: Three scenario columns (Bear/Base/Bull) with metric rows. Format: Scenario: metric1, metric2. Plain text, rendered as three-column comparison automatically.
+  Example body:
+  "Bear: $8M revenue, 15% growth, 18-month runway
+Base: $15M revenue, 35% growth, 24-month runway
+Bull: $28M revenue, 60% growth, 36-month runway"
+
+VALUE_CHAIN: Horizontal chevron chain of stages with value labels. Stages separated by arrows. Format: Stage: value description. Plain text, rendered as horizontal chevrons automatically.
+  Example body:
+  "Raw Materials: $2.40/unit sourcing
+Manufacturing: $8.60/unit production
+Distribution: $3.20/unit logistics
+Retail: $18.99/unit shelf price
+Consumer: $45 perceived value"
+
+GEOGRAPHIC_MAP: Regional data annotations on simplified map layout. One region per line. Format: Region: metric. Plain text, rendered as annotated map automatically.
+  Example body:
+  "North America: $8.2M ARR (62%)
+Europe: $3.1M ARR (24%)
+Asia Pacific: $1.2M ARR (9%)
+Latin America: $0.7M ARR (5%)"
+
+IMPACT_SCORECARD: Grid of initiatives x impact dimensions. Format: Initiative: Dim1=H, Dim2=M, Dim3=L. H/M/L color-coded. Plain text, rendered as heat-map grid automatically.
+  Example body:
+  "AI Copilot: Revenue=H, Retention=H, Cost=M
+API Platform: Revenue=M, Retention=H, Cost=L
+Mobile App: Revenue=M, Retention=M, Cost=H
+Enterprise SSO: Revenue=L, Retention=H, Cost=L"
+
+EXIT_STRATEGY: Timeline with exit option nodes and valuations. One option per line. Format: Year: Exit Type - $Valuation. Plain text, rendered as timeline path automatically.
+  Example body:
+  "2026: Secondary Sale - $50M valuation
+2027: Strategic Acquisition - $120M valuation
+2028: Series C / Growth - $250M valuation
+2030: IPO - $500M+ valuation"
+
+ORG_CHART: Hierarchical tree of roles connected by lines. One person per line. Format: Name - Role (reports to: Parent Name). Plain text, rendered as tree layout automatically.
+  Example body:
+  "Jane Smith - CEO
+John Doe - CTO (reports to: Jane Smith)
+Alice Chen - VP Engineering (reports to: John Doe)
+Bob Kim - VP Product (reports to: Jane Smith)
+Maria Lopez - VP Sales (reports to: Jane Smith)"
+
+FEATURE_COMPARISON: Multi-product comparison matrix with ratings. Feature name as first line, then Product: rating per line. Blocks separated by blank lines. Plain text, rendered as comparison table automatically.
+  Example body:
+  "AI Generation
+Pitchable: ★★★★★
+Gamma: ★★★★☆
+Beautiful.ai: ★★★☆☆
+Canva: ★★☆☆☆
+
+Theme Quality
+Pitchable: ★★★★★
+Gamma: ★★★☆☆
+Beautiful.ai: ★★★★☆
+Canva: ★★★☆☆
+
+Export Options
+Pitchable: ★★★★★
+Gamma: ★★★☆☆
+Beautiful.ai: ★★☆☆☆
+Canva: ★★★★☆"
+
+DATA_TABLE: Clean styled table with auto header detection. Use standard markdown table syntax (| col | col |). Header row gets accent background. Numeric cells right-aligned automatically.
+  Example body:
+  "| Quarter | Revenue | Growth | Customers |
+|---|---|---|---|
+| Q1 2025 | $1.2M | 45% | 120 |
+| Q2 2025 | $1.8M | 50% | 185 |
+| Q3 2025 | $2.7M | 50% | 280 |
+| Q4 2025 | $4.2M | 56% | 420 |"
+
+ECOSYSTEM_MAP: Radial layout with center product and orbital partner rings. Format: Center: ProductName on first line, then Ring1: Partner1, Partner2 and Ring2: Partner3, Partner4. Plain text, rendered as SVG radial map automatically.
+  Example body:
+  "Center: Pitchable
+Ring1: Figma, Notion, Slack, Google Workspace
+Ring2: Zapier, HubSpot, Salesforce, Stripe, AWS"
+
+KPI_DASHBOARD: 2x3 grid of KPI cards with trend arrows. One KPI per line. Format: KPI: Value (arrow percentage). Use up/down arrows. Plain text, rendered as dashboard cards automatically.
+  Example body:
+  "MRR: $420K (↑18%)
+Customers: 2,400 (↑12%)
+NRR: 142% (↑8%)
+CAC: $340 (↓15%)
+Churn: 1.2% (↓22%)
+LTV:CAC: 4.2x (↑25%)"
+
+REFERENCES: Numbered citation list with academic formatting. One reference per line. Format: [N] Author (Year). Title. Journal/Source. Plain text, rendered as formatted citation list automatically.
+  Example body:
+  "[1] Kahneman, D. (2011). Thinking, Fast and Slow. Farrar, Straus and Giroux.
+[2] Vaswani, A. et al. (2017). Attention Is All You Need. NeurIPS.
+[3] Brown, T. et al. (2020). Language Models are Few-Shot Learners. NeurIPS.
+[4] Wei, J. et al. (2022). Chain-of-Thought Prompting. NeurIPS."
+
+ABSTRACT: Structured academic abstract with labeled sections. Format: Label: text paragraph. Labels: Objective, Method, Results, Conclusion. Optional Keywords line at end.
+  Example body:
+  "Objective: This study examines the impact of AI-generated presentations on audience engagement and information retention across enterprise settings.
+Method: We conducted a randomized controlled trial with 240 participants comparing AI-generated slides against manually designed presentations across 12 topic domains.
+Results: AI-generated presentations achieved 23% higher information retention scores and 18% higher engagement ratings, with statistical significance (p < 0.01).
+Conclusion: AI slide generation produces measurably superior audience outcomes while reducing creation time by 85%.
+Keywords: artificial intelligence, presentation design, audience engagement, information retention"
+
 PRESENTATION TYPE: ${presentationType}
 ${themeBlock}
 ${mcKinseyBlock}
+${academicBlock}
 ${kbBlock}
 
 ${pitchLensContext ? `PITCH LENS GUIDANCE (follow this for tone, depth, and narrative structure):
