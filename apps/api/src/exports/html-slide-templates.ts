@@ -1002,6 +1002,32 @@ function buildMetricsHighlight(slide: SlideInput, p: ColorPalette, hasImage = fa
     }
   }
 
+  // Chart mode: detect 3+ consecutive "label: numericValue" lines
+  // Body prefix [line] or [bar] forces chart type; default: line for 5+, bar for 2-4
+  const rawBodyLines = slide.body.split('\n').map((l) => l.replace(/^[-\u2022*\u2192\u25ba\u25b8\u279c]\s*/, '').trim()).filter(Boolean);
+  const chartTypePrefix = rawBodyLines.length > 0 && /^\[(line|bar)\]/i.test(rawBodyLines[0])
+    ? rawBodyLines[0].match(/^\[(line|bar)\]/i)![1].toLowerCase() as 'line' | 'bar'
+    : null;
+  const chartLines = chartTypePrefix ? rawBodyLines.slice(1) : rawBodyLines;
+  const chartData = parseChartData(chartLines);
+
+  if (chartData && metricLines.length < 2) {
+    const chartType = chartTypePrefix || (chartData.length >= 5 ? 'line' : 'bar');
+    const chartX = PAD + 60;
+    const chartYPos = Math.round(H * 0.35);
+    const chartW = cW - PAD * 2 - 120;
+    const chartH = Math.round(H * 0.45);
+
+    let chartSvg = `<svg style="position:absolute;left:0;top:0" width="${cW}" height="${H}" xmlns="http://www.w3.org/2000/svg">`;
+    if (chartType === 'line') {
+      chartSvg += generateLineChartSVG(chartData, chartX, chartYPos, chartW, chartH, p);
+    } else {
+      chartSvg += generateBarChartSVG(chartData, chartX, chartYPos, chartW, chartH, p);
+    }
+    chartSvg += '</svg>';
+    secondaryHtml += chartSvg;
+  }
+
   // Multi-circle mode: when supportLines contain 2-4 percentage values,
   // render a horizontal row of donut charts below the hero metric
   const pctSupportLines = supportLines.filter((l) => /^\d+(\.\d+)?\s*%/.test(l.trim()));
@@ -1199,6 +1225,148 @@ function generatePercentageCircleSVG(
   const dashOffset = Math.round(circumference * (1 - Math.min(pctValue, 100) / 100));
   return `<circle cx="${cx}" cy="${cy}" r="${radius}" fill="${hexToRgba(accentColor, 0.03)}" stroke="${hexToRgba(borderColor, 0.12)}" stroke-width="${strokeWidth}" />` +
     `<circle cx="${cx}" cy="${cy}" r="${radius}" fill="none" stroke="${accentColor}" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-dasharray="${circumference}" stroke-dashoffset="${dashOffset}" transform="rotate(-90 ${cx} ${cy})" opacity="0.65" />`;
+}
+
+// ── Chart SVG Utilities ──────────────────────────────────────
+
+interface ChartDataPoint {
+  label: string;
+  value: number;
+}
+
+function formatChartValue(v: number): string {
+  if (v >= 1_000_000) return `${(v / 1_000_000).toFixed(1)}M`;
+  if (v >= 1_000) return `${(v / 1_000).toFixed(v >= 10_000 ? 0 : 1)}K`;
+  if (v % 1 !== 0) return v.toFixed(1);
+  return String(v);
+}
+
+function generateLineChartSVG(
+  data: ChartDataPoint[],
+  chartX: number,
+  chartY: number,
+  chartW: number,
+  chartH: number,
+  palette: ColorPalette,
+): string {
+  if (data.length < 2) return '';
+  const vals = data.map((d) => d.value);
+  const minV = Math.min(...vals);
+  const maxV = Math.max(...vals);
+  const range = maxV - minV || 1;
+  const padded = range * 0.1;
+  const yMin = minV - padded;
+  const yMax = maxV + padded;
+  const yRange = yMax - yMin || 1;
+
+  let svg = '';
+
+  // Grid lines (4 horizontal)
+  for (let g = 0; g <= 4; g++) {
+    const gy = chartY + chartH - (g / 4) * chartH;
+    const gVal = yMin + (g / 4) * yRange;
+    svg += `<line x1="${chartX}" y1="${Math.round(gy)}" x2="${chartX + chartW}" y2="${Math.round(gy)}" stroke="${hexToRgba(palette.border, 0.15)}" stroke-width="1" stroke-dasharray="4,4" />`;
+    svg += `<text x="${chartX - 8}" y="${Math.round(gy + 4)}" text-anchor="end" fill="${palette.text}" font-size="10" opacity="0.5">${formatChartValue(gVal)}</text>`;
+  }
+
+  // Data points + polyline
+  const points: string[] = [];
+  const areaPoints: string[] = [];
+  for (let i = 0; i < data.length; i++) {
+    const px = chartX + (i / (data.length - 1)) * chartW;
+    const py = chartY + chartH - ((data[i].value - yMin) / yRange) * chartH;
+    points.push(`${Math.round(px)},${Math.round(py)}`);
+    areaPoints.push(`${Math.round(px)},${Math.round(py)}`);
+  }
+
+  // Area fill
+  const firstX = chartX;
+  const lastX = chartX + chartW;
+  const bottomY = chartY + chartH;
+  svg += `<polygon points="${firstX},${bottomY} ${areaPoints.join(' ')} ${lastX},${bottomY}" fill="${hexToRgba(palette.accent, 0.08)}" />`;
+
+  // Line
+  svg += `<polyline points="${points.join(' ')}" fill="none" stroke="${palette.accent}" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" />`;
+
+  // Data point circles
+  for (let i = 0; i < data.length; i++) {
+    const px = chartX + (i / (data.length - 1)) * chartW;
+    const py = chartY + chartH - ((data[i].value - yMin) / yRange) * chartH;
+    svg += `<circle cx="${Math.round(px)}" cy="${Math.round(py)}" r="4" fill="${palette.accent}" stroke="${palette.background}" stroke-width="2" />`;
+  }
+
+  // X-axis labels
+  const maxLabels = Math.min(data.length, 8);
+  const step = data.length <= maxLabels ? 1 : Math.ceil(data.length / maxLabels);
+  for (let i = 0; i < data.length; i += step) {
+    const px = chartX + (i / (data.length - 1)) * chartW;
+    svg += `<text x="${Math.round(px)}" y="${chartY + chartH + 16}" text-anchor="middle" fill="${palette.text}" font-size="10" opacity="0.6">${escHtml(data[i].label.slice(0, 10))}</text>`;
+  }
+
+  return svg;
+}
+
+function generateBarChartSVG(
+  data: ChartDataPoint[],
+  chartX: number,
+  chartY: number,
+  chartW: number,
+  chartH: number,
+  palette: ColorPalette,
+): string {
+  if (data.length === 0) return '';
+  const vals = data.map((d) => d.value);
+  const maxV = Math.max(...vals) || 1;
+  const barCount = Math.min(data.length, 8);
+  const barGap = Math.round(chartW * 0.06);
+  const barW = Math.round((chartW - (barCount - 1) * barGap) / barCount);
+  const accents = cardAccentColors(palette);
+
+  let svg = '';
+
+  // Grid lines
+  for (let g = 0; g <= 4; g++) {
+    const gy = chartY + chartH - (g / 4) * chartH;
+    const gVal = (g / 4) * maxV;
+    svg += `<line x1="${chartX}" y1="${Math.round(gy)}" x2="${chartX + chartW}" y2="${Math.round(gy)}" stroke="${hexToRgba(palette.border, 0.12)}" stroke-width="1" stroke-dasharray="4,4" />`;
+    svg += `<text x="${chartX - 8}" y="${Math.round(gy + 4)}" text-anchor="end" fill="${palette.text}" font-size="10" opacity="0.5">${formatChartValue(gVal)}</text>`;
+  }
+
+  // Bars
+  for (let i = 0; i < barCount; i++) {
+    const bx = chartX + i * (barW + barGap);
+    const bh = Math.round((data[i].value / maxV) * chartH);
+    const by = chartY + chartH - bh;
+    const color = accents[i % accents.length];
+    svg += `<rect x="${bx}" y="${by}" width="${barW}" height="${bh}" rx="4" fill="${color}" opacity="0.85" />`;
+    // Value label on top
+    svg += `<text x="${bx + barW / 2}" y="${by - 6}" text-anchor="middle" fill="${palette.text}" font-size="11" font-weight="bold" opacity="0.8">${formatChartValue(data[i].value)}</text>`;
+    // X-axis label
+    svg += `<text x="${bx + barW / 2}" y="${chartY + chartH + 16}" text-anchor="middle" fill="${palette.text}" font-size="10" opacity="0.6">${escHtml(data[i].label.slice(0, 10))}</text>`;
+  }
+
+  return svg;
+}
+
+function parseChartData(lines: string[]): ChartDataPoint[] | null {
+  // Detect 3+ consecutive "label: numericValue" lines
+  const dataPoints: ChartDataPoint[] = [];
+  for (const line of lines) {
+    const m = line.match(/^(.+?)[:\s]\s*([\$\u20ac\u00a3]?[\d,]+\.?\d*[BMKTbmkt]?)\s*$/);
+    if (m) {
+      let val = m[2].replace(/[\$,\u20ac\u00a3]/g, '');
+      let multiplier = 1;
+      const suffix = val.slice(-1).toUpperCase();
+      if (suffix === 'B') { multiplier = 1_000_000_000; val = val.slice(0, -1); }
+      else if (suffix === 'M') { multiplier = 1_000_000; val = val.slice(0, -1); }
+      else if (suffix === 'K' || suffix === 'T') { multiplier = 1_000; val = val.slice(0, -1); }
+      const num = parseFloat(val) * multiplier;
+      if (!isNaN(num)) {
+        dataPoints.push({ label: m[1].trim(), value: num });
+      }
+    }
+  }
+  return dataPoints.length >= 3 ? dataPoints : null;
 }
 
 // ── COMPARISON ───────────────────────────────────────────────
@@ -3419,6 +3587,12 @@ function buildSocialProof(slide: SlideInput, p: ColorPalette, hasImage = false):
   const lines = parseBodyLines(slide.body);
   const dark = isDarkBackground(p.background);
 
+  // Press variant detection: lines containing em dash or pipe as publication separator
+  const pressLines = lines.filter((l) => / \u2014 /.test(l) || / \| /.test(l));
+  if (pressLines.length >= 2) {
+    return buildSocialProofPress(slide, p, cW, dark, pressLines);
+  }
+
   // First line = hero stat, rest = badges/awards
   const heroText = lines.length > 0 ? lines[0] : '4.9/5 from 2,400+ reviews';
   const badges = lines.slice(1, 7);
@@ -3480,6 +3654,60 @@ function buildSocialProof(slide: SlideInput, p: ColorPalette, hasImage = false):
 </div>`;
 }
 
+
+// ── SOCIAL_PROOF (Press Clipping Variant) ────────────────────
+
+function buildSocialProofPress(
+  slide: SlideInput,
+  p: ColorPalette,
+  cW: number,
+  dark: boolean,
+  pressLines: string[],
+): string {
+  const items = pressLines.slice(0, 6).map((line) => {
+    // Split on em dash or pipe
+    const sepMatch = line.match(/ \u2014 | \| /);
+    if (sepMatch) {
+      const idx = line.indexOf(sepMatch[0]);
+      return { headline: line.slice(0, idx).trim(), publication: line.slice(idx + sepMatch[0].length).trim() };
+    }
+    return { headline: line, publication: '' };
+  });
+
+  const cols = items.length >= 4 ? 2 : 1;
+  const rows = Math.ceil(items.length / cols);
+  const cardGap = 16;
+  const totalW = cW - PAD * 2;
+  const cardW = cols === 1 ? totalW : Math.round((totalW - cardGap) / 2);
+  const cardTop = PAD + 90;
+  const cardH = Math.min(90, Math.round((H - cardTop - PAD - (rows - 1) * cardGap) / rows));
+
+  let cardsHtml = '';
+  for (let i = 0; i < items.length; i++) {
+    const col = i % cols;
+    const row = Math.floor(i / cols);
+    const cx = PAD + col * (cardW + cardGap);
+    const cy = cardTop + row * (cardH + cardGap);
+    const cardBg = dark ? hexToRgba(p.surface, 0.4) : p.surface;
+
+    cardsHtml += `<div style="position:absolute;left:${cx}px;top:${cy}px;width:${cardW}px;height:${cardH}px;background:${cardBg};border:1px solid ${hexToRgba(p.border, 0.15)};border-left:3px solid ${p.accent};border-radius:8px;box-shadow:${cardShadow(1, dark)};overflow:hidden"></div>`;
+    // Publication name (uppercase, small)
+    if (items[i].publication) {
+      cardsHtml += `<div style="position:absolute;left:${cx + 16}px;top:${cy + 10}px;width:${cardW - 32}px;font-size:11px;font-weight:bold;text-transform:uppercase;letter-spacing:1px;color:${p.accent};opacity:0.8;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${escHtml(items[i].publication)}</div>`;
+    }
+    // Headline (bold)
+    const headlineTop = items[i].publication ? cy + 30 : cy + 14;
+    cardsHtml += `<div style="position:absolute;left:${cx + 16}px;top:${headlineTop}px;width:${cardW - 32}px;font-size:14px;font-weight:bold;color:${p.text};line-height:1.35;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">${escHtml(items[i].headline)}</div>`;
+  }
+
+  return `${SCOPED_RESET}
+<div style="position:relative;width:${W}px;height:${H}px;background:${p.background};overflow:hidden">
+  ${bgGradientOverlay(cW, H, p.accent, 0.04, '40%')}
+  <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;text-align:center;font-size:${titleFontSize(slide.title)}px;font-weight:bold;overflow-wrap:break-word;word-wrap:break-word;color:${p.text};line-height:1.2">${escHtml(slide.title)}</div>
+  <div style="position:absolute;left:${Math.round((cW - 60) / 2)}px;top:${PAD + 56}px;width:60px;height:3px;background:${p.accent};border-radius:2px"></div>
+  ${cardsHtml}
+</div>`;
+}
 
 // ── OBJECTION_HANDLER ───────────────────────────────────────
 // Left panel: objection in italic with red accent, right: rebuttal with green data points
