@@ -4386,7 +4386,7 @@ function buildRevenueModel(slide: SlideInput, p: ColorPalette, hasImage = false,
 
 
 // ── CUSTOMER_JOURNEY ──────────────────────────────────────────────
-// Horizontal path with stage cards, conversion arrows, and gradient connector
+// Horizontal funnel with shrinking bars, conversion drops, and stage detail cards
 
 function buildCustomerJourney(slide: SlideInput, p: ColorPalette, hasImage = false, accentDiversity = true): string {
   const cW = hasImage ? CONTENT_W_IMG : W;
@@ -4405,59 +4405,93 @@ function buildCustomerJourney(slide: SlideInput, p: ColorPalette, hasImage = fal
     }
   }
   if (stages.length === 0) {
-    stages.push({ name: 'Awareness', metric: '10K', conversion: '100%' });
-    stages.push({ name: 'Interest', metric: '5K', conversion: '50%' });
-    stages.push({ name: 'Decision', metric: '1K', conversion: '10%' });
-    stages.push({ name: 'Action', metric: '200', conversion: '2%' });
+    stages.push({ name: 'Awareness', metric: '100K visitors', conversion: '100%' });
+    stages.push({ name: 'Interest', metric: '12K signups', conversion: '12%' });
+    stages.push({ name: 'Decision', metric: '2K trials', conversion: '17%' });
+    stages.push({ name: 'Action', metric: '400 paying', conversion: '20%' });
   }
   const n = Math.min(stages.length, 6);
 
-  const pathY = Math.round(H * 0.38);
-  const startX = PAD + 50;
-  const endX = cW - PAD - 50;
-  const gap = n > 1 ? (endX - startX) / (n - 1) : 0;
-  const nodeR = 24;
-
-  let svgInner = '';
-  // Gradient connector line
-  svgInner += `<defs><linearGradient id="cjg" x1="0%" y1="0%" x2="100%" y2="0%">`;
-  svgInner += `<stop offset="0%" stop-color="${accents[0] || p.accent}"/>`;
-  svgInner += `<stop offset="100%" stop-color="${accents[Math.min(n - 1, accents.length - 1)] || p.accent}"/>`;
-  svgInner += `</linearGradient></defs>`;
-  if (n > 1) {
-    svgInner += `<line x1="${startX}" y1="${pathY}" x2="${endX}" y2="${pathY}" stroke="url(#cjg)" stroke-width="3" opacity="0.3"/>`;
-  }
-
-  let cardsHtml = '';
+  // Extract numeric percentages for bar widths
+  const pcts: number[] = [];
   for (let i = 0; i < n; i++) {
-    const x = Math.round(startX + i * gap);
-    const col = accents[i % accents.length];
-    const st = stages[i];
-    // Node: outer glow ring + inner filled circle
-    svgInner += `<circle cx="${x}" cy="${pathY}" r="${nodeR}" fill="${hexToRgba(col, 0.1)}" stroke="${col}" stroke-width="2"/>`;
-    svgInner += `<circle cx="${x}" cy="${pathY}" r="${nodeR - 8}" fill="${col}"/>`;
-    svgInner += `<text x="${x}" y="${pathY + 5}" text-anchor="middle" fill="#fff" font-size="12" font-weight="bold">${i + 1}</text>`;
+    const pctStr = stages[i].conversion.replace('%', '');
+    const pctVal = parseFloat(pctStr);
+    pcts.push(isNaN(pctVal) ? (100 - i * 20) : pctVal);
+  }
+  const maxPct = Math.max(...pcts, 1);
 
-    // Conversion arrow between nodes
-    if (i < n - 1) {
-      const mx = Math.round(x + gap / 2);
-      const nextConv = stages[i + 1]?.conversion || '';
-      if (nextConv) {
-        svgInner += `<text x="${mx}" y="${pathY - 14}" text-anchor="middle" fill="${col}" font-size="11" font-weight="600">${escHtml(nextConv)}</text>`;
-        svgInner += `<polygon points="${mx - 4},${pathY - 8} ${mx + 4},${pathY - 8} ${mx},${pathY - 4}" fill="${hexToRgba(col, 0.4)}"/>`;
-      }
+  // Layout
+  const barAreaTop = PAD + 95;
+  const barAreaLeft = PAD + 10;
+  const barAreaW = cW - PAD * 2 - 20;
+  const barMaxW = Math.round(barAreaW * 0.92);
+  const barMinW = Math.round(barAreaW * 0.12);
+  const barH = 42;
+  const barGap = 10;
+  const totalBarHeight = n * barH + (n - 1) * barGap;
+  const detailCardTop = barAreaTop + totalBarHeight + 24;
+
+  let svgInner = '<defs>';
+  for (let i = 0; i < n; i++) {
+    const col = accents[i % accents.length];
+    svgInner += `<linearGradient id="cjbar${i}" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="${col}"/><stop offset="100%" stop-color="${hexToRgba(col, 0.5)}"/></linearGradient>`;
+  }
+  svgInner += '</defs>';
+
+  let labelsHtml = '';
+  for (let i = 0; i < n; i++) {
+    const st = stages[i];
+    const col = accents[i % accents.length];
+    const barW = Math.round(barMinW + (barMaxW - barMinW) * (pcts[i] / maxPct));
+    const by = barAreaTop + i * (barH + barGap);
+    const bx = barAreaLeft + Math.round((barAreaW - barW) / 2); // centered
+
+    // Bar with gradient
+    svgInner += `<rect x="${bx}" y="${by}" width="${barW}" height="${barH}" rx="8" fill="url(#cjbar${i})" opacity="0.85"/>`;
+    // Glow shadow under bar
+    svgInner += `<rect x="${bx + 4}" y="${by + barH - 2}" width="${barW - 8}" height="6" rx="3" fill="${col}" opacity="0.15" filter="url(#blur)"/>`;
+
+    // Stage name + metric inside bar
+    if (barW > 120) {
+      svgInner += `<text x="${bx + 16}" y="${by + barH / 2 + 5}" fill="#fff" font-size="13" font-weight="bold">${escHtml(st.name)}</text>`;
+      svgInner += `<text x="${bx + barW - 16}" y="${by + barH / 2 + 5}" text-anchor="end" fill="rgba(255,255,255,0.85)" font-size="12">${escHtml(st.metric)}</text>`;
+    } else {
+      svgInner += `<text x="${bx + barW / 2}" y="${by + barH / 2 + 5}" text-anchor="middle" fill="#fff" font-size="12" font-weight="bold">${escHtml(st.name.slice(0, 10))}</text>`;
     }
 
-    // Stage card below node
-    const cardW = Math.min(150, Math.round(gap * 0.85));
-    const cardX = x - cardW / 2;
-    const cardY = pathY + nodeR + 20;
-    const cardH = 110;
-    const cardBg = dark ? hexToRgba(p.surface, 0.3) : p.surface;
-    cardsHtml += `<div style="position:absolute;left:${Math.round(cardX)}px;top:${cardY}px;width:${cardW}px;height:${cardH}px;background:${cardBg};border-radius:12px;border-top:3px solid ${col};box-shadow:${cardShadow(1, dark)};padding:12px 10px;text-align:center">`;
-    cardsHtml += `<div style="font-size:13px;font-weight:700;color:${col};margin-bottom:6px">${escHtml(st.name)}</div>`;
-    if (st.metric) cardsHtml += `<div style="font-size:22px;font-weight:bold;color:${p.text};margin-bottom:4px">${escHtml(st.metric)}</div>`;
-    if (st.conversion) cardsHtml += `<div style="font-size:11px;color:${p.text};opacity:0.6">${escHtml(st.conversion)} conversion</div>`;
+    // Conversion % badge on the right
+    const badgeX = bx + barW + 12;
+    const badgeY = by + barH / 2;
+    labelsHtml += `<div style="position:absolute;left:${badgeX}px;top:${badgeY - 12}px;padding:3px 10px;background:${hexToRgba(col, dark ? 0.15 : 0.08)};border:1px solid ${hexToRgba(col, 0.25)};border-radius:12px;font-size:12px;font-weight:700;color:${col}">${escHtml(st.conversion || st.metric)}</div>`;
+
+    // Drop-off arrow between bars
+    if (i < n - 1) {
+      const dropPct = pcts[i] > 0 ? Math.round((1 - pcts[i + 1] / pcts[i]) * 100) : 0;
+      if (dropPct > 0) {
+        const arrowX = barAreaLeft - 4;
+        const arrowY = by + barH + barGap / 2;
+        labelsHtml += `<div style="position:absolute;left:${arrowX}px;top:${arrowY - 10}px;font-size:10px;color:${p.error || '#ef4444'};font-weight:600;opacity:0.7">\u2193 -${dropPct}%</div>`;
+      }
+    }
+  }
+
+  // Add a blur filter for bar shadows
+  svgInner = svgInner.replace('<defs>', '<defs><filter id="blur"><feGaussianBlur stdDeviation="3"/></filter>');
+
+  // Detail cards below
+  const cardW = Math.round((barAreaW - (n - 1) * 12) / n);
+  const cardH = Math.min(100, H - detailCardTop - PAD - 10);
+  let cardsHtml = '';
+  for (let i = 0; i < n; i++) {
+    const st = stages[i];
+    const col = accents[i % accents.length];
+    const cx = barAreaLeft + i * (cardW + 12);
+    const cardBg = dark ? hexToRgba(p.surface, 0.25) : p.surface;
+    cardsHtml += `<div style="position:absolute;left:${cx}px;top:${detailCardTop}px;width:${cardW}px;height:${cardH}px;background:${cardBg};border-radius:12px;border-top:3px solid ${col};box-shadow:${cardShadow(1, dark)};padding:10px 12px;text-align:center">`;
+    cardsHtml += `<div style="width:28px;height:28px;border-radius:50%;background:${hexToRgba(col, 0.15)};border:2px solid ${col};display:inline-flex;align-items:center;justify-content:center;font-size:14px;font-weight:bold;color:${col};margin-bottom:6px">${i + 1}</div>`;
+    cardsHtml += `<div style="font-size:12px;font-weight:700;color:${col};margin-bottom:4px">${escHtml(st.name)}</div>`;
+    if (st.metric) cardsHtml += `<div style="font-size:16px;font-weight:bold;color:${p.text}">${escHtml(st.metric)}</div>`;
     cardsHtml += `</div>`;
   }
 
@@ -4467,13 +4501,14 @@ function buildCustomerJourney(slide: SlideInput, p: ColorPalette, hasImage = fal
   <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;font-size:${titleFontSize(slide.title)}px;font-weight:bold;color:${p.text};line-height:1.2">${escHtml(slide.title)}</div>
   <div style="position:absolute;left:${PAD}px;top:${PAD + 56}px;width:50px;height:3px;background:${p.accent};border-radius:2px"></div>
   <svg style="position:absolute;left:0;top:0;width:${cW}px;height:${H}px;pointer-events:none" viewBox="0 0 ${cW} ${H}">${svgInner}</svg>
+  ${labelsHtml}
   ${cardsHtml}
 </div>`;
 }
 
 
 // ── TECH_STACK ──────────────────────────────────────────────
-// Layered architecture bands with SVG connectors and component pills
+// Layered architecture diagram with 3D-depth bands, prominent labels, and tech badges
 
 function buildTechStack(slide: SlideInput, p: ColorPalette, hasImage = false, accentDiversity = true): string {
   const cW = hasImage ? CONTENT_W_IMG : W;
@@ -4492,76 +4527,111 @@ function buildTechStack(slide: SlideInput, p: ColorPalette, hasImage = false, ac
     }
   }
   if (layers.length === 0) {
-    layers.push({ name: 'Infrastructure', components: ['AWS', 'Docker', 'Terraform'] });
-    layers.push({ name: 'Backend', components: ['Node.js', 'PostgreSQL', 'Redis'] });
-    layers.push({ name: 'Frontend', components: ['React', 'TypeScript', 'Tailwind'] });
+    layers.push({ name: 'Infrastructure', components: ['AWS', 'Kubernetes', 'Terraform'] });
+    layers.push({ name: 'Data', components: ['PostgreSQL', 'Redis', 'S3'] });
+    layers.push({ name: 'Backend', components: ['NestJS', 'Prisma', 'BullMQ'] });
+    layers.push({ name: 'Frontend', components: ['Next.js', 'Tailwind', 'React Query'] });
+    layers.push({ name: 'AI/ML', components: ['Claude API', 'LangChain'] });
   }
 
   const n = layers.length;
   const startY = PAD + 95;
   const availH = H - startY - PAD - 10;
-  const bandGap = 8;
-  const bandH = Math.min(80, Math.round((availH - (n - 1) * bandGap) / n));
+  const bandGap = 12;
+  const bandH = Math.min(88, Math.round((availH - (n - 1) * bandGap) / n));
   const bandW = cW - PAD * 2;
-  const labelW = Math.round(bandW * 0.2);
+  const labelColW = 150;
 
-  let svgInner = '';
+  let svgInner = '<defs>';
+  for (let i = 0; i < n; i++) {
+    const col = accents[i % accents.length];
+    svgInner += `<linearGradient id="tsg${i}" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="${hexToRgba(col, dark ? 0.2 : 0.12)}"/><stop offset="100%" stop-color="${hexToRgba(col, 0.02)}"/></linearGradient>`;
+  }
+  svgInner += '</defs>';
+
   let bandsHtml = '';
   // Render bottom-to-top: layers[0] = bottom = infra
   for (let i = 0; i < n; i++) {
     const layer = layers[n - 1 - i];
     const col = accents[(n - 1 - i) % accents.length];
     const by = startY + i * (bandH + bandGap);
-    const cardBg = dark ? hexToRgba(p.surface, 0.25) : p.surface;
+    const cardBg = dark ? hexToRgba(p.surface, 0.2) : p.surface;
 
-    // Band background with gradient left edge
-    bandsHtml += `<div style="position:absolute;left:${PAD}px;top:${by}px;width:${bandW}px;height:${bandH}px;background:${cardBg};border-radius:12px;border-left:5px solid ${col};box-shadow:${cardShadow(1, dark)};overflow:hidden">`;
-    // Gradient overlay on left portion
-    bandsHtml += `<div style="position:absolute;left:0;top:0;width:${labelW}px;height:100%;background:linear-gradient(90deg,${hexToRgba(col, dark ? 0.15 : 0.08)},transparent)"></div>`;
+    // Band background
+    svgInner += `<rect x="${PAD}" y="${by}" width="${bandW}" height="${bandH}" rx="14" fill="${cardBg}" stroke="${hexToRgba(p.border, 0.1)}" stroke-width="1"/>`;
+    // Gradient overlay
+    svgInner += `<rect x="${PAD}" y="${by}" width="${bandW}" height="${bandH}" rx="14" fill="url(#tsg${n - 1 - i})"/>`;
+    // Left accent stripe
+    svgInner += `<rect x="${PAD}" y="${by}" width="6" height="${bandH}" rx="3" fill="${col}" opacity="0.9"/>`;
+    // Shadow at bottom of band
+    svgInner += `<rect x="${PAD + 10}" y="${by + bandH}" width="${bandW - 20}" height="4" rx="2" fill="${hexToRgba(col, 0.08)}"/>`;
+
+    // Layer label area with icon circle
+    const iconCx = PAD + 32;
+    const iconCy = by + bandH / 2;
+    bandsHtml += `<div style="position:absolute;left:${iconCx - 16}px;top:${iconCy - 16}px;width:32px;height:32px;border-radius:50%;background:${hexToRgba(col, 0.15)};border:2px solid ${col};display:flex;align-items:center;justify-content:center">`;
+    bandsHtml += `<div style="font-size:14px;font-weight:bold;color:${col}">${n - i}</div>`;
     bandsHtml += `</div>`;
 
     // Layer name
-    bandsHtml += `<div style="position:absolute;left:${PAD + 16}px;top:${by + Math.round(bandH / 2) - 10}px;width:${labelW - 20}px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:${col}">${escHtml(layer.name)}</div>`;
+    bandsHtml += `<div style="position:absolute;left:${PAD + 56}px;top:${iconCy - 10}px;width:${labelColW - 40}px">`;
+    bandsHtml += `<div style="font-size:14px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;color:${col}">${escHtml(layer.name)}</div>`;
+    bandsHtml += `</div>`;
 
-    // Component pills
-    const pillLeft = PAD + labelW + 8;
-    let px = pillLeft;
-    const pillY = by + Math.round((bandH - 30) / 2);
-    for (const comp of layer.components.slice(0, 6)) {
-      const pw = Math.min(110, comp.length * 8 + 24);
-      if (px + pw > PAD + bandW - 10) break;
-      bandsHtml += `<div style="position:absolute;left:${px}px;top:${pillY}px;height:30px;padding:0 12px;background:${hexToRgba(col, dark ? 0.2 : 0.1)};border:1px solid ${hexToRgba(col, 0.2)};border-radius:15px;display:flex;align-items:center;font-size:12px;font-weight:600;color:${dark ? '#fff' : col};white-space:nowrap">${escHtml(comp)}</div>`;
-      px += pw + 8;
+    // Component badges — each with an initial circle + name
+    const badgeLeft = PAD + labelColW + 16;
+    let bx = badgeLeft;
+    const badgeY = by + Math.round((bandH - 36) / 2);
+    const maxBadgeW = PAD + bandW - 16;
+    for (const comp of layer.components.slice(0, 5)) {
+      const textW = comp.length * 7.5 + 46;
+      const bw = Math.min(140, textW);
+      if (bx + bw > maxBadgeW) break;
+      bandsHtml += `<div style="position:absolute;left:${bx}px;top:${badgeY}px;height:36px;padding:0 12px 0 6px;background:${dark ? hexToRgba(p.surface, 0.4) : '#fff'};border:1px solid ${hexToRgba(col, 0.2)};border-radius:18px;display:flex;align-items:center;box-shadow:${cardShadow(1, dark)}">`;
+      // Initial circle
+      bandsHtml += `<div style="width:24px;height:24px;border-radius:50%;background:${hexToRgba(col, 0.15)};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:bold;color:${col};margin-right:6px">${escHtml(comp.charAt(0).toUpperCase())}</div>`;
+      bandsHtml += `<span style="font-size:12px;font-weight:600;color:${dark ? '#fff' : p.text};white-space:nowrap">${escHtml(comp)}</span>`;
+      bandsHtml += `</div>`;
+      bx += bw + 10;
     }
 
-    // SVG connector arrows between layers
+    // SVG vertical connector between layers
     if (i < n - 1) {
-      const arrowX = PAD + bandW / 2;
-      const arrowY1 = by + bandH + 1;
-      const arrowY2 = arrowY1 + bandGap - 1;
-      svgInner += `<line x1="${arrowX}" y1="${arrowY1}" x2="${arrowX}" y2="${arrowY2}" stroke="${hexToRgba(p.border, 0.2)}" stroke-width="2" stroke-dasharray="3,3"/>`;
-      svgInner += `<polygon points="${arrowX - 4},${arrowY1 + 2} ${arrowX + 4},${arrowY1 + 2} ${arrowX},${arrowY1 - 2}" fill="${hexToRgba(p.border, 0.25)}"/>`;
+      const connX1 = PAD + bandW * 0.35;
+      const connX2 = PAD + bandW * 0.65;
+      const connY1 = by + bandH + 2;
+      const connY2 = connY1 + bandGap - 4;
+      const nextCol = accents[(n - 2 - i) % accents.length];
+      // Multiple connector lines for visual richness
+      svgInner += `<line x1="${connX1}" y1="${connY1}" x2="${connX1}" y2="${connY2}" stroke="${hexToRgba(p.border, 0.15)}" stroke-width="2" stroke-dasharray="3,3"/>`;
+      svgInner += `<line x1="${PAD + bandW * 0.5}" y1="${connY1}" x2="${PAD + bandW * 0.5}" y2="${connY2}" stroke="${hexToRgba(nextCol, 0.2)}" stroke-width="2"/>`;
+      svgInner += `<line x1="${connX2}" y1="${connY1}" x2="${connX2}" y2="${connY2}" stroke="${hexToRgba(p.border, 0.15)}" stroke-width="2" stroke-dasharray="3,3"/>`;
+      // Down arrow
+      const mid = PAD + bandW * 0.5;
+      svgInner += `<polygon points="${mid - 5},${connY2 - 2} ${mid + 5},${connY2 - 2} ${mid},${connY2 + 3}" fill="${hexToRgba(nextCol, 0.25)}"/>`;
     }
   }
 
-  // "User" label at top, "Infrastructure" arrow at bottom
-  const topLabel = `<div style="position:absolute;right:${W - cW + PAD}px;top:${startY - 18}px;font-size:10px;color:${p.text};opacity:0.4;text-transform:uppercase;letter-spacing:1px">\u2191 Users</div>`;
-  const botLabel = `<div style="position:absolute;right:${W - cW + PAD}px;top:${startY + n * (bandH + bandGap) - bandGap + 4}px;font-size:10px;color:${p.text};opacity:0.4;text-transform:uppercase;letter-spacing:1px">\u2193 Infrastructure</div>`;
+  // Side labels
+  const sideX = cW - PAD - 5;
+  const topLabelY = startY + 2;
+  const botLabelY = startY + n * (bandH + bandGap) - bandGap - 14;
+  bandsHtml += `<div style="position:absolute;left:${sideX - 70}px;top:${topLabelY}px;width:70px;text-align:right;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:${p.text};opacity:0.35">\u2191 Users</div>`;
+  bandsHtml += `<div style="position:absolute;left:${sideX - 70}px;top:${botLabelY}px;width:70px;text-align:right;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:${p.text};opacity:0.35">\u2193 Infra</div>`;
 
   return `${SCOPED_RESET}
 <div style="position:relative;width:${W}px;height:${H}px;background:${p.background};overflow:hidden">
   ${bgGradientOverlay(cW, H, p.accent, 0.05, '50%')}
   <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;font-size:${titleFontSize(slide.title)}px;font-weight:bold;color:${p.text};line-height:1.2">${escHtml(slide.title)}</div>
   <div style="position:absolute;left:${PAD}px;top:${PAD + 56}px;width:50px;height:3px;background:${p.accent};border-radius:2px"></div>
-  ${bandsHtml}
-  ${topLabel}${botLabel}
   <svg style="position:absolute;left:0;top:0;width:${cW}px;height:${H}px;pointer-events:none" viewBox="0 0 ${cW} ${H}">${svgInner}</svg>
+  ${bandsHtml}
 </div>`;
 }
 
 
 // ── GROWTH_LOOPS ──────────────────────────────────────────────
-// Circular node network with gradient bezier edges and glow nodes
+// Large circular node cards with thick gradient arcs, prominent arrows, and center metric
 
 function buildGrowthLoops(slide: SlideInput, p: ColorPalette, hasImage = false, accentDiversity = true): string {
   const cW = hasImage ? CONTENT_W_IMG : W;
@@ -4573,58 +4643,84 @@ function buildGrowthLoops(slide: SlideInput, p: ColorPalette, hasImage = false, 
 
   const cx = Math.round(cW * 0.50);
   const cy = Math.round(H * 0.52);
-  const R = Math.min(Math.round(cW * 0.2), 175);
+  const R = Math.min(Math.round(cW * 0.22), 195);
 
+  // SVG defs: gradients for arcs + glow filters
   let svgDefs = '<defs>';
   for (let i = 0; i < n; i++) {
     const col = accents[i % accents.length];
-    svgDefs += `<filter id="glf${i}"><feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>`;
+    const col2 = accents[(i + 1) % accents.length];
+    svgDefs += `<linearGradient id="glg${i}" gradientUnits="userSpaceOnUse" x1="${(cx + R * Math.cos((i / n) * Math.PI * 2 - Math.PI / 2)).toFixed(0)}" y1="${(cy + R * Math.sin((i / n) * Math.PI * 2 - Math.PI / 2)).toFixed(0)}" x2="${(cx + R * Math.cos(((i + 1) / n) * Math.PI * 2 - Math.PI / 2)).toFixed(0)}" y2="${(cy + R * Math.sin(((i + 1) / n) * Math.PI * 2 - Math.PI / 2)).toFixed(0)}"><stop offset="0%" stop-color="${col}"/><stop offset="100%" stop-color="${col2}"/></linearGradient>`;
   }
+  svgDefs += '<filter id="glglow"><feGaussianBlur stdDeviation="4" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>';
   svgDefs += '</defs>';
 
   let svgInner = svgDefs;
-  // Bezier edges between consecutive nodes
+
+  // Outer ambient ring
+  svgInner += `<circle cx="${cx}" cy="${cy}" r="${R + 8}" fill="none" stroke="${hexToRgba(p.accent, 0.06)}" stroke-width="20"/>`;
+
+  // Thick arc paths between nodes
   for (let i = 0; i < n; i++) {
     const a1 = (i / n) * Math.PI * 2 - Math.PI / 2;
     const a2 = ((i + 1) / n) * Math.PI * 2 - Math.PI / 2;
-    const x1 = cx + R * Math.cos(a1), y1 = cy + R * Math.sin(a1);
-    const x2 = cx + R * Math.cos(a2), y2 = cy + R * Math.sin(a2);
-    const cpFactor = 0.45;
-    const cpx = cx + R * cpFactor * Math.cos((a1 + a2) / 2);
-    const cpy = cy + R * cpFactor * Math.sin((a1 + a2) / 2);
+    // Offset arc slightly inward to create visual depth
+    const arcR = R;
+    const x1 = cx + arcR * Math.cos(a1), y1 = cy + arcR * Math.sin(a1);
+    const x2 = cx + arcR * Math.cos(a2), y2 = cy + arcR * Math.sin(a2);
+    // Bezier control point pulled inward
+    const cpFactor = 0.5;
+    const midA = (a1 + a2) / 2;
+    const cpx = cx + arcR * cpFactor * Math.cos(midA);
+    const cpy = cy + arcR * cpFactor * Math.sin(midA);
     const col = accents[i % accents.length];
-    svgInner += `<path d="M${x1.toFixed(1)},${y1.toFixed(1)} Q${cpx.toFixed(1)},${cpy.toFixed(1)} ${x2.toFixed(1)},${y2.toFixed(1)}" fill="none" stroke="${col}" stroke-width="3" opacity="0.6"/>`;
-    // Arrowhead
-    const sz = 9;
+
+    // Thick background arc for depth
+    svgInner += `<path d="M${x1.toFixed(1)},${y1.toFixed(1)} Q${cpx.toFixed(1)},${cpy.toFixed(1)} ${x2.toFixed(1)},${y2.toFixed(1)}" fill="none" stroke="${hexToRgba(col, 0.08)}" stroke-width="12"/>`;
+    // Main arc
+    svgInner += `<path d="M${x1.toFixed(1)},${y1.toFixed(1)} Q${cpx.toFixed(1)},${cpy.toFixed(1)} ${x2.toFixed(1)},${y2.toFixed(1)}" fill="none" stroke="url(#glg${i})" stroke-width="5" stroke-linecap="round" opacity="0.8"/>`;
+
+    // Large arrowhead at destination
+    const sz = 12;
     const dx = x2 - cpx, dy = y2 - cpy;
     const dl = Math.sqrt(dx * dx + dy * dy) || 1;
     const ux = dx / dl, uy = dy / dl;
-    svgInner += `<polygon points="${x2.toFixed(1)},${y2.toFixed(1)} ${(x2 - ux * sz - uy * sz * 0.5).toFixed(1)},${(y2 - uy * sz + ux * sz * 0.5).toFixed(1)} ${(x2 - ux * sz + uy * sz * 0.5).toFixed(1)},${(y2 - uy * sz - ux * sz * 0.5).toFixed(1)}" fill="${col}" opacity="0.8"/>`;
+    const col2 = accents[(i + 1) % accents.length];
+    svgInner += `<polygon points="${x2.toFixed(1)},${y2.toFixed(1)} ${(x2 - ux * sz - uy * sz * 0.5).toFixed(1)},${(y2 - uy * sz + ux * sz * 0.5).toFixed(1)} ${(x2 - ux * sz + uy * sz * 0.5).toFixed(1)},${(y2 - uy * sz - ux * sz * 0.5).toFixed(1)}" fill="${col2}" opacity="0.9"/>`;
   }
 
-  // Node circles with glow
+  // Node cards positioned around the circle
   let nodesHtml = '';
+  const nodeCardR = R + 50;
   for (let i = 0; i < n; i++) {
     const a = (i / n) * Math.PI * 2 - Math.PI / 2;
-    const x = cx + R * Math.cos(a), y = cy + R * Math.sin(a);
+    const nx = cx + R * Math.cos(a), ny = cy + R * Math.sin(a);
     const col = accents[i % accents.length];
-    svgInner += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="26" fill="${hexToRgba(col, 0.12)}" stroke="${col}" stroke-width="2"/>`;
-    svgInner += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="12" fill="${col}" filter="url(#glf${i % n})"/>`;
-    // Label with card background
-    const lR = R + 60;
-    const lx = cx + lR * Math.cos(a);
-    const ly = cy + lR * Math.sin(a);
+
+    // SVG node: large filled circle with glow
+    svgInner += `<circle cx="${nx.toFixed(1)}" cy="${ny.toFixed(1)}" r="30" fill="${hexToRgba(col, 0.12)}" stroke="${col}" stroke-width="2.5"/>`;
+    svgInner += `<circle cx="${nx.toFixed(1)}" cy="${ny.toFixed(1)}" r="16" fill="${col}" filter="url(#glglow)"/>`;
+    // Step number inside
+    svgInner += `<text x="${nx.toFixed(1)}" y="${(ny + 5).toFixed(1)}" text-anchor="middle" fill="#fff" font-size="14" font-weight="bold">${i + 1}</text>`;
+
+    // Label card
+    const lx = cx + nodeCardR * Math.cos(a);
+    const ly = cy + nodeCardR * Math.sin(a);
     const align = lx < cx ? 'right' : 'left';
-    const boxW = 150;
-    const leftPos = align === 'right' ? lx - boxW : lx;
-    nodesHtml += `<div style="position:absolute;left:${Math.round(leftPos)}px;top:${Math.round(ly - 14)}px;width:${boxW}px;text-align:${align}">`;
-    nodesHtml += `<div style="display:inline-block;padding:4px 10px;background:${hexToRgba(col, dark ? 0.12 : 0.06)};border-radius:8px;font-size:12px;font-weight:700;color:${col};line-height:1.3">${escHtml(nodes[i] || 'Node ' + (i + 1))}</div>`;
+    const cardW = 165;
+    const leftPos = align === 'right' ? lx - cardW : lx;
+    const cardBg = dark ? hexToRgba(p.surface, 0.3) : hexToRgba(p.surface, 0.9);
+    nodesHtml += `<div style="position:absolute;left:${Math.round(leftPos)}px;top:${Math.round(ly - 20)}px;width:${cardW}px;padding:6px 12px;background:${cardBg};border:1px solid ${hexToRgba(col, 0.2)};border-left:3px solid ${col};border-radius:10px;box-shadow:${cardShadow(1, dark)};text-align:${align === 'right' ? 'right' : 'left'}">`;
+    nodesHtml += `<div style="font-size:13px;font-weight:700;color:${col};line-height:1.3">${escHtml(nodes[i] || 'Step ' + (i + 1))}</div>`;
     nodesHtml += `</div>`;
   }
 
-  // Center label
-  svgInner += `<circle cx="${cx}" cy="${cy}" r="28" fill="${hexToRgba(p.accent, 0.08)}" stroke="${hexToRgba(p.accent, 0.2)}" stroke-width="1"/>`;
-  const centerHtml = `<div style="position:absolute;left:${cx - 30}px;top:${cy - 10}px;width:60px;text-align:center;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:${p.accent};opacity:0.7">Loop</div>`;
+  // Center: large ring + label
+  svgInner += `<circle cx="${cx}" cy="${cy}" r="40" fill="${hexToRgba(p.accent, 0.06)}" stroke="${hexToRgba(p.accent, 0.15)}" stroke-width="2"/>`;
+  svgInner += `<circle cx="${cx}" cy="${cy}" r="28" fill="${hexToRgba(p.accent, 0.1)}" stroke="${hexToRgba(p.accent, 0.2)}" stroke-width="1"/>`;
+  const centerHtml = `<div style="position:absolute;left:${cx - 35}px;top:${cy - 16}px;width:70px;text-align:center">` +
+    `<div style="font-size:18px;font-weight:bold;color:${p.accent}">\u221E</div>` +
+    `<div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:${p.accent};opacity:0.6;margin-top:-2px">LOOP</div></div>`;
 
   return `${SCOPED_RESET}
 <div style="position:relative;width:${W}px;height:${H}px;background:${p.background};overflow:hidden">
