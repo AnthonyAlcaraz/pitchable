@@ -33,7 +33,7 @@ export const FIGMA_GRADE_TYPES: Set<string> = new Set([
   'HOOK', 'MATRIX_2X2', 'WATERFALL', 'FUNNEL', 'COMPETITIVE_MATRIX', 'ROADMAP',
   'PRICING_TABLE', 'UNIT_ECONOMICS', 'SWOT', 'THREE_PILLARS', 'BEFORE_AFTER',
   'SOCIAL_PROOF', 'OBJECTION_HANDLER', 'FAQ', 'VERDICT', 'COHORT_TABLE', 'PROGRESS_TRACKER',
-  'PRODUCT_SHOWCASE', 'SPLIT_STATEMENT',
+  'PRODUCT_SHOWCASE', 'SPLIT_STATEMENT', 'HIRING_PLAN', 'USE_OF_FUNDS', 'RISK_MITIGATION', 'DEMO_SCREENSHOT', 'MILESTONE_TIMELINE', 'PARTNERSHIP_LOGOS',
 ]);
 
 // ── Helpers ──────────────────────────────────────────────────
@@ -507,6 +507,7 @@ export function buildHtmlSlideContent(
       html = buildProductShowcase(cleaned, palette, !!cleaned.imageUrl); break;
     case 'SPLIT_STATEMENT':
       html = buildSplitStatement(cleaned, palette, !!cleaned.imageUrl); break;
+case 'HIRING_PLAN':      html = buildHiringPlan(cleaned, palette, !!cleaned.imageUrl, accentDiversity); break;    case 'USE_OF_FUNDS':      html = buildUseOfFunds(cleaned, palette, !!cleaned.imageUrl, accentDiversity); break;    case 'RISK_MITIGATION':      html = buildRiskMitigation(cleaned, palette, !!cleaned.imageUrl); break;    case 'DEMO_SCREENSHOT':      html = buildDemoScreenshot(cleaned, palette, !!cleaned.imageUrl); break;    case 'MILESTONE_TIMELINE':      html = buildMilestoneTimeline(cleaned, palette, !!cleaned.imageUrl, accentDiversity); break;    case 'PARTNERSHIP_LOGOS':      html = buildPartnershipLogos(cleaned, palette, !!cleaned.imageUrl, accentDiversity); break;
     default:
       return '';
   }
@@ -4210,3 +4211,431 @@ function buildProgressTracker(slide: SlideInput, p: ColorPalette, hasImage = fal
   ${barsHtml}
 </div>`;
 }
+
+
+// ── HIRING_PLAN ──────────────────────────────────────────────
+// Horizontal timeline with quarter columns and role pill badges
+
+function buildHiringPlan(slide: SlideInput, p: ColorPalette, hasImage = false, accentDiversity = true): string {
+  const cW = hasImage ? CONTENT_W_IMG : W;
+  const lines = parseBodyLines(slide.body);
+  const dark = isDarkBackground(p.background);
+  const accents = cardAccentColors(p, accentDiversity ? colorOffset(slide.title) : 0);
+
+  // Parse "Quarter: Role1, Role2" format
+  const quarters: { label: string; roles: string[] }[] = [];
+  for (const line of lines) {
+    const sep = line.indexOf(':');
+    if (sep > 0) {
+      const label = line.slice(0, sep).trim();
+      const roles = line.slice(sep + 1).split(',').map(r => r.trim()).filter(Boolean);
+      if (roles.length > 0) quarters.push({ label, roles });
+    }
+  }
+  if (quarters.length === 0) {
+    quarters.push({ label: 'Q1', roles: ['Engineer', 'Designer'] });
+    quarters.push({ label: 'Q2', roles: ['PM', 'Sales'] });
+    quarters.push({ label: 'Q3', roles: ['Marketing'] });
+  }
+
+  const count = Math.min(quarters.length, 6);
+  const tlTop = PAD + 120;
+  const tlLeft = PAD + 20;
+  const tlRight = cW - PAD - 20;
+  const segW = Math.round((tlRight - tlLeft) / count);
+  const dotR = 8;
+
+  // Timeline line + dots
+  let html = '';
+  html += `<svg style="position:absolute;left:0;top:0;width:${cW}px;height:${H}px;pointer-events:none">`;
+  html += `<line x1="${tlLeft}" y1="${tlTop}" x2="${tlLeft + segW * (count - 1)}" y2="${tlTop}" stroke="${hexToRgba(p.border, 0.3)}" stroke-width="3" />`;
+  for (let i = 0; i < count; i++) {
+    const cx = tlLeft + i * segW;
+    html += `<circle cx="${cx}" cy="${tlTop}" r="${dotR}" fill="${accents[i % accents.length]}" />`;
+  }
+  html += `</svg>`;
+
+  // Quarter labels + role pills
+  for (let i = 0; i < count; i++) {
+    const q = quarters[i];
+    const cx = tlLeft + i * segW;
+    const color = accents[i % accents.length];
+    html += `<div style="position:absolute;left:${cx - 40}px;top:${tlTop - 36}px;width:80px;text-align:center;font-size:14px;font-weight:bold;color:${color}">${escHtml(q.label)}</div>`;
+    for (let r = 0; r < Math.min(q.roles.length, 4); r++) {
+      const py = tlTop + 24 + r * 34;
+      const pillBg = dark ? hexToRgba(color, 0.15) : hexToRgba(color, 0.1);
+      html += `<div style="position:absolute;left:${cx - 48}px;top:${py}px;width:96px;height:26px;background:${pillBg};border:1px solid ${hexToRgba(color, 0.3)};border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:${color};overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${escHtml(q.roles[r])}</div>`;
+    }
+  }
+
+  return `${SCOPED_RESET}
+<div style="position:relative;width:${W}px;height:${H}px;background:${p.background};overflow:hidden">
+  ${bgGradientOverlay(cW, H, p.accent, 0.04, '45%')}
+  <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;font-size:${titleFontSize(slide.title)}px;font-weight:bold;overflow-wrap:break-word;word-wrap:break-word;color:${p.text};line-height:1.2">${escHtml(slide.title)}</div>
+  <div style="position:absolute;left:${PAD}px;top:${PAD + 56}px;width:50px;height:3px;background:${p.accent};border-radius:2px"></div>
+  ${html}
+</div>`;
+}
+
+
+// ── USE_OF_FUNDS ─────────────────────────────────────────────
+// Wide horizontal stacked bar + category cards below
+
+function buildUseOfFunds(slide: SlideInput, p: ColorPalette, hasImage = false, accentDiversity = true): string {
+  const cW = hasImage ? CONTENT_W_IMG : W;
+  const lines = parseBodyLines(slide.body);
+  const dark = isDarkBackground(p.background);
+  const accents = cardAccentColors(p, accentDiversity ? colorOffset(slide.title) : 0);
+
+  // Parse "Category: $amount (pct%)"
+  const items: { name: string; amount: string; pct: number }[] = [];
+  for (const line of lines) {
+    const sep = line.indexOf(':');
+    if (sep > 0) {
+      const name = line.slice(0, sep).trim();
+      const rest = line.slice(sep + 1).trim();
+      const pctMatch = rest.match(/(\d+)\s*%/);
+      const amtMatch = rest.match(/(\$[\d,.]+[KMB]?)/i);
+      if (pctMatch) {
+        items.push({ name, amount: amtMatch ? amtMatch[1] : '', pct: parseInt(pctMatch[1], 10) });
+      }
+    }
+  }
+  if (items.length === 0) {
+    items.push({ name: 'Engineering', amount: '$2M', pct: 40 });
+    items.push({ name: 'Sales', amount: '$1.5M', pct: 30 });
+    items.push({ name: 'Marketing', amount: '$1M', pct: 20 });
+    items.push({ name: 'Operations', amount: '$500K', pct: 10 });
+  }
+
+  const count = Math.min(items.length, 8);
+  const barTop = PAD + 100;
+  const barH = 40;
+  const barLeft = PAD + 10;
+  const barW = cW - PAD * 2 - 20;
+  const totalPct = items.slice(0, count).reduce((s, it) => s + it.pct, 0) || 100;
+
+  // Stacked bar SVG
+  let html = `<svg style="position:absolute;left:${barLeft}px;top:${barTop}px;width:${barW}px;height:${barH}px" viewBox="0 0 ${barW} ${barH}">`;
+  let bx = 0;
+  for (let i = 0; i < count; i++) {
+    const segW = Math.round(barW * items[i].pct / totalPct);
+    const color = accents[i % accents.length];
+    const rx = i === 0 ? 8 : (i === count - 1 ? 8 : 0);
+    html += `<rect x="${bx}" y="0" width="${segW}" height="${barH}" fill="${color}" rx="${rx}" />`;
+    if (segW > 40) {
+      html += `<text x="${bx + segW / 2}" y="${barH / 2 + 5}" text-anchor="middle" fill="#fff" font-size="12" font-weight="bold">${items[i].pct}%</text>`;
+    }
+    bx += segW;
+  }
+  html += `</svg>`;
+
+  // Category cards below bar
+  const cardTop = barTop + barH + 24;
+  const cardGap = 10;
+  const cols = Math.min(count, 4);
+  const rows = Math.ceil(count / cols);
+  const cardW = Math.round((barW - (cols - 1) * cardGap) / cols);
+  const cardH = Math.min(80, Math.round((H - cardTop - PAD - (rows - 1) * cardGap) / rows));
+
+  for (let i = 0; i < count; i++) {
+    const it = items[i];
+    const col = i % cols;
+    const row = Math.floor(i / cols);
+    const cx = barLeft + col * (cardW + cardGap);
+    const cy = cardTop + row * (cardH + cardGap);
+    const color = accents[i % accents.length];
+    const cardBg = dark ? hexToRgba(p.surface, 0.35) : p.surface;
+
+    html += `<div style="position:absolute;left:${cx}px;top:${cy}px;width:${cardW}px;height:${cardH}px;background:${cardBg};border:1px solid ${hexToRgba(p.border, 0.15)};border-radius:10px;border-top:3px solid ${color};box-shadow:${cardShadow(1, dark)}"></div>`;
+    html += `<div style="position:absolute;left:${cx + 12}px;top:${cy + 10}px;width:${cardW - 24}px;font-size:12px;font-weight:600;color:${p.text};overflow:hidden;white-space:nowrap;text-overflow:ellipsis"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${color};margin-right:6px;vertical-align:middle"></span>${escHtml(it.name)}</div>`;
+    if (it.amount) {
+      html += `<div style="position:absolute;left:${cx + 12}px;top:${cy + 30}px;font-size:18px;font-weight:bold;color:${color}">${escHtml(it.amount)}</div>`;
+    }
+    html += `<div style="position:absolute;left:${cx + 12}px;top:${cy + cardH - 22}px;font-size:12px;color:${p.text};opacity:0.6">${it.pct}% of total</div>`;
+  }
+
+  return `${SCOPED_RESET}
+<div style="position:relative;width:${W}px;height:${H}px;background:${p.background};overflow:hidden">
+  ${bgGradientOverlay(cW, H, p.accent, 0.04, '35%')}
+  <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;font-size:${titleFontSize(slide.title)}px;font-weight:bold;overflow-wrap:break-word;word-wrap:break-word;color:${p.text};line-height:1.2">${escHtml(slide.title)}</div>
+  <div style="position:absolute;left:${PAD}px;top:${PAD + 56}px;width:50px;height:3px;background:${p.accent};border-radius:2px"></div>
+  ${html}
+</div>`;
+}
+
+
+// ── RISK_MITIGATION ──────────────────────────────────────────
+// Two columns: risk cards (left) with arrow to mitigation cards (right)
+
+function buildRiskMitigation(slide: SlideInput, p: ColorPalette, hasImage = false): string {
+  const cW = hasImage ? CONTENT_W_IMG : W;
+  const lines = parseBodyLines(slide.body);
+  const dark = isDarkBackground(p.background);
+
+  // Parse "Risk -> Mitigation" or "Risk: Mitigation"
+  const pairs: { risk: string; mitigation: string }[] = [];
+  for (const line of lines) {
+    const arrowMatch = line.match(/^(.+?)\s*(?:\u2192|->|=>|\u2794)\s*(.+)$/);
+    if (arrowMatch) {
+      pairs.push({ risk: arrowMatch[1].trim(), mitigation: arrowMatch[2].trim() });
+      continue;
+    }
+    const sepIdx = line.indexOf(':');
+    if (sepIdx > 0 && sepIdx < line.length - 1) {
+      pairs.push({ risk: line.slice(0, sepIdx).trim(), mitigation: line.slice(sepIdx + 1).trim() });
+    }
+  }
+  if (pairs.length === 0) {
+    pairs.push({ risk: 'Market risk', mitigation: 'Diversified revenue streams' });
+    pairs.push({ risk: 'Tech risk', mitigation: 'Proven tech stack' });
+  }
+
+  const count = Math.min(pairs.length, 5);
+  const rowTop = PAD + 100;
+  const totalW = cW - PAD * 2;
+  const colW = Math.round((totalW - 60) / 2);
+  const rowGap = 12;
+  const rowH = Math.min(90, Math.round((H - rowTop - PAD - (count - 1) * rowGap) / count));
+  const leftX = PAD;
+  const rightX = PAD + colW + 60;
+
+  let html = '';
+  const riskColor = p.error || '#ef4444';
+  const mitigColor = p.success || '#22c55e';
+
+  for (let i = 0; i < count; i++) {
+    const pair = pairs[i];
+    const ry = rowTop + i * (rowH + rowGap);
+    const riskBg = dark ? hexToRgba(riskColor, 0.06) : hexToRgba(riskColor, 0.04);
+    const mitigBg = dark ? hexToRgba(mitigColor, 0.06) : hexToRgba(mitigColor, 0.04);
+
+    // Risk card
+    html += `<div style="position:absolute;left:${leftX}px;top:${ry}px;width:${colW}px;height:${rowH}px;background:${riskBg};border:1px solid ${hexToRgba(riskColor, 0.15)};border-left:4px solid ${riskColor};border-radius:10px;box-shadow:${cardShadow(1, dark)}"></div>`;
+    html += `<div style="position:absolute;left:${leftX + 14}px;top:${ry + Math.round((rowH - 18) / 2)}px;width:${colW - 28}px;font-size:13px;line-height:1.4;color:${p.text};overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical"><span style="color:${riskColor};margin-right:6px;font-weight:bold">\u26A0</span>${escHtml(pair.risk)}</div>`;
+
+    // Arrow
+    const arrowY = ry + Math.round(rowH / 2);
+    html += `<svg style="position:absolute;left:${leftX + colW + 8}px;top:${arrowY - 8}px;width:44px;height:16px" viewBox="0 0 44 16"><line x1="0" y1="8" x2="34" y2="8" stroke="${hexToRgba(p.text, 0.3)}" stroke-width="2" /><polygon points="34,2 44,8 34,14" fill="${hexToRgba(p.text, 0.3)}" /></svg>`;
+
+    // Mitigation card
+    html += `<div style="position:absolute;left:${rightX}px;top:${ry}px;width:${colW}px;height:${rowH}px;background:${mitigBg};border:1px solid ${hexToRgba(mitigColor, 0.15)};border-left:4px solid ${mitigColor};border-radius:10px;box-shadow:${cardShadow(1, dark)}"></div>`;
+    html += `<div style="position:absolute;left:${rightX + 14}px;top:${ry + Math.round((rowH - 18) / 2)}px;width:${colW - 28}px;font-size:13px;line-height:1.4;color:${p.text};overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical"><span style="color:${mitigColor};margin-right:6px;font-weight:bold">\u2713</span>${escHtml(pair.mitigation)}</div>`;
+  }
+
+  return `${SCOPED_RESET}
+<div style="position:relative;width:${W}px;height:${H}px;background:${p.background};overflow:hidden">
+  ${bgGradientOverlay(cW, H, p.primary, 0.04, '45%')}
+  <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;font-size:${titleFontSize(slide.title)}px;font-weight:bold;overflow-wrap:break-word;word-wrap:break-word;color:${p.text};line-height:1.2">${escHtml(slide.title)}</div>
+  <div style="position:absolute;left:${PAD}px;top:${PAD + 56}px;width:50px;height:3px;background:${p.accent};border-radius:2px"></div>
+  ${html}
+</div>`;
+}
+
+
+// ── DEMO_SCREENSHOT ──────────────────────────────────────────
+// Large image area with numbered callout circles and feature labels
+
+function buildDemoScreenshot(slide: SlideInput, p: ColorPalette, hasImage = false): string {
+  const cW = hasImage ? CONTENT_W_IMG : W;
+  const lines = parseBodyLines(slide.body);
+  const dark = isDarkBackground(p.background);
+
+  // Parse "Number. Feature description" format
+  const features: { num: number; text: string }[] = [];
+  for (const line of lines) {
+    const m = line.match(/^(\d+)\.\s*(.+)/);
+    if (m) {
+      features.push({ num: parseInt(m[1], 10), text: m[2].trim() });
+    }
+  }
+  if (features.length === 0) {
+    features.push({ num: 1, text: 'Main dashboard view' });
+    features.push({ num: 2, text: 'Real-time analytics' });
+    features.push({ num: 3, text: 'Quick actions panel' });
+  }
+
+  const count = Math.min(features.length, 6);
+  const imgTop = PAD + 90;
+  const imgH = H - imgTop - PAD - 10;
+  const imgW = Math.round((cW - PAD * 2) * 0.62);
+  const imgLeft = PAD;
+  const imgBg = dark ? hexToRgba(p.surface, 0.2) : hexToRgba(p.border, 0.08);
+
+  let html = '';
+
+  // Image placeholder area
+  if (slide.imageUrl) {
+    html += `<div style="position:absolute;left:${imgLeft}px;top:${imgTop}px;width:${imgW}px;height:${imgH}px;border-radius:12px;overflow:hidden;border:1px solid ${hexToRgba(p.border, 0.15)};box-shadow:${cardShadow(2, dark)}"><img src="${escHtml(slide.imageUrl)}" style="width:100%;height:100%;object-fit:cover" /></div>`;
+  } else {
+    html += `<div style="position:absolute;left:${imgLeft}px;top:${imgTop}px;width:${imgW}px;height:${imgH}px;background:${imgBg};border-radius:12px;border:2px dashed ${hexToRgba(p.border, 0.2)};display:flex;align-items:center;justify-content:center;font-size:14px;color:${hexToRgba(p.text, 0.4)}">Product Screenshot</div>`;
+  }
+
+  // Callout circles and labels on the right side
+  const labelLeft = imgLeft + imgW + 20;
+  const labelW = cW - labelLeft - PAD;
+  const labelGap = Math.min(70, Math.round(imgH / Math.max(count, 1)));
+  const circleR = 16;
+
+  for (let i = 0; i < count; i++) {
+    const feat = features[i];
+    const fy = imgTop + 20 + i * labelGap;
+    html += `<div style="position:absolute;left:${labelLeft}px;top:${fy}px;width:${circleR * 2}px;height:${circleR * 2}px;border-radius:50%;background:${p.accent};display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:bold;color:#fff;box-shadow:0 2px 8px ${hexToRgba(p.accent, 0.3)}">${feat.num}</div>`;
+    html += `<div style="position:absolute;left:${labelLeft + circleR * 2 + 10}px;top:${fy + 4}px;width:${labelW - circleR * 2 - 10}px;font-size:13px;line-height:1.4;color:${p.text};overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${escHtml(feat.text)}</div>`;
+  }
+
+  return `${SCOPED_RESET}
+<div style="position:relative;width:${W}px;height:${H}px;background:${p.background};overflow:hidden">
+  ${bgGradientOverlay(cW, H, p.accent, 0.04, '50%')}
+  <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;font-size:${titleFontSize(slide.title)}px;font-weight:bold;overflow-wrap:break-word;word-wrap:break-word;color:${p.text};line-height:1.2">${escHtml(slide.title)}</div>
+  <div style="position:absolute;left:${PAD}px;top:${PAD + 56}px;width:50px;height:3px;background:${p.accent};border-radius:2px"></div>
+  ${html}
+</div>`;
+}
+
+
+// ── MILESTONE_TIMELINE ───────────────────────────────────────
+// Vertical timeline with past (filled) and future (outlined) milestones
+
+function buildMilestoneTimeline(slide: SlideInput, p: ColorPalette, hasImage = false, accentDiversity = true): string {
+  const cW = hasImage ? CONTENT_W_IMG : W;
+  const lines = parseBodyLines(slide.body);
+  const dark = isDarkBackground(p.background);
+  const accents = cardAccentColors(p, accentDiversity ? colorOffset(slide.title) : 0);
+
+  // Parse lines starting with checkmark or circle: "Date: Description"
+  const milestones: { done: boolean; date: string; desc: string }[] = [];
+  for (const line of lines) {
+    const doneMatch = line.match(/^(?:\u2713|\u2714|\[x\]|\(x\))\s*(.+)/i);
+    const futureMatch = line.match(/^(?:\u25CB|\u25EF|\[\s*\]|\(\s*\))\s*(.+)/i);
+    const msContent = doneMatch ? doneMatch[1] : futureMatch ? futureMatch[1] : null;
+    const done = !!doneMatch;
+    if (msContent) {
+      const colonIdx = msContent.indexOf(':');
+      if (colonIdx > 0) {
+        milestones.push({ done, date: msContent.slice(0, colonIdx).trim(), desc: msContent.slice(colonIdx + 1).trim() });
+      } else {
+        milestones.push({ done, date: '', desc: msContent.trim() });
+      }
+    } else if (line.trim()) {
+      const colonIdx = line.indexOf(':');
+      if (colonIdx > 0) {
+        milestones.push({ done: false, date: line.slice(0, colonIdx).trim(), desc: line.slice(colonIdx + 1).trim() });
+      }
+    }
+  }
+  if (milestones.length === 0) {
+    milestones.push({ done: true, date: 'Q1 2024', desc: 'MVP Launch' });
+    milestones.push({ done: true, date: 'Q2 2024', desc: 'First 100 users' });
+    milestones.push({ done: false, date: 'Q3 2024', desc: 'Series A' });
+  }
+
+  const count = Math.min(milestones.length, 7);
+  const lineX = Math.round(cW * 0.18);
+  const topY = PAD + 95;
+  const itemGap = Math.min(80, Math.round((H - topY - PAD) / Math.max(count, 1)));
+  const dotR = 10;
+
+  // Vertical timeline line
+  let html = `<svg style="position:absolute;left:0;top:0;width:${cW}px;height:${H}px;pointer-events:none">`;
+  html += `<line x1="${lineX}" y1="${topY}" x2="${lineX}" y2="${topY + (count - 1) * itemGap}" stroke="${hexToRgba(p.border, 0.25)}" stroke-width="2" />`;
+  html += `</svg>`;
+
+  for (let i = 0; i < count; i++) {
+    const ms = milestones[i];
+    const my = topY + i * itemGap;
+    const color = accents[i % accents.length];
+
+    if (ms.done) {
+      html += `<div style="position:absolute;left:${lineX - dotR}px;top:${my - dotR}px;width:${dotR * 2}px;height:${dotR * 2}px;border-radius:50%;background:${color};box-shadow:0 0 8px ${hexToRgba(color, 0.3)}"></div>`;
+    } else {
+      html += `<div style="position:absolute;left:${lineX - dotR}px;top:${my - dotR}px;width:${dotR * 2}px;height:${dotR * 2}px;border-radius:50%;background:${p.background};border:2px dashed ${hexToRgba(color, 0.5)}"></div>`;
+    }
+
+    const textLeft = lineX + dotR + 16;
+    const textW = cW - textLeft - PAD;
+    if (ms.date) {
+      html += `<div style="position:absolute;left:${textLeft}px;top:${my - 12}px;font-size:13px;font-weight:bold;color:${color}">${escHtml(ms.date)}</div>`;
+      html += `<div style="position:absolute;left:${textLeft}px;top:${my + 6}px;width:${textW}px;font-size:12px;line-height:1.3;color:${p.text};opacity:0.8;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${escHtml(ms.desc)}</div>`;
+    } else {
+      html += `<div style="position:absolute;left:${textLeft}px;top:${my - 8}px;width:${textW}px;font-size:13px;line-height:1.4;color:${p.text};overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${escHtml(ms.desc)}</div>`;
+    }
+  }
+
+  return `${SCOPED_RESET}
+<div style="position:relative;width:${W}px;height:${H}px;background:${p.background};overflow:hidden">
+  ${bgGradientOverlay(cW, H, p.accent, 0.04, '40%')}
+  <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;font-size:${titleFontSize(slide.title)}px;font-weight:bold;overflow-wrap:break-word;word-wrap:break-word;color:${p.text};line-height:1.2">${escHtml(slide.title)}</div>
+  <div style="position:absolute;left:${PAD}px;top:${PAD + 56}px;width:50px;height:3px;background:${p.accent};border-radius:2px"></div>
+  ${html}
+</div>`;
+}
+
+
+// ── PARTNERSHIP_LOGOS ─────────────────────────────────────────
+// Category headers with grid of name badges below each
+
+function buildPartnershipLogos(slide: SlideInput, p: ColorPalette, hasImage = false, accentDiversity = true): string {
+  const cW = hasImage ? CONTENT_W_IMG : W;
+  const lines = parseBodyLines(slide.body);
+  const dark = isDarkBackground(p.background);
+  const accents = cardAccentColors(p, accentDiversity ? colorOffset(slide.title) : 0);
+
+  // Parse "Category: Name1, Name2, Name3"
+  const categories: { label: string; names: string[] }[] = [];
+  for (const line of lines) {
+    const sep = line.indexOf(':');
+    if (sep > 0) {
+      const label = line.slice(0, sep).trim();
+      const names = line.slice(sep + 1).split(',').map(n => n.trim()).filter(Boolean);
+      if (names.length > 0) categories.push({ label, names });
+    }
+  }
+  if (categories.length === 0) {
+    categories.push({ label: 'Technology', names: ['AWS', 'Google Cloud', 'Azure'] });
+    categories.push({ label: 'Integration', names: ['Salesforce', 'HubSpot', 'Slack'] });
+  }
+
+  const catCount = Math.min(categories.length, 4);
+  const startY = PAD + 95;
+  const availH = H - startY - PAD;
+  const catGap = 12;
+  const catH = Math.round((availH - (catCount - 1) * catGap) / catCount);
+  const contentW = cW - PAD * 2;
+
+  let html = '';
+
+  for (let ci = 0; ci < catCount; ci++) {
+    const cat = categories[ci];
+    const color = accents[ci % accents.length];
+    const cy = startY + ci * (catH + catGap);
+
+    html += `<div style="position:absolute;left:${PAD}px;top:${cy}px;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:${color}">${escHtml(cat.label)}</div>`;
+
+    const badgeTop = cy + 22;
+    const maxPerRow = 4;
+    const badgeGap = 10;
+    const nameCount = Math.min(cat.names.length, 8);
+    const badgeW = Math.min(140, Math.round((contentW - (maxPerRow - 1) * badgeGap) / maxPerRow));
+    const badgeH = 30;
+
+    for (let ni = 0; ni < nameCount; ni++) {
+      const col = ni % maxPerRow;
+      const row = Math.floor(ni / maxPerRow);
+      const bx = PAD + col * (badgeW + badgeGap);
+      const by = badgeTop + row * (badgeH + 8);
+      const badgeBg = dark ? hexToRgba(p.surface, 0.3) : p.surface;
+
+      html += `<div style="position:absolute;left:${bx}px;top:${by}px;width:${badgeW}px;height:${badgeH}px;background:${badgeBg};border:1px solid ${hexToRgba(p.border, 0.2)};border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:${p.text};overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${escHtml(cat.names[ni])}</div>`;
+    }
+  }
+
+  return `${SCOPED_RESET}
+<div style="position:relative;width:${W}px;height:${H}px;background:${p.background};overflow:hidden">
+  ${bgGradientOverlay(cW, H, p.accent, 0.04, '45%')}
+  <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;font-size:${titleFontSize(slide.title)}px;font-weight:bold;overflow-wrap:break-word;word-wrap:break-word;color:${p.text};line-height:1.2">${escHtml(slide.title)}</div>
+  <div style="position:absolute;left:${PAD}px;top:${PAD + 56}px;width:50px;height:3px;background:${p.accent};border-radius:2px"></div>
+  ${html}
+</div>`;
+}
+
