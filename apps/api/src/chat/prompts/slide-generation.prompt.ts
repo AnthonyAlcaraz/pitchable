@@ -453,6 +453,89 @@ User Training: 40%
 Security Audit: 95%
 Documentation: 55%"
 
+FLYWHEEL: Steps in a circular loop separated by arrows. 3-6 steps. Plain text, rendered as circular SVG flywheel automatically.
+  Example body:
+  "Content Creation → Audience Growth → Engagement → Monetization → Reinvestment → Content Creation"
+
+REVENUE_MODEL: Revenue channels with dollar amounts and percentages. One channel per line. Format: Channel: $amount (pct%). Plain text, rendered with channel cards and donut chart automatically.
+  Example body:
+  "SaaS Subscriptions: $8.2M (62%)
+Enterprise Licenses: $3.1M (24%)
+API Usage: $1.2M (9%)
+Professional Services: $0.7M (5%)"
+
+CUSTOMER_JOURNEY: Stages with metrics and conversion rates. One stage per line. Format: Stage: metric (conversion%). Plain text, rendered as horizontal journey path automatically.
+  Example body:
+  "Awareness: 100K visitors (100%)
+Consideration: 12K signups (12%)
+Activation: 4.8K active (40%)
+Revenue: 960 paying (20%)
+Advocacy: 192 referrers (20%)"
+
+TECH_STACK: Technology layers from infrastructure to user-facing. One layer per line. Format: Layer: Component1, Component2. Plain text, rendered as horizontal stacked bands automatically.
+  Example body:
+  "Infrastructure: AWS, Kubernetes, Terraform
+Data: PostgreSQL, Redis, S3
+Backend: NestJS, Prisma, BullMQ
+Frontend: Next.js, Tailwind, React Query
+AI: Claude API, Replicate, LangChain"
+
+GROWTH_LOOPS: Nodes in a circular growth loop connected by arrows. 3-6 nodes. Format: Node1 → Node2 → Node3. Plain text, rendered as circular node network with bezier edges automatically.
+  Example body:
+  "User Creates Content → Content Attracts Viewers → Viewers Sign Up → New Users Create Content"
+
+CASE_STUDY: Client name, quote, and KPI metrics. Format: Client name on first line, quote in double quotes on second line, then KPI: value pairs. Plain text, rendered as case study card automatically.
+  Example body:
+  "Acme Corporation
+"Pitchable cut our deck creation time from 6 hours to 10 minutes"
+Revenue Impact: +340%
+Time Saved: 85%
+Team Adoption: 96%"
+
+HIRING_PLAN: Quarterly hiring timeline with roles. One quarter per line. Format: Quarter: Role1, Role2. Plain text, rendered as horizontal timeline with role badges automatically.
+  Example body:
+  "Q1 2026: Senior Engineer, Product Designer
+Q2 2026: ML Engineer, DevRel, Sales Lead
+Q3 2026: 3x Engineers, Customer Success
+Q4 2026: VP Sales, Data Scientist, 2x Engineers"
+
+USE_OF_FUNDS: Budget allocation categories with amounts and percentages. One category per line. Format: Category: $amount (pct%). Plain text, rendered as stacked bar chart with breakdown cards automatically.
+  Example body:
+  "Engineering: $4.2M (42%)
+Sales & Marketing: $2.5M (25%)
+Operations: $1.5M (15%)
+R&D: $1.0M (10%)
+G&A: $0.8M (8%)"
+
+RISK_MITIGATION: Risk and mitigation pairs separated by arrows. One pair per line. Format: Risk → Mitigation. Plain text, rendered as two-column risk/mitigation cards automatically.
+  Example body:
+  "Key person dependency → Cross-training program + documentation
+Market downturn → 18-month runway + variable cost structure
+Technical debt → Quarterly refactoring sprints + automated testing
+Competitor pricing → Unique AI moat + switching cost lock-in"
+
+DEMO_SCREENSHOT: Numbered feature callouts for a product demo. One callout per line. Format: Number. Feature description. imagePromptHint should describe the UI screenshot.
+  Example body:
+  "1. AI-powered slide generation with one-click themes
+2. Real-time collaboration with team cursors
+3. Export to PDF, PPTX, and Google Slides
+4. Custom branding with logo and color palette"
+
+MILESTONE_TIMELINE: Past achievements (checkmark) and future goals (circle). One milestone per line. Format: ✓ Date: Achievement or ○ Date: Goal. Plain text, rendered as vertical timeline automatically.
+  Example body:
+  "✓ Jan 2025: MVP Launch — 100 beta users
+✓ Apr 2025: Product Hunt #1 — 2,400 users
+✓ Sep 2025: Series A — $4.2M raised
+○ Mar 2026: Enterprise Launch — 50 accounts
+○ Sep 2026: International — EU + APAC expansion"
+
+PARTNERSHIP_LOGOS: Partner names organized by category. One category per line. Format: Category: Name1, Name2, Name3. Plain text, rendered as categorized badge grid automatically.
+  Example body:
+  "Technology: AWS, Google Cloud, Microsoft Azure
+Integration: Slack, Notion, Figma, Zapier
+Channel: Deloitte, Accenture, McKinsey
+Strategic: Y Combinator, Sequoia, a16z"
+
 PRESENTATION TYPE: ${presentationType}
 ${themeBlock}
 ${mcKinseyBlock}

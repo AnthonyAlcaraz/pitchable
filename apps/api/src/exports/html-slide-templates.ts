@@ -507,7 +507,18 @@ export function buildHtmlSlideContent(
       html = buildProductShowcase(cleaned, palette, !!cleaned.imageUrl); break;
     case 'SPLIT_STATEMENT':
       html = buildSplitStatement(cleaned, palette, !!cleaned.imageUrl); break;
-case 'HIRING_PLAN':      html = buildHiringPlan(cleaned, palette, !!cleaned.imageUrl, accentDiversity); break;    case 'USE_OF_FUNDS':      html = buildUseOfFunds(cleaned, palette, !!cleaned.imageUrl, accentDiversity); break;    case 'RISK_MITIGATION':      html = buildRiskMitigation(cleaned, palette, !!cleaned.imageUrl); break;    case 'DEMO_SCREENSHOT':      html = buildDemoScreenshot(cleaned, palette, !!cleaned.imageUrl); break;    case 'MILESTONE_TIMELINE':      html = buildMilestoneTimeline(cleaned, palette, !!cleaned.imageUrl, accentDiversity); break;    case 'PARTNERSHIP_LOGOS':      html = buildPartnershipLogos(cleaned, palette, !!cleaned.imageUrl, accentDiversity); break;
+    case 'HIRING_PLAN':
+      html = buildHiringPlan(cleaned, palette, !!cleaned.imageUrl, accentDiversity); break;
+    case 'USE_OF_FUNDS':
+      html = buildUseOfFunds(cleaned, palette, !!cleaned.imageUrl, accentDiversity); break;
+    case 'RISK_MITIGATION':
+      html = buildRiskMitigation(cleaned, palette, !!cleaned.imageUrl); break;
+    case 'DEMO_SCREENSHOT':
+      html = buildDemoScreenshot(cleaned, palette, !!cleaned.imageUrl); break;
+    case 'MILESTONE_TIMELINE':
+      html = buildMilestoneTimeline(cleaned, palette, !!cleaned.imageUrl, accentDiversity); break;
+    case 'PARTNERSHIP_LOGOS':
+      html = buildPartnershipLogos(cleaned, palette, !!cleaned.imageUrl, accentDiversity); break;
     default:
       return '';
   }
@@ -4209,6 +4220,364 @@ function buildProgressTracker(slide: SlideInput, p: ColorPalette, hasImage = fal
   <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;font-size:${titleFontSize(slide.title)}px;font-weight:bold;overflow-wrap:break-word;word-wrap:break-word;color:${p.text};line-height:1.2">${escHtml(slide.title)}</div>
   <div style="position:absolute;left:${PAD}px;top:${PAD + 56}px;width:50px;height:3px;background:${p.accent};border-radius:2px"></div>
   ${barsHtml}
+</div>`;
+}
+
+
+// ── FLYWHEEL ──────────────────────────────────────────────
+// Circular SVG loop with labeled segments + arrows
+
+function buildFlywheel(slide: SlideInput, p: ColorPalette, hasImage = false, accentDiversity = true): string {
+  const cW = hasImage ? CONTENT_W_IMG : W;
+  const raw = slide.body.replace(/\u2192/g, '→');
+  const steps = raw.split('→').map(s => s.trim()).filter(Boolean);
+  const n = Math.min(steps.length, 8) || 4;
+  const accents = cardAccentColors(p, accentDiversity ? colorOffset(slide.title) : 0);
+  const dark = isDarkBackground(p.background);
+
+  const cx = Math.round(cW * 0.5);
+  const cy = Math.round(H * 0.53);
+  const R = Math.min(Math.round(cW * 0.22), 200);
+  const labelR = R + 55;
+
+  // SVG arcs + arrows
+  let svgInner = '';
+  for (let i = 0; i < n; i++) {
+    const a1 = (i / n) * Math.PI * 2 - Math.PI / 2;
+    const a2 = ((i + 0.85) / n) * Math.PI * 2 - Math.PI / 2;
+    const x1 = cx + R * Math.cos(a1), y1 = cy + R * Math.sin(a1);
+    const x2 = cx + R * Math.cos(a2), y2 = cy + R * Math.sin(a2);
+    const col = accents[i % accents.length];
+    svgInner += `<path d="M${x1},${y1} A${R},${R} 0 0,1 ${x2},${y2}" fill="none" stroke="${col}" stroke-width="6" stroke-linecap="round"/>`;
+    // Arrow at end of arc
+    const aa = ((i + 0.85) / n) * Math.PI * 2 - Math.PI / 2;
+    const ad = aa + 0.15;
+    const ax = cx + R * Math.cos(ad), ay = cy + R * Math.sin(ad);
+    svgInner += `<polygon points="${x2},${y2} ${x2 + (ax - x2) * 0.5 - (ay - y2) * 0.3},${y2 + (ay - y2) * 0.5 + (ax - x2) * 0.3} ${x2 + (ax - x2) * 0.5 + (ay - y2) * 0.3},${y2 + (ay - y2) * 0.5 - (ax - x2) * 0.3}" fill="${col}"/>`;
+  }
+  // Center circle
+  svgInner += `<circle cx="${cx}" cy="${cy}" r="24" fill="${p.accent}" opacity="0.2"/>`;
+  svgInner += `<circle cx="${cx}" cy="${cy}" r="12" fill="${p.accent}"/>`;
+
+  // Labels
+  let labelsHtml = '';
+  for (let i = 0; i < n; i++) {
+    const a = (i / n) * Math.PI * 2 - Math.PI / 2;
+    const lx = cx + labelR * Math.cos(a);
+    const ly = cy + labelR * Math.sin(a);
+    const col = accents[i % accents.length];
+    const align = lx < cx ? 'right' : 'left';
+    const left = align === 'right' ? lx - 140 : lx;
+    labelsHtml += `<div style="position:absolute;left:${Math.round(left)}px;top:${Math.round(ly - 10)}px;width:140px;text-align:${align};font-size:12px;font-weight:600;color:${col};line-height:1.3">${escHtml(steps[i] || `Step ${i + 1}`)}</div>`;
+  }
+
+  return `${SCOPED_RESET}
+<div style="position:relative;width:${W}px;height:${H}px;background:${p.background};overflow:hidden">
+  ${bgGradientOverlay(cW, H, p.accent, 0.04)}
+  <div style="position:absolute;left:${PAD}px;top:${PAD - 6}px;width:${cW - PAD * 2}px;font-size:${titleFontSize(slide.title)}px;font-weight:bold;color:${p.text};line-height:1.2">${escHtml(slide.title)}</div>
+  <div style="position:absolute;left:${PAD}px;top:${PAD + 48}px;width:50px;height:3px;background:${p.accent};border-radius:2px"></div>
+  <svg style="position:absolute;left:0;top:0;width:${cW}px;height:${H}px;pointer-events:none" viewBox="0 0 ${cW} ${H}">${svgInner}</svg>
+  ${labelsHtml}
+</div>`;
+}
+
+
+// ── REVENUE_MODEL ──────────────────────────────────────────────
+// Left: channel cards, Right: SVG donut chart
+
+function buildRevenueModel(slide: SlideInput, p: ColorPalette, hasImage = false, accentDiversity = true): string {
+  const cW = hasImage ? CONTENT_W_IMG : W;
+  const lines = parseBodyLines(slide.body);
+  const dark = isDarkBackground(p.background);
+  const accents = cardAccentColors(p, accentDiversity ? colorOffset(slide.title) : 0);
+
+  interface Channel { name: string; amount: string; pct: number; }
+  const channels: Channel[] = [];
+  for (const line of lines) {
+    const m = line.match(/^(.+?):\s*(\$[\d.,]+[MmKkBb]?)\s*\((\d+)%?\)/);
+    if (m) channels.push({ name: m[1].trim(), amount: m[2], pct: parseInt(m[3], 10) });
+  }
+  if (channels.length === 0) {
+    channels.push({ name: 'Primary', amount: '$8M', pct: 60 }, { name: 'Secondary', amount: '$4M', pct: 30 }, { name: 'Other', amount: '$1M', pct: 10 });
+  }
+
+  const leftW = Math.round(cW * 0.52);
+  const startY = PAD + 90;
+  const cardH = Math.min(52, Math.round((H - startY - PAD) / channels.length) - 8);
+
+  let cardsHtml = '';
+  for (let i = 0; i < channels.length; i++) {
+    const ch = channels[i];
+    const col = accents[i % accents.length];
+    const cy = startY + i * (cardH + 8);
+    cardsHtml += `<div style="position:absolute;left:${PAD}px;top:${cy}px;width:${leftW - PAD - 10}px;height:${cardH}px;background:${hexToRgba(col, dark ? 0.12 : 0.06)};border-left:3px solid ${col};border-radius:6px;display:flex;align-items:center;padding:0 12px">`;
+    cardsHtml += `<span style="font-size:13px;font-weight:600;color:${p.text};width:40%">${escHtml(ch.name)}</span>`;
+    cardsHtml += `<span style="font-size:12px;color:${p.text};width:20%">${escHtml(ch.amount)}</span>`;
+    cardsHtml += `<div style="flex:1;height:8px;background:${hexToRgba(p.border, 0.15)};border-radius:4px"><div style="width:${ch.pct}%;height:100%;background:${col};border-radius:4px"></div></div>`;
+    cardsHtml += `</div>`;
+  }
+
+  // Donut chart
+  const donutCx = Math.round(cW * 0.78);
+  const donutCy = Math.round(H * 0.52);
+  const donutR = 90;
+  const circumference = 2 * Math.PI * donutR;
+  let offset = 0;
+  let donutSvg = '';
+  for (let i = 0; i < channels.length; i++) {
+    const ch = channels[i];
+    const col = accents[i % accents.length];
+    const dash = (ch.pct / 100) * circumference;
+    donutSvg += `<circle cx="${donutCx}" cy="${donutCy}" r="${donutR}" fill="none" stroke="${col}" stroke-width="28" stroke-dasharray="${dash} ${circumference - dash}" stroke-dashoffset="${-offset}" transform="rotate(-90 ${donutCx} ${donutCy})"/>`;
+    offset += dash;
+  }
+
+  return `${SCOPED_RESET}
+<div style="position:relative;width:${W}px;height:${H}px;background:${p.background};overflow:hidden">
+  ${bgGradientOverlay(cW, H, p.accent, 0.04)}
+  <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;font-size:${titleFontSize(slide.title)}px;font-weight:bold;color:${p.text};line-height:1.2">${escHtml(slide.title)}</div>
+  <div style="position:absolute;left:${PAD}px;top:${PAD + 56}px;width:50px;height:3px;background:${p.accent};border-radius:2px"></div>
+  ${cardsHtml}
+  <svg style="position:absolute;left:0;top:0;width:${cW}px;height:${H}px;pointer-events:none" viewBox="0 0 ${cW} ${H}">${donutSvg}</svg>
+  <div style="position:absolute;left:${donutCx - 40}px;top:${donutCy - 14}px;width:80px;text-align:center;font-size:16px;font-weight:bold;color:${p.text}">Revenue</div>
+</div>`;
+}
+
+
+// ── CUSTOMER_JOURNEY ──────────────────────────────────────────────
+// Horizontal zigzag path with step nodes
+
+function buildCustomerJourney(slide: SlideInput, p: ColorPalette, hasImage = false, accentDiversity = true): string {
+  const cW = hasImage ? CONTENT_W_IMG : W;
+  const lines = parseBodyLines(slide.body);
+  const dark = isDarkBackground(p.background);
+  const accents = cardAccentColors(p, accentDiversity ? colorOffset(slide.title) : 0);
+
+  interface Stage { name: string; metric: string; conversion: string; }
+  const stages: Stage[] = [];
+  for (const line of lines) {
+    const m = line.match(/^(.+?):\s*(.+?)\s*\((\d+%?)\)/);
+    if (m) stages.push({ name: m[1].trim(), metric: m[2].trim(), conversion: m[3] });
+    else if (line.includes(':')) {
+      const parts = line.split(':');
+      const name = parts[0].trim();
+      const rest = parts.slice(1).join(':').trim();
+      stages.push({ name, metric: rest || '', conversion: '' });
+    }
+  }
+  const n = stages.length || 1;
+
+  const pathY = Math.round(H * 0.48);
+  const startX = PAD + 40;
+  const endX = cW - PAD - 40;
+  const gap = n > 1 ? (endX - startX) / (n - 1) : 0;
+
+  let svgInner = '';
+  // Connector line
+  if (n > 1) {
+    svgInner += `<line x1="${startX}" y1="${pathY}" x2="${endX}" y2="${pathY}" stroke="${hexToRgba(p.border, 0.3)}" stroke-width="2" stroke-dasharray="6,4"/>`;
+  }
+
+  let nodesHtml = '';
+  for (let i = 0; i < n; i++) {
+    const x = Math.round(startX + i * gap);
+    const col = accents[i % accents.length];
+    const st = stages[i] || { name: `Stage ${i + 1}`, metric: '', conversion: '' };
+    // Node circle
+    svgInner += `<circle cx="${x}" cy="${pathY}" r="18" fill="${col}" opacity="0.15"/>`;
+    svgInner += `<circle cx="${x}" cy="${pathY}" r="10" fill="${col}"/>`;
+    svgInner += `<text x="${x}" y="${pathY + 4}" text-anchor="middle" fill="#fff" font-size="10" font-weight="bold">${i + 1}</text>`;
+    // Conversion arrow label
+    if (i < n - 1 && st.conversion) {
+      const mx = Math.round(x + gap / 2);
+      svgInner += `<text x="${mx}" y="${pathY - 24}" text-anchor="middle" fill="${col}" font-size="11" font-weight="600">${escHtml(st.conversion)}</text>`;
+    }
+    // Labels below
+    nodesHtml += `<div style="position:absolute;left:${x - 55}px;top:${pathY + 28}px;width:110px;text-align:center">`;
+    nodesHtml += `<div style="font-size:12px;font-weight:700;color:${col};margin-bottom:2px">${escHtml(st.name)}</div>`;
+    if (st.metric) nodesHtml += `<div style="font-size:11px;color:${p.text}">${escHtml(st.metric)}</div>`;
+    nodesHtml += `</div>`;
+  }
+
+  return `${SCOPED_RESET}
+<div style="position:relative;width:${W}px;height:${H}px;background:${p.background};overflow:hidden">
+  ${bgGradientOverlay(cW, H, p.accent, 0.04)}
+  <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;font-size:${titleFontSize(slide.title)}px;font-weight:bold;color:${p.text};line-height:1.2">${escHtml(slide.title)}</div>
+  <div style="position:absolute;left:${PAD}px;top:${PAD + 56}px;width:50px;height:3px;background:${p.accent};border-radius:2px"></div>
+  <svg style="position:absolute;left:0;top:0;width:${cW}px;height:${H}px;pointer-events:none" viewBox="0 0 ${cW} ${H}">${svgInner}</svg>
+  ${nodesHtml}
+</div>`;
+}
+
+
+// ── TECH_STACK ──────────────────────────────────────────────
+// Horizontal layered bands bottom to top
+
+function buildTechStack(slide: SlideInput, p: ColorPalette, hasImage = false, accentDiversity = true): string {
+  const cW = hasImage ? CONTENT_W_IMG : W;
+  const lines = parseBodyLines(slide.body);
+  const dark = isDarkBackground(p.background);
+  const accents = cardAccentColors(p, accentDiversity ? colorOffset(slide.title) : 0);
+
+  interface Layer { name: string; components: string[]; }
+  const layers: Layer[] = [];
+  for (const line of lines) {
+    const colonIdx = line.indexOf(':');
+    if (colonIdx > 0) {
+      const name = line.slice(0, colonIdx).trim();
+      const comps = line.slice(colonIdx + 1).split(',').map(s => s.trim()).filter(Boolean);
+      layers.push({ name, components: comps });
+    }
+  }
+  if (layers.length === 0) {
+    layers.push({ name: 'Infrastructure', components: ['AWS', 'Docker'] });
+    layers.push({ name: 'Backend', components: ['Node.js', 'PostgreSQL'] });
+    layers.push({ name: 'Frontend', components: ['React', 'TypeScript'] });
+  }
+
+  const n = layers.length;
+  const startY = PAD + 90;
+  const availH = H - startY - PAD;
+  const bandH = Math.min(60, Math.round((availH - (n - 1) * 6) / n));
+  const bandW = cW - PAD * 2;
+
+  // Render bottom-to-top: layers[0] = bottom = infra
+  let bandsHtml = '';
+  for (let i = 0; i < n; i++) {
+    const layer = layers[n - 1 - i]; // reverse so first line = bottom
+    const col = accents[(n - 1 - i) % accents.length];
+    const by = startY + i * (bandH + 6);
+    bandsHtml += `<div style="position:absolute;left:${PAD}px;top:${by}px;width:${bandW}px;height:${bandH}px;background:${hexToRgba(col, dark ? 0.12 : 0.06)};border-left:4px solid ${col};border-radius:8px;display:flex;align-items:center;padding:0 16px">`;
+    bandsHtml += `<span style="font-size:13px;font-weight:700;color:${col};width:22%;min-width:100px">${escHtml(layer.name)}</span>`;
+    bandsHtml += `<div style="display:flex;flex-wrap:wrap;gap:6px">`;
+    for (const comp of layer.components) {
+      bandsHtml += `<span style="font-size:11px;padding:3px 10px;border-radius:12px;background:${hexToRgba(col, dark ? 0.2 : 0.1)};color:${dark ? '#fff' : col};font-weight:500">${escHtml(comp)}</span>`;
+    }
+    bandsHtml += `</div></div>`;
+  }
+
+  return `${SCOPED_RESET}
+<div style="position:relative;width:${W}px;height:${H}px;background:${p.background};overflow:hidden">
+  ${bgGradientOverlay(cW, H, p.accent, 0.04)}
+  <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;font-size:${titleFontSize(slide.title)}px;font-weight:bold;color:${p.text};line-height:1.2">${escHtml(slide.title)}</div>
+  <div style="position:absolute;left:${PAD}px;top:${PAD + 56}px;width:50px;height:3px;background:${p.accent};border-radius:2px"></div>
+  ${bandsHtml}
+</div>`;
+}
+
+
+// ── GROWTH_LOOPS ──────────────────────────────────────────────
+// Circular node network with bezier edges
+
+function buildGrowthLoops(slide: SlideInput, p: ColorPalette, hasImage = false, accentDiversity = true): string {
+  const cW = hasImage ? CONTENT_W_IMG : W;
+  const raw = slide.body.replace(/\u2192/g, '→');
+  const nodes = raw.split('→').map(s => s.trim()).filter(Boolean);
+  const n = Math.min(nodes.length, 8) || 4;
+  const accents = cardAccentColors(p, accentDiversity ? colorOffset(slide.title) : 0);
+  const dark = isDarkBackground(p.background);
+
+  const cx = Math.round(cW * 0.50);
+  const cy = Math.round(H * 0.54);
+  const R = Math.min(Math.round(cW * 0.2), 170);
+
+  let svgInner = '';
+  // Bezier edges between consecutive nodes
+  for (let i = 0; i < n; i++) {
+    const a1 = (i / n) * Math.PI * 2 - Math.PI / 2;
+    const a2 = ((i + 1) / n) * Math.PI * 2 - Math.PI / 2;
+    const x1 = cx + R * Math.cos(a1), y1 = cy + R * Math.sin(a1);
+    const x2 = cx + R * Math.cos(a2), y2 = cy + R * Math.sin(a2);
+    const cpx = cx + R * 0.35 * Math.cos((a1 + a2) / 2);
+    const cpy = cy + R * 0.35 * Math.sin((a1 + a2) / 2);
+    const col = accents[i % accents.length];
+    svgInner += `<path d="M${x1},${y1} Q${cpx},${cpy} ${x2},${y2}" fill="none" stroke="${hexToRgba(col, 0.5)}" stroke-width="2"/>`;
+    // Arrowhead at endpoint
+    const sz = 7;
+    const dx = x2 - cpx, dy = y2 - cpy;
+    const dl = Math.sqrt(dx * dx + dy * dy) || 1;
+    const ux = dx / dl, uy = dy / dl;
+    svgInner += `<polygon points="${x2},${y2} ${x2 - ux * sz - uy * sz * 0.5},${y2 - uy * sz + ux * sz * 0.5} ${x2 - ux * sz + uy * sz * 0.5},${y2 - uy * sz - ux * sz * 0.5}" fill="${col}"/>`;
+  }
+
+  // Node circles + labels
+  let nodesHtml = '';
+  for (let i = 0; i < n; i++) {
+    const a = (i / n) * Math.PI * 2 - Math.PI / 2;
+    const x = cx + R * Math.cos(a), y = cy + R * Math.sin(a);
+    const col = accents[i % accents.length];
+    svgInner += `<circle cx="${x}" cy="${y}" r="22" fill="${hexToRgba(col, 0.15)}" stroke="${col}" stroke-width="2"/>`;
+    svgInner += `<circle cx="${x}" cy="${y}" r="8" fill="${col}"/>`;
+    // Label
+    const lR = R + 50;
+    const lx = cx + lR * Math.cos(a);
+    const ly = cy + lR * Math.sin(a);
+    const align = lx < cx ? 'right' : 'left';
+    const leftPos = align === 'right' ? lx - 130 : lx;
+    nodesHtml += `<div style="position:absolute;left:${Math.round(leftPos)}px;top:${Math.round(ly - 10)}px;width:130px;text-align:${align};font-size:11px;font-weight:600;color:${col};line-height:1.3">${escHtml(nodes[i] || 'Node ' + (i + 1))}</div>`;
+  }
+
+  return `${SCOPED_RESET}
+<div style="position:relative;width:${W}px;height:${H}px;background:${p.background};overflow:hidden">
+  ${bgGradientOverlay(cW, H, p.accent, 0.04)}
+  <div style="position:absolute;left:${PAD}px;top:${PAD - 6}px;width:${cW - PAD * 2}px;font-size:${titleFontSize(slide.title)}px;font-weight:bold;color:${p.text};line-height:1.2">${escHtml(slide.title)}</div>
+  <div style="position:absolute;left:${PAD}px;top:${PAD + 48}px;width:50px;height:3px;background:${p.accent};border-radius:2px"></div>
+  <svg style="position:absolute;left:0;top:0;width:${cW}px;height:${H}px;pointer-events:none" viewBox="0 0 ${cW} ${H}">${svgInner}</svg>
+  ${nodesHtml}
+</div>`;
+}
+
+
+// ── CASE_STUDY ──────────────────────────────────────────────
+// Client name + quote + KPI stat cards
+
+function buildCaseStudy(slide: SlideInput, p: ColorPalette, hasImage = false): string {
+  const cW = hasImage ? CONTENT_W_IMG : W;
+  const lines = parseBodyLines(slide.body);
+  const dark = isDarkBackground(p.background);
+
+  const clientName = lines[0] || 'Client';
+  let quote = '';
+  const kpis: { label: string; value: string; }[] = [];
+
+  for (let i = 1; i < lines.length; i++) {
+    const line = lines[i];
+    if ((line.startsWith('"') || line.startsWith('\u201c')) && !quote) {
+      quote = line.replace(/^["\u201c]+/, '').replace(/["\u201d]+$/, '').trim();
+    } else if (line.includes(':')) {
+      const colonIdx = line.indexOf(':');
+      const label = line.slice(0, colonIdx).trim();
+      const val = line.slice(colonIdx + 1).trim();
+      if (label && val) kpis.push({ label, value: val });
+    }
+  }
+
+  const quoteY = PAD + 140;
+  const kpiY = H - PAD - 90;
+  const kpiCount = Math.min(kpis.length, 4);
+  const kpiW = kpiCount > 0 ? Math.round((cW - PAD * 2 - (kpiCount - 1) * 12) / kpiCount) : 0;
+
+  let kpiHtml = '';
+  for (let i = 0; i < kpiCount; i++) {
+    const kpi = kpis[i];
+    const kx = PAD + i * (kpiW + 12);
+    kpiHtml += `<div style="position:absolute;left:${kx}px;top:${kpiY}px;width:${kpiW}px;height:80px;background:${hexToRgba(p.accent, dark ? 0.1 : 0.05)};border-top:3px solid ${p.accent};border-radius:8px;padding:10px 14px">`;
+    kpiHtml += `<div style="font-size:22px;font-weight:bold;color:${p.accent}">${escHtml(kpi.value)}</div>`;
+    kpiHtml += `<div style="font-size:11px;color:${p.text};margin-top:2px">${escHtml(kpi.label)}</div>`;
+    kpiHtml += `</div>`;
+  }
+
+  return `${SCOPED_RESET}
+<div style="position:relative;width:${W}px;height:${H}px;background:${p.background};overflow:hidden">
+  ${bgGradientOverlay(cW, H, p.accent, 0.04)}
+  <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;font-size:${titleFontSize(slide.title)}px;font-weight:bold;color:${p.text};line-height:1.2">${escHtml(slide.title)}</div>
+  <div style="position:absolute;left:${PAD}px;top:${PAD + 56}px;width:50px;height:3px;background:${p.accent};border-radius:2px"></div>
+  <div style="position:absolute;left:${PAD}px;top:${PAD + 76}px;font-size:20px;font-weight:700;color:${p.accent}">${escHtml(clientName)}</div>
+  <div style="position:absolute;left:${PAD + 4}px;top:${quoteY}px;width:${cW - PAD * 2 - 20}px;border-left:3px solid ${hexToRgba(p.accent, 0.4)};padding-left:18px">
+    <div style="font-size:32px;color:${p.accent};line-height:0.8;margin-bottom:4px">\u201c</div>
+    <div style="font-size:15px;font-style:italic;color:${p.text};opacity:0.88;line-height:1.5">${escHtml(quote)}</div>
+  </div>
+  ${kpiHtml}
 </div>`;
 }
 
