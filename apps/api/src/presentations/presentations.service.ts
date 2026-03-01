@@ -628,15 +628,34 @@ export class PresentationsService {
   }
 
   // ── Temporary diagnostic methods ──────────────────────────
-  async diagPitchLens(userId: string): Promise<number> {
+  async diagPitchLens(userId: string): Promise<string> {
+    // Test 1: count
     const count = await this.prisma.pitchLens.count({ where: { userId } });
-    return count;
+    // Test 2: findMany with all fields (like pitch-lens service does)
+    const lenses = await this.prisma.pitchLens.findMany({
+      where: { userId },
+      orderBy: [{ isDefault: 'desc' }, { updatedAt: 'desc' }],
+      include: { _count: { select: { presentations: true } } },
+    });
+    return `${count} lenses, findMany returned ${lenses.length}, first: ${lenses[0]?.name ?? 'none'}`;
   }
 
   async diagExport(userId: string): Promise<string> {
-    // Try a minimal Prisma query on exportJob
-    const count = await this.prisma.exportJob.count({ where: { presentation: { userId } } });
-    return `${count} export jobs`;
+    // Test the full export pipeline on a recent presentation
+    const pres = await this.prisma.presentation.findFirst({
+      where: { userId, status: 'COMPLETED' },
+      orderBy: { updatedAt: 'desc' },
+      include: { slides: { take: 1 } },
+    });
+    if (!pres) return 'no completed presentations';
+
+    // Test creating an export job
+    try {
+      const job = await this.exportsService.createExportJob(pres.id, 'PDF');
+      return `export job created: ${job.id}`;
+    } catch (e: unknown) {
+      return `createExportJob error: ${e instanceof Error ? e.message : String(e)}`;
+    }
   }
 
   /**
