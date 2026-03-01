@@ -11,7 +11,7 @@ dist/
 .env.*.local
 
 # Prisma generated client
-generated/
+# generated/ -- temporarily unignored for deploy
 
 # IDE
 .vscode/
