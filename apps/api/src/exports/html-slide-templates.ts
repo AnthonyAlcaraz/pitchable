@@ -33,6 +33,7 @@ export const FIGMA_GRADE_TYPES: Set<string> = new Set([
   'HOOK', 'MATRIX_2X2', 'WATERFALL', 'FUNNEL', 'COMPETITIVE_MATRIX', 'ROADMAP',
   'PRICING_TABLE', 'UNIT_ECONOMICS', 'SWOT', 'THREE_PILLARS', 'BEFORE_AFTER',
   'SOCIAL_PROOF', 'OBJECTION_HANDLER', 'FAQ', 'VERDICT', 'COHORT_TABLE', 'PROGRESS_TRACKER',
+  'PRODUCT_SHOWCASE',
 ]);
 
 // ── Helpers ──────────────────────────────────────────────────
@@ -502,6 +503,8 @@ export function buildHtmlSlideContent(
       html = buildCohortTable(cleaned, palette, !!cleaned.imageUrl); break;
     case 'PROGRESS_TRACKER':
       html = buildProgressTracker(cleaned, palette, !!cleaned.imageUrl); break;
+    case 'PRODUCT_SHOWCASE':
+      html = buildProductShowcase(cleaned, palette, !!cleaned.imageUrl); break;
     default:
       return '';
   }
@@ -623,6 +626,77 @@ export function buildHtmlSlideContent(
   }
 
   return html;
+}
+
+// ── PRODUCT_SHOWCASE ────────────────────────────────────────
+// Left: title + accent bar + feature bullets. Right: CSS laptop bezel framing the image.
+
+function buildProductShowcase(slide: SlideInput, p: ColorPalette, hasImage = false): string {
+  const cW = hasImage ? CONTENT_W_IMG : W;
+  const lines = parseBodyLines(slide.body);
+  const dark = isDarkBackground(p.background);
+
+  // Left panel: title + features (40% width)
+  const leftW = Math.round(cW * 0.40);
+  const rightX = leftW + 20;
+  const rightW = cW - rightX - PAD;
+
+  // Feature bullets
+  let featuresHtml = '';
+  const featStartY = PAD + 100;
+  const featLineH = Math.min(50, Math.round((H - featStartY - PAD) / Math.max(lines.length, 1)));
+  for (let i = 0; i < Math.min(lines.length, 6); i++) {
+    const fy = featStartY + i * featLineH;
+    featuresHtml += `<div style="position:absolute;left:${PAD + 8}px;top:${fy}px;width:${leftW - 24}px;font-size:15px;line-height:1.4;color:${p.text};opacity:0.85;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical"><span style="color:${p.accent};margin-right:8px;font-weight:bold">&bull;</span>${escHtml(lines[i])}</div>`;
+  }
+
+  // Right panel: laptop bezel frame
+  const bezelX = rightX;
+  const bezelY = PAD + 40;
+  const bezelW = rightW;
+  const bezelH = H - bezelY - PAD - 30;
+  const screenPad = 12;
+  const screenX = bezelX + screenPad;
+  const screenY = bezelY + 28; // top bar height
+  const screenW = bezelW - screenPad * 2;
+  const screenH = bezelH - 28 - screenPad;
+  const bezelBg = dark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)';
+  const bezelBorder = dark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.12)';
+
+  let screenContent = '';
+  if (slide.imageUrl) {
+    screenContent = `<img src="${slide.imageUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:4px" />`;
+  } else {
+    // Placeholder screen with grid pattern
+    screenContent = `<div style="width:100%;height:100%;background:${bezelBg};border-radius:4px;display:flex;align-items:center;justify-content:center">
+      <div style="font-size:16px;font-weight:bold;color:${p.text};opacity:0.4">${escHtml(slide.title)}</div>
+    </div>`;
+  }
+
+  const bezelHtml = `<div style="position:absolute;left:${bezelX}px;top:${bezelY}px;width:${bezelW}px;height:${bezelH}px;background:${bezelBg};border:${dark ? '2' : '3'}px solid ${bezelBorder};border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,0.3);overflow:hidden">
+    <div style="height:24px;background:${dark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)'};display:flex;align-items:center;padding:0 12px">
+      <div style="width:8px;height:8px;border-radius:50%;background:${p.error || '#ef4444'};margin-right:6px;opacity:0.7"></div>
+      <div style="width:8px;height:8px;border-radius:50%;background:${p.warning || '#eab308'};margin-right:6px;opacity:0.7"></div>
+      <div style="width:8px;height:8px;border-radius:50%;background:${p.success || '#22c55e'};opacity:0.7"></div>
+    </div>
+    <div style="padding:${screenPad}px;height:${screenH}px;overflow:hidden">
+      ${screenContent}
+    </div>
+    <div style="position:absolute;bottom:0;left:0;width:100%;height:40px;background:linear-gradient(to bottom,transparent,${hexToRgba(p.background, 0.3)});pointer-events:none"></div>
+  </div>`;
+
+  // Stand/base of laptop
+  const standHtml = `<div style="position:absolute;left:${bezelX + Math.round(bezelW * 0.3)}px;top:${bezelY + bezelH}px;width:${Math.round(bezelW * 0.4)}px;height:8px;background:${bezelBorder};border-radius:0 0 8px 8px"></div>`;
+
+  return `${SCOPED_RESET}
+<div style="position:relative;width:${W}px;height:${H}px;background:${p.background};overflow:hidden">
+  ${bgGradientOverlay(cW, H, p.accent, 0.04, '45%')}
+  <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${leftW}px;font-size:${titleFontSize(slide.title)}px;font-weight:bold;overflow-wrap:break-word;word-wrap:break-word;color:${p.text};line-height:1.2">${escHtml(slide.title)}</div>
+  <div style="position:absolute;left:${PAD}px;top:${PAD + 56}px;width:50px;height:3px;background:${p.accent};border-radius:2px"></div>
+  ${featuresHtml}
+  ${bezelHtml}
+  ${standHtml}
+</div>`;
 }
 
 // ── MARKET_SIZING ────────────────────────────────────────────
@@ -1428,10 +1502,14 @@ function buildTeam(slide: SlideInput, p: ColorPalette, hasImage = false): string
   const cW = hasImage ? CONTENT_W_IMG : W;
   const lines = parseBodyLines(slide.body);
   const members = lines.map((line) => {
-    const sep = line.indexOf(' - ');
-    if (sep > -1) return { name: line.slice(0, sep).trim(), role: line.slice(sep + 3).trim() };
-    return { name: line, role: '' };
+    // Extract optional photo URL from end of line: "Name - Role [https://...]" or "Name - Role https://..."
+    const photoMatch = line.match(/\[?(https?:\/\/[^\]\s]+)\]?\s*$/);
+    const cleanLine = photoMatch ? line.slice(0, line.indexOf(photoMatch[0])).trim() : line;
+    const sep = cleanLine.indexOf(' - ');
+    if (sep > -1) return { name: cleanLine.slice(0, sep).trim(), role: cleanLine.slice(sep + 3).trim(), photoUrl: photoMatch ? photoMatch[1] : '' };
+    return { name: cleanLine, role: '', photoUrl: photoMatch ? photoMatch[1] : '' };
   });
+  const hasAnyPhoto = members.some((m) => m.photoUrl);
 
   if (members.length === 0) {
     return `${SCOPED_RESET}
@@ -1451,7 +1529,7 @@ function buildTeam(slide: SlideInput, p: ColorPalette, hasImage = false): string
   const totalH = rows * cardH + (rows - 1) * gapY;
   const startX = Math.round((cW - totalW) / 2);
   const startY = Math.round(PAD + 90 + (H - PAD * 2 - 90 - totalH) / 2);
-  const avatarSize = 64;
+  const avatarSize = hasAnyPhoto ? 80 : 64;
 
   let cardsHtml = '';
   let avatarsSvg = '';
@@ -1471,18 +1549,23 @@ function buildTeam(slide: SlideInput, p: ColorPalette, hasImage = false): string
       cardsHtml += `<div style="position:absolute;left:${cx + 12}px;top:${cy + 124}px;width:${cardW - 24}px;text-align:center;font-size:13px;color:${p.text};opacity:0.6">${escHtml(members[i].role)}</div>`;
     }
 
-    // Avatar circle + initials (SVG)
+    // Avatar: photo (circular <img>) or initials (SVG circle)
     const avCx = cx + cardW / 2;
     const avCy = cy + 24 + avatarSize / 2;
-    const initials = members[i].name
-      .split(' ')
-      .map((w) => w[0] || '')
-      .join('')
-      .slice(0, 2)
-      .toUpperCase();
 
-    avatarsSvg += `<circle cx="${Math.round(avCx)}" cy="${Math.round(avCy)}" r="${avatarSize / 2}" fill="${p.primary}" opacity="0.15" />`;
-    avatarsSvg += `<text x="${Math.round(avCx)}" y="${Math.round(avCy + 7)}" text-anchor="middle" fill="${p.primary}" font-size="18" font-weight="bold">${escHtml(initials)}</text>`;
+    if (members[i].photoUrl) {
+      // Circular photo via foreignObject
+      avatarsSvg += `<foreignObject x="${Math.round(avCx - avatarSize / 2)}" y="${Math.round(avCy - avatarSize / 2)}" width="${avatarSize}" height="${avatarSize}"><div xmlns="http://www.w3.org/1999/xhtml" style="width:${avatarSize}px;height:${avatarSize}px;border-radius:50%;overflow:hidden;border:2px solid ${p.accent}"><img src="${members[i].photoUrl}" style="width:100%;height:100%;object-fit:cover" /></div></foreignObject>`;
+    } else {
+      const initials = members[i].name
+        .split(' ')
+        .map((w) => w[0] || '')
+        .join('')
+        .slice(0, 2)
+        .toUpperCase();
+      avatarsSvg += `<circle cx="${Math.round(avCx)}" cy="${Math.round(avCy)}" r="${avatarSize / 2}" fill="${p.primary}" opacity="0.15" />`;
+      avatarsSvg += `<text x="${Math.round(avCx)}" y="${Math.round(avCy + 7)}" text-anchor="middle" fill="${p.primary}" font-size="18" font-weight="bold">${escHtml(initials)}</text>`;
+    }
   }
 
   return `${SCOPED_RESET}
