@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { CheckCircle2, Download, Presentation, Loader2, ExternalLink } from 'lucide-react';
+import { CheckCircle2, Download, Loader2, ExternalLink } from 'lucide-react';
 import { api } from '../../lib/api.js';
 
 export interface GenerationCompleteData {
@@ -30,7 +30,7 @@ export function GenerationCompleteCard({ data, onExport }: GenerationCompleteCar
     return () => clearTimeout(timer);
   }, []);
 
-  // Auto-export PDF on mount
+  // Auto-export PPTX on mount
   useEffect(() => {
     if (autoExportStatus !== 'idle') return;
     setAutoExportStatus('exporting');
@@ -39,7 +39,7 @@ export function GenerationCompleteCard({ data, onExport }: GenerationCompleteCar
       try {
         const jobs = await api.post<Array<{ id: string; format: string; status: string }>>(
           `/presentations/${data.presentationId}/export`,
-          { formats: ['PDF'] },
+          { formats: ['PPTX'] },
         );
         const jobId = jobs[0]?.id;
         if (!jobId) throw new Error('No export job created');
@@ -100,7 +100,7 @@ export function GenerationCompleteCard({ data, onExport }: GenerationCompleteCar
       {autoExportStatus === 'exporting' && (
         <div className="mb-3 flex items-center gap-2 rounded-md bg-orange-500/10 px-3 py-2 text-xs text-orange-400">
           <Loader2 className="h-3.5 w-3.5 animate-spin" />
-          Preparing your PDF export...
+          Preparing your PPTX export...
         </div>
       )}
       {autoExportStatus === 'ready' && autoExportUrl && (
@@ -111,7 +111,7 @@ export function GenerationCompleteCard({ data, onExport }: GenerationCompleteCar
           className="mb-3 flex items-center gap-2 rounded-md bg-green-500/10 px-3 py-2 text-xs font-medium text-green-400 hover:bg-green-500/20 transition-colors"
         >
           <ExternalLink className="h-3.5 w-3.5" />
-          Your PDF is ready — click to open
+          Your PPTX is ready — click to download
         </a>
       )}
       {autoExportStatus === 'failed' && (
@@ -120,7 +120,7 @@ export function GenerationCompleteCard({ data, onExport }: GenerationCompleteCar
           onClick={() => setAutoExportStatus('idle')}
           className="mb-3 flex items-center gap-2 rounded-md bg-red-500/10 px-3 py-2 text-xs text-red-400 hover:bg-red-500/20 transition-colors"
         >
-          PDF export failed — click to retry
+          Export failed — click to retry
         </button>
       )}
 
@@ -133,15 +133,6 @@ export function GenerationCompleteCard({ data, onExport }: GenerationCompleteCar
         >
           {exportingFormat === 'pptx' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
           Download PPTX
-        </button>
-        <button
-          type="button"
-          disabled={exportingFormat === 'pdf'}
-          onClick={() => handleExportClick('pdf')}
-          className="flex items-center gap-1.5 rounded-md bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary hover:bg-primary/20 transition-colors disabled:opacity-50"
-        >
-          {exportingFormat === 'pdf' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Presentation className="h-3.5 w-3.5" />}
-          Download PDF
         </button>
       </div>
 

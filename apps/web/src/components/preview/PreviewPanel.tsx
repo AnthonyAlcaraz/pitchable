@@ -316,8 +316,8 @@ export function PreviewPanel({ presentationId }: PreviewPanelProps) {
     }
     try {
       const formatMap: Record<string, string> = {
-        pdf: 'PDF', pptx: 'PPTX', html: 'REVEAL_JS',
-        'pdf-figma': 'PDF', 'pptx-figma': 'PPTX',
+        pptx: 'PPTX', html: 'REVEAL_JS',
+        'pptx-figma': 'PPTX',
       };
       const exportFormat = formatMap[format] || 'PPTX';
       const jobs = await api.post<Array<{ id: string; format: string; status: string }>>(
@@ -501,13 +501,13 @@ export function PreviewPanel({ presentationId }: PreviewPanelProps) {
                 </button>
                 {showExportMenu && (
                   <div className="absolute right-0 top-full z-50 mt-1 min-w-[10rem] rounded-md border border-border bg-popover py-1 shadow-md">
-                    {(['pdf', 'pptx', 'pdf-figma', 'pptx-figma', 'html'] as const).map((fmt) => (
+                    {(['pptx', 'pptx-figma', 'html'] as const).map((fmt) => (
                       <button
                         key={fmt}
                         onClick={() => { handleExport(fmt); setShowExportMenu(false); }}
                         className="flex w-full items-center px-3 py-1.5 text-left text-sm text-popover-foreground transition-colors hover:bg-accent"
                       >
-                        {fmt === 'pdf' ? 'PDF' : fmt === 'pptx' ? 'PowerPoint' : fmt === 'pdf-figma' ? 'PDF (Figma)' : fmt === 'pptx-figma' ? 'PPTX (Figma)' : 'HTML'}
+                        {fmt === 'pptx' ? 'PowerPoint' : fmt === 'pptx-figma' ? 'PPTX (Figma)' : 'HTML'}
                       </button>
                     ))}
                   </div>
@@ -716,13 +716,13 @@ export function PreviewPanel({ presentationId }: PreviewPanelProps) {
                       </button>
                       {showExportMenu && (
                         <div className="absolute right-0 top-full z-50 mt-1 min-w-[10rem] rounded-md border border-border bg-popover py-1 shadow-md">
-                          {(['pdf', 'pptx', 'pdf-figma', 'pptx-figma', 'html'] as const).map((fmt) => (
+                          {(['pptx', 'pptx-figma', 'html'] as const).map((fmt) => (
                             <button
                               key={fmt}
                               onClick={() => { handleExport(fmt); setShowExportMenu(false); }}
                               className="flex w-full items-center px-3 py-1.5 text-left text-sm text-popover-foreground transition-colors hover:bg-accent"
                             >
-                              {fmt === 'pdf' ? 'PDF' : fmt === 'pptx' ? 'PowerPoint' : fmt === 'pdf-figma' ? 'PDF (Figma)' : fmt === 'pptx-figma' ? 'PPTX (Figma)' : 'HTML'}
+                              {fmt === 'pptx' ? 'PowerPoint' : fmt === 'pptx-figma' ? 'PPTX (Figma)' : 'HTML'}
                             </button>
                           ))}
                         </div>
@@ -753,16 +753,8 @@ export function PreviewPanel({ presentationId }: PreviewPanelProps) {
                     <div className="flex items-center justify-center gap-3">
                       <button
                         type="button"
-                        onClick={() => handleExport('pdf')}
-                        className="flex items-center gap-1.5 rounded-lg bg-orange-500 px-5 py-2.5 text-sm font-medium text-white hover:bg-orange-600 transition-colors"
-                      >
-                        <Download className="h-4 w-4" />
-                        Export PDF
-                      </button>
-                      <button
-                        type="button"
                         onClick={() => handleExport('pptx')}
-                        className="flex items-center gap-1.5 rounded-lg border border-border px-5 py-2.5 text-sm font-medium text-foreground hover:bg-muted transition-colors"
+                        className="flex items-center gap-1.5 rounded-lg bg-orange-500 px-5 py-2.5 text-sm font-medium text-white hover:bg-orange-600 transition-colors"
                       >
                         <Download className="h-4 w-4" />
                         Export PPTX

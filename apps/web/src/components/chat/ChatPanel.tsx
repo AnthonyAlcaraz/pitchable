@@ -115,8 +115,8 @@ export function ChatPanel({ presentationId, briefId, lensId }: ChatPanelProps) {
       }
       try {
         const formatMap: Record<string, string> = {
-          pdf: 'PDF', pptx: 'PPTX', html: 'REVEAL_JS',
-          'pdf-figma': 'PDF', 'pptx-figma': 'PPTX',
+          pptx: 'PPTX', html: 'REVEAL_JS',
+          'pptx-figma': 'PPTX',
         };
         const exportFormat = formatMap[format] || 'PPTX';
         const jobs = await api.post<Array<{ id: string; format: string; status: string }>>(
