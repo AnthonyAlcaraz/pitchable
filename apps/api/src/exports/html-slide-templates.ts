@@ -743,8 +743,15 @@ function buildSplitStatement(slide: SlideInput, p: ColorPalette, hasImage = fals
         const afterStat = rest.slice(statMatch[0].length).trim();
         descParts = afterStat.split('\n').map(l => l.trim()).filter(Boolean);
       } else if (restLines.length > 0 && /^[\d$%,.:+]/.test(restLines[0])) {
-        stat = stripMarkdown(restLines[0]);
-        descParts = restLines.slice(1);
+        // Extract just the leading numeric token (e.g. "1,000" from "1,000 salespeople...")
+        const numMatch = restLines[0].match(/^([\d$%,.+]+(?:\s*[A-Z+]+)?)\s+(.*)/);
+        if (numMatch) {
+          stat = stripMarkdown(numMatch[1]);
+          descParts = [numMatch[2], ...restLines.slice(1)].filter(Boolean);
+        } else {
+          stat = stripMarkdown(restLines[0]);
+          descParts = restLines.slice(1);
+        }
       } else {
         descParts = restLines;
       }
@@ -771,7 +778,7 @@ function buildSplitStatement(slide: SlideInput, p: ColorPalette, hasImage = fals
   const cardAvailH = H - cardStartY - PAD - 10;
   const cardGap = 16;
   const numCards = Math.min(sections.length, 4);
-  const cardW = Math.round((cW - PAD * 2 - (numCards - 1) * cardGap) / numCards);
+  const cardW = Math.floor((cW - PAD * 2 - (numCards - 1) * cardGap) / numCards) - 2;
   const cardH = Math.min(cardAvailH, 380);
   const cardBg = dark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.025)';
   const cardBorder = dark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)';
