@@ -627,6 +627,18 @@ export class PresentationsService {
     return updated;
   }
 
+  // ── Temporary diagnostic methods ──────────────────────────
+  async diagPitchLens(userId: string): Promise<number> {
+    const count = await this.prisma.pitchLens.count({ where: { userId } });
+    return count;
+  }
+
+  async diagExport(userId: string): Promise<string> {
+    // Try a minimal Prisma query on exportJob
+    const count = await this.prisma.exportJob.count({ where: { presentation: { userId } } });
+    return `${count} export jobs`;
+  }
+
   /**
    * Duplicate a presentation with all its slides.
    */

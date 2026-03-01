@@ -214,6 +214,33 @@ export class PresentationsController {
   }
 
   /**
+   * GET /presentations/diag
+   * Temporary diagnostic — surfaces actual error messages for debugging.
+   */
+  @Get('diag')
+  async diag(@CurrentUser() user: RequestUser) {
+    const results: Record<string, string> = {};
+
+    // Test pitch lens query
+    try {
+      const lenses = await this.presentationsService.diagPitchLens(user.userId);
+      results['pitchLens'] = `OK: ${lenses} lenses`;
+    } catch (e: unknown) {
+      results['pitchLens'] = `ERROR: ${e instanceof Error ? e.message : String(e)}`;
+    }
+
+    // Test export service load
+    try {
+      const count = await this.presentationsService.diagExport(user.userId);
+      results['export'] = `OK: ${count}`;
+    } catch (e: unknown) {
+      results['export'] = `ERROR: ${e instanceof Error ? e.message : String(e)}`;
+    }
+
+    return results;
+  }
+
+  /**
    * DELETE /presentations/:id
    * Delete a presentation and all associated data.
    */
