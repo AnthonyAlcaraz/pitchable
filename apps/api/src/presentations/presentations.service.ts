@@ -629,15 +629,35 @@ export class PresentationsService {
 
   // ── Temporary diagnostic methods ──────────────────────────
   async diagPitchLens(userId: string): Promise<string> {
-    // Test 1: count
+    const results: string[] = [];
+
+    // Test 1: count (works because it doesn't select columns)
     const count = await this.prisma.pitchLens.count({ where: { userId } });
-    // Test 2: findMany with all fields (like pitch-lens service does)
-    const lenses = await this.prisma.pitchLens.findMany({
-      where: { userId },
-      orderBy: [{ isDefault: 'desc' }, { updatedAt: 'desc' }],
-      include: { _count: { select: { presentations: true } } },
-    });
-    return `${count} lenses, findMany returned ${lenses.length}, first: ${lenses[0]?.name ?? 'none'}`;
+    results.push(`count: ${count}`);
+
+    // Test 2: select specific columns one by one to find the missing one
+    const cols = ['id', 'name', 'audienceType', 'pitchGoal', 'industry', 'companyStage',
+      'toneStyle', 'technicalLevel', 'selectedFramework', 'frameworkOverridden',
+      'deckArchetype', 'customGuidance', 'isDefault', 'isPublic',
+      'backgroundImageFrequency', 'sidePanelImageFrequency',
+      'maxBulletsPerSlide', 'maxWordsPerSlide', 'maxTableRows',
+      'showSectionLabels', 'showOutlineSlide', 'useCount', 'rating', 'ratingCount',
+      'clonedFromId', 'figmaFileKey', 'figmaAccessToken', 'figmaTemplateId',
+      'accentColorDiversity', 'preferredSlideRange'];
+
+    for (const col of cols) {
+      try {
+        await this.prisma.pitchLens.findFirst({
+          where: { userId },
+          select: { [col]: true },
+        });
+        results.push(`${col}: OK`);
+      } catch (e: unknown) {
+        results.push(`${col}: MISSING - ${e instanceof Error ? e.message.slice(0, 80) : String(e)}`);
+      }
+    }
+
+    return results.join('\n');
   }
 
   async diagExport(userId: string): Promise<string> {
