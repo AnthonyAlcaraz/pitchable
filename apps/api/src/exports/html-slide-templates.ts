@@ -4224,58 +4224,77 @@ function buildProgressTracker(slide: SlideInput, p: ColorPalette, hasImage = fal
 }
 
 
-// ── FLYWHEEL ──────────────────────────────────────────────
-// Circular SVG loop with labeled segments + arrows
+// ── FLYWHEEL ────────────────────────────────────────────────
+// Circular SVG loop with gradient arcs, glow center, and labeled segments
 
 function buildFlywheel(slide: SlideInput, p: ColorPalette, hasImage = false, accentDiversity = true): string {
   const cW = hasImage ? CONTENT_W_IMG : W;
-  const raw = slide.body.replace(/\u2192/g, '→');
-  const steps = raw.split('→').map(s => s.trim()).filter(Boolean);
+  const raw = slide.body.replace(/\u2192/g, '\u2192');
+  const steps = raw.split(/\u2192|->|=>/).map(s => s.trim()).filter(Boolean);
   const n = Math.min(steps.length, 8) || 4;
   const accents = cardAccentColors(p, accentDiversity ? colorOffset(slide.title) : 0);
   const dark = isDarkBackground(p.background);
 
   const cx = Math.round(cW * 0.5);
-  const cy = Math.round(H * 0.53);
-  const R = Math.min(Math.round(cW * 0.22), 200);
-  const labelR = R + 55;
+  const cy = Math.round(H * 0.52);
+  const R = Math.min(Math.round(cW * 0.21), 195);
+  const labelR = R + 70;
 
-  // SVG arcs + arrows
-  let svgInner = '';
+  let svgDefs = '<defs>';
   for (let i = 0; i < n; i++) {
-    const a1 = (i / n) * Math.PI * 2 - Math.PI / 2;
-    const a2 = ((i + 0.85) / n) * Math.PI * 2 - Math.PI / 2;
+    const col = accents[i % accents.length];
+    const col2 = accents[(i + 1) % accents.length];
+    svgDefs += `<linearGradient id="fwg${i}" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="${col}"/><stop offset="100%" stop-color="${col2}"/></linearGradient>`;
+  }
+  svgDefs += '</defs>';
+
+  let svgInner = svgDefs;
+  const arcGap = 0.08; // gap between arcs (radians)
+  const arcSpan = (2 * Math.PI / n) - arcGap;
+  for (let i = 0; i < n; i++) {
+    const a1 = (i / n) * Math.PI * 2 - Math.PI / 2 + arcGap / 2;
+    const a2 = a1 + arcSpan;
     const x1 = cx + R * Math.cos(a1), y1 = cy + R * Math.sin(a1);
     const x2 = cx + R * Math.cos(a2), y2 = cy + R * Math.sin(a2);
+    const large = arcSpan > Math.PI ? 1 : 0;
+    svgInner += `<path d="M${x1.toFixed(1)},${y1.toFixed(1)} A${R},${R} 0 ${large},1 ${x2.toFixed(1)},${y2.toFixed(1)}" fill="none" stroke="url(#fwg${i})" stroke-width="10" stroke-linecap="round" opacity="0.85"/>`;
+    // Arrowhead at end of arc
+    const aDelta = 0.12;
+    const tipX = cx + R * Math.cos(a2 + aDelta), tipY = cy + R * Math.sin(a2 + aDelta);
+    const tangentX = -Math.sin(a2), tangentY = Math.cos(a2);
     const col = accents[i % accents.length];
-    svgInner += `<path d="M${x1},${y1} A${R},${R} 0 0,1 ${x2},${y2}" fill="none" stroke="${col}" stroke-width="6" stroke-linecap="round"/>`;
-    // Arrow at end of arc
-    const aa = ((i + 0.85) / n) * Math.PI * 2 - Math.PI / 2;
-    const ad = aa + 0.15;
-    const ax = cx + R * Math.cos(ad), ay = cy + R * Math.sin(ad);
-    svgInner += `<polygon points="${x2},${y2} ${x2 + (ax - x2) * 0.5 - (ay - y2) * 0.3},${y2 + (ay - y2) * 0.5 + (ax - x2) * 0.3} ${x2 + (ax - x2) * 0.5 + (ay - y2) * 0.3},${y2 + (ay - y2) * 0.5 - (ax - x2) * 0.3}" fill="${col}"/>`;
+    svgInner += `<polygon points="${x2.toFixed(1)},${y2.toFixed(1)} ${(x2 - tangentX * 8 + Math.cos(a2) * 14).toFixed(1)},${(y2 - tangentY * 8 + Math.sin(a2) * 14).toFixed(1)} ${(x2 + tangentX * 8 + Math.cos(a2) * 14).toFixed(1)},${(y2 + tangentY * 8 + Math.sin(a2) * 14).toFixed(1)}" fill="${col}" opacity="0.9"/>`;
   }
-  // Center circle
-  svgInner += `<circle cx="${cx}" cy="${cy}" r="24" fill="${p.accent}" opacity="0.2"/>`;
-  svgInner += `<circle cx="${cx}" cy="${cy}" r="12" fill="${p.accent}"/>`;
 
-  // Labels
+  // Center glow ring + icon
+  svgInner += `<circle cx="${cx}" cy="${cy}" r="32" fill="none" stroke="${p.accent}" stroke-width="2" opacity="0.2"/>`;
+  svgInner += `<circle cx="${cx}" cy="${cy}" r="20" fill="${hexToRgba(p.accent, 0.15)}"/>`;
+  svgInner += `<circle cx="${cx}" cy="${cy}" r="10" fill="${p.accent}"/>`;
+
+  // Labels with connector lines
   let labelsHtml = '';
   for (let i = 0; i < n; i++) {
     const a = (i / n) * Math.PI * 2 - Math.PI / 2;
     const lx = cx + labelR * Math.cos(a);
     const ly = cy + labelR * Math.sin(a);
     const col = accents[i % accents.length];
+    // Connector line from arc to label
+    const innerX = cx + (R + 18) * Math.cos(a), innerY = cy + (R + 18) * Math.sin(a);
+    const outerX = cx + (labelR - 10) * Math.cos(a), outerY = cy + (labelR - 10) * Math.sin(a);
+    svgInner += `<line x1="${innerX.toFixed(1)}" y1="${innerY.toFixed(1)}" x2="${outerX.toFixed(1)}" y2="${outerY.toFixed(1)}" stroke="${hexToRgba(col, 0.3)}" stroke-width="1" stroke-dasharray="3,3"/>`;
     const align = lx < cx ? 'right' : 'left';
-    const left = align === 'right' ? lx - 140 : lx;
-    labelsHtml += `<div style="position:absolute;left:${Math.round(left)}px;top:${Math.round(ly - 10)}px;width:140px;text-align:${align};font-size:12px;font-weight:600;color:${col};line-height:1.3">${escHtml(steps[i] || `Step ${i + 1}`)}</div>`;
+    const boxW = 160;
+    const left = align === 'right' ? lx - boxW : lx;
+    labelsHtml += `<div style="position:absolute;left:${Math.round(left)}px;top:${Math.round(ly - 14)}px;width:${boxW}px;text-align:${align}">`;
+    labelsHtml += `<div style="font-size:13px;font-weight:700;color:${col};line-height:1.3">${escHtml(steps[i] || 'Step ' + (i + 1))}</div>`;
+    labelsHtml += `</div>`;
   }
 
   return `${SCOPED_RESET}
 <div style="position:relative;width:${W}px;height:${H}px;background:${p.background};overflow:hidden">
-  ${bgGradientOverlay(cW, H, p.accent, 0.04)}
-  <div style="position:absolute;left:${PAD}px;top:${PAD - 6}px;width:${cW - PAD * 2}px;font-size:${titleFontSize(slide.title)}px;font-weight:bold;color:${p.text};line-height:1.2">${escHtml(slide.title)}</div>
-  <div style="position:absolute;left:${PAD}px;top:${PAD + 48}px;width:50px;height:3px;background:${p.accent};border-radius:2px"></div>
+  ${bgGradientOverlay(cW, H, p.accent, 0.05)}
+  <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;font-size:${titleFontSize(slide.title)}px;font-weight:bold;color:${p.text};line-height:1.2;${dark ? textGlow(p.accent, 0.15) : ''}">${escHtml(slide.title)}</div>
+  <div style="position:absolute;left:${PAD}px;top:${PAD + 56}px;width:50px;height:3px;background:${p.accent};border-radius:2px"></div>
   <svg style="position:absolute;left:0;top:0;width:${cW}px;height:${H}px;pointer-events:none" viewBox="0 0 ${cW} ${H}">${svgInner}</svg>
   ${labelsHtml}
 </div>`;
@@ -4283,7 +4302,7 @@ function buildFlywheel(slide: SlideInput, p: ColorPalette, hasImage = false, acc
 
 
 // ── REVENUE_MODEL ──────────────────────────────────────────────
-// Left: channel cards, Right: SVG donut chart
+// Left: channel cards with progress bars, Right: SVG donut with gap segments + center total
 
 function buildRevenueModel(slide: SlideInput, p: ColorPalette, hasImage = false, accentDiversity = true): string {
   const cW = hasImage ? CONTENT_W_IMG : W;
@@ -4293,59 +4312,81 @@ function buildRevenueModel(slide: SlideInput, p: ColorPalette, hasImage = false,
 
   interface Channel { name: string; amount: string; pct: number; }
   const channels: Channel[] = [];
+  let totalLabel = '';
   for (const line of lines) {
     const m = line.match(/^(.+?):\s*(\$[\d.,]+[MmKkBb]?)\s*\((\d+)%?\)/);
-    if (m) channels.push({ name: m[1].trim(), amount: m[2], pct: parseInt(m[3], 10) });
+    if (m) { channels.push({ name: m[1].trim(), amount: m[2], pct: parseInt(m[3], 10) }); totalLabel = totalLabel || ''; }
+    else {
+      const totalMatch = line.match(/total.*?(\$[\d.,]+[MmKkBb]?)/i);
+      if (totalMatch) totalLabel = totalMatch[1];
+    }
   }
   if (channels.length === 0) {
     channels.push({ name: 'Primary', amount: '$8M', pct: 60 }, { name: 'Secondary', amount: '$4M', pct: 30 }, { name: 'Other', amount: '$1M', pct: 10 });
   }
 
   const leftW = Math.round(cW * 0.52);
-  const startY = PAD + 90;
-  const cardH = Math.min(52, Math.round((H - startY - PAD) / channels.length) - 8);
+  const startY = PAD + 95;
+  const cardH = Math.min(64, Math.round((H - startY - PAD - 10) / channels.length) - 10);
+  const cardW = leftW - PAD - 16;
 
   let cardsHtml = '';
   for (let i = 0; i < channels.length; i++) {
     const ch = channels[i];
     const col = accents[i % accents.length];
-    const cy = startY + i * (cardH + 8);
-    cardsHtml += `<div style="position:absolute;left:${PAD}px;top:${cy}px;width:${leftW - PAD - 10}px;height:${cardH}px;background:${hexToRgba(col, dark ? 0.12 : 0.06)};border-left:3px solid ${col};border-radius:6px;display:flex;align-items:center;padding:0 12px">`;
-    cardsHtml += `<span style="font-size:13px;font-weight:600;color:${p.text};width:40%">${escHtml(ch.name)}</span>`;
-    cardsHtml += `<span style="font-size:12px;color:${p.text};width:20%">${escHtml(ch.amount)}</span>`;
-    cardsHtml += `<div style="flex:1;height:8px;background:${hexToRgba(p.border, 0.15)};border-radius:4px"><div style="width:${ch.pct}%;height:100%;background:${col};border-radius:4px"></div></div>`;
+    const cy = startY + i * (cardH + 10);
+    const cardBg = dark ? hexToRgba(p.surface, 0.3) : p.surface;
+    cardsHtml += `<div style="position:absolute;left:${PAD}px;top:${cy}px;width:${cardW}px;height:${cardH}px;background:${cardBg};border-left:4px solid ${col};border-radius:10px;box-shadow:${cardShadow(1, dark)};padding:8px 14px">`;
+    cardsHtml += `<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">`;
+    cardsHtml += `<span style="font-size:13px;font-weight:700;color:${p.text}">${escHtml(ch.name)}</span>`;
+    cardsHtml += `<span style="font-size:14px;font-weight:bold;color:${col}">${escHtml(ch.amount)}</span>`;
+    cardsHtml += `</div>`;
+    cardsHtml += `<div style="height:6px;background:${hexToRgba(p.border, 0.12)};border-radius:3px;overflow:hidden"><div style="width:${ch.pct}%;height:100%;background:linear-gradient(90deg,${col},${hexToRgba(col, 0.6)});border-radius:3px"></div></div>`;
+    cardsHtml += `<div style="font-size:10px;color:${p.text};opacity:0.5;margin-top:3px">${ch.pct}% of revenue</div>`;
     cardsHtml += `</div>`;
   }
 
-  // Donut chart
+  // Donut chart with gap segments
   const donutCx = Math.round(cW * 0.78);
   const donutCy = Math.round(H * 0.52);
-  const donutR = 90;
+  const donutR = 95;
+  const sw = 30;
   const circumference = 2 * Math.PI * donutR;
+  const gapPct = 1.5; // gap between segments in %
   let offset = 0;
   let donutSvg = '';
+  // Subtle shadow ring behind donut
+  donutSvg += `<circle cx="${donutCx}" cy="${donutCy}" r="${donutR}" fill="none" stroke="${hexToRgba(p.border, 0.08)}" stroke-width="${sw + 4}"/>`;
   for (let i = 0; i < channels.length; i++) {
     const ch = channels[i];
     const col = accents[i % accents.length];
-    const dash = (ch.pct / 100) * circumference;
-    donutSvg += `<circle cx="${donutCx}" cy="${donutCy}" r="${donutR}" fill="none" stroke="${col}" stroke-width="28" stroke-dasharray="${dash} ${circumference - dash}" stroke-dashoffset="${-offset}" transform="rotate(-90 ${donutCx} ${donutCy})"/>`;
-    offset += dash;
+    const segPct = Math.max(ch.pct - gapPct, 0.5);
+    const dash = (segPct / 100) * circumference;
+    const gapDash = (gapPct / 100) * circumference;
+    donutSvg += `<circle cx="${donutCx}" cy="${donutCy}" r="${donutR}" fill="none" stroke="${col}" stroke-width="${sw}" stroke-dasharray="${dash} ${circumference - dash}" stroke-dashoffset="${-offset}" stroke-linecap="round" transform="rotate(-90 ${donutCx} ${donutCy})" opacity="0.85"/>`;
+    offset += dash + gapDash;
   }
+
+  // Center text
+  const centerTotal = totalLabel || channels.reduce((s, c) => s, 'Revenue');
+  const centerHtml = `<div style="position:absolute;left:${donutCx - 50}px;top:${donutCy - 22}px;width:100px;text-align:center">` +
+    `<div style="font-size:${totalLabel ? 22 : 14}px;font-weight:bold;color:${p.text}">${escHtml(typeof centerTotal === 'string' ? centerTotal : 'Revenue')}</div>` +
+    `<div style="font-size:10px;color:${p.text};opacity:0.5;margin-top:2px">Total</div></div>`;
 
   return `${SCOPED_RESET}
 <div style="position:relative;width:${W}px;height:${H}px;background:${p.background};overflow:hidden">
-  ${bgGradientOverlay(cW, H, p.accent, 0.04)}
+  ${bgGradientOverlay(cW, H, p.accent, 0.05)}
   <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;font-size:${titleFontSize(slide.title)}px;font-weight:bold;color:${p.text};line-height:1.2">${escHtml(slide.title)}</div>
   <div style="position:absolute;left:${PAD}px;top:${PAD + 56}px;width:50px;height:3px;background:${p.accent};border-radius:2px"></div>
   ${cardsHtml}
   <svg style="position:absolute;left:0;top:0;width:${cW}px;height:${H}px;pointer-events:none" viewBox="0 0 ${cW} ${H}">${donutSvg}</svg>
-  <div style="position:absolute;left:${donutCx - 40}px;top:${donutCy - 14}px;width:80px;text-align:center;font-size:16px;font-weight:bold;color:${p.text}">Revenue</div>
+  ${centerHtml}
 </div>`;
 }
 
 
 // ── CUSTOMER_JOURNEY ──────────────────────────────────────────────
-// Horizontal zigzag path with step nodes
+// Horizontal path with stage cards, conversion arrows, and gradient connector
 
 function buildCustomerJourney(slide: SlideInput, p: ColorPalette, hasImage = false, accentDiversity = true): string {
   const cW = hasImage ? CONTENT_W_IMG : W;
@@ -4360,58 +4401,79 @@ function buildCustomerJourney(slide: SlideInput, p: ColorPalette, hasImage = fal
     if (m) stages.push({ name: m[1].trim(), metric: m[2].trim(), conversion: m[3] });
     else if (line.includes(':')) {
       const parts = line.split(':');
-      const name = parts[0].trim();
-      const rest = parts.slice(1).join(':').trim();
-      stages.push({ name, metric: rest || '', conversion: '' });
+      stages.push({ name: parts[0].trim(), metric: parts.slice(1).join(':').trim(), conversion: '' });
     }
   }
-  const n = stages.length || 1;
+  if (stages.length === 0) {
+    stages.push({ name: 'Awareness', metric: '10K', conversion: '100%' });
+    stages.push({ name: 'Interest', metric: '5K', conversion: '50%' });
+    stages.push({ name: 'Decision', metric: '1K', conversion: '10%' });
+    stages.push({ name: 'Action', metric: '200', conversion: '2%' });
+  }
+  const n = Math.min(stages.length, 6);
 
-  const pathY = Math.round(H * 0.48);
-  const startX = PAD + 40;
-  const endX = cW - PAD - 40;
+  const pathY = Math.round(H * 0.38);
+  const startX = PAD + 50;
+  const endX = cW - PAD - 50;
   const gap = n > 1 ? (endX - startX) / (n - 1) : 0;
+  const nodeR = 24;
 
   let svgInner = '';
-  // Connector line
+  // Gradient connector line
+  svgInner += `<defs><linearGradient id="cjg" x1="0%" y1="0%" x2="100%" y2="0%">`;
+  svgInner += `<stop offset="0%" stop-color="${accents[0] || p.accent}"/>`;
+  svgInner += `<stop offset="100%" stop-color="${accents[Math.min(n - 1, accents.length - 1)] || p.accent}"/>`;
+  svgInner += `</linearGradient></defs>`;
   if (n > 1) {
-    svgInner += `<line x1="${startX}" y1="${pathY}" x2="${endX}" y2="${pathY}" stroke="${hexToRgba(p.border, 0.3)}" stroke-width="2" stroke-dasharray="6,4"/>`;
+    svgInner += `<line x1="${startX}" y1="${pathY}" x2="${endX}" y2="${pathY}" stroke="url(#cjg)" stroke-width="3" opacity="0.3"/>`;
   }
 
-  let nodesHtml = '';
+  let cardsHtml = '';
   for (let i = 0; i < n; i++) {
     const x = Math.round(startX + i * gap);
     const col = accents[i % accents.length];
-    const st = stages[i] || { name: `Stage ${i + 1}`, metric: '', conversion: '' };
-    // Node circle
-    svgInner += `<circle cx="${x}" cy="${pathY}" r="18" fill="${col}" opacity="0.15"/>`;
-    svgInner += `<circle cx="${x}" cy="${pathY}" r="10" fill="${col}"/>`;
-    svgInner += `<text x="${x}" y="${pathY + 4}" text-anchor="middle" fill="#fff" font-size="10" font-weight="bold">${i + 1}</text>`;
-    // Conversion arrow label
-    if (i < n - 1 && st.conversion) {
+    const st = stages[i];
+    // Node: outer glow ring + inner filled circle
+    svgInner += `<circle cx="${x}" cy="${pathY}" r="${nodeR}" fill="${hexToRgba(col, 0.1)}" stroke="${col}" stroke-width="2"/>`;
+    svgInner += `<circle cx="${x}" cy="${pathY}" r="${nodeR - 8}" fill="${col}"/>`;
+    svgInner += `<text x="${x}" y="${pathY + 5}" text-anchor="middle" fill="#fff" font-size="12" font-weight="bold">${i + 1}</text>`;
+
+    // Conversion arrow between nodes
+    if (i < n - 1) {
       const mx = Math.round(x + gap / 2);
-      svgInner += `<text x="${mx}" y="${pathY - 24}" text-anchor="middle" fill="${col}" font-size="11" font-weight="600">${escHtml(st.conversion)}</text>`;
+      const nextConv = stages[i + 1]?.conversion || '';
+      if (nextConv) {
+        svgInner += `<text x="${mx}" y="${pathY - 14}" text-anchor="middle" fill="${col}" font-size="11" font-weight="600">${escHtml(nextConv)}</text>`;
+        svgInner += `<polygon points="${mx - 4},${pathY - 8} ${mx + 4},${pathY - 8} ${mx},${pathY - 4}" fill="${hexToRgba(col, 0.4)}"/>`;
+      }
     }
-    // Labels below
-    nodesHtml += `<div style="position:absolute;left:${x - 55}px;top:${pathY + 28}px;width:110px;text-align:center">`;
-    nodesHtml += `<div style="font-size:12px;font-weight:700;color:${col};margin-bottom:2px">${escHtml(st.name)}</div>`;
-    if (st.metric) nodesHtml += `<div style="font-size:11px;color:${p.text}">${escHtml(st.metric)}</div>`;
-    nodesHtml += `</div>`;
+
+    // Stage card below node
+    const cardW = Math.min(150, Math.round(gap * 0.85));
+    const cardX = x - cardW / 2;
+    const cardY = pathY + nodeR + 20;
+    const cardH = 110;
+    const cardBg = dark ? hexToRgba(p.surface, 0.3) : p.surface;
+    cardsHtml += `<div style="position:absolute;left:${Math.round(cardX)}px;top:${cardY}px;width:${cardW}px;height:${cardH}px;background:${cardBg};border-radius:12px;border-top:3px solid ${col};box-shadow:${cardShadow(1, dark)};padding:12px 10px;text-align:center">`;
+    cardsHtml += `<div style="font-size:13px;font-weight:700;color:${col};margin-bottom:6px">${escHtml(st.name)}</div>`;
+    if (st.metric) cardsHtml += `<div style="font-size:22px;font-weight:bold;color:${p.text};margin-bottom:4px">${escHtml(st.metric)}</div>`;
+    if (st.conversion) cardsHtml += `<div style="font-size:11px;color:${p.text};opacity:0.6">${escHtml(st.conversion)} conversion</div>`;
+    cardsHtml += `</div>`;
   }
 
   return `${SCOPED_RESET}
 <div style="position:relative;width:${W}px;height:${H}px;background:${p.background};overflow:hidden">
-  ${bgGradientOverlay(cW, H, p.accent, 0.04)}
+  ${bgGradientOverlay(cW, H, p.accent, 0.05, '35%')}
   <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;font-size:${titleFontSize(slide.title)}px;font-weight:bold;color:${p.text};line-height:1.2">${escHtml(slide.title)}</div>
   <div style="position:absolute;left:${PAD}px;top:${PAD + 56}px;width:50px;height:3px;background:${p.accent};border-radius:2px"></div>
   <svg style="position:absolute;left:0;top:0;width:${cW}px;height:${H}px;pointer-events:none" viewBox="0 0 ${cW} ${H}">${svgInner}</svg>
-  ${nodesHtml}
+  ${cardsHtml}
 </div>`;
 }
 
 
 // ── TECH_STACK ──────────────────────────────────────────────
-// Horizontal layered bands bottom to top
+// Layered architecture bands with SVG connectors and component pills
 
 function buildTechStack(slide: SlideInput, p: ColorPalette, hasImage = false, accentDiversity = true): string {
   const cW = hasImage ? CONTENT_W_IMG : W;
@@ -4430,106 +4492,154 @@ function buildTechStack(slide: SlideInput, p: ColorPalette, hasImage = false, ac
     }
   }
   if (layers.length === 0) {
-    layers.push({ name: 'Infrastructure', components: ['AWS', 'Docker'] });
-    layers.push({ name: 'Backend', components: ['Node.js', 'PostgreSQL'] });
-    layers.push({ name: 'Frontend', components: ['React', 'TypeScript'] });
+    layers.push({ name: 'Infrastructure', components: ['AWS', 'Docker', 'Terraform'] });
+    layers.push({ name: 'Backend', components: ['Node.js', 'PostgreSQL', 'Redis'] });
+    layers.push({ name: 'Frontend', components: ['React', 'TypeScript', 'Tailwind'] });
   }
 
   const n = layers.length;
-  const startY = PAD + 90;
-  const availH = H - startY - PAD;
-  const bandH = Math.min(60, Math.round((availH - (n - 1) * 6) / n));
+  const startY = PAD + 95;
+  const availH = H - startY - PAD - 10;
+  const bandGap = 8;
+  const bandH = Math.min(80, Math.round((availH - (n - 1) * bandGap) / n));
   const bandW = cW - PAD * 2;
+  const labelW = Math.round(bandW * 0.2);
 
-  // Render bottom-to-top: layers[0] = bottom = infra
+  let svgInner = '';
   let bandsHtml = '';
+  // Render bottom-to-top: layers[0] = bottom = infra
   for (let i = 0; i < n; i++) {
-    const layer = layers[n - 1 - i]; // reverse so first line = bottom
+    const layer = layers[n - 1 - i];
     const col = accents[(n - 1 - i) % accents.length];
-    const by = startY + i * (bandH + 6);
-    bandsHtml += `<div style="position:absolute;left:${PAD}px;top:${by}px;width:${bandW}px;height:${bandH}px;background:${hexToRgba(col, dark ? 0.12 : 0.06)};border-left:4px solid ${col};border-radius:8px;display:flex;align-items:center;padding:0 16px">`;
-    bandsHtml += `<span style="font-size:13px;font-weight:700;color:${col};width:22%;min-width:100px">${escHtml(layer.name)}</span>`;
-    bandsHtml += `<div style="display:flex;flex-wrap:wrap;gap:6px">`;
-    for (const comp of layer.components) {
-      bandsHtml += `<span style="font-size:11px;padding:3px 10px;border-radius:12px;background:${hexToRgba(col, dark ? 0.2 : 0.1)};color:${dark ? '#fff' : col};font-weight:500">${escHtml(comp)}</span>`;
+    const by = startY + i * (bandH + bandGap);
+    const cardBg = dark ? hexToRgba(p.surface, 0.25) : p.surface;
+
+    // Band background with gradient left edge
+    bandsHtml += `<div style="position:absolute;left:${PAD}px;top:${by}px;width:${bandW}px;height:${bandH}px;background:${cardBg};border-radius:12px;border-left:5px solid ${col};box-shadow:${cardShadow(1, dark)};overflow:hidden">`;
+    // Gradient overlay on left portion
+    bandsHtml += `<div style="position:absolute;left:0;top:0;width:${labelW}px;height:100%;background:linear-gradient(90deg,${hexToRgba(col, dark ? 0.15 : 0.08)},transparent)"></div>`;
+    bandsHtml += `</div>`;
+
+    // Layer name
+    bandsHtml += `<div style="position:absolute;left:${PAD + 16}px;top:${by + Math.round(bandH / 2) - 10}px;width:${labelW - 20}px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:${col}">${escHtml(layer.name)}</div>`;
+
+    // Component pills
+    const pillLeft = PAD + labelW + 8;
+    let px = pillLeft;
+    const pillY = by + Math.round((bandH - 30) / 2);
+    for (const comp of layer.components.slice(0, 6)) {
+      const pw = Math.min(110, comp.length * 8 + 24);
+      if (px + pw > PAD + bandW - 10) break;
+      bandsHtml += `<div style="position:absolute;left:${px}px;top:${pillY}px;height:30px;padding:0 12px;background:${hexToRgba(col, dark ? 0.2 : 0.1)};border:1px solid ${hexToRgba(col, 0.2)};border-radius:15px;display:flex;align-items:center;font-size:12px;font-weight:600;color:${dark ? '#fff' : col};white-space:nowrap">${escHtml(comp)}</div>`;
+      px += pw + 8;
     }
-    bandsHtml += `</div></div>`;
+
+    // SVG connector arrows between layers
+    if (i < n - 1) {
+      const arrowX = PAD + bandW / 2;
+      const arrowY1 = by + bandH + 1;
+      const arrowY2 = arrowY1 + bandGap - 1;
+      svgInner += `<line x1="${arrowX}" y1="${arrowY1}" x2="${arrowX}" y2="${arrowY2}" stroke="${hexToRgba(p.border, 0.2)}" stroke-width="2" stroke-dasharray="3,3"/>`;
+      svgInner += `<polygon points="${arrowX - 4},${arrowY1 + 2} ${arrowX + 4},${arrowY1 + 2} ${arrowX},${arrowY1 - 2}" fill="${hexToRgba(p.border, 0.25)}"/>`;
+    }
   }
+
+  // "User" label at top, "Infrastructure" arrow at bottom
+  const topLabel = `<div style="position:absolute;right:${W - cW + PAD}px;top:${startY - 18}px;font-size:10px;color:${p.text};opacity:0.4;text-transform:uppercase;letter-spacing:1px">\u2191 Users</div>`;
+  const botLabel = `<div style="position:absolute;right:${W - cW + PAD}px;top:${startY + n * (bandH + bandGap) - bandGap + 4}px;font-size:10px;color:${p.text};opacity:0.4;text-transform:uppercase;letter-spacing:1px">\u2193 Infrastructure</div>`;
 
   return `${SCOPED_RESET}
 <div style="position:relative;width:${W}px;height:${H}px;background:${p.background};overflow:hidden">
-  ${bgGradientOverlay(cW, H, p.accent, 0.04)}
+  ${bgGradientOverlay(cW, H, p.accent, 0.05, '50%')}
   <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;font-size:${titleFontSize(slide.title)}px;font-weight:bold;color:${p.text};line-height:1.2">${escHtml(slide.title)}</div>
   <div style="position:absolute;left:${PAD}px;top:${PAD + 56}px;width:50px;height:3px;background:${p.accent};border-radius:2px"></div>
   ${bandsHtml}
+  ${topLabel}${botLabel}
+  <svg style="position:absolute;left:0;top:0;width:${cW}px;height:${H}px;pointer-events:none" viewBox="0 0 ${cW} ${H}">${svgInner}</svg>
 </div>`;
 }
 
 
 // ── GROWTH_LOOPS ──────────────────────────────────────────────
-// Circular node network with bezier edges
+// Circular node network with gradient bezier edges and glow nodes
 
 function buildGrowthLoops(slide: SlideInput, p: ColorPalette, hasImage = false, accentDiversity = true): string {
   const cW = hasImage ? CONTENT_W_IMG : W;
-  const raw = slide.body.replace(/\u2192/g, '→');
-  const nodes = raw.split('→').map(s => s.trim()).filter(Boolean);
+  const raw = slide.body.replace(/\u2192/g, '\u2192');
+  const nodes = raw.split(/\u2192|->|=>/).map(s => s.trim()).filter(Boolean);
   const n = Math.min(nodes.length, 8) || 4;
   const accents = cardAccentColors(p, accentDiversity ? colorOffset(slide.title) : 0);
   const dark = isDarkBackground(p.background);
 
   const cx = Math.round(cW * 0.50);
-  const cy = Math.round(H * 0.54);
-  const R = Math.min(Math.round(cW * 0.2), 170);
+  const cy = Math.round(H * 0.52);
+  const R = Math.min(Math.round(cW * 0.2), 175);
 
-  let svgInner = '';
+  let svgDefs = '<defs>';
+  for (let i = 0; i < n; i++) {
+    const col = accents[i % accents.length];
+    svgDefs += `<filter id="glf${i}"><feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>`;
+  }
+  svgDefs += '</defs>';
+
+  let svgInner = svgDefs;
   // Bezier edges between consecutive nodes
   for (let i = 0; i < n; i++) {
     const a1 = (i / n) * Math.PI * 2 - Math.PI / 2;
     const a2 = ((i + 1) / n) * Math.PI * 2 - Math.PI / 2;
     const x1 = cx + R * Math.cos(a1), y1 = cy + R * Math.sin(a1);
     const x2 = cx + R * Math.cos(a2), y2 = cy + R * Math.sin(a2);
-    const cpx = cx + R * 0.35 * Math.cos((a1 + a2) / 2);
-    const cpy = cy + R * 0.35 * Math.sin((a1 + a2) / 2);
+    const cpFactor = 0.45;
+    const cpx = cx + R * cpFactor * Math.cos((a1 + a2) / 2);
+    const cpy = cy + R * cpFactor * Math.sin((a1 + a2) / 2);
     const col = accents[i % accents.length];
-    svgInner += `<path d="M${x1},${y1} Q${cpx},${cpy} ${x2},${y2}" fill="none" stroke="${hexToRgba(col, 0.5)}" stroke-width="2"/>`;
-    // Arrowhead at endpoint
-    const sz = 7;
+    svgInner += `<path d="M${x1.toFixed(1)},${y1.toFixed(1)} Q${cpx.toFixed(1)},${cpy.toFixed(1)} ${x2.toFixed(1)},${y2.toFixed(1)}" fill="none" stroke="${col}" stroke-width="3" opacity="0.6"/>`;
+    // Arrowhead
+    const sz = 9;
     const dx = x2 - cpx, dy = y2 - cpy;
     const dl = Math.sqrt(dx * dx + dy * dy) || 1;
     const ux = dx / dl, uy = dy / dl;
-    svgInner += `<polygon points="${x2},${y2} ${x2 - ux * sz - uy * sz * 0.5},${y2 - uy * sz + ux * sz * 0.5} ${x2 - ux * sz + uy * sz * 0.5},${y2 - uy * sz - ux * sz * 0.5}" fill="${col}"/>`;
+    svgInner += `<polygon points="${x2.toFixed(1)},${y2.toFixed(1)} ${(x2 - ux * sz - uy * sz * 0.5).toFixed(1)},${(y2 - uy * sz + ux * sz * 0.5).toFixed(1)} ${(x2 - ux * sz + uy * sz * 0.5).toFixed(1)},${(y2 - uy * sz - ux * sz * 0.5).toFixed(1)}" fill="${col}" opacity="0.8"/>`;
   }
 
-  // Node circles + labels
+  // Node circles with glow
   let nodesHtml = '';
   for (let i = 0; i < n; i++) {
     const a = (i / n) * Math.PI * 2 - Math.PI / 2;
     const x = cx + R * Math.cos(a), y = cy + R * Math.sin(a);
     const col = accents[i % accents.length];
-    svgInner += `<circle cx="${x}" cy="${y}" r="22" fill="${hexToRgba(col, 0.15)}" stroke="${col}" stroke-width="2"/>`;
-    svgInner += `<circle cx="${x}" cy="${y}" r="8" fill="${col}"/>`;
-    // Label
-    const lR = R + 50;
+    svgInner += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="26" fill="${hexToRgba(col, 0.12)}" stroke="${col}" stroke-width="2"/>`;
+    svgInner += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="12" fill="${col}" filter="url(#glf${i % n})"/>`;
+    // Label with card background
+    const lR = R + 60;
     const lx = cx + lR * Math.cos(a);
     const ly = cy + lR * Math.sin(a);
     const align = lx < cx ? 'right' : 'left';
-    const leftPos = align === 'right' ? lx - 130 : lx;
-    nodesHtml += `<div style="position:absolute;left:${Math.round(leftPos)}px;top:${Math.round(ly - 10)}px;width:130px;text-align:${align};font-size:11px;font-weight:600;color:${col};line-height:1.3">${escHtml(nodes[i] || 'Node ' + (i + 1))}</div>`;
+    const boxW = 150;
+    const leftPos = align === 'right' ? lx - boxW : lx;
+    nodesHtml += `<div style="position:absolute;left:${Math.round(leftPos)}px;top:${Math.round(ly - 14)}px;width:${boxW}px;text-align:${align}">`;
+    nodesHtml += `<div style="display:inline-block;padding:4px 10px;background:${hexToRgba(col, dark ? 0.12 : 0.06)};border-radius:8px;font-size:12px;font-weight:700;color:${col};line-height:1.3">${escHtml(nodes[i] || 'Node ' + (i + 1))}</div>`;
+    nodesHtml += `</div>`;
   }
+
+  // Center label
+  svgInner += `<circle cx="${cx}" cy="${cy}" r="28" fill="${hexToRgba(p.accent, 0.08)}" stroke="${hexToRgba(p.accent, 0.2)}" stroke-width="1"/>`;
+  const centerHtml = `<div style="position:absolute;left:${cx - 30}px;top:${cy - 10}px;width:60px;text-align:center;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:${p.accent};opacity:0.7">Loop</div>`;
 
   return `${SCOPED_RESET}
 <div style="position:relative;width:${W}px;height:${H}px;background:${p.background};overflow:hidden">
-  ${bgGradientOverlay(cW, H, p.accent, 0.04)}
+  ${bgGradientOverlay(cW, H, p.accent, 0.05)}
   <div style="position:absolute;left:${PAD}px;top:${PAD - 6}px;width:${cW - PAD * 2}px;font-size:${titleFontSize(slide.title)}px;font-weight:bold;color:${p.text};line-height:1.2">${escHtml(slide.title)}</div>
   <div style="position:absolute;left:${PAD}px;top:${PAD + 48}px;width:50px;height:3px;background:${p.accent};border-radius:2px"></div>
   <svg style="position:absolute;left:0;top:0;width:${cW}px;height:${H}px;pointer-events:none" viewBox="0 0 ${cW} ${H}">${svgInner}</svg>
   ${nodesHtml}
+  ${centerHtml}
 </div>`;
 }
 
 
 // ── CASE_STUDY ──────────────────────────────────────────────
-// Client name + quote + KPI stat cards
+// Client brand bar + decorative quote block + KPI stat cards with shadows
 
 function buildCaseStudy(slide: SlideInput, p: ColorPalette, hasImage = false): string {
   const cW = hasImage ? CONTENT_W_IMG : W;
@@ -4538,7 +4648,7 @@ function buildCaseStudy(slide: SlideInput, p: ColorPalette, hasImage = false): s
 
   const clientName = lines[0] || 'Client';
   let quote = '';
-  const kpis: { label: string; value: string; }[] = [];
+  const kpis: { label: string; value: string }[] = [];
 
   for (let i = 1; i < lines.length; i++) {
     const line = lines[i];
@@ -4552,38 +4662,50 @@ function buildCaseStudy(slide: SlideInput, p: ColorPalette, hasImage = false): s
     }
   }
 
-  const quoteY = PAD + 140;
-  const kpiY = H - PAD - 90;
+  const quoteY = PAD + 155;
+  const kpiY = H - PAD - 110;
   const kpiCount = Math.min(kpis.length, 4);
-  const kpiW = kpiCount > 0 ? Math.round((cW - PAD * 2 - (kpiCount - 1) * 12) / kpiCount) : 0;
+  const kpiGap = 14;
+  const kpiW = kpiCount > 0 ? Math.round((cW - PAD * 2 - (kpiCount - 1) * kpiGap) / kpiCount) : 0;
+  const accents = cardAccentColors(p, colorOffset(slide.title));
 
+  // Client name bar
+  const clientBarHtml = `<div style="position:absolute;left:${PAD}px;top:${PAD + 78}px;width:${cW - PAD * 2}px;height:50px;background:${hexToRgba(p.accent, dark ? 0.12 : 0.06)};border-radius:12px;display:flex;align-items:center;padding:0 20px">` +
+    `<div style="width:36px;height:36px;border-radius:50%;background:${p.accent};display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:bold;color:#fff">${escHtml(clientName.charAt(0).toUpperCase())}</div>` +
+    `<div style="margin-left:14px;font-size:18px;font-weight:700;color:${p.text}">${escHtml(clientName)}</div></div>`;
+
+  // Quote with decorative SVG quotation mark
+  const quoteHtml = `<div style="position:absolute;left:${PAD + 8}px;top:${quoteY}px;width:${cW - PAD * 2 - 30}px">` +
+    `<svg width="36" height="28" viewBox="0 0 36 28" style="margin-bottom:-4px"><path d="M0 18C0 8 6 2 14 0l2 4C10 6 8 10 8 14h6v14H0V18zm20 0C20 8 26 2 34 0l2 4C30 6 28 10 28 14h6v14H20V18z" fill="${hexToRgba(p.accent, 0.2)}"/></svg>` +
+    `<div style="font-size:16px;font-style:italic;color:${p.text};opacity:0.85;line-height:1.6;padding-left:4px">${escHtml(quote)}</div></div>`;
+
+  // KPI stat cards
   let kpiHtml = '';
   for (let i = 0; i < kpiCount; i++) {
     const kpi = kpis[i];
-    const kx = PAD + i * (kpiW + 12);
-    kpiHtml += `<div style="position:absolute;left:${kx}px;top:${kpiY}px;width:${kpiW}px;height:80px;background:${hexToRgba(p.accent, dark ? 0.1 : 0.05)};border-top:3px solid ${p.accent};border-radius:8px;padding:10px 14px">`;
-    kpiHtml += `<div style="font-size:22px;font-weight:bold;color:${p.accent}">${escHtml(kpi.value)}</div>`;
-    kpiHtml += `<div style="font-size:11px;color:${p.text};margin-top:2px">${escHtml(kpi.label)}</div>`;
+    const kx = PAD + i * (kpiW + kpiGap);
+    const col = accents[i % accents.length];
+    const cardBg = dark ? hexToRgba(p.surface, 0.3) : p.surface;
+    kpiHtml += `<div style="position:absolute;left:${kx}px;top:${kpiY}px;width:${kpiW}px;height:100px;background:${cardBg};border-top:3px solid ${col};border-radius:12px;box-shadow:${cardShadow(1, dark)};padding:12px 16px">`;
+    kpiHtml += `<div style="font-size:26px;font-weight:bold;color:${col}">${escHtml(kpi.value)}</div>`;
+    kpiHtml += `<div style="font-size:12px;color:${p.text};opacity:0.6;margin-top:4px">${escHtml(kpi.label)}</div>`;
     kpiHtml += `</div>`;
   }
 
   return `${SCOPED_RESET}
 <div style="position:relative;width:${W}px;height:${H}px;background:${p.background};overflow:hidden">
-  ${bgGradientOverlay(cW, H, p.accent, 0.04)}
+  ${bgGradientOverlay(cW, H, p.accent, 0.05, '30%')}
   <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;font-size:${titleFontSize(slide.title)}px;font-weight:bold;color:${p.text};line-height:1.2">${escHtml(slide.title)}</div>
   <div style="position:absolute;left:${PAD}px;top:${PAD + 56}px;width:50px;height:3px;background:${p.accent};border-radius:2px"></div>
-  <div style="position:absolute;left:${PAD}px;top:${PAD + 76}px;font-size:20px;font-weight:700;color:${p.accent}">${escHtml(clientName)}</div>
-  <div style="position:absolute;left:${PAD + 4}px;top:${quoteY}px;width:${cW - PAD * 2 - 20}px;border-left:3px solid ${hexToRgba(p.accent, 0.4)};padding-left:18px">
-    <div style="font-size:32px;color:${p.accent};line-height:0.8;margin-bottom:4px">\u201c</div>
-    <div style="font-size:15px;font-style:italic;color:${p.text};opacity:0.88;line-height:1.5">${escHtml(quote)}</div>
-  </div>
+  ${clientBarHtml}
+  ${quoteHtml}
   ${kpiHtml}
 </div>`;
 }
 
 
 // ── HIRING_PLAN ──────────────────────────────────────────────
-// Horizontal timeline with quarter columns and role pill badges
+// Vertical column timeline with quarter cards and role badges
 
 function buildHiringPlan(slide: SlideInput, p: ColorPalette, hasImage = false, accentDiversity = true): string {
   const cW = hasImage ? CONTENT_W_IMG : W;
@@ -4591,7 +4713,6 @@ function buildHiringPlan(slide: SlideInput, p: ColorPalette, hasImage = false, a
   const dark = isDarkBackground(p.background);
   const accents = cardAccentColors(p, accentDiversity ? colorOffset(slide.title) : 0);
 
-  // Parse "Quarter: Role1, Role2" format
   const quarters: { label: string; roles: string[] }[] = [];
   for (const line of lines) {
     const sep = line.indexOf(':');
@@ -4602,44 +4723,57 @@ function buildHiringPlan(slide: SlideInput, p: ColorPalette, hasImage = false, a
     }
   }
   if (quarters.length === 0) {
-    quarters.push({ label: 'Q1', roles: ['Engineer', 'Designer'] });
-    quarters.push({ label: 'Q2', roles: ['PM', 'Sales'] });
-    quarters.push({ label: 'Q3', roles: ['Marketing'] });
+    quarters.push({ label: 'Q1 2026', roles: ['Engineer', 'Designer'] });
+    quarters.push({ label: 'Q2 2026', roles: ['PM', 'Sales', 'DevRel'] });
+    quarters.push({ label: 'Q3 2026', roles: ['3x Engineers', 'CS'] });
   }
 
   const count = Math.min(quarters.length, 6);
-  const tlTop = PAD + 120;
-  const tlLeft = PAD + 20;
-  const tlRight = cW - PAD - 20;
-  const segW = Math.round((tlRight - tlLeft) / count);
-  const dotR = 8;
+  const colGap = 14;
+  const colW = Math.round((cW - PAD * 2 - (count - 1) * colGap) / count);
+  const colTop = PAD + 95;
+  const colH = H - colTop - PAD - 10;
 
-  // Timeline line + dots
   let html = '';
+  // Horizontal timeline line at top of columns
   html += `<svg style="position:absolute;left:0;top:0;width:${cW}px;height:${H}px;pointer-events:none">`;
-  html += `<line x1="${tlLeft}" y1="${tlTop}" x2="${tlLeft + segW * (count - 1)}" y2="${tlTop}" stroke="${hexToRgba(p.border, 0.3)}" stroke-width="3" />`;
+  const lineY = colTop - 4;
+  html += `<line x1="${PAD + colW / 2}" y1="${lineY}" x2="${PAD + (count - 1) * (colW + colGap) + colW / 2}" y2="${lineY}" stroke="${hexToRgba(p.border, 0.25)}" stroke-width="2"/>`;
   for (let i = 0; i < count; i++) {
-    const cx = tlLeft + i * segW;
-    html += `<circle cx="${cx}" cy="${tlTop}" r="${dotR}" fill="${accents[i % accents.length]}" />`;
+    const dotX = PAD + i * (colW + colGap) + colW / 2;
+    html += `<circle cx="${dotX}" cy="${lineY}" r="6" fill="${accents[i % accents.length]}"/>`;
   }
   html += `</svg>`;
 
-  // Quarter labels + role pills
   for (let i = 0; i < count; i++) {
     const q = quarters[i];
-    const cx = tlLeft + i * segW;
     const color = accents[i % accents.length];
-    html += `<div style="position:absolute;left:${cx - 40}px;top:${tlTop - 36}px;width:80px;text-align:center;font-size:14px;font-weight:bold;color:${color}">${escHtml(q.label)}</div>`;
-    for (let r = 0; r < Math.min(q.roles.length, 4); r++) {
-      const py = tlTop + 24 + r * 34;
-      const pillBg = dark ? hexToRgba(color, 0.15) : hexToRgba(color, 0.1);
-      html += `<div style="position:absolute;left:${cx - 48}px;top:${py}px;width:96px;height:26px;background:${pillBg};border:1px solid ${hexToRgba(color, 0.3)};border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:${color};overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${escHtml(q.roles[r])}</div>`;
+    const cx = PAD + i * (colW + colGap);
+    const cardBg = dark ? hexToRgba(p.surface, 0.25) : p.surface;
+
+    // Quarter card
+    html += `<div style="position:absolute;left:${cx}px;top:${colTop + 8}px;width:${colW}px;height:${colH - 8}px;background:${cardBg};border-radius:12px;border-top:3px solid ${color};box-shadow:${cardShadow(1, dark)}"></div>`;
+
+    // Quarter label
+    html += `<div style="position:absolute;left:${cx}px;top:${colTop + 18}px;width:${colW}px;text-align:center;font-size:14px;font-weight:bold;color:${color}">${escHtml(q.label)}</div>`;
+
+    // Headcount badge
+    html += `<div style="position:absolute;left:${cx + colW - 36}px;top:${colTop + 16}px;width:28px;height:18px;background:${hexToRgba(color, 0.15)};border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:bold;color:${color}">${q.roles.length}</div>`;
+
+    // Role pills
+    const pillTop = colTop + 48;
+    const pillH = 30;
+    const pillGap = 8;
+    for (let r = 0; r < Math.min(q.roles.length, 6); r++) {
+      const py = pillTop + r * (pillH + pillGap);
+      if (py + pillH > colTop + colH - 10) break;
+      html += `<div style="position:absolute;left:${cx + 10}px;top:${py}px;width:${colW - 20}px;height:${pillH}px;background:${hexToRgba(color, dark ? 0.15 : 0.08)};border:1px solid ${hexToRgba(color, 0.2)};border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:${dark ? '#fff' : color};overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${escHtml(q.roles[r])}</div>`;
     }
   }
 
   return `${SCOPED_RESET}
 <div style="position:relative;width:${W}px;height:${H}px;background:${p.background};overflow:hidden">
-  ${bgGradientOverlay(cW, H, p.accent, 0.04, '45%')}
+  ${bgGradientOverlay(cW, H, p.accent, 0.05, '45%')}
   <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;font-size:${titleFontSize(slide.title)}px;font-weight:bold;overflow-wrap:break-word;word-wrap:break-word;color:${p.text};line-height:1.2">${escHtml(slide.title)}</div>
   <div style="position:absolute;left:${PAD}px;top:${PAD + 56}px;width:50px;height:3px;background:${p.accent};border-radius:2px"></div>
   ${html}
@@ -4648,7 +4782,7 @@ function buildHiringPlan(slide: SlideInput, p: ColorPalette, hasImage = false, a
 
 
 // ── USE_OF_FUNDS ─────────────────────────────────────────────
-// Wide horizontal stacked bar + category cards below
+// Wide horizontal stacked bar with gradient segments + category cards
 
 function buildUseOfFunds(slide: SlideInput, p: ColorPalette, hasImage = false, accentDiversity = true): string {
   const cW = hasImage ? CONTENT_W_IMG : W;
@@ -4656,7 +4790,6 @@ function buildUseOfFunds(slide: SlideInput, p: ColorPalette, hasImage = false, a
   const dark = isDarkBackground(p.background);
   const accents = cardAccentColors(p, accentDiversity ? colorOffset(slide.title) : 0);
 
-  // Parse "Category: $amount (pct%)"
   const items: { name: string; amount: string; pct: number }[] = [];
   for (const line of lines) {
     const sep = line.indexOf(':');
@@ -4665,9 +4798,7 @@ function buildUseOfFunds(slide: SlideInput, p: ColorPalette, hasImage = false, a
       const rest = line.slice(sep + 1).trim();
       const pctMatch = rest.match(/(\d+)\s*%/);
       const amtMatch = rest.match(/(\$[\d,.]+[KMB]?)/i);
-      if (pctMatch) {
-        items.push({ name, amount: amtMatch ? amtMatch[1] : '', pct: parseInt(pctMatch[1], 10) });
-      }
+      if (pctMatch) items.push({ name, amount: amtMatch ? amtMatch[1] : '', pct: parseInt(pctMatch[1], 10) });
     }
   }
   if (items.length === 0) {
@@ -4678,35 +4809,42 @@ function buildUseOfFunds(slide: SlideInput, p: ColorPalette, hasImage = false, a
   }
 
   const count = Math.min(items.length, 8);
-  const barTop = PAD + 100;
-  const barH = 40;
+  const barTop = PAD + 105;
+  const barH = 44;
   const barLeft = PAD + 10;
   const barW = cW - PAD * 2 - 20;
   const totalPct = items.slice(0, count).reduce((s, it) => s + it.pct, 0) || 100;
 
-  // Stacked bar SVG
-  let html = `<svg style="position:absolute;left:${barLeft}px;top:${barTop}px;width:${barW}px;height:${barH}px" viewBox="0 0 ${barW} ${barH}">`;
+  // Stacked bar SVG with rounded ends
+  let barSvg = `<svg style="position:absolute;left:${barLeft}px;top:${barTop}px;width:${barW}px;height:${barH}px" viewBox="0 0 ${barW} ${barH}">`;
+  // Shadow under bar
+  barSvg += `<rect x="2" y="4" width="${barW - 4}" height="${barH}" rx="10" fill="${hexToRgba('#000', 0.08)}"/>`;
   let bx = 0;
   for (let i = 0; i < count; i++) {
     const segW = Math.round(barW * items[i].pct / totalPct);
     const color = accents[i % accents.length];
-    const rx = i === 0 ? 8 : (i === count - 1 ? 8 : 0);
-    html += `<rect x="${bx}" y="0" width="${segW}" height="${barH}" fill="${color}" rx="${rx}" />`;
-    if (segW > 40) {
-      html += `<text x="${bx + segW / 2}" y="${barH / 2 + 5}" text-anchor="middle" fill="#fff" font-size="12" font-weight="bold">${items[i].pct}%</text>`;
+    const isFirst = i === 0, isLast = i === count - 1;
+    // Clip for rounded ends
+    if (isFirst || isLast) {
+      barSvg += `<clipPath id="uofclip${i}"><rect x="${bx}" y="0" width="${segW}" height="${barH}" rx="${isFirst && isLast ? 10 : 0}" ${isFirst ? 'rx="10"' : ''} /></clipPath>`;
+    }
+    barSvg += `<rect x="${bx}" y="0" width="${segW}" height="${barH}" fill="${color}" ${isFirst ? 'rx="10"' : ''} ${isLast ? 'rx="10"' : ''} opacity="0.9"/>`;
+    if (segW > 50) {
+      barSvg += `<text x="${bx + segW / 2}" y="${barH / 2 + 5}" text-anchor="middle" fill="#fff" font-size="13" font-weight="bold">${items[i].pct}%</text>`;
     }
     bx += segW;
   }
-  html += `</svg>`;
+  barSvg += `</svg>`;
 
   // Category cards below bar
-  const cardTop = barTop + barH + 24;
-  const cardGap = 10;
+  const cardTop = barTop + barH + 30;
+  const cardGap = 12;
   const cols = Math.min(count, 4);
   const rows = Math.ceil(count / cols);
   const cardW = Math.round((barW - (cols - 1) * cardGap) / cols);
-  const cardH = Math.min(80, Math.round((H - cardTop - PAD - (rows - 1) * cardGap) / rows));
+  const cardH = Math.min(90, Math.round((H - cardTop - PAD - (rows - 1) * cardGap) / rows));
 
+  let cardsHtml = '';
   for (let i = 0; i < count; i++) {
     const it = items[i];
     const col = i % cols;
@@ -4714,87 +4852,98 @@ function buildUseOfFunds(slide: SlideInput, p: ColorPalette, hasImage = false, a
     const cx = barLeft + col * (cardW + cardGap);
     const cy = cardTop + row * (cardH + cardGap);
     const color = accents[i % accents.length];
-    const cardBg = dark ? hexToRgba(p.surface, 0.35) : p.surface;
+    const cardBg = dark ? hexToRgba(p.surface, 0.3) : p.surface;
 
-    html += `<div style="position:absolute;left:${cx}px;top:${cy}px;width:${cardW}px;height:${cardH}px;background:${cardBg};border:1px solid ${hexToRgba(p.border, 0.15)};border-radius:10px;border-top:3px solid ${color};box-shadow:${cardShadow(1, dark)}"></div>`;
-    html += `<div style="position:absolute;left:${cx + 12}px;top:${cy + 10}px;width:${cardW - 24}px;font-size:12px;font-weight:600;color:${p.text};overflow:hidden;white-space:nowrap;text-overflow:ellipsis"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${color};margin-right:6px;vertical-align:middle"></span>${escHtml(it.name)}</div>`;
-    if (it.amount) {
-      html += `<div style="position:absolute;left:${cx + 12}px;top:${cy + 30}px;font-size:18px;font-weight:bold;color:${color}">${escHtml(it.amount)}</div>`;
-    }
-    html += `<div style="position:absolute;left:${cx + 12}px;top:${cy + cardH - 22}px;font-size:12px;color:${p.text};opacity:0.6">${it.pct}% of total</div>`;
+    cardsHtml += `<div style="position:absolute;left:${cx}px;top:${cy}px;width:${cardW}px;height:${cardH}px;background:${cardBg};border:1px solid ${hexToRgba(p.border, 0.12)};border-radius:12px;border-top:3px solid ${color};box-shadow:${cardShadow(1, dark)};padding:10px 14px">`;
+    cardsHtml += `<div style="display:flex;align-items:center;margin-bottom:6px"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${color};margin-right:8px"></span><span style="font-size:13px;font-weight:700;color:${p.text}">${escHtml(it.name)}</span></div>`;
+    if (it.amount) cardsHtml += `<div style="font-size:20px;font-weight:bold;color:${color}">${escHtml(it.amount)}</div>`;
+    cardsHtml += `<div style="font-size:11px;color:${p.text};opacity:0.5;margin-top:2px">${it.pct}% of total</div>`;
+    cardsHtml += `</div>`;
   }
 
   return `${SCOPED_RESET}
 <div style="position:relative;width:${W}px;height:${H}px;background:${p.background};overflow:hidden">
-  ${bgGradientOverlay(cW, H, p.accent, 0.04, '35%')}
+  ${bgGradientOverlay(cW, H, p.accent, 0.05, '35%')}
   <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;font-size:${titleFontSize(slide.title)}px;font-weight:bold;overflow-wrap:break-word;word-wrap:break-word;color:${p.text};line-height:1.2">${escHtml(slide.title)}</div>
   <div style="position:absolute;left:${PAD}px;top:${PAD + 56}px;width:50px;height:3px;background:${p.accent};border-radius:2px"></div>
-  ${html}
+  ${barSvg}
+  ${cardsHtml}
 </div>`;
 }
 
 
 // ── RISK_MITIGATION ──────────────────────────────────────────
-// Two columns: risk cards (left) with arrow to mitigation cards (right)
+// Two columns: risk cards (red) with SVG arrow to mitigation cards (green)
 
 function buildRiskMitigation(slide: SlideInput, p: ColorPalette, hasImage = false): string {
   const cW = hasImage ? CONTENT_W_IMG : W;
   const lines = parseBodyLines(slide.body);
   const dark = isDarkBackground(p.background);
 
-  // Parse "Risk -> Mitigation" or "Risk: Mitigation"
   const pairs: { risk: string; mitigation: string }[] = [];
   for (const line of lines) {
     const arrowMatch = line.match(/^(.+?)\s*(?:\u2192|->|=>|\u2794)\s*(.+)$/);
-    if (arrowMatch) {
-      pairs.push({ risk: arrowMatch[1].trim(), mitigation: arrowMatch[2].trim() });
-      continue;
-    }
+    if (arrowMatch) { pairs.push({ risk: arrowMatch[1].trim(), mitigation: arrowMatch[2].trim() }); continue; }
     const sepIdx = line.indexOf(':');
-    if (sepIdx > 0 && sepIdx < line.length - 1) {
-      pairs.push({ risk: line.slice(0, sepIdx).trim(), mitigation: line.slice(sepIdx + 1).trim() });
-    }
+    if (sepIdx > 0 && sepIdx < line.length - 1) pairs.push({ risk: line.slice(0, sepIdx).trim(), mitigation: line.slice(sepIdx + 1).trim() });
   }
   if (pairs.length === 0) {
     pairs.push({ risk: 'Market risk', mitigation: 'Diversified revenue streams' });
     pairs.push({ risk: 'Tech risk', mitigation: 'Proven tech stack' });
+    pairs.push({ risk: 'Key person risk', mitigation: 'Cross-training program' });
   }
 
   const count = Math.min(pairs.length, 5);
-  const rowTop = PAD + 100;
+  // Column headers
+  const headerY = PAD + 80;
+  const rowTop = headerY + 30;
   const totalW = cW - PAD * 2;
-  const colW = Math.round((totalW - 60) / 2);
-  const rowGap = 12;
+  const arrowZone = 56;
+  const colW = Math.round((totalW - arrowZone) / 2);
+  const rowGap = 10;
   const rowH = Math.min(90, Math.round((H - rowTop - PAD - (count - 1) * rowGap) / count));
   const leftX = PAD;
-  const rightX = PAD + colW + 60;
+  const rightX = PAD + colW + arrowZone;
 
-  let html = '';
   const riskColor = p.error || '#ef4444';
   const mitigColor = p.success || '#22c55e';
+
+  // Column headers
+  let html = `<div style="position:absolute;left:${leftX}px;top:${headerY}px;width:${colW}px;text-align:center;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:${riskColor}">Risk</div>`;
+  html += `<div style="position:absolute;left:${rightX}px;top:${headerY}px;width:${colW}px;text-align:center;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:${mitigColor}">Mitigation</div>`;
 
   for (let i = 0; i < count; i++) {
     const pair = pairs[i];
     const ry = rowTop + i * (rowH + rowGap);
-    const riskBg = dark ? hexToRgba(riskColor, 0.06) : hexToRgba(riskColor, 0.04);
-    const mitigBg = dark ? hexToRgba(mitigColor, 0.06) : hexToRgba(mitigColor, 0.04);
+    const riskBg = dark ? hexToRgba(riskColor, 0.08) : hexToRgba(riskColor, 0.04);
+    const mitigBg = dark ? hexToRgba(mitigColor, 0.08) : hexToRgba(mitigColor, 0.04);
+    const cardBgR = dark ? hexToRgba(p.surface, 0.2) : p.surface;
+    const cardBgM = dark ? hexToRgba(p.surface, 0.2) : p.surface;
 
     // Risk card
-    html += `<div style="position:absolute;left:${leftX}px;top:${ry}px;width:${colW}px;height:${rowH}px;background:${riskBg};border:1px solid ${hexToRgba(riskColor, 0.15)};border-left:4px solid ${riskColor};border-radius:10px;box-shadow:${cardShadow(1, dark)}"></div>`;
-    html += `<div style="position:absolute;left:${leftX + 14}px;top:${ry + Math.round((rowH - 18) / 2)}px;width:${colW - 28}px;font-size:13px;line-height:1.4;color:${p.text};overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical"><span style="color:${riskColor};margin-right:6px;font-weight:bold">\u26A0</span>${escHtml(pair.risk)}</div>`;
+    html += `<div style="position:absolute;left:${leftX}px;top:${ry}px;width:${colW}px;height:${rowH}px;background:${cardBgR};border-left:4px solid ${riskColor};border-radius:10px;box-shadow:${cardShadow(1, dark)}">`;
+    html += `<div style="position:absolute;left:0;top:0;width:100%;height:100%;background:linear-gradient(90deg,${hexToRgba(riskColor, 0.06)},transparent);border-radius:10px;pointer-events:none"></div>`;
+    html += `</div>`;
+    html += `<div style="position:absolute;left:${leftX + 16}px;top:${ry + Math.round((rowH - 20) / 2)}px;width:${colW - 32}px;font-size:13px;line-height:1.4;color:${p.text};overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical"><span style="color:${riskColor};margin-right:6px;font-size:14px">\u26A0</span>${escHtml(pair.risk)}</div>`;
 
-    // Arrow
-    const arrowY = ry + Math.round(rowH / 2);
-    html += `<svg style="position:absolute;left:${leftX + colW + 8}px;top:${arrowY - 8}px;width:44px;height:16px" viewBox="0 0 44 16"><line x1="0" y1="8" x2="34" y2="8" stroke="${hexToRgba(p.text, 0.3)}" stroke-width="2" /><polygon points="34,2 44,8 34,14" fill="${hexToRgba(p.text, 0.3)}" /></svg>`;
+    // Arrow SVG
+    const arrowCx = leftX + colW + arrowZone / 2;
+    const arrowCy = ry + rowH / 2;
+    html += `<svg style="position:absolute;left:${arrowCx - 20}px;top:${arrowCy - 10}px;width:40px;height:20px" viewBox="0 0 40 20">`;
+    html += `<line x1="0" y1="10" x2="30" y2="10" stroke="${hexToRgba(p.text, 0.25)}" stroke-width="2"/>`;
+    html += `<polygon points="30,4 40,10 30,16" fill="${hexToRgba(mitigColor, 0.5)}"/>`;
+    html += `</svg>`;
 
     // Mitigation card
-    html += `<div style="position:absolute;left:${rightX}px;top:${ry}px;width:${colW}px;height:${rowH}px;background:${mitigBg};border:1px solid ${hexToRgba(mitigColor, 0.15)};border-left:4px solid ${mitigColor};border-radius:10px;box-shadow:${cardShadow(1, dark)}"></div>`;
-    html += `<div style="position:absolute;left:${rightX + 14}px;top:${ry + Math.round((rowH - 18) / 2)}px;width:${colW - 28}px;font-size:13px;line-height:1.4;color:${p.text};overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical"><span style="color:${mitigColor};margin-right:6px;font-weight:bold">\u2713</span>${escHtml(pair.mitigation)}</div>`;
+    html += `<div style="position:absolute;left:${rightX}px;top:${ry}px;width:${colW}px;height:${rowH}px;background:${cardBgM};border-left:4px solid ${mitigColor};border-radius:10px;box-shadow:${cardShadow(1, dark)}">`;
+    html += `<div style="position:absolute;left:0;top:0;width:100%;height:100%;background:linear-gradient(90deg,${hexToRgba(mitigColor, 0.06)},transparent);border-radius:10px;pointer-events:none"></div>`;
+    html += `</div>`;
+    html += `<div style="position:absolute;left:${rightX + 16}px;top:${ry + Math.round((rowH - 20) / 2)}px;width:${colW - 32}px;font-size:13px;line-height:1.4;color:${p.text};overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical"><span style="color:${mitigColor};margin-right:6px;font-size:14px">\u2713</span>${escHtml(pair.mitigation)}</div>`;
   }
 
   return `${SCOPED_RESET}
 <div style="position:relative;width:${W}px;height:${H}px;background:${p.background};overflow:hidden">
-  ${bgGradientOverlay(cW, H, p.primary, 0.04, '45%')}
+  ${bgGradientOverlay(cW, H, p.primary, 0.05, '45%')}
   <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;font-size:${titleFontSize(slide.title)}px;font-weight:bold;overflow-wrap:break-word;word-wrap:break-word;color:${p.text};line-height:1.2">${escHtml(slide.title)}</div>
   <div style="position:absolute;left:${PAD}px;top:${PAD + 56}px;width:50px;height:3px;background:${p.accent};border-radius:2px"></div>
   ${html}
@@ -4803,68 +4952,95 @@ function buildRiskMitigation(slide: SlideInput, p: ColorPalette, hasImage = fals
 
 
 // ── DEMO_SCREENSHOT ──────────────────────────────────────────
-// Large image area with numbered callout circles and feature labels
+// Browser bezel frame with image + numbered callout pins with connecting lines
 
 function buildDemoScreenshot(slide: SlideInput, p: ColorPalette, hasImage = false): string {
   const cW = hasImage ? CONTENT_W_IMG : W;
   const lines = parseBodyLines(slide.body);
   const dark = isDarkBackground(p.background);
 
-  // Parse "Number. Feature description" format
   const features: { num: number; text: string }[] = [];
   for (const line of lines) {
     const m = line.match(/^(\d+)\.\s*(.+)/);
-    if (m) {
-      features.push({ num: parseInt(m[1], 10), text: m[2].trim() });
-    }
+    if (m) features.push({ num: parseInt(m[1], 10), text: m[2].trim() });
   }
   if (features.length === 0) {
     features.push({ num: 1, text: 'Main dashboard view' });
     features.push({ num: 2, text: 'Real-time analytics' });
     features.push({ num: 3, text: 'Quick actions panel' });
+    features.push({ num: 4, text: 'Settings and config' });
   }
 
   const count = Math.min(features.length, 6);
-  const imgTop = PAD + 90;
+  const imgTop = PAD + 95;
   const imgH = H - imgTop - PAD - 10;
-  const imgW = Math.round((cW - PAD * 2) * 0.62);
+  const imgW = Math.round((cW - PAD * 2) * 0.6);
   const imgLeft = PAD;
-  const imgBg = dark ? hexToRgba(p.surface, 0.2) : hexToRgba(p.border, 0.08);
+  const bezelH = 28;
+  const bezelColor = dark ? hexToRgba(p.surface, 0.5) : hexToRgba(p.border, 0.15);
 
   let html = '';
 
-  // Image placeholder area
+  // Browser bezel frame
+  html += `<div style="position:absolute;left:${imgLeft}px;top:${imgTop}px;width:${imgW}px;height:${bezelH}px;background:${bezelColor};border-radius:12px 12px 0 0;display:flex;align-items:center;padding:0 12px">`;
+  // Window dots
+  html += `<div style="width:10px;height:10px;border-radius:50%;background:${p.error || '#ef4444'};margin-right:6px;opacity:0.7"></div>`;
+  html += `<div style="width:10px;height:10px;border-radius:50%;background:${p.warning || '#eab308'};margin-right:6px;opacity:0.7"></div>`;
+  html += `<div style="width:10px;height:10px;border-radius:50%;background:${p.success || '#22c55e'};opacity:0.7"></div>`;
+  html += `<div style="flex:1;height:16px;background:${hexToRgba(p.border, 0.1)};border-radius:8px;margin-left:14px"></div>`;
+  html += `</div>`;
+
+  // Image content area
+  const contentTop = imgTop + bezelH;
+  const contentH = imgH - bezelH;
   if (slide.imageUrl) {
-    html += `<div style="position:absolute;left:${imgLeft}px;top:${imgTop}px;width:${imgW}px;height:${imgH}px;border-radius:12px;overflow:hidden;border:1px solid ${hexToRgba(p.border, 0.15)};box-shadow:${cardShadow(2, dark)}"><img src="${escHtml(slide.imageUrl)}" style="width:100%;height:100%;object-fit:cover" /></div>`;
+    html += `<div style="position:absolute;left:${imgLeft}px;top:${contentTop}px;width:${imgW}px;height:${contentH}px;border-radius:0 0 12px 12px;overflow:hidden;border:1px solid ${hexToRgba(p.border, 0.12)};border-top:none;box-shadow:${cardShadow(2, dark)}"><img src="${escHtml(slide.imageUrl)}" style="width:100%;height:100%;object-fit:cover"/></div>`;
   } else {
-    html += `<div style="position:absolute;left:${imgLeft}px;top:${imgTop}px;width:${imgW}px;height:${imgH}px;background:${imgBg};border-radius:12px;border:2px dashed ${hexToRgba(p.border, 0.2)};display:flex;align-items:center;justify-content:center;font-size:14px;color:${hexToRgba(p.text, 0.4)}">Product Screenshot</div>`;
+    html += `<div style="position:absolute;left:${imgLeft}px;top:${contentTop}px;width:${imgW}px;height:${contentH}px;background:${dark ? hexToRgba(p.surface, 0.15) : hexToRgba(p.border, 0.05)};border-radius:0 0 12px 12px;border:1px solid ${hexToRgba(p.border, 0.12)};border-top:none;box-shadow:${cardShadow(2, dark)};display:flex;align-items:center;justify-content:center">`;
+    // Placeholder mockup lines
+    html += `<div style="width:80%;opacity:0.15">`;
+    for (let i = 0; i < 4; i++) {
+      const w = 40 + (i * 17) % 50;
+      html += `<div style="height:8px;width:${w}%;background:${p.text};border-radius:4px;margin-bottom:12px"></div>`;
+    }
+    html += `<div style="height:60px;width:90%;background:${p.text};border-radius:8px;margin-top:16px"></div>`;
+    html += `</div></div>`;
   }
 
-  // Callout circles and labels on the right side
-  const labelLeft = imgLeft + imgW + 20;
+  // Feature callouts on right side with connecting lines
+  const labelLeft = imgLeft + imgW + 24;
   const labelW = cW - labelLeft - PAD;
-  const labelGap = Math.min(70, Math.round(imgH / Math.max(count, 1)));
-  const circleR = 16;
+  const labelGap = Math.min(75, Math.round(contentH / Math.max(count, 1)));
+  const circleD = 34;
 
+  let svgLines = '';
   for (let i = 0; i < count; i++) {
     const feat = features[i];
-    const fy = imgTop + 20 + i * labelGap;
-    html += `<div style="position:absolute;left:${labelLeft}px;top:${fy}px;width:${circleR * 2}px;height:${circleR * 2}px;border-radius:50%;background:${p.accent};display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:bold;color:#fff;box-shadow:0 2px 8px ${hexToRgba(p.accent, 0.3)}">${feat.num}</div>`;
-    html += `<div style="position:absolute;left:${labelLeft + circleR * 2 + 10}px;top:${fy + 4}px;width:${labelW - circleR * 2 - 10}px;font-size:13px;line-height:1.4;color:${p.text};overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${escHtml(feat.text)}</div>`;
+    const fy = contentTop + 16 + i * labelGap;
+    // Pin circle
+    html += `<div style="position:absolute;left:${labelLeft}px;top:${fy}px;width:${circleD}px;height:${circleD}px;border-radius:50%;background:${p.accent};box-shadow:0 3px 10px ${hexToRgba(p.accent, 0.35)};display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:bold;color:#fff">${feat.num}</div>`;
+    // Feature text
+    html += `<div style="position:absolute;left:${labelLeft + circleD + 12}px;top:${fy + 3}px;width:${labelW - circleD - 12}px">`;
+    html += `<div style="font-size:13px;font-weight:600;color:${p.text};line-height:1.4">${escHtml(feat.text)}</div>`;
+    html += `</div>`;
+    // Connecting line from image edge to pin
+    const lineY = fy + circleD / 2;
+    svgLines += `<line x1="${imgLeft + imgW + 2}" y1="${lineY}" x2="${labelLeft - 4}" y2="${lineY}" stroke="${hexToRgba(p.accent, 0.2)}" stroke-width="1" stroke-dasharray="4,3"/>`;
   }
 
   return `${SCOPED_RESET}
 <div style="position:relative;width:${W}px;height:${H}px;background:${p.background};overflow:hidden">
-  ${bgGradientOverlay(cW, H, p.accent, 0.04, '50%')}
+  ${bgGradientOverlay(cW, H, p.accent, 0.05, '50%')}
   <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;font-size:${titleFontSize(slide.title)}px;font-weight:bold;overflow-wrap:break-word;word-wrap:break-word;color:${p.text};line-height:1.2">${escHtml(slide.title)}</div>
   <div style="position:absolute;left:${PAD}px;top:${PAD + 56}px;width:50px;height:3px;background:${p.accent};border-radius:2px"></div>
   ${html}
+  <svg style="position:absolute;left:0;top:0;width:${cW}px;height:${H}px;pointer-events:none" viewBox="0 0 ${cW} ${H}">${svgLines}</svg>
 </div>`;
 }
 
 
 // ── MILESTONE_TIMELINE ───────────────────────────────────────
-// Vertical timeline with past (filled) and future (outlined) milestones
+// Vertical timeline with progress indicator, glow dots, and milestone cards
 
 function buildMilestoneTimeline(slide: SlideInput, p: ColorPalette, hasImage = false, accentDiversity = true): string {
   const cW = hasImage ? CONTENT_W_IMG : W;
@@ -4872,7 +5048,6 @@ function buildMilestoneTimeline(slide: SlideInput, p: ColorPalette, hasImage = f
   const dark = isDarkBackground(p.background);
   const accents = cardAccentColors(p, accentDiversity ? colorOffset(slide.title) : 0);
 
-  // Parse lines starting with checkmark or circle: "Date: Description"
   const milestones: { done: boolean; date: string; desc: string }[] = [];
   for (const line of lines) {
     const doneMatch = line.match(/^(?:\u2713|\u2714|\[x\]|\(x\))\s*(.+)/i);
@@ -4881,34 +5056,41 @@ function buildMilestoneTimeline(slide: SlideInput, p: ColorPalette, hasImage = f
     const done = !!doneMatch;
     if (msContent) {
       const colonIdx = msContent.indexOf(':');
-      if (colonIdx > 0) {
-        milestones.push({ done, date: msContent.slice(0, colonIdx).trim(), desc: msContent.slice(colonIdx + 1).trim() });
-      } else {
-        milestones.push({ done, date: '', desc: msContent.trim() });
-      }
+      if (colonIdx > 0) milestones.push({ done, date: msContent.slice(0, colonIdx).trim(), desc: msContent.slice(colonIdx + 1).trim() });
+      else milestones.push({ done, date: '', desc: msContent.trim() });
     } else if (line.trim()) {
       const colonIdx = line.indexOf(':');
-      if (colonIdx > 0) {
-        milestones.push({ done: false, date: line.slice(0, colonIdx).trim(), desc: line.slice(colonIdx + 1).trim() });
-      }
+      if (colonIdx > 0) milestones.push({ done: false, date: line.slice(0, colonIdx).trim(), desc: line.slice(colonIdx + 1).trim() });
     }
   }
   if (milestones.length === 0) {
     milestones.push({ done: true, date: 'Q1 2024', desc: 'MVP Launch' });
     milestones.push({ done: true, date: 'Q2 2024', desc: 'First 100 users' });
     milestones.push({ done: false, date: 'Q3 2024', desc: 'Series A' });
+    milestones.push({ done: false, date: 'Q4 2024', desc: 'International expansion' });
   }
 
   const count = Math.min(milestones.length, 7);
-  const lineX = Math.round(cW * 0.18);
+  const doneCount = milestones.filter(m => m.done).length;
+  const lineX = Math.round(cW * 0.22);
   const topY = PAD + 95;
-  const itemGap = Math.min(80, Math.round((H - topY - PAD) / Math.max(count, 1)));
-  const dotR = 10;
+  const itemGap = Math.min(80, Math.round((H - topY - PAD - 10) / Math.max(count, 1)));
+  const dotR = 12;
+  const endY = topY + (count - 1) * itemGap;
 
-  // Vertical timeline line
-  let html = `<svg style="position:absolute;left:0;top:0;width:${cW}px;height:${H}px;pointer-events:none">`;
-  html += `<line x1="${lineX}" y1="${topY}" x2="${lineX}" y2="${topY + (count - 1) * itemGap}" stroke="${hexToRgba(p.border, 0.25)}" stroke-width="2" />`;
-  html += `</svg>`;
+  // SVG: vertical line with progress coloring
+  let svgInner = '';
+  // Background line (full)
+  svgInner += `<line x1="${lineX}" y1="${topY}" x2="${lineX}" y2="${endY}" stroke="${hexToRgba(p.border, 0.15)}" stroke-width="3"/>`;
+  // Progress line (done portion)
+  if (doneCount > 0) {
+    const progressY = topY + (Math.min(doneCount, count) - 1) * itemGap;
+    svgInner += `<line x1="${lineX}" y1="${topY}" x2="${lineX}" y2="${progressY}" stroke="${p.accent}" stroke-width="3" opacity="0.5"/>`;
+  }
+
+  let html = '';
+  // Progress label
+  html += `<div style="position:absolute;left:${PAD}px;top:${PAD + 70}px;font-size:11px;color:${p.text};opacity:0.5">${doneCount}/${count} completed</div>`;
 
   for (let i = 0; i < count; i++) {
     const ms = milestones[i];
@@ -4916,33 +5098,43 @@ function buildMilestoneTimeline(slide: SlideInput, p: ColorPalette, hasImage = f
     const color = accents[i % accents.length];
 
     if (ms.done) {
-      html += `<div style="position:absolute;left:${lineX - dotR}px;top:${my - dotR}px;width:${dotR * 2}px;height:${dotR * 2}px;border-radius:50%;background:${color};box-shadow:0 0 8px ${hexToRgba(color, 0.3)}"></div>`;
+      // Filled circle with glow
+      html += `<div style="position:absolute;left:${lineX - dotR}px;top:${my - dotR}px;width:${dotR * 2}px;height:${dotR * 2}px;border-radius:50%;background:${color};box-shadow:0 0 12px ${hexToRgba(color, 0.4)},0 0 24px ${hexToRgba(color, 0.15)}"></div>`;
+      // Checkmark inside
+      html += `<div style="position:absolute;left:${lineX - dotR}px;top:${my - dotR}px;width:${dotR * 2}px;height:${dotR * 2}px;display:flex;align-items:center;justify-content:center;font-size:12px;color:#fff;font-weight:bold">\u2713</div>`;
     } else {
-      html += `<div style="position:absolute;left:${lineX - dotR}px;top:${my - dotR}px;width:${dotR * 2}px;height:${dotR * 2}px;border-radius:50%;background:${p.background};border:2px dashed ${hexToRgba(color, 0.5)}"></div>`;
+      // Outlined circle
+      html += `<div style="position:absolute;left:${lineX - dotR}px;top:${my - dotR}px;width:${dotR * 2}px;height:${dotR * 2}px;border-radius:50%;background:${p.background};border:2px dashed ${hexToRgba(color, 0.4)}"></div>`;
     }
 
-    const textLeft = lineX + dotR + 16;
-    const textW = cW - textLeft - PAD;
+    // Milestone card
+    const cardLeft = lineX + dotR + 20;
+    const cardW = cW - cardLeft - PAD;
+    const cardH = Math.min(60, itemGap - 10);
+    const cardBg = dark ? hexToRgba(p.surface, ms.done ? 0.3 : 0.15) : ms.done ? p.surface : hexToRgba(p.surface, 0.6);
+    html += `<div style="position:absolute;left:${cardLeft}px;top:${my - cardH / 2}px;width:${cardW}px;height:${cardH}px;background:${cardBg};border-radius:10px;border-left:3px solid ${color};box-shadow:${ms.done ? cardShadow(1, dark) : 'none'};padding:8px 14px;opacity:${ms.done ? 1 : 0.7}">`;
     if (ms.date) {
-      html += `<div style="position:absolute;left:${textLeft}px;top:${my - 12}px;font-size:13px;font-weight:bold;color:${color}">${escHtml(ms.date)}</div>`;
-      html += `<div style="position:absolute;left:${textLeft}px;top:${my + 6}px;width:${textW}px;font-size:12px;line-height:1.3;color:${p.text};opacity:0.8;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${escHtml(ms.desc)}</div>`;
+      html += `<div style="font-size:13px;font-weight:bold;color:${color}">${escHtml(ms.date)}</div>`;
+      html += `<div style="font-size:12px;color:${p.text};opacity:0.8;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;margin-top:2px">${escHtml(ms.desc)}</div>`;
     } else {
-      html += `<div style="position:absolute;left:${textLeft}px;top:${my - 8}px;width:${textW}px;font-size:13px;line-height:1.4;color:${p.text};overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${escHtml(ms.desc)}</div>`;
+      html += `<div style="font-size:13px;color:${p.text};line-height:1.4;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">${escHtml(ms.desc)}</div>`;
     }
+    html += `</div>`;
   }
 
   return `${SCOPED_RESET}
 <div style="position:relative;width:${W}px;height:${H}px;background:${p.background};overflow:hidden">
-  ${bgGradientOverlay(cW, H, p.accent, 0.04, '40%')}
+  ${bgGradientOverlay(cW, H, p.accent, 0.05, '40%')}
   <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;font-size:${titleFontSize(slide.title)}px;font-weight:bold;overflow-wrap:break-word;word-wrap:break-word;color:${p.text};line-height:1.2">${escHtml(slide.title)}</div>
   <div style="position:absolute;left:${PAD}px;top:${PAD + 56}px;width:50px;height:3px;background:${p.accent};border-radius:2px"></div>
+  <svg style="position:absolute;left:0;top:0;width:${cW}px;height:${H}px;pointer-events:none" viewBox="0 0 ${cW} ${H}">${svgInner}</svg>
   ${html}
 </div>`;
 }
 
 
 // ── PARTNERSHIP_LOGOS ─────────────────────────────────────────
-// Category headers with grid of name badges below each
+// Categorized partner grid with logo-style badges and colored category chips
 
 function buildPartnershipLogos(slide: SlideInput, p: ColorPalette, hasImage = false, accentDiversity = true): string {
   const cW = hasImage ? CONTENT_W_IMG : W;
@@ -4950,7 +5142,6 @@ function buildPartnershipLogos(slide: SlideInput, p: ColorPalette, hasImage = fa
   const dark = isDarkBackground(p.background);
   const accents = cardAccentColors(p, accentDiversity ? colorOffset(slide.title) : 0);
 
-  // Parse "Category: Name1, Name2, Name3"
   const categories: { label: string; names: string[] }[] = [];
   for (const line of lines) {
     const sep = line.indexOf(':');
@@ -4966,9 +5157,9 @@ function buildPartnershipLogos(slide: SlideInput, p: ColorPalette, hasImage = fa
   }
 
   const catCount = Math.min(categories.length, 4);
-  const startY = PAD + 95;
+  const startY = PAD + 100;
   const availH = H - startY - PAD;
-  const catGap = 12;
+  const catGap = 16;
   const catH = Math.round((availH - (catCount - 1) * catGap) / catCount);
   const contentW = cW - PAD * 2;
 
@@ -4979,29 +5170,37 @@ function buildPartnershipLogos(slide: SlideInput, p: ColorPalette, hasImage = fa
     const color = accents[ci % accents.length];
     const cy = startY + ci * (catH + catGap);
 
-    html += `<div style="position:absolute;left:${PAD}px;top:${cy}px;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:${color}">${escHtml(cat.label)}</div>`;
+    // Category chip
+    html += `<div style="position:absolute;left:${PAD}px;top:${cy}px;display:inline-flex;align-items:center;padding:3px 12px;background:${hexToRgba(color, dark ? 0.15 : 0.08)};border-radius:12px;border:1px solid ${hexToRgba(color, 0.2)}">`;
+    html += `<span style="font-size:11px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;color:${color}">${escHtml(cat.label)}</span>`;
+    html += `</div>`;
 
-    const badgeTop = cy + 22;
+    // Partner badges grid
+    const badgeTop = cy + 30;
     const maxPerRow = 4;
     const badgeGap = 10;
     const nameCount = Math.min(cat.names.length, 8);
-    const badgeW = Math.min(140, Math.round((contentW - (maxPerRow - 1) * badgeGap) / maxPerRow));
-    const badgeH = 30;
+    const badgeW = Math.min(160, Math.round((contentW - (maxPerRow - 1) * badgeGap) / maxPerRow));
+    const badgeH = 40;
+    const cardBg = dark ? hexToRgba(p.surface, 0.25) : p.surface;
 
     for (let ni = 0; ni < nameCount; ni++) {
       const col = ni % maxPerRow;
       const row = Math.floor(ni / maxPerRow);
       const bx = PAD + col * (badgeW + badgeGap);
-      const by = badgeTop + row * (badgeH + 8);
-      const badgeBg = dark ? hexToRgba(p.surface, 0.3) : p.surface;
+      const by = badgeTop + row * (badgeH + 10);
 
-      html += `<div style="position:absolute;left:${bx}px;top:${by}px;width:${badgeW}px;height:${badgeH}px;background:${badgeBg};border:1px solid ${hexToRgba(p.border, 0.2)};border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:${p.text};overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${escHtml(cat.names[ni])}</div>`;
+      html += `<div style="position:absolute;left:${bx}px;top:${by}px;width:${badgeW}px;height:${badgeH}px;background:${cardBg};border:1px solid ${hexToRgba(p.border, 0.15)};border-radius:10px;box-shadow:${cardShadow(1, dark)};display:flex;align-items:center;padding:0 12px">`;
+      // Logo placeholder circle
+      html += `<div style="width:26px;height:26px;border-radius:50%;background:${hexToRgba(color, 0.12)};border:1px solid ${hexToRgba(color, 0.2)};display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:bold;color:${color};flex-shrink:0">${escHtml(cat.names[ni].charAt(0))}</div>`;
+      html += `<span style="margin-left:10px;font-size:12px;font-weight:600;color:${p.text};overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${escHtml(cat.names[ni])}</span>`;
+      html += `</div>`;
     }
   }
 
   return `${SCOPED_RESET}
 <div style="position:relative;width:${W}px;height:${H}px;background:${p.background};overflow:hidden">
-  ${bgGradientOverlay(cW, H, p.accent, 0.04, '45%')}
+  ${bgGradientOverlay(cW, H, p.accent, 0.05, '45%')}
   <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;font-size:${titleFontSize(slide.title)}px;font-weight:bold;overflow-wrap:break-word;word-wrap:break-word;color:${p.text};line-height:1.2">${escHtml(slide.title)}</div>
   <div style="position:absolute;left:${PAD}px;top:${PAD + 56}px;width:50px;height:3px;background:${p.accent};border-radius:2px"></div>
   ${html}
