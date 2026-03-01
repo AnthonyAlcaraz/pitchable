@@ -39,7 +39,7 @@ export class HealthController {
     for (const v of newVals) {
       try {
         await this.prisma.$executeRawUnsafe(
-          `DO $$$ BEGIN ALTER TYPE "SlideType" ADD VALUE IF NOT EXISTS '${v}'; EXCEPTION WHEN duplicate_object THEN NULL; END $$$;`
+          `ALTER TYPE "SlideType" ADD VALUE IF NOT EXISTS '${v}'`
         );
         results[v] = 'OK';
       } catch (e: any) {
