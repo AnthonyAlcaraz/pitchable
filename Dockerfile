@@ -25,7 +25,7 @@ COPY --from=deps /app/apps/web/node_modules ./apps/web/node_modules
 COPY --from=deps /app/packages/shared/node_modules ./packages/shared/node_modules
 COPY . .
 
-# Generate Prisma client
+# Generate Prisma client (cache bust: 12-new-types-v1)
 RUN cd apps/api && npx prisma generate
 
 # Prisma generate in Docker doesn't always create package.json with "type":"module".
