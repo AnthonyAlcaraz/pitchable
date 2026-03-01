@@ -537,6 +537,9 @@ export function buildHtmlSlideContent(
       return '';
   }
 
+  // Global overflow prevention: clip entire slide
+  html = `<div style="width:${W}px;height:${H}px;overflow:hidden;position:relative">${html}</div>`;
+
   // Text stacking prevention: ensure body text divs have overflow:hidden
   html = html.replace(
     /opacity:0\.8[5-9](?!.*overflow:hidden)/g,
@@ -4335,7 +4338,7 @@ function buildFlywheel(slide: SlideInput, p: ColorPalette, hasImage = false, acc
     labelsHtml += `<div style="position:absolute;left:${Math.round(left)}px;top:${Math.round(ly - 18)}px;width:${boxW}px;padding:8px 12px;background:${cardBg};${glassBorder}${blurCSS}border-left:3px solid ${col};border-radius:10px;box-shadow:${cardShadow(2, dark)};text-align:${align}">`;
     labelsHtml += `<div style="display:flex;align-items:center;${align === 'right' ? 'flex-direction:row-reverse;' : ''}gap:6px">`;
     labelsHtml += `<div style="width:8px;height:8px;border-radius:50%;background:linear-gradient(135deg,${col},${hexToRgba(col, 0.6)});flex-shrink:0"></div>`;
-    labelsHtml += `<span style="font-size:13px;font-weight:800;color:${col};letter-spacing:0.5px;line-height:1.3">${escHtml(steps[i] || 'Step ' + (i + 1))}</span>`;
+    labelsHtml += `<span style="font-size:13px;font-weight:800;color:${col};letter-spacing:0.5px;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(steps[i] || 'Step ' + (i + 1))}</span>`;
     labelsHtml += `</div></div>`;
   }
 
@@ -4409,8 +4412,8 @@ function buildRevenueModel(slide: SlideInput, p: ColorPalette, hasImage = false,
     cardsHtml += `<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">`;
     // Icon circle with gradient fill (30px)
     cardsHtml += `<div style="width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,${col},${hexToRgba(col, 0.6)});display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;flex-shrink:0">${escHtml(ch.name.charAt(0).toUpperCase())}</div>`;
-    cardsHtml += `<span style="font-size:14px;font-weight:800;color:${p.text};letter-spacing:0.5px">${escHtml(ch.name)}</span>`;
-    cardsHtml += `<span style="margin-left:auto;font-size:15px;font-weight:bold;color:${col}">${escHtml(ch.amount)}</span>`;
+    cardsHtml += `<span style="font-size:14px;font-weight:800;color:${p.text};letter-spacing:0.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(ch.name)}</span>`;
+    cardsHtml += `<span style="margin-left:auto;font-size:15px;font-weight:bold;color:${col};white-space:nowrap">${escHtml(ch.amount)}</span>`;
     cardsHtml += `</div>`;
     // Progress bar (8px height)
     cardsHtml += `<div style="height:8px;background:${hexToRgba(p.border, 0.12)};border-radius:4px;overflow:hidden"><div style="width:${ch.pct}%;height:100%;background:linear-gradient(90deg,${col},${hexToRgba(col, 0.6)});border-radius:4px"></div></div>`;
@@ -4548,7 +4551,7 @@ function buildCustomerJourney(slide: SlideInput, p: ColorPalette, hasImage = fal
     const badgeY = by + barH / 2;
     const badgeBg = dark ? hexToRgba(p.surface, 0.25) : hexToRgba(p.surface, 0.92);
     const glassB = dark ? 'backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.12);' : `border:1px solid ${hexToRgba(col, 0.2)};`;
-    labelsHtml += `<div style="position:absolute;left:${badgeX}px;top:${badgeY - 14}px;padding:4px 12px;background:${badgeBg};${glassB}border-radius:14px;font-size:13px;font-weight:800;color:${col};box-shadow:0 0 10px ${hexToRgba(col, 0.3)},${cardShadow(2, dark)}">${escHtml(st.conversion || st.metric)}</div>`;
+    labelsHtml += `<div style="position:absolute;left:${badgeX}px;top:${badgeY - 14}px;padding:4px 12px;background:${badgeBg};${glassB}border-radius:14px;font-size:13px;font-weight:800;color:${col};box-shadow:0 0 10px ${hexToRgba(col, 0.3)},${cardShadow(2, dark)};white-space:nowrap;overflow:hidden">${escHtml(st.conversion || st.metric)}</div>`;
 
     // Drop-off arrows: larger text (12px), bolder color
     if (i < n - 1) {
@@ -4556,7 +4559,7 @@ function buildCustomerJourney(slide: SlideInput, p: ColorPalette, hasImage = fal
       if (dropPct > 0) {
         const arrowX = barAreaLeft - 6;
         const arrowY = by + barH + barGap / 2;
-        labelsHtml += `<div style="position:absolute;left:${arrowX}px;top:${arrowY - 10}px;font-size:12px;color:${p.error || '#ef4444'};font-weight:800;opacity:0.8">\u2193 -${dropPct}%</div>`;
+        labelsHtml += `<div style="position:absolute;left:${Math.max(arrowX, PAD + 4)}px;top:${arrowY - 10}px;font-size:12px;color:${p.error || '#ef4444'};font-weight:800;opacity:0.8">\u2193 -${dropPct}%</div>`;
       }
     }
   }
@@ -4575,7 +4578,7 @@ function buildCustomerJourney(slide: SlideInput, p: ColorPalette, hasImage = fal
     // Larger numbered circle (36px) with gradient fill
     cardsHtml += `<div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,${col},${hexToRgba(col, 0.6)});display:inline-flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;color:#fff;margin-bottom:6px">${i + 1}</div>`;
     cardsHtml += `<div style="font-size:13px;font-weight:800;color:${col};margin-bottom:4px;letter-spacing:0.5px">${escHtml(st.name)}</div>`;
-    if (st.metric) cardsHtml += `<div style="font-size:17px;font-weight:bold;color:${p.text}">${escHtml(st.metric)}</div>`;
+    if (st.metric) cardsHtml += `<div style="font-size:17px;font-weight:bold;color:${p.text};overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${escHtml(st.metric)}</div>`;
     cardsHtml += `</div>`;
   }
 
@@ -4671,7 +4674,7 @@ function buildTechStack(slide: SlideInput, p: ColorPalette, hasImage = false, ac
 
     // Layer name (bolder)
     bandsHtml += `<div style="position:absolute;left:${PAD + 58}px;top:${iconCy - 12}px;width:${labelColW - 40}px">`;
-    bandsHtml += `<div style="font-size:14px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:${col}">${escHtml(layer.name)}</div>`;
+    bandsHtml += `<div style="font-size:14px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:${col};overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${escHtml(layer.name)}</div>`;
     bandsHtml += `</div>`;
 
     // ── Hexagonal-inspired pill component badges with gradient initial circles (32px) ──
@@ -4689,7 +4692,7 @@ function buildTechStack(slide: SlideInput, p: ColorPalette, hasImage = false, ac
       bandsHtml += `<div style="position:absolute;left:${bx}px;top:${badgeY}px;height:40px;padding:0 14px 0 6px;background:${pillBg};${pillBorder}${blurCSS}border-radius:20px;display:flex;align-items:center;box-shadow:${cardShadow(2, dark)}">`;
       // Gradient initial circle (32px)
       bandsHtml += `<div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,${col},${hexToRgba(col, 0.6)});display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#fff;margin-right:8px">${escHtml(comp.charAt(0).toUpperCase())}</div>`;
-      bandsHtml += `<span style="font-size:12px;font-weight:700;color:${dark ? '#fff' : p.text};white-space:nowrap;letter-spacing:0.3px">${escHtml(comp)}</span>`;
+      bandsHtml += `<span style="font-size:12px;font-weight:700;color:${dark ? '#fff' : p.text};white-space:nowrap;letter-spacing:0.3px;max-width:90px;overflow:hidden;text-overflow:ellipsis">${escHtml(comp)}</span>`;
       bandsHtml += `</div>`;
       bx += bw + 10;
     }
@@ -4712,7 +4715,7 @@ function buildTechStack(slide: SlideInput, p: ColorPalette, hasImage = false, ac
   }
 
   // ── "ARCHITECTURE" rotated text annotation on right edge ──
-  const archX = cW - PAD + 8;
+  const archX = cW - PAD - 5;
   const archY = startY + Math.round(n * (bandH + bandGap) / 2);
   svgInner += `<text x="${archX}" y="${archY}" text-anchor="middle" fill="${hexToRgba(p.text, 0.08)}" font-size="12" font-weight="800" letter-spacing="3" transform="rotate(-90 ${archX} ${archY})">ARCHITECTURE</text>`;
 
@@ -4723,8 +4726,8 @@ function buildTechStack(slide: SlideInput, p: ColorPalette, hasImage = false, ac
   svgInner += `<line x1="${arrowX}" y1="${arrowTop}" x2="${arrowX}" y2="${arrowBot}" stroke="${hexToRgba(p.text, 0.12)}" stroke-width="2"/>`;
   svgInner += `<polygon points="${arrowX - 4},${arrowTop + 6} ${arrowX + 4},${arrowTop + 6} ${arrowX},${arrowTop}" fill="${hexToRgba(p.text, 0.15)}"/>`;
   svgInner += `<polygon points="${arrowX - 4},${arrowBot - 6} ${arrowX + 4},${arrowBot - 6} ${arrowX},${arrowBot}" fill="${hexToRgba(p.text, 0.15)}"/>`;
-  bandsHtml += `<div style="position:absolute;left:${arrowX - 20}px;top:${arrowTop - 16}px;width:40px;text-align:center;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:${p.text};opacity:0.35">\u2191 Users</div>`;
-  bandsHtml += `<div style="position:absolute;left:${arrowX - 20}px;top:${arrowBot + 6}px;width:40px;text-align:center;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:${p.text};opacity:0.35">\u2193 Infra</div>`;
+  bandsHtml += `<div style="position:absolute;left:${Math.max(PAD - 10, arrowX - 20)}px;top:${arrowTop - 16}px;width:40px;text-align:center;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:${p.text};opacity:0.35">\u2191 Users</div>`;
+  bandsHtml += `<div style="position:absolute;left:${Math.max(PAD - 10, arrowX - 20)}px;top:${arrowBot + 6}px;width:40px;text-align:center;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:${p.text};opacity:0.35">\u2193 Infra</div>`;
 
   return `${SCOPED_RESET}
 <div style="position:relative;width:${W}px;height:${H}px;background:${p.background};overflow:hidden">
@@ -4846,10 +4849,10 @@ function buildGrowthLoops(slide: SlideInput, p: ColorPalette, hasImage = false, 
     const connOuterX = cx + (nodeCardR - 14) * Math.cos(a), connOuterY = cy + (nodeCardR - 14) * Math.sin(a);
     svgInner += `<line x1="${connInnerX.toFixed(1)}" y1="${connInnerY.toFixed(1)}" x2="${connOuterX.toFixed(1)}" y2="${connOuterY.toFixed(1)}" stroke="${hexToRgba(col, 0.25)}" stroke-width="1.5" stroke-dasharray="4,4"/>`;
 
-    nodesHtml += `<div style="position:absolute;left:${Math.round(leftPos)}px;top:${Math.round(ly - 20)}px;width:${cardW}px;padding:8px 12px;background:${cardBg};${glassBorder}${blurCSS}border-left:3px solid ${col};border-radius:10px;box-shadow:${cardShadow(2, dark)};text-align:${align === 'right' ? 'right' : 'left'}">`;
+    nodesHtml += `<div style="position:absolute;left:${Math.max(PAD, Math.round(leftPos))}px;top:${Math.round(ly - 20)}px;width:${cardW}px;padding:8px 12px;background:${cardBg};${glassBorder}${blurCSS}border-left:3px solid ${col};border-radius:10px;box-shadow:${cardShadow(2, dark)};text-align:${align === 'right' ? 'right' : 'left'}">`;
     nodesHtml += `<div style="display:flex;align-items:center;${align === 'right' ? 'flex-direction:row-reverse;' : ''}gap:6px">`;
     nodesHtml += `<div style="width:8px;height:8px;border-radius:50%;background:linear-gradient(135deg,${col},${hexToRgba(col, 0.6)});flex-shrink:0"></div>`;
-    nodesHtml += `<span style="font-size:13px;font-weight:800;color:${col};letter-spacing:0.5px;line-height:1.3">${escHtml(nodes[i] || 'Step ' + (i + 1))}</span>`;
+    nodesHtml += `<span style="font-size:13px;font-weight:800;color:${col};letter-spacing:0.5px;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(nodes[i] || 'Step ' + (i + 1))}</span>`;
     nodesHtml += `</div></div>`;
   }
 
@@ -4920,7 +4923,7 @@ function buildCaseStudy(slide: SlideInput, p: ColorPalette, hasImage = false): s
   const clientGlass = dark ? 'backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.12);' : `border:1px solid ${hexToRgba(p.accent, 0.12)};`;
   const clientBarHtml = `<div style="position:absolute;left:${PAD}px;top:${PAD + 78}px;width:${cW - PAD * 2}px;height:56px;background:linear-gradient(135deg,${clientBarBg},${hexToRgba(p.accent, dark ? 0.08 : 0.03)});${clientGlass}border-radius:14px;display:flex;align-items:center;padding:0 20px;box-shadow:${cardShadow(2, dark)}">` +
     `<div style="width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,${p.accent},${hexToRgba(p.accent, 0.6)});display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;color:#fff">${escHtml(clientName.charAt(0).toUpperCase())}</div>` +
-    `<div style="margin-left:14px;font-size:20px;font-weight:800;color:${p.text};letter-spacing:0.5px">${escHtml(clientName)}</div></div>`;
+    `<div style="margin-left:14px;font-size:20px;font-weight:800;color:${p.text};letter-spacing:0.5px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;max-width:${cW - PAD * 2 - 100}px">${escHtml(clientName)}</div></div>`;
 
   // ── Giant decorative SVG quotation mark (100px tall, accent at 0.06 opacity) positioned top-right of quote area ──
   const quoteMarkX = cW - PAD - 120;
@@ -4944,7 +4947,7 @@ function buildCaseStudy(slide: SlideInput, p: ColorPalette, hasImage = false): s
     // Gradient accent top border (via pseudo overlay)
     kpiHtml += `<div style="position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,${col},${hexToRgba(col, 0.6)});border-radius:14px 14px 0 0"></div>`;
     // Value with glow
-    kpiHtml += `<div style="font-size:30px;font-weight:800;color:${col};${dark ? `text-shadow:0 0 12px ${hexToRgba(col, 0.3)}` : ''};margin-top:4px">${escHtml(kpi.value)}</div>`;
+    kpiHtml += `<div style="font-size:30px;font-weight:800;color:${col};overflow:hidden;white-space:nowrap;text-overflow:ellipsis;${dark ? `text-shadow:0 0 12px ${hexToRgba(col, 0.3)}` : ''};margin-top:4px">${escHtml(kpi.value)}</div>`;
     kpiHtml += `<div style="font-size:12px;font-weight:600;color:${p.text};opacity:0.6;margin-top:6px;letter-spacing:0.3px">${escHtml(kpi.label)}</div>`;
     kpiHtml += `</div>`;
   }
@@ -5576,6 +5579,7 @@ function buildPartnershipLogos(slide: SlideInput, p: ColorPalette, hasImage = fa
       const row = Math.floor(ni / maxPerRow);
       const bx = PAD + col_idx * (badgeW + badgeGap);
       const by = badgeTop + row * (badgeH + 10);
+      if (by + badgeH > H - PAD) continue;
       const badgeGlass = dark
         ? `background:${hexToRgba(p.surface, 0.18)};backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.12)`
         : `background:${p.surface};border:1px solid ${hexToRgba(p.border, 0.15)}`;
