@@ -33,7 +33,9 @@ export const FIGMA_GRADE_TYPES: Set<string> = new Set([
   'HOOK', 'MATRIX_2X2', 'WATERFALL', 'FUNNEL', 'COMPETITIVE_MATRIX', 'ROADMAP',
   'PRICING_TABLE', 'UNIT_ECONOMICS', 'SWOT', 'THREE_PILLARS', 'BEFORE_AFTER',
   'SOCIAL_PROOF', 'OBJECTION_HANDLER', 'FAQ', 'VERDICT', 'COHORT_TABLE', 'PROGRESS_TRACKER',
-  'PRODUCT_SHOWCASE', 'SPLIT_STATEMENT', 'HIRING_PLAN', 'USE_OF_FUNDS', 'RISK_MITIGATION', 'DEMO_SCREENSHOT', 'MILESTONE_TIMELINE', 'PARTNERSHIP_LOGOS',
+  'PRODUCT_SHOWCASE', 'SPLIT_STATEMENT',
+  'FLYWHEEL', 'REVENUE_MODEL', 'CUSTOMER_JOURNEY', 'TECH_STACK', 'GROWTH_LOOPS', 'CASE_STUDY',
+  'HIRING_PLAN', 'USE_OF_FUNDS', 'RISK_MITIGATION', 'DEMO_SCREENSHOT', 'MILESTONE_TIMELINE', 'PARTNERSHIP_LOGOS',
 ]);
 
 // ── Helpers ──────────────────────────────────────────────────
@@ -507,6 +509,18 @@ export function buildHtmlSlideContent(
       html = buildProductShowcase(cleaned, palette, !!cleaned.imageUrl); break;
     case 'SPLIT_STATEMENT':
       html = buildSplitStatement(cleaned, palette, !!cleaned.imageUrl); break;
+    case 'FLYWHEEL':
+      html = buildFlywheel(cleaned, palette, !!cleaned.imageUrl, accentDiversity); break;
+    case 'REVENUE_MODEL':
+      html = buildRevenueModel(cleaned, palette, !!cleaned.imageUrl, accentDiversity); break;
+    case 'CUSTOMER_JOURNEY':
+      html = buildCustomerJourney(cleaned, palette, !!cleaned.imageUrl, accentDiversity); break;
+    case 'TECH_STACK':
+      html = buildTechStack(cleaned, palette, !!cleaned.imageUrl, accentDiversity); break;
+    case 'GROWTH_LOOPS':
+      html = buildGrowthLoops(cleaned, palette, !!cleaned.imageUrl, accentDiversity); break;
+    case 'CASE_STUDY':
+      html = buildCaseStudy(cleaned, palette, !!cleaned.imageUrl); break;
     case 'HIRING_PLAN':
       html = buildHiringPlan(cleaned, palette, !!cleaned.imageUrl, accentDiversity); break;
     case 'USE_OF_FUNDS':
