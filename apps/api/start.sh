@@ -11,31 +11,133 @@ echo "=== Attempting prisma db push ==="
 npx prisma db push --accept-data-loss --url "$DATABASE_URL" 2>&1 || echo "=== prisma db push FAILED (exit $?) ==="
 echo "=== prisma db push completed ==="
 
-# Apply any missing enum values or columns that prisma db push may skip
-echo "=== Applying supplemental schema fixes ==="
-node -e "
-const { PrismaClient } = require('./generated/prisma/client.js');
-const prisma = new PrismaClient({ datasourceUrl: process.env.DATABASE_URL });
-(async () => {
-  const fixes = [
-    \"ALTER TABLE \\\"PitchLens\\\" ADD COLUMN IF NOT EXISTS \\\"accentColorDiversity\\\" BOOLEAN NOT NULL DEFAULT true\",
-  ];
-  const enumVals = [
-    'MATRIX_2X2','WATERFALL','FUNNEL','COMPETITIVE_MATRIX','ROADMAP',
-    'PRICING_TABLE','UNIT_ECONOMICS','SWOT','THREE_PILLARS','HOOK',
-    'BEFORE_AFTER','SOCIAL_PROOF','OBJECTION_HANDLER','FAQ','VERDICT',
-    'COHORT_TABLE','PROGRESS_TRACKER','PRODUCT_SHOWCASE','FLYWHEEL','REVENUE_MODEL','CUSTOMER_JOURNEY','TECH_STACK','GROWTH_LOOPS','CASE_STUDY','HIRING_PLAN','USE_OF_FUNDS','RISK_MITIGATION','DEMO_SCREENSHOT','MILESTONE_TIMELINE','PARTNERSHIP_LOGOS',
-  ];
-  for (const sql of fixes) {
-    try { await prisma.\$executeRawUnsafe(sql); } catch {}
-  }
-  for (const v of enumVals) {
-    try { await prisma.\$executeRawUnsafe('ALTER TYPE \"SlideType\" ADD VALUE IF NOT EXISTS \\'' + v + '\\''); } catch {}
-  }
-  console.log('Schema fixes applied');
-  await prisma.\$disconnect();
-})();
-" 2>&1 || echo "=== Schema fixes failed ==="
+# Apply any missing enum values via raw SQL file (avoids ESM/CJS issues)
+echo "=== Applying supplemental enum values ==="
+cat > /tmp/enum_fixes.sql << 'SQLEOF'
+ALTER TABLE "PitchLens" ADD COLUMN IF NOT EXISTS "accentColorDiversity" BOOLEAN NOT NULL DEFAULT true;
+DO $$ BEGIN
+  ALTER TYPE "SlideType" ADD VALUE IF NOT EXISTS 'MATRIX_2X2';
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+DO $$ BEGIN
+  ALTER TYPE "SlideType" ADD VALUE IF NOT EXISTS 'WATERFALL';
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+DO $$ BEGIN
+  ALTER TYPE "SlideType" ADD VALUE IF NOT EXISTS 'FUNNEL';
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+DO $$ BEGIN
+  ALTER TYPE "SlideType" ADD VALUE IF NOT EXISTS 'COMPETITIVE_MATRIX';
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+DO $$ BEGIN
+  ALTER TYPE "SlideType" ADD VALUE IF NOT EXISTS 'ROADMAP';
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+DO $$ BEGIN
+  ALTER TYPE "SlideType" ADD VALUE IF NOT EXISTS 'PRICING_TABLE';
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+DO $$ BEGIN
+  ALTER TYPE "SlideType" ADD VALUE IF NOT EXISTS 'UNIT_ECONOMICS';
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+DO $$ BEGIN
+  ALTER TYPE "SlideType" ADD VALUE IF NOT EXISTS 'SWOT';
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+DO $$ BEGIN
+  ALTER TYPE "SlideType" ADD VALUE IF NOT EXISTS 'THREE_PILLARS';
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+DO $$ BEGIN
+  ALTER TYPE "SlideType" ADD VALUE IF NOT EXISTS 'HOOK';
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+DO $$ BEGIN
+  ALTER TYPE "SlideType" ADD VALUE IF NOT EXISTS 'BEFORE_AFTER';
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+DO $$ BEGIN
+  ALTER TYPE "SlideType" ADD VALUE IF NOT EXISTS 'SOCIAL_PROOF';
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+DO $$ BEGIN
+  ALTER TYPE "SlideType" ADD VALUE IF NOT EXISTS 'OBJECTION_HANDLER';
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+DO $$ BEGIN
+  ALTER TYPE "SlideType" ADD VALUE IF NOT EXISTS 'FAQ';
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+DO $$ BEGIN
+  ALTER TYPE "SlideType" ADD VALUE IF NOT EXISTS 'VERDICT';
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+DO $$ BEGIN
+  ALTER TYPE "SlideType" ADD VALUE IF NOT EXISTS 'COHORT_TABLE';
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+DO $$ BEGIN
+  ALTER TYPE "SlideType" ADD VALUE IF NOT EXISTS 'PROGRESS_TRACKER';
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+DO $$ BEGIN
+  ALTER TYPE "SlideType" ADD VALUE IF NOT EXISTS 'PRODUCT_SHOWCASE';
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+DO $$ BEGIN
+  ALTER TYPE "SlideType" ADD VALUE IF NOT EXISTS 'FLYWHEEL';
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+DO $$ BEGIN
+  ALTER TYPE "SlideType" ADD VALUE IF NOT EXISTS 'REVENUE_MODEL';
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+DO $$ BEGIN
+  ALTER TYPE "SlideType" ADD VALUE IF NOT EXISTS 'CUSTOMER_JOURNEY';
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+DO $$ BEGIN
+  ALTER TYPE "SlideType" ADD VALUE IF NOT EXISTS 'TECH_STACK';
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+DO $$ BEGIN
+  ALTER TYPE "SlideType" ADD VALUE IF NOT EXISTS 'GROWTH_LOOPS';
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+DO $$ BEGIN
+  ALTER TYPE "SlideType" ADD VALUE IF NOT EXISTS 'CASE_STUDY';
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+DO $$ BEGIN
+  ALTER TYPE "SlideType" ADD VALUE IF NOT EXISTS 'HIRING_PLAN';
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+DO $$ BEGIN
+  ALTER TYPE "SlideType" ADD VALUE IF NOT EXISTS 'USE_OF_FUNDS';
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+DO $$ BEGIN
+  ALTER TYPE "SlideType" ADD VALUE IF NOT EXISTS 'RISK_MITIGATION';
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+DO $$ BEGIN
+  ALTER TYPE "SlideType" ADD VALUE IF NOT EXISTS 'DEMO_SCREENSHOT';
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+DO $$ BEGIN
+  ALTER TYPE "SlideType" ADD VALUE IF NOT EXISTS 'MILESTONE_TIMELINE';
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+DO $$ BEGIN
+  ALTER TYPE "SlideType" ADD VALUE IF NOT EXISTS 'PARTNERSHIP_LOGOS';
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+SQLEOF
+
+npx prisma db execute --url "$DATABASE_URL" --file /tmp/enum_fixes.sql 2>&1 || echo "=== Enum fixes via prisma db execute FAILED ==="
+echo "=== Enum fixes completed ==="
 
 exec node /app/apps/api/dist/src/main.js
-# rebuild trigger
