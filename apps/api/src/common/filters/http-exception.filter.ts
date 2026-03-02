@@ -42,12 +42,12 @@ export class AllExceptionsFilter implements ExceptionFilter {
         exception instanceof Error ? exception.stack : undefined,
       );
       // Report unhandled (5xx) errors to Sentry
-      Sentry.captureException(exception);
+      Sentry?.captureException(exception);
     }
 
     // Also capture explicit 5xx HttpExceptions
     if (exception instanceof HttpException && statusCode >= 500) {
-      Sentry.captureException(exception);
+      Sentry?.captureException(exception);
     }
 
     response.status(statusCode).json({
