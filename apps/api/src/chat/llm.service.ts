@@ -23,6 +23,28 @@ export interface SystemBlock {
 /** Optional schema validator function. Returns null if valid, error message if invalid. */
 export type JsonValidator<T> = (data: unknown) => data is T;
 
+/** Token usage extracted from Anthropic API responses. */
+export interface LlmUsage {
+  inputTokens: number;
+  outputTokens: number;
+  cacheReadTokens: number;
+  cacheWriteTokens: number;
+}
+
+/** Result from completeWithUsage — includes content, usage, and resolved model. */
+export interface LlmResult {
+  content: string;
+  usage: LlmUsage;
+  model: string;
+}
+
+/** Result from completeJsonWithUsage — includes parsed data, usage, and resolved model. */
+export interface LlmJsonResult<T> {
+  data: T;
+  usage: LlmUsage;
+  model: string;
+}
+
 /** Default timeout for LLM calls (120 seconds — Opus needs more time for rich content). */
 const DEFAULT_TIMEOUT_MS = 120_000;
 
@@ -56,6 +78,18 @@ export class LlmService {
       'ANTHROPIC_MODEL',
       LlmModel.OPUS,
     );
+  }
+
+  /** Extract token usage from an Anthropic API response. */
+  private extractUsage(response: Anthropic.Message): LlmUsage {
+    return {
+      inputTokens: response.usage?.input_tokens ?? 0,
+      outputTokens: response.usage?.output_tokens ?? 0,
+      cacheReadTokens:
+        (response.usage as unknown as Record<string, number>)?.cache_read_input_tokens ?? 0,
+      cacheWriteTokens:
+        (response.usage as unknown as Record<string, number>)?.cache_creation_input_tokens ?? 0,
+    };
   }
 
   /**
@@ -106,10 +140,11 @@ export class LlmService {
     yield { content: '', done: true };
   }
 
-  async complete(
+  /** Complete a chat and return content with token usage and resolved model. */
+  async completeWithUsage(
     messages: LlmMessage[],
     model?: string,
-  ): Promise<string> {
+  ): Promise<LlmResult> {
     const { system, messages: nonSystem } = this.separateSystemMessages(messages);
 
     const result = await this.anthropic.messages.create({
@@ -120,11 +155,24 @@ export class LlmService {
     });
 
     const textBlock = result.content.find((block) => block.type === 'text');
-    return textBlock?.text ?? '';
+    return {
+      content: textBlock?.text ?? '',
+      usage: this.extractUsage(result),
+      model: result.model,
+    };
+  }
+
+  async complete(
+    messages: LlmMessage[],
+    model?: string,
+  ): Promise<string> {
+    const result = await this.completeWithUsage(messages, model);
+    return result.content;
   }
 
   /**
    * Complete with JSON instruction + parse + validate + retry on failure.
+   * Returns parsed data along with token usage and resolved model.
    *
    * Claude Opus 4.6 does not support assistant message prefill.
    * Instead we rely on strong system prompt instruction for JSON output.
@@ -134,16 +182,19 @@ export class LlmService {
    * @param validator - Optional type guard to validate the parsed structure
    * @param maxRetries - Number of retries on parse/validation failure (default: 1)
    */
-  async completeJson<T>(
+  async completeJsonWithUsage<T>(
     messages: LlmMessage[],
     model?: string,
     validator?: JsonValidator<T>,
     maxRetries = 1,
     options?: { cacheSystemPrompt?: boolean },
-  ): Promise<T> {
+  ): Promise<LlmJsonResult<T>> {
     let lastError: Error | null = null;
+    let lastUsage: LlmUsage = { inputTokens: 0, outputTokens: 0, cacheReadTokens: 0, cacheWriteTokens: 0 };
+    let lastModel = model ?? this.defaultModel;
     // Build a mutable copy of non-system messages for retry nudges
-    let { system, messages: nonSystem } = this.separateSystemMessages(messages);
+    const { system, messages: nonSystem } = this.separateSystemMessages(messages);
+    let mutableNonSystem = [...nonSystem];
 
     // Append JSON instruction to system prompt
     const jsonInstruction = '\n\nIMPORTANT: You MUST respond with valid JSON only. No markdown fences, no explanation, no text before or after the JSON. Output ONLY a single JSON object.';
@@ -165,8 +216,11 @@ export class LlmService {
           model: model ?? this.defaultModel,
           max_tokens: 4096,
           system: systemParam,
-          messages: nonSystem,
+          messages: mutableNonSystem,
         });
+
+        lastUsage = this.extractUsage(result);
+        lastModel = result.model;
 
         const textBlock = result.content.find((block) => block.type === 'text');
         const rawContent = (textBlock?.text ?? '').trim();
@@ -189,8 +243,8 @@ export class LlmService {
 
           if (attempt < maxRetries) {
             // Retry with a nudge to fix the JSON
-            nonSystem = [
-              ...nonSystem,
+            mutableNonSystem = [
+              ...mutableNonSystem,
               { role: 'assistant' as const, content: rawContent },
               {
                 role: 'user' as const,
@@ -211,8 +265,8 @@ export class LlmService {
             lastError = new Error('LLM response failed structural validation');
 
             if (attempt < maxRetries) {
-              nonSystem = [
-                ...nonSystem,
+              mutableNonSystem = [
+                ...mutableNonSystem,
                 { role: 'assistant' as const, content: rawContent },
                 {
                   role: 'user' as const,
@@ -225,7 +279,7 @@ export class LlmService {
           }
         }
 
-        return parsed as T;
+        return { data: parsed as T, usage: lastUsage, model: lastModel };
       } catch (err) {
         // If it's our own validation error being re-thrown, handle above
         if (err === lastError) throw err;
@@ -247,29 +301,44 @@ export class LlmService {
     }
 
     // Should never reach here, but TypeScript needs it
-    throw lastError ?? new Error('completeJson failed');
+    throw lastError ?? new Error('completeJsonWithUsage failed');
+  }
+
+  /** Backward-compatible wrapper: returns parsed data only (no usage). */
+  async completeJson<T>(
+    messages: LlmMessage[],
+    model?: string,
+    validator?: JsonValidator<T>,
+    maxRetries = 1,
+    options?: { cacheSystemPrompt?: boolean },
+  ): Promise<T> {
+    const result = await this.completeJsonWithUsage<T>(messages, model, validator, maxRetries, options);
+    return result.data;
   }
 
   /**
    * Complete with vision (image+text) content blocks + JSON parse + validate + retry.
+   * Returns parsed data along with token usage and resolved model.
    *
-   * Similar to completeJson<T>() but accepts Anthropic ContentBlockParam[] for
+   * Similar to completeJsonWithUsage<T>() but accepts Anthropic ContentBlockParam[] for
    * multimodal inputs (e.g. image thumbnails + text instructions).
    *
    * @param systemPrompt - System prompt text
    * @param contentBlocks - Array of Anthropic content blocks (text + image)
-   * @param model - Model to use (defaults to SONNET for vision tasks)
+   * @param model - Model to use (defaults to OPUS for vision tasks)
    * @param validator - Optional type guard to validate the parsed structure
    * @param maxRetries - Number of retries on parse/validation failure (default: 1)
    */
-  async completeJsonVision<T>(
+  async completeJsonVisionWithUsage<T>(
     systemPrompt: string,
     contentBlocks: Array<Anthropic.ContentBlockParam>,
     model?: string,
     validator?: JsonValidator<T>,
     maxRetries = 1,
-  ): Promise<T> {
+  ): Promise<LlmJsonResult<T>> {
     let lastError: Error | null = null;
+    let lastUsage: LlmUsage = { inputTokens: 0, outputTokens: 0, cacheReadTokens: 0, cacheWriteTokens: 0 };
+    let lastModel = model ?? LlmModel.OPUS;
 
     const jsonInstruction = '\n\nIMPORTANT: You MUST respond with valid JSON only. No markdown fences, no explanation, no text before or after the JSON. Output ONLY a single JSON object.';
     const fullSystem = systemPrompt + jsonInstruction;
@@ -287,6 +356,9 @@ export class LlmService {
           system: fullSystem,
           messages,
         });
+
+        lastUsage = this.extractUsage(result);
+        lastModel = result.model;
 
         const textBlock = result.content.find((block) => block.type === 'text');
         const rawContent = (textBlock?.text ?? '').trim();
@@ -344,7 +416,7 @@ export class LlmService {
           }
         }
 
-        return parsed as T;
+        return { data: parsed as T, usage: lastUsage, model: lastModel };
       } catch (err) {
         if (err === lastError) throw err;
 
@@ -362,6 +434,18 @@ export class LlmService {
       }
     }
 
-    throw lastError ?? new Error('completeJsonVision failed');
+    throw lastError ?? new Error('completeJsonVisionWithUsage failed');
+  }
+
+  /** Backward-compatible wrapper: returns parsed data only (no usage). */
+  async completeJsonVision<T>(
+    systemPrompt: string,
+    contentBlocks: Array<Anthropic.ContentBlockParam>,
+    model?: string,
+    validator?: JsonValidator<T>,
+    maxRetries = 1,
+  ): Promise<T> {
+    const result = await this.completeJsonVisionWithUsage<T>(systemPrompt, contentBlocks, model, validator, maxRetries);
+    return result.data;
   }
 }
