@@ -1,5 +1,7 @@
 import { Injectable, BadRequestException, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { ActivityService } from '../observability/activity.service.js';
+import { GenerationMetricsService } from '../observability/generation-metrics.service.js';
 import { LlmService, LlmModel } from '../chat/llm.service.js';
 import { getModelForSlideType } from '../chat/model-router.js';
 import { ContextBuilderService } from '../chat/context-builder.service.js';
@@ -65,6 +67,8 @@ export class SyncGenerationService {
 
   constructor(
     private readonly prisma: PrismaService,
+    private readonly activity: ActivityService,
+    private readonly generationMetrics: GenerationMetricsService,
     private readonly llm: LlmService,
     private readonly contextBuilder: ContextBuilderService,
     private readonly constraints: ConstraintsService,
@@ -216,7 +220,8 @@ export class SyncGenerationService {
         );
         const outlineUserPrompt = buildOutlineUserPrompt(input.topic, frameworkSlideStructure);
 
-        outline = await this.llm.completeJson<GeneratedOutline>(
+        const tOutlinePerf = performance.now();
+        const outlineResult = await this.llm.completeJsonWithUsage<GeneratedOutline>(
           [
             { role: 'system', content: outlineSystemPrompt },
             { role: 'user', content: outlineUserPrompt },
@@ -225,6 +230,19 @@ export class SyncGenerationService {
           isValidOutline,
           2,
         );
+        outline = outlineResult.data;
+        const outlineDurationMs = Math.round(performance.now() - tOutlinePerf);
+        this.generationMetrics.record({
+          userId,
+          presentationId: presentation.id,
+          operation: 'outline',
+          model: outlineResult.model,
+          ...outlineResult.usage,
+          durationMs: outlineDurationMs,
+          slideCount: outline.slides?.length ?? 0,
+          success: true,
+        });
+        this.activity.track({ userId, eventType: 'generate_outline', category: 'generation', metadata: { presentationId: presentation.id, slideCount: outline.slides?.length ?? 0 } });
         timings['outline'] = Date.now() - tOutline;
         this.logger.log(`[TIMING] Outline generation (Opus): ${((Date.now() - tOutline) / 1000).toFixed(1)}s — ${outline.slides?.length ?? 0} slides planned`);
       }
@@ -392,7 +410,8 @@ export class SyncGenerationService {
           }
 
           const tSlide = Date.now();
-          return this.llm.completeJson<GeneratedSlideContent>(
+          const tSlidePerf = performance.now();
+          return this.llm.completeJsonWithUsage<GeneratedSlideContent>(
             [
               { role: 'system', content: slideSystemPrompt },
               { role: 'user', content: slideUserPrompt },
@@ -401,10 +420,21 @@ export class SyncGenerationService {
             isValidSlideContent,
             2,
             { cacheSystemPrompt: true },
-          ).then(result => {
+          ).then(llmResult => {
             const tSlideGen = Date.now() - tSlide;
+            const slideDurationMs = Math.round(performance.now() - tSlidePerf);
+            this.generationMetrics.record({
+              userId,
+              presentationId: presentation.id,
+              operation: 'slide',
+              model: llmResult.model,
+              ...llmResult.usage,
+              durationMs: slideDurationMs,
+              slideType: outlineSlide.slideType,
+              success: true,
+            });
             this.logger.log(`[TIMING] Slide ${globalIdx + 1}/${outline.slides.length} generation (Opus): ${(tSlideGen / 1000).toFixed(1)}s \u2014 "${outlineSlide.title.slice(0, 40)}"`);
-            return { result, outlineSlide, globalIdx, tSlide };
+            return { result: llmResult.data, outlineSlide, globalIdx, tSlide };
           });
         });
 
@@ -506,6 +536,14 @@ export class SyncGenerationService {
       const minSlide = slideTimings.length > 0 ? (Math.min(...slideTimings) / 1000).toFixed(1) : '0';
       const maxSlide = slideTimings.length > 0 ? (Math.max(...slideTimings) / 1000).toFixed(1) : '0';
       this.logger.log(`[TIMING] Slide generation loop: ${((Date.now() - tSlidesLoop) / 1000).toFixed(1)}s total — ${outline.slides.length} slides, avg=${avgSlide}s, min=${minSlide}s, max=${maxSlide}s`);
+
+      // Track slides generation complete
+      this.activity.track({
+        userId,
+        eventType: 'generate_slides',
+        category: 'generation',
+        metadata: { presentationId: presentation.id, slideCount: outline.slides.length, themeId, model: 'multi', presentationType: presType },
+      });
 
       // 12. Multi-Agent Quality Review (Style + Narrative + Fact Check — all Opus 4.6)
       const allSyncSlides = await this.prisma.slide.findMany({
@@ -631,6 +669,9 @@ export class SyncGenerationService {
         },
       });
     } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Unknown error';
+      this.activity.track({ userId, eventType: 'generate_fail', category: 'generation', metadata: { presentationId: presentation.id, error: msg } });
+
       // Release credit reservation on failure
       await this.creditReservation.release(reservationId).catch(() => {});
 
@@ -642,9 +683,9 @@ export class SyncGenerationService {
         })
         .catch(() => {});
 
-      const msg = err instanceof Error ? err.message : 'Unknown error';
-      this.logger.error(`Sync generation failed: ${msg}`);
-      throw new BadRequestException(`Generation failed: ${msg}`);
+      const errMsg = err instanceof Error ? err.message : 'Unknown error';
+      this.logger.error(`Sync generation failed: ${errMsg}`);
+      throw new BadRequestException(`Generation failed: ${errMsg}`);
     }
   }
 
