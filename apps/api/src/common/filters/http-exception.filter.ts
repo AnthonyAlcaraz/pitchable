@@ -35,12 +35,10 @@ export class AllExceptionsFilter implements ExceptionFilter {
       }
     } else {
       statusCode = HttpStatus.INTERNAL_SERVER_ERROR;
-      const detail = exception instanceof Error ? exception.message : String(exception);
-      // Include error detail temporarily for debugging production issues
-      message = `Internal server error: ${detail}`;
+      message = 'Internal server error';
       error = 'InternalServerError';
       this.logger.error(
-        `Unhandled exception: ${detail}`,
+        `Unhandled exception: ${exception instanceof Error ? exception.message : String(exception)}`,
         exception instanceof Error ? exception.stack : undefined,
       );
       Sentry?.captureException(exception);

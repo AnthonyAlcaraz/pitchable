@@ -87,9 +87,8 @@ COPY --from=build /app/apps/api/node_modules ./apps/api/node_modules
 COPY --from=build /app/package.json ./
 COPY --from=build /app/apps/api/package.json ./apps/api/
 
-# Copy startup script and migration helpers
+# Copy startup script (runs prisma db push before app)
 COPY apps/api/start.sh ./apps/api/start.sh
-COPY apps/api/scripts ./apps/api/scripts
 RUN chmod +x ./apps/api/start.sh
 
 EXPOSE 3000
