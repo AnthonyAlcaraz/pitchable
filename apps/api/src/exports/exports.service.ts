@@ -105,6 +105,7 @@ function safeFilename(title: string): string {
 export class ExportsService {
   private readonly logger = new Logger(ExportsService.name);
   private readonly tempDir = join(process.cwd(), 'exports');
+  private readonly previewLocks = new Map<string, { running: boolean; pending: boolean }>();
 
   constructor(
     private readonly prisma: PrismaService,
@@ -1252,30 +1253,10 @@ export class ExportsService {
   }
 
   /**
-   * Generate per-slide preview images and save them.
-   * Uses the same Marp markdown the export uses.
-   * Updates each slide's previewUrl in the database.
+   * Resolve PitchLens context for preview rendering.
+   * Shared by generatePreviewsForPresentation and generateTextOnlyPreviews.
    */
-  /**
-   * Generate preview images for all slides in a presentation.
-   * Can be called standalone (after deck generation) or as part of export.
-   */
-  async generatePreviewsForPresentation(presentationId: string): Promise<void> {
-    const presentation = await this.prisma.presentation.findUnique({
-      where: { id: presentationId },
-      include: { theme: true },
-    });
-    if (!presentation || !presentation.theme) return;
-
-    const slides = await this.prisma.slide.findMany({
-      where: { presentationId },
-      orderBy: { slideNumber: 'asc' },
-    });
-    if (slides.length === 0) return;
-
-    const theme = presentation.theme as unknown as ThemeModel;
-
-    // Load PitchLens context (same as export pipeline)
+  private async resolvePreviewConfig(presentation: PresentationModel & { pitchLensId?: string | null }) {
     let audienceType: string | null = null;
     let pitchGoal: string | null = null;
     let toneStyle: string | null = null;
@@ -1294,7 +1275,13 @@ export class ExportsService {
       accentColorDiversity = lens?.accentColorDiversity ?? undefined;
     }
 
-    // Match the export pipeline: use theme-aware layout profile + AI renderer chooser
+    return { audienceType, pitchGoal, toneStyle, deckArchetype, accentColorDiversity };
+  }
+
+  private resolveLayoutProfile(
+    theme: ThemeModel,
+    config: { audienceType: string | null; pitchGoal: string | null; toneStyle: string | null; deckArchetype: string | null },
+  ): LayoutProfile {
     const themeMeta = this.themesService.getThemeMeta(theme.name);
     const selection = this.templateSelector.selectRenderEngine({
       format: ExportFormat.PDF,
@@ -1302,13 +1289,34 @@ export class ExportsService {
       themeCategory: themeMeta?.category ?? 'dark',
       defaultLayoutProfile: themeMeta?.defaultLayoutProfile ?? 'startup',
       figmaTemplateId: null,
-      audienceType,
-      pitchGoal,
-      toneStyle,
-      deckArchetype,
+      audienceType: config.audienceType,
+      pitchGoal: config.pitchGoal,
+      toneStyle: config.toneStyle,
+      deckArchetype: config.deckArchetype,
     });
+    return selection.layoutProfile;
+  }
 
-    const layoutProfile = selection.layoutProfile;
+  /**
+   * Generate preview images for all slides in a presentation.
+   * Can be called standalone (after deck generation) or as part of export.
+   */
+  async generatePreviewsForPresentation(presentationId: string): Promise<void> {
+    const presentation = await this.prisma.presentation.findUnique({
+      where: { id: presentationId },
+      include: { theme: true },
+    });
+    if (!presentation || !presentation.theme) return;
+
+    const slides = await this.prisma.slide.findMany({
+      where: { presentationId },
+      orderBy: { slideNumber: 'asc' },
+    });
+    if (slides.length === 0) return;
+
+    const theme = presentation.theme as unknown as ThemeModel;
+    const config = await this.resolvePreviewConfig(presentation as unknown as PresentationModel & { pitchLensId?: string | null });
+    const layoutProfile = this.resolveLayoutProfile(theme, config);
     const rendererOverrides = new Map<number, string>();
 
     await this.generateSlidePreviewImages(
@@ -1318,8 +1326,102 @@ export class ExportsService {
       layoutProfile,
       rendererOverrides,
       undefined,
-      accentColorDiversity,
+      config.accentColorDiversity,
     );
+  }
+
+  /**
+   * Fire-and-forget entry point for incremental preview rendering.
+   * Coalesces concurrent calls: if a render is in-flight, queues one re-run.
+   */
+  async generateIncrementalPreviews(presentationId: string): Promise<void> {
+    let lock = this.previewLocks.get(presentationId);
+    if (!lock) {
+      lock = { running: false, pending: false };
+      this.previewLocks.set(presentationId, lock);
+    }
+
+    if (lock.running) {
+      lock.pending = true;
+      return;
+    }
+
+    lock.running = true;
+    try {
+      await this.generateTextOnlyPreviews(presentationId);
+    } finally {
+      lock.running = false;
+      if (lock.pending) {
+        lock.pending = false;
+        this.generateIncrementalPreviews(presentationId).catch((err) =>
+          this.logger.warn(`Coalesced incremental preview failed: ${err instanceof Error ? err.message : 'unknown'}`),
+        );
+      } else {
+        this.previewLocks.delete(presentationId);
+      }
+    }
+  }
+
+  /**
+   * Render text-only Marp previews for all current slides, uploading only those without a previewUrl.
+   */
+  private async generateTextOnlyPreviews(presentationId: string): Promise<void> {
+    const presentation = await this.prisma.presentation.findUnique({
+      where: { id: presentationId },
+      include: { theme: true },
+    });
+    if (!presentation || !presentation.theme) return;
+
+    const slides = await this.prisma.slide.findMany({
+      where: { presentationId },
+      orderBy: { slideNumber: 'asc' },
+    });
+    if (slides.length === 0) return;
+
+    const theme = presentation.theme as unknown as ThemeModel;
+    const config = await this.resolvePreviewConfig(presentation as unknown as PresentationModel & { pitchLensId?: string | null });
+    const layoutProfile = this.resolveLayoutProfile(theme, config);
+
+    const sortedSlides = [...slides].sort((a, b) => a.slideNumber - b.slideNumber) as unknown as SlideModel[];
+
+    // Build text-only markdown for ALL current slides (Marp needs full doc)
+    const textOnlySlides = sortedSlides.map((slide) => ({
+      ...slide,
+      imageUrl: null,
+    })) as SlideModel[];
+
+    const markdown = this.marpExporter.generateMarpMarkdown(
+      presentation as unknown as PresentationModel,
+      textOnlySlides,
+      theme,
+      layoutProfile,
+      new Map<number, string>(),
+      undefined,
+      undefined,
+      config.accentColorDiversity,
+    );
+
+    const buffers = await this.marpExporter.renderSlideImages(markdown);
+    if (buffers.length === 0) return;
+
+    // Only upload slides that don't have a previewUrl yet
+    const newSlides: SlideModel[] = [];
+    const newBuffers: Buffer[] = [];
+    for (let i = 0; i < sortedSlides.length && i < buffers.length; i++) {
+      if (!sortedSlides[i].previewUrl) {
+        newSlides.push(sortedSlides[i]);
+        newBuffers.push(buffers[i]);
+      }
+    }
+
+    if (newSlides.length > 0) {
+      await this.uploadAndEmitPreviews(
+        presentation as unknown as PresentationModel,
+        newSlides,
+        newBuffers,
+      );
+      this.logger.log(`Incremental preview: uploaded ${newSlides.length} new previews for ${presentationId}`);
+    }
   }
 
   /**

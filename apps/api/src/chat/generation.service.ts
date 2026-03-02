@@ -959,6 +959,13 @@ OUTPUT: Valid JSON matching this schema (no markdown fences):
           position: prep.actualSlideNumber,
         });
 
+        // Trigger incremental Marp preview after first slide saved
+        if (waveStart === 0 && wi === 0) {
+          this.exportsService.generateIncrementalPreviews(presentationId).catch(err =>
+            this.logger.warn(`First-slide preview: ${err instanceof Error ? err.message : 'unknown'}`),
+          );
+        }
+
         // Emit inline slide preview card to chat stream
         yield {
           type: 'action',
@@ -1155,6 +1162,12 @@ OUTPUT: Valid JSON matching this schema (no markdown fences):
             label: prep.outlineSlide.title,
           },
         };
+      }
+      // Trigger incremental Marp preview after each wave (skip last wave — final render handles it)
+      if (waveStart + WAVE_SIZE < outline.slides.length) {
+        this.exportsService.generateIncrementalPreviews(presentationId).catch(err =>
+          this.logger.warn(`Wave preview: ${err instanceof Error ? err.message : 'unknown'}`),
+        );
       }
     }
     // Track slides generation complete
