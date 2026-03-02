@@ -6,6 +6,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { ActivityService } from '../observability/activity.service.js';
 import { ConstraintsService } from '../constraints/constraints.service.js';
 import { ExportsService } from '../exports/exports.service.js';
 import { EmailService } from '../email/email.service.js';
@@ -90,6 +91,7 @@ export class PresentationsService {
 
   constructor(
     private readonly prisma: PrismaService,
+    private readonly activity: ActivityService,
     private readonly constraints: ConstraintsService,
     private readonly credits: CreditsService,
     private readonly exportsService: ExportsService,
@@ -582,6 +584,10 @@ export class PresentationsService {
       select: { id: true, isPublic: true, publishedAt: true },
     });
 
+    if (isPublic) {
+      this.activity.track({ userId, eventType: 'publish_deck', category: 'deck', metadata: { presentationId: id } });
+    }
+
     this.logger.log(`Set visibility of presentation ${id} to ${isPublic ? 'public' : 'private'}`);
 
     return updated;
@@ -805,6 +811,8 @@ export class PresentationsService {
         include: { slides: { orderBy: { slideNumber: 'asc' } } },
       });
     });
+
+    this.activity.track({ userId, eventType: 'fork_deck', category: 'deck', metadata: { presentationId: forked.id, forkedFromId: id } });
 
     this.logger.log(
       `Forked presentation ${id} → ${forked.id} for user ${userId}` +
