@@ -33,6 +33,7 @@ import { EmailModule } from './email/email.module.js';
 import { FigmaModule } from './figma/figma.module.js';
 import { LoggerModule } from 'nestjs-pino';
 import { ObservabilityModule } from './observability/observability.module.js';
+import { AdminModule } from './admin/admin.module.js';
 import { validate } from './config/env.validation.js';
 
 // Parse REDIS_URL (Railway provides this) or fall back to host/port
@@ -112,6 +113,7 @@ const redisConnection = redisUrl
               '/figma/{*path}',
               '/email/{*path}',
               '/slides/{*path}',
+              '/admin/{*path}',
             ],
           }),
         ]
@@ -140,6 +142,7 @@ const redisConnection = redisUrl
     FigmaModule,
     HealthModule,
     ObservabilityModule,
+    AdminModule,
   ],
   controllers: [AppController],
   providers: [
