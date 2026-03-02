@@ -27,6 +27,10 @@ model User {
   lockedUntil        DateTime?
   passwordResetToken String?
   passwordResetUsedAt DateTime?
+  emailVerified       Boolean             @default(false)
+  emailVerificationToken String?
+  emailVerificationSentAt DateTime?
+  lowCreditsAlertedAt DateTime?
   createdAt          DateTime            @default(now())
   updatedAt          DateTime            @updatedAt
   apiKeys            ApiKey[]
