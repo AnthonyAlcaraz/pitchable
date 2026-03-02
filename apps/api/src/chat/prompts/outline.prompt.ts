@@ -94,6 +94,35 @@ FAQ — Question and answer card pairs — use for anticipated questions in sale
 VERDICT — Single judgment or recommendation with colored confidence bar — use as conclusion after analysis sections.
 COHORT_TABLE — Retention or revenue cohort matrix with color-intensity encoding — use for investor or board metrics.
 PROGRESS_TRACKER — Horizontal progress bars with percentage fill — use for OKR, project status, or milestone tracking.
+FLYWHEEL — Circular reinforcing loop diagram (Content → Audience → Engagement → Monetization) — use for growth engines, network effects, or compounding strategies.
+REVENUE_MODEL — Channel-based revenue breakdown with donut chart — use for business model slides showing revenue streams.
+CUSTOMER_JOURNEY — Horizontal stage-based journey path with conversion metrics — use for user onboarding, sales funnel, or experience mapping.
+TECH_STACK — Layered horizontal bands showing technology architecture — use for engineering overview or platform infrastructure.
+GROWTH_LOOPS — Circular node network showing viral or growth mechanics — use for product-led growth or viral loop slides.
+CASE_STUDY — Client name, quote, and KPI results in a case study card — use for customer success stories or proof points.
+HIRING_PLAN — Quarter-based timeline with role badges — use for team growth plans or organizational scaling.
+USE_OF_FUNDS — Category-based allocation with stacked bar chart — use for investor decks showing how capital will be deployed.
+RISK_MITIGATION — Two-column risk/mitigation cards — use for addressing potential concerns with concrete countermeasures.
+DEMO_SCREENSHOT — Numbered feature callouts on a product screenshot — use for product walkthroughs. imagePromptHint describes the UI.
+MILESTONE_TIMELINE — Vertical timeline with achieved (✓) and planned (○) milestones — use for company traction or product delivery history.
+PARTNERSHIP_LOGOS — Categorized badge grid of strategic partners — use for ecosystem or alliance slides (different from LOGO_WALL which is customer-focused).
+FINANCIAL_PROJECTION — Year-over-year revenue/cost/profit table with bar chart — use for 3-5 year financial forecasts.
+GO_TO_MARKET — Horizontal channel cards with strategy and timeline — use for GTM strategy or distribution plan slides.
+PERSONA — User persona card with name, role, pain points, and goals — use for target audience or ICP definition.
+TESTIMONIAL_WALL — 3-4 quote cards in masonry grid layout — use for aggregated customer quotes (different from single QUOTE).
+THANK_YOU — Centered closing slide with contact info — use as the final slide after CTA.
+SCENARIO_ANALYSIS — Bear/Base/Bull scenarios with key metrics — use for sensitivity analysis or strategic planning.
+VALUE_CHAIN — Horizontal chevron stages showing value creation flow — use for supply chain, process value mapping, or industry analysis.
+GEOGRAPHIC_MAP — Region-annotated layout with metrics per geography — use for market expansion or geographic distribution.
+IMPACT_SCORECARD — Initiative-based heat-map grid (High/Medium/Low) — use for prioritization matrices or impact assessment.
+EXIT_STRATEGY — Timeline path showing potential exit types and valuations — use for investor decks showing return scenarios.
+ORG_CHART — Tree layout showing reporting structure — use for organizational design or leadership hierarchy.
+FEATURE_COMPARISON — Multi-product star rating comparison grid — use for detailed feature-by-feature competitive analysis.
+DATA_TABLE — Standard markdown table with accent-colored header — use for dense tabular data that doesn't fit DATA_METRICS layout.
+ECOSYSTEM_MAP — Radial SVG map with center product and surrounding partners — use for platform ecosystem or marketplace visualization.
+KPI_DASHBOARD — 2x3 dashboard grid with KPI values and trend indicators — use for executive summary or board reporting.
+REFERENCES — Formatted citation list — use as final content slide for academic or research presentations.
+ABSTRACT — Structured academic abstract (Objective/Method/Results/Conclusion) — use for research or whitepaper presentations.
 
 SLIDE TYPE SELECTION RULES:
 - Use DATA_METRICS or CONTENT (with tables) when the outline item contains 3+ data points that can be organized in columns
@@ -101,7 +130,7 @@ SLIDE TYPE SELECTION RULES:
 - Use PROCESS only for sequential workflows (3-6 steps)
 - Use QUOTE when featuring a specific person's statement
 - Prefer DATA_METRICS/CONTENT over PROBLEM/SOLUTION for data-heavy slides
-- A well-structured deck typically has: 1 TITLE, 2-4 DATA_METRICS/CONTENT with tables, 1-2 PROBLEM/SOLUTION, 0-1 COMPARISON, 0-1 QUOTE, 0-2 VISUAL_HUMOR, 0-1 TEAM, 0-1 TIMELINE, 0-2 SECTION_DIVIDER, 0-1 METRICS_HIGHLIGHT, 0-1 FEATURE_GRID, 0-1 PRODUCT_SHOWCASE, 0-1 LOGO_WALL, 0-1 MARKET_SIZING, 0-1 SPLIT_STATEMENT, 0-1 MATRIX_2X2, 0-1 WATERFALL, 0-1 FUNNEL, 0-1 COMPETITIVE_MATRIX, 0-1 ROADMAP, 0-1 PRICING_TABLE, 0-1 UNIT_ECONOMICS, 0-1 SWOT, 0-1 THREE_PILLARS, 0-1 HOOK, 0-1 BEFORE_AFTER, 0-1 SOCIAL_PROOF, 0-1 OBJECTION_HANDLER, 0-1 FAQ, 0-1 VERDICT, 0-1 COHORT_TABLE, 0-1 PROGRESS_TRACKER, 1 CTA
+- A well-structured deck typically has: 1 TITLE, 2-4 DATA_METRICS/CONTENT with tables, 1-2 PROBLEM/SOLUTION, 0-1 COMPARISON, 0-1 QUOTE, 0-2 VISUAL_HUMOR, 0-1 TEAM, 0-1 TIMELINE, 0-2 SECTION_DIVIDER, 0-1 METRICS_HIGHLIGHT, 0-1 FEATURE_GRID, 0-1 PRODUCT_SHOWCASE, 0-1 LOGO_WALL, 0-1 MARKET_SIZING, 0-1 SPLIT_STATEMENT, 0-1 MATRIX_2X2, 0-1 WATERFALL, 0-1 FUNNEL, 0-1 COMPETITIVE_MATRIX, 0-1 ROADMAP, 0-1 PRICING_TABLE, 0-1 UNIT_ECONOMICS, 0-1 SWOT, 0-1 THREE_PILLARS, 0-1 HOOK, 0-1 BEFORE_AFTER, 0-1 SOCIAL_PROOF, 0-1 OBJECTION_HANDLER, 0-1 FAQ, 0-1 VERDICT, 0-1 COHORT_TABLE, 0-1 PROGRESS_TRACKER, 0-1 FLYWHEEL, 0-1 REVENUE_MODEL, 0-1 CUSTOMER_JOURNEY, 0-1 TECH_STACK, 0-1 GROWTH_LOOPS, 0-1 CASE_STUDY, 0-1 HIRING_PLAN, 0-1 USE_OF_FUNDS, 0-1 RISK_MITIGATION, 0-1 DEMO_SCREENSHOT, 0-1 MILESTONE_TIMELINE, 0-1 PARTNERSHIP_LOGOS, 0-1 FINANCIAL_PROJECTION, 0-1 GO_TO_MARKET, 0-1 PERSONA, 0-1 TESTIMONIAL_WALL, 0-1 THANK_YOU, 0-1 SCENARIO_ANALYSIS, 0-1 VALUE_CHAIN, 0-1 GEOGRAPHIC_MAP, 0-1 IMPACT_SCORECARD, 0-1 EXIT_STRATEGY, 0-1 ORG_CHART, 0-1 FEATURE_COMPARISON, 0-1 DATA_TABLE, 0-1 ECOSYSTEM_MAP, 0-1 KPI_DASHBOARD, 0-1 REFERENCES, 0-1 ABSTRACT, 1 CTA
 - Use TEAM when presenting founders, leadership, or advisory board members
 - Use TIMELINE for roadmap or milestones (NOT for how-to steps — that's PROCESS)
 - Use SECTION_DIVIDER to break decks of 12+ slides into sections. Place before each major topic shift

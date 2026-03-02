@@ -1058,8 +1058,10 @@ li { margin-bottom: 0.3em; }
 
     const imagesBase = join(tempDir, 'slide');
 
+    const RENDER_TIMEOUT_MS = 45_000;
+
     try {
-      const exitCode = await marpCli([
+      const marpPromise = marpCli([
         tempMdPath,
         '--images', 'jpeg',
         '--html',
@@ -1069,11 +1071,41 @@ li { margin-bottom: 0.3em; }
         '-o',
         imagesBase + '.jpeg',
       ]);
+      const timeoutPromise = new Promise<number>((_, reject) =>
+        setTimeout(() => reject(new Error(`Marp CLI timed out after ${RENDER_TIMEOUT_MS / 1000}s`)), RENDER_TIMEOUT_MS),
+      );
+      const exitCode = await Promise.race([marpPromise, timeoutPromise]);
       if (exitCode !== 0) throw new Error('Marp CLI exited with code ' + exitCode);
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Unknown error';
       this.logger.error(`Preview image render failed: ${message}`);
-      return [];
+
+      // Retry once without --html (strips complex HTML templates, uses basic Markdown)
+      try {
+        this.logger.log('Retrying render without --html (fallback mode)');
+        const fallbackMd = marpMarkdown.replace(/<div[^>]*>[\s\S]*?<\/div>/g, '');
+        const fallbackMdPath = join(tempDir, 'slides-fallback.md');
+        await writeFile(fallbackMdPath, fallbackMd, 'utf-8');
+        const fallbackPromise = marpCli([
+          fallbackMdPath,
+          '--images', 'jpeg',
+          '--jpeg-quality', '80',
+          '--allow-local-files',
+          '--no-stdin',
+          '-o',
+          imagesBase + '.jpeg',
+        ]);
+        const fallbackTimeout = new Promise<number>((_, reject) =>
+          setTimeout(() => reject(new Error('Fallback render timed out')), RENDER_TIMEOUT_MS),
+        );
+        const fallbackCode = await Promise.race([fallbackPromise, fallbackTimeout]);
+        if (fallbackCode !== 0) throw new Error('Fallback render failed');
+        this.logger.log('Fallback render succeeded');
+      } catch (retryErr) {
+        const retryMsg = retryErr instanceof Error ? retryErr.message : 'Unknown';
+        this.logger.error(`Fallback render also failed: ${retryMsg}`);
+        return [];
+      }
     }
 
     const dirFiles = await readdir(tempDir);

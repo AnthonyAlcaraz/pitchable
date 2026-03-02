@@ -118,23 +118,14 @@ export class QualityAgentsService {
       ? this.archetypeResolver.getQualityGateRules(options.archetypeId as DeckArchetype, 'fact_check')
       : { extraRules: [] };
 
-    // Run Style Enforcer + Fact Checker in parallel (both are per-slide)
-    const tStyleFact = Date.now();
-    const [styleResults, factCheckResults] = await Promise.all([
+    // Run all three quality agents in parallel
+    const tAgents = Date.now();
+    const [styleResults, factCheckResults, narrativeResult] = await Promise.all([
       this.runStyleEnforcer(slides, options.themeCategory, options.themeName, options.themeColors, styleGate.extraRules),
       this.runFactChecker(slides, options.userId, options.presentationId),
+      this.runNarrativeCoherence(slides, options.presentationType, options.frameworkName, narrativeGate.extraRules),
     ]);
-    this.logger.log(`[TIMING] Style+FactCheck (parallel): ${((Date.now() - tStyleFact) / 1000).toFixed(1)}s — ${styleResults.length} style, ${factCheckResults.length} fact checks`);
-
-    // Run Narrative Coherence (needs full deck context)
-    const tNarrative = Date.now();
-    const narrativeResult = await this.runNarrativeCoherence(
-      slides,
-      options.presentationType,
-      options.frameworkName,
-      narrativeGate.extraRules,
-    );
-    this.logger.log(`[TIMING] Narrative coherence: ${((Date.now() - tNarrative) / 1000).toFixed(1)}s`);
+    this.logger.log(`[TIMING] All agents (parallel): ${((Date.now() - tAgents) / 1000).toFixed(1)}s — ${styleResults.length} style, ${factCheckResults.length} fact checks`);
 
     // Collect auto-fixes from Style Enforcer
     const fixes: QualityReviewResult['fixes'] = [];
@@ -247,8 +238,8 @@ export class QualityAgentsService {
     const systemPrompt = buildStyleEnforcerPrompt(themeCategory, themeName, themeColors, archetypeExtraRules);
     const results: Array<{ slideNumber: number; result: StyleEnforcerResult }> = [];
 
-    // Process slides in batches of 3 for controlled parallelism
-    const batchSize = 3;
+    // Process slides in batches of 6 for controlled parallelism
+    const batchSize = 6;
     for (let i = 0; i < slides.length; i += batchSize) {
       const batch = slides.slice(i, i + batchSize);
       const batchResults = await Promise.all(
@@ -348,8 +339,8 @@ ${slide.imagePromptHint ? `Image Prompt: ${slide.imagePromptHint}` : ''}`;
 
     const results: Array<{ slideNumber: number; result: FactCheckerResult }> = [];
 
-    // Process in batches of 2 (fact checking needs more context per call)
-    const batchSize = 2;
+    // Process in batches of 4 for improved throughput
+    const batchSize = 4;
     for (let i = 0; i < slidesToCheck.length; i += batchSize) {
       const batch = slidesToCheck.slice(i, i + batchSize);
       const batchResults = await Promise.all(

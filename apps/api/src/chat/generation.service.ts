@@ -1209,102 +1209,18 @@ OUTPUT: Valid JSON matching this schema (no markdown fences):
       });
     }
 
-    try {
-      const qualityResult = await this.qualityAgents.reviewPresentation(slidesForReview, {
-        themeCategory,
-        themeName,
-        themeColors,
-        presentationType: config.presentationType || 'STANDARD',
-        frameworkName: presWithLens?.pitchLens?.selectedFramework ?? undefined,
-        userId,
-        presentationId,
-        archetypeId: presWithLens?.pitchLens?.deckArchetype ?? undefined,
-      });
-
-      yield { type: 'progress', content: 'Running quality review agents', metadata: { step: 'quality_review', status: 'complete' } };
-
-      // Apply auto-fixes from agents and re-emit updated slide previews
-      if (qualityResult.fixes.length > 0) {
-        this.logger.log(`Quality review auto-fixing ${qualityResult.fixes.length} slides`);
-        for (const fix of qualityResult.fixes) {
-          const slideToFix = allSlides.find((s) => s.slideNumber === fix.slideNumber);
-          if (slideToFix) {
-            await this.prisma.slide.update({
-              where: { id: slideToFix.id },
-              data: { title: fix.fixedTitle, body: fix.fixedBody },
-            });
-            this.events.emitSlideUpdated({
-              presentationId,
-              slideId: slideToFix.id,
-              data: { title: fix.fixedTitle, body: fix.fixedBody },
-            });
-            // Re-emit slide preview so chat stream reflects the fix
-            yield {
-              type: 'action',
-              content: '',
-              metadata: {
-                action: 'slide_preview',
-                slide: {
-                  id: slideToFix.id,
-                  slideNumber: slideToFix.slideNumber,
-                  title: fix.fixedTitle,
-                  body: fix.fixedBody,
-                  slideType: slideToFix.slideType,
-                  imageUrl: null,
-                },
-              },
-            };
-          }
-        }
-      }
-
-      // Log quality metrics internally (not shown to user)
-      const m = qualityResult.metrics;
-      this.logger.log(
-        `Quality scores for ${presentationId}: Style=${(m.avgStyleScore * 100).toFixed(0)}% Narrative=${(m.narrativeScore * 100).toFixed(0)}% Facts=${(m.avgFactScore * 100).toFixed(0)}%${m.errorsFound > 0 ? ` Errors=${m.errorsFound}` : ''}`,
-      );
-
-      // Emit per-slide verification results
-      const fixedSlideNumbers = new Set(qualityResult.fixes.map(f => f.slideNumber));
-      const styleScoreMap = new Map(qualityResult.styleResults.map(r => [r.slideNumber, r.result.score]));
-      for (const slide of allSlides) {
-        this.events.emitSlideVerification({
-          presentationId,
-          slideId: slide.id,
-          slideNumber: slide.slideNumber,
-          status: fixedSlideNumbers.has(slide.slideNumber) ? 'fixed' : 'verified',
-          score: styleScoreMap.get(slide.slideNumber) ?? 1.0,
-        });
-      }
-      this.events.emitVerificationComplete({
-        presentationId,
-        passed: qualityResult.passed,
-        metrics: {
-          avgStyleScore: m.avgStyleScore,
-          narrativeScore: m.narrativeScore,
-          avgFactScore: m.avgFactScore,
-          slidesFixed: qualityResult.fixes.length,
-        },
-      });
-    } catch (qualityErr) {
-      this.logger.warn(`Quality review pipeline failed (non-fatal): ${qualityErr}`);
-      yield { type: 'progress', content: 'Quality review skipped', metadata: { step: 'quality_review', status: 'complete' } };
-      // Graceful degradation: mark all slides as verified
-      for (const slide of allSlides) {
-        this.events.emitSlideVerification({
-          presentationId,
-          slideId: slide.id,
-          slideNumber: slide.slideNumber,
-          status: 'verified',
-          score: 1.0,
-        });
-      }
-      this.events.emitVerificationComplete({
-        presentationId,
-        passed: true,
-        metrics: { avgStyleScore: 1.0, narrativeScore: 1.0, avgFactScore: 1.0, slidesFixed: 0 },
-      });
-    }
+    // Fire quality review as non-blocking background task (saves ~10-15s on critical path)
+    const qualitySlideRefs = allSlides.map(s => ({ id: s.id, slideNumber: s.slideNumber, slideType: s.slideType }));
+    this.runQualityReviewBackground(presentationId, slidesForReview, qualitySlideRefs, {
+      themeCategory,
+      themeName,
+      themeColors,
+      presentationType: config.presentationType || 'STANDARD',
+      frameworkName: presWithLens?.pitchLens?.selectedFramework ?? undefined,
+      userId,
+      archetypeId: presWithLens?.pitchLens?.deckArchetype ?? undefined,
+    }).catch(err => this.logger.warn(`Background quality review failed: ${err}`));
+    yield { type: 'progress', content: 'Quality review running in background', metadata: { step: 'quality_review', status: 'complete' } };
 
     // 6b. Apply Figma template designs to slides (if PitchLens has figmaTemplateId)
     if (presWithLens?.pitchLens?.figmaTemplateId && this.figmaImageSync) {
@@ -1634,6 +1550,96 @@ OUTPUT: Valid JSON matching this schema (no markdown fences):
     });
 
     yield { type: 'done', content: '' };
+  }
+
+  /**
+   * Run quality review in background (non-blocking).
+   * Applies fixes and emits verification events via WebSocket.
+   */
+  private async runQualityReviewBackground(
+    presentationId: string,
+    slidesForReview: SlideForReview[],
+    slideRefs: Array<{ id: string; slideNumber: number; slideType: string }>,
+    options: {
+      themeCategory: string;
+      themeName: string;
+      themeColors?: { primary: string; accent: string; background: string; text: string };
+      presentationType: string;
+      frameworkName?: string;
+      userId: string;
+      archetypeId?: string;
+    },
+  ): Promise<void> {
+    try {
+      const qualityResult = await this.qualityAgents.reviewPresentation(slidesForReview, {
+        ...options,
+        presentationId,
+      });
+
+      // Apply auto-fixes
+      if (qualityResult.fixes.length > 0) {
+        this.logger.log(`[BG] Quality review auto-fixing ${qualityResult.fixes.length} slides`);
+        for (const fix of qualityResult.fixes) {
+          const slideRef = slideRefs.find((s) => s.slideNumber === fix.slideNumber);
+          if (slideRef) {
+            await this.prisma.slide.update({
+              where: { id: slideRef.id },
+              data: { title: fix.fixedTitle, body: fix.fixedBody },
+            });
+            this.events.emitSlideUpdated({
+              presentationId,
+              slideId: slideRef.id,
+              data: { title: fix.fixedTitle, body: fix.fixedBody },
+            });
+          }
+        }
+      }
+
+      // Log quality metrics
+      const m = qualityResult.metrics;
+      this.logger.log(
+        `[BG] Quality scores for ${presentationId}: Style=${(m.avgStyleScore * 100).toFixed(0)}% Narrative=${(m.narrativeScore * 100).toFixed(0)}% Facts=${(m.avgFactScore * 100).toFixed(0)}%${m.errorsFound > 0 ? ` Errors=${m.errorsFound}` : ''}`,
+      );
+
+      // Emit per-slide verification results
+      const fixedSlideNumbers = new Set(qualityResult.fixes.map(f => f.slideNumber));
+      const styleScoreMap = new Map(qualityResult.styleResults.map(r => [r.slideNumber, r.result.score]));
+      for (const slide of slideRefs) {
+        this.events.emitSlideVerification({
+          presentationId,
+          slideId: slide.id,
+          slideNumber: slide.slideNumber,
+          status: fixedSlideNumbers.has(slide.slideNumber) ? 'fixed' : 'verified',
+          score: styleScoreMap.get(slide.slideNumber) ?? 1.0,
+        });
+      }
+      this.events.emitVerificationComplete({
+        presentationId,
+        passed: qualityResult.passed,
+        metrics: {
+          avgStyleScore: m.avgStyleScore,
+          narrativeScore: m.narrativeScore,
+          avgFactScore: m.avgFactScore,
+          slidesFixed: qualityResult.fixes.length,
+        },
+      });
+    } catch (qualityErr) {
+      this.logger.warn(`[BG] Quality review pipeline failed (non-fatal): ${qualityErr}`);
+      for (const slide of slideRefs) {
+        this.events.emitSlideVerification({
+          presentationId,
+          slideId: slide.id,
+          slideNumber: slide.slideNumber,
+          status: 'verified',
+          score: 1.0,
+        });
+      }
+      this.events.emitVerificationComplete({
+        presentationId,
+        passed: true,
+        metrics: { avgStyleScore: 1.0, narrativeScore: 1.0, avgFactScore: 1.0, slidesFixed: 0 },
+      });
+    }
   }
 
   // ── Private Helpers ───────────────────────────────────────
