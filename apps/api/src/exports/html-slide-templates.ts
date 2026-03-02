@@ -5662,7 +5662,18 @@ function buildFinancialProjection(slide: SlideInput, p: ColorPalette, hasImage =
     if (sep > 0 && sep < 30) {
       const label = line.slice(0, sep).trim();
       const vals = line.slice(sep + 1).trim().split(/[,;]+/).map(v => {
-        const num = parseFloat(v.replace(/[^0-9.\-]/g, ''));
+        const cleaned = v.trim();
+        const suffixMatch = cleaned.match(/([\d.\-]+)\s*([KkMmBb])/);
+        let num: number;
+        if (suffixMatch) {
+          num = parseFloat(suffixMatch[1]);
+          const suffix = suffixMatch[2].toUpperCase();
+          if (suffix === 'K') num *= 1e3;
+          else if (suffix === 'M') num *= 1e6;
+          else if (suffix === 'B') num *= 1e9;
+        } else {
+          num = parseFloat(cleaned.replace(/[^0-9.\-]/g, ''));
+        }
         return isNaN(num) ? 0 : num;
       });
       rows.push({
@@ -6298,8 +6309,8 @@ function buildGeographicMap(slide: SlideInput, p: ColorPalette, hasImage = false
 
   // Geographical region positions (approximate, on 900x400 virtual canvas)
   const geoPositions: { x: number; y: number; w: number; h: number; matchKeys: string[] }[] = [
-    { x: 80, y: 40, w: 240, h: 160, matchKeys: ['america', 'us', 'usa', 'north am', 'na', 'united states', 'canada'] },
-    { x: 120, y: 220, w: 200, h: 140, matchKeys: ['latin', 'south am', 'latam', 'brazil', 'mexico', 'sa'] },
+    { x: 80, y: 40, w: 240, h: 160, matchKeys: ['north am', 'na', 'united states', 'canada', 'us', 'usa'] },
+    { x: 120, y: 220, w: 200, h: 140, matchKeys: ['latin', 'south am', 'latam', 'brazil', 'mexico', 'sa', 'america'] },
     { x: 400, y: 30, w: 200, h: 150, matchKeys: ['europe', 'eu', 'emea', 'uk', 'germany', 'france'] },
     { x: 380, y: 200, w: 180, h: 140, matchKeys: ['africa', 'mea', 'middle east'] },
     { x: 650, y: 30, w: 220, h: 160, matchKeys: ['asia', 'apac', 'pacific', 'china', 'japan', 'india', 'sea'] },
@@ -6826,9 +6837,9 @@ function buildFeatureComparison(slide: SlideInput, p: ColorPalette, hasImage = f
       let circles = '';
       for (let s = 0; s < 5; s++) {
         if (s < rating) {
-          circles += `<span style="color:${color};font-size:14px">&#9679;</span>`;
+          circles += `<span style="color:${color};font-size:18px">&#9679;</span>`;
         } else {
-          circles += `<span style="color:${hexToRgba(p.border, 0.3)};font-size:14px">&#9675;</span>`;
+          circles += `<span style="color:${hexToRgba(p.border, 0.3)};font-size:18px">&#9675;</span>`;
         }
       }
 
@@ -6929,7 +6940,7 @@ function buildDataTable(slide: SlideInput, p: ColorPalette, hasImage = false, ac
   // Glass card border around entire table
   const totalH = (headers.length > 0 ? headerH : 0) + maxRows * rowH;
   const glassBorder = dark
-    ? `border:1px solid rgba(255,255,255,0.1);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)`
+    ? `border:1px solid rgba(255,255,255,0.1)`
     : `border:1px solid ${hexToRgba(p.border, 0.15)}`;
   tableHtml += `<div style="position:absolute;left:${PAD}px;top:${startY}px;width:${tableW}px;height:${totalH}px;${glassBorder};border-radius:10px;pointer-events:none;box-shadow:${cardShadow(2, dark)}"></div>`;
 
@@ -7072,8 +7083,10 @@ function buildKpiDashboard(slide: SlideInput, p: ColorPalette, hasImage = false,
   const kpis: { label: string; value: string; trend: string; up: boolean }[] = [];
 
   for (const line of lines.slice(0, 6)) {
-    const sep = line.indexOf(':');
-    if (sep > 0 && sep < 50) {
+    // Use last ': ' (colon+space) to handle compound labels like "LTV:CAC"
+    const sepSpace = line.lastIndexOf(': ');
+    const sep = sepSpace > 0 ? sepSpace : line.indexOf(':');
+    if (sep > 0 && sep < line.length - 1) {
       const label = line.slice(0, sep).trim();
       let rest = line.slice(sep + 1).trim();
       // Extract trend: (up12%) or (down5%) or (+12%) or (-5%)
@@ -7176,7 +7189,7 @@ function buildReferences(slide: SlideInput, p: ColorPalette, hasImage = false): 
   }
 
   const startY = PAD + 85;
-  const lineH = 28;
+  const lineH = 42;
   const contentW = cW - PAD * 2 - 60;
   const maxRefs = Math.min(refs.length, Math.floor((H - startY - PAD) / lineH));
 
@@ -7188,11 +7201,11 @@ function buildReferences(slide: SlideInput, p: ColorPalette, hasImage = false): 
 
     // Number badge in accent color
     refsHtml += `<div style="position:absolute;left:${PAD}px;top:${ry}px;width:40px;text-align:right">`;
-    refsHtml += `<span style="font-size:13px;font-weight:800;color:${p.accent};font-family:Georgia,'Times New Roman',serif">[${escHtml(ref.num)}]</span>`;
+    refsHtml += `<span style="font-size:15px;font-weight:800;color:${p.accent};font-family:Georgia,'Times New Roman',serif">[${escHtml(ref.num)}]</span>`;
     refsHtml += `</div>`;
 
     // Citation text
-    refsHtml += `<div style="position:absolute;left:${PAD + 50}px;top:${ry}px;width:${contentW}px;font-size:13px;font-weight:400;color:${p.text};opacity:0.85;font-family:Georgia,'Times New Roman',serif;line-height:1.6;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${escHtml(ref.text)}</div>`;
+    refsHtml += `<div style="position:absolute;left:${PAD + 50}px;top:${ry}px;width:${contentW}px;font-size:15px;font-weight:400;color:${p.text};opacity:0.88;font-family:Georgia,'Times New Roman',serif;line-height:1.7;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${escHtml(ref.text)}</div>`;
   }
 
   // Subtle separator line below title
