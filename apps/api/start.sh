@@ -14,6 +14,10 @@ echo "=== prisma db push completed ==="
 # Apply any missing enum values via raw SQL file (avoids ESM/CJS issues)
 echo "=== Applying supplemental enum values ==="
 cat > /tmp/enum_fixes.sql << 'SQLEOF'
+ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "googleId" TEXT;
+ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "authProvider" TEXT NOT NULL DEFAULT 'local';
+DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'User_googleId_key') THEN CREATE UNIQUE INDEX "User_googleId_key" ON "User"("googleId"); END IF; END $$;
+ALTER TABLE "User" ALTER COLUMN "passwordHash" DROP NOT NULL;
 ALTER TABLE "PitchLens" ADD COLUMN IF NOT EXISTS "accentColorDiversity" BOOLEAN NOT NULL DEFAULT true;
 ALTER TYPE "SlideType" ADD VALUE IF NOT EXISTS 'MATRIX_2X2';
 ALTER TYPE "SlideType" ADD VALUE IF NOT EXISTS 'WATERFALL';

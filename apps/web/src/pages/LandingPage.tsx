@@ -631,11 +631,13 @@ export function LandingPage() {
             <PeachLogo className="h-5 w-5" />
             <span className="font-semibold text-foreground">{t('common.app_name')}</span>
           </div>
-          <div className="flex gap-6 text-sm text-muted-foreground">
+          <div className="flex flex-wrap justify-center gap-6 text-sm text-muted-foreground">
             <Link to="/gallery" className="transition-colors hover:text-foreground">{t('landing.footer.gallery')}</Link>
             <Link to="/docs" className="transition-colors hover:text-foreground">{t('landing.footer.docs')}</Link>
             <Link to="/login" className="transition-colors hover:text-foreground">{t('landing.footer.log_in')}</Link>
             <Link to="/register" className="transition-colors hover:text-foreground">{t('landing.footer.sign_up')}</Link>
+            <Link to="/terms" className="transition-colors hover:text-foreground">Terms</Link>
+            <Link to="/privacy" className="transition-colors hover:text-foreground">Privacy</Link>
           </div>
           <p className="text-sm text-muted-foreground/70">
             {t('landing.footer.tagline')}

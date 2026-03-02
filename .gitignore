@@ -40,3 +40,4 @@ check-slide-body.js
 npm-debug.log*
 pnpm-debug.log*
 .gitnexus
+.claude/worktrees/

@@ -6,6 +6,7 @@ import { AuthService } from './auth.service.js';
 import { AuthController } from './auth.controller.js';
 import { JwtStrategy } from './strategies/jwt.strategy.js';
 import { RefreshTokenStrategy } from './strategies/refresh-token.strategy.js';
+import { GoogleStrategy } from './strategies/google.strategy.js';
 import { PrismaModule } from '../prisma/prisma.module.js';
 import { EmailModule } from '../email/email.module.js';
 
@@ -24,7 +25,7 @@ import { EmailModule } from '../email/email.module.js';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, RefreshTokenStrategy],
+  providers: [AuthService, JwtStrategy, RefreshTokenStrategy, GoogleStrategy],
   exports: [AuthService],
 })
 export class AuthModule {}

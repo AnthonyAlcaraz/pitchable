@@ -126,6 +126,26 @@ class EnvironmentVariables {
   @IsOptional()
   @IsString()
   FRONTEND_URL?: string = 'http://localhost:5173';
+
+  @IsOptional()
+  @IsString()
+  SENTRY_DSN?: string;
+
+  @IsOptional()
+  @IsString()
+  BACKEND_URL?: string = 'http://localhost:3000';
+
+  @IsOptional()
+  @IsString()
+  GOOGLE_CLIENT_ID?: string;
+
+  @IsOptional()
+  @IsString()
+  GOOGLE_CLIENT_SECRET?: string;
+
+  @IsOptional()
+  @IsString()
+  ENABLE_DB_BACKUPS?: string = 'false';
 }
 
 export function validate(config: Record<string, unknown>): EnvironmentVariables {

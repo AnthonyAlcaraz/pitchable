@@ -1,3 +1,6 @@
+// Sentry must be initialized before anything else
+import './common/sentry.js';
+
 import { join } from 'node:path';
 import { existsSync, readFileSync } from 'node:fs';
 import { NestFactory } from '@nestjs/core';
@@ -19,9 +22,22 @@ async function bootstrap() {
   const expressApp = app.getHttpAdapter().getInstance();
   expressApp.set('trust proxy', 1);
 
+  // HTTPS redirect in production (Railway sets x-forwarded-proto)
+  if (process.env['NODE_ENV'] === 'production') {
+    expressApp.use((req: { headers: Record<string, string>; url: string }, res: { redirect: (status: number, url: string) => void }, next: () => void) => {
+      if (req.headers['x-forwarded-proto'] !== 'https') {
+        return res.redirect(301, `https://${req.headers['host']}${req.url}`);
+      }
+      next();
+    });
+  }
+
   // Security
   app.use(
     helmet({
+      hsts: process.env['NODE_ENV'] === 'production'
+        ? { maxAge: 31536000, includeSubDomains: true, preload: true }
+        : false,
       contentSecurityPolicy: process.env['NODE_ENV'] === 'production'
         ? {
             directives: {
@@ -83,6 +99,9 @@ async function bootstrap() {
       });
     }
   }
+
+  // Graceful shutdown: drain connections on SIGTERM (Railway deployments)
+  app.enableShutdownHooks();
 
   await app.listen(process.env['PORT'] || 3000);
 

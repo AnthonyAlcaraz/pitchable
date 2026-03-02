@@ -30,6 +30,10 @@ const FigmaTemplatesPage = lazy(() => import('@/pages/FigmaTemplatesPage'));
 const NewPresentationWizardPage = lazy(() => import('@/pages/NewPresentationWizardPage'));
 const AdminDashboardPage = lazy(() => import('@/pages/AdminDashboardPage'));
 const VerifyEmailPage = lazy(() => import('@/pages/VerifyEmailPage'));
+const TermsPage = lazy(() => import('@/pages/TermsPage'));
+const PrivacyPolicyPage = lazy(() => import('@/pages/PrivacyPolicyPage'));
+const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'));
+const AuthCallbackPage = lazy(() => import('@/pages/AuthCallbackPage'));
 
 function PageFallback() {
   return (
@@ -54,6 +58,9 @@ function App() {
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/verify-email" element={<VerifyEmailPage />} />
+          <Route path="/terms" element={<TermsPage />} />
+          <Route path="/privacy" element={<PrivacyPolicyPage />} />
+          <Route path="/auth/callback" element={<AuthCallbackPage />} />
 
           {/* Protected routes with app layout (sidebar + navbar) */}
           <Route
@@ -113,7 +120,7 @@ function App() {
           />
 
           {/* Catch-all */}
-          <Route path="*" element={<Navigate to="/" replace />} />
+          <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </Suspense>
     </BrowserRouter>

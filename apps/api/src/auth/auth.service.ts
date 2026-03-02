@@ -3,6 +3,7 @@ import {
   ConflictException,
   UnauthorizedException,
   BadRequestException,
+  InternalServerErrorException,
   Logger,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
@@ -125,6 +126,11 @@ export class AuthService {
     });
 
     if (!user) {
+      return null;
+    }
+
+    // Google-only users cannot log in with a password
+    if (!user.passwordHash) {
       return null;
     }
 
@@ -357,6 +363,154 @@ export class AuthService {
     void this.emailService.sendVerificationEmail(user.email, user.name, verificationToken);
 
     return { message: 'Verification email sent' };
+  }
+
+  async changePassword(
+    userId: string,
+    currentPassword: string,
+    newPassword: string,
+  ): Promise<void> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { passwordHash: true },
+    });
+
+    if (!user || !user.passwordHash) {
+      throw new UnauthorizedException('User not found or password login not available');
+    }
+
+    const isCurrentValid = await argon2.verify(user.passwordHash, currentPassword);
+    if (!isCurrentValid) {
+      throw new UnauthorizedException('Current password is incorrect');
+    }
+
+    const passwordHash = await argon2.hash(newPassword);
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        passwordHash,
+        refreshTokenHash: null, // Invalidate all sessions
+      },
+    });
+
+    this.activity.track({ userId, eventType: 'password_changed', category: 'auth' });
+  }
+
+  async deleteAccount(userId: string, password: string): Promise<void> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { passwordHash: true, email: true },
+    });
+
+    if (!user || !user.passwordHash) {
+      throw new UnauthorizedException('User not found or password login not available');
+    }
+
+    const isPasswordValid = await argon2.verify(user.passwordHash, password);
+    if (!isPasswordValid) {
+      throw new UnauthorizedException('Password is incorrect');
+    }
+
+    // Hard delete — Prisma cascade removes all related records
+    await this.prisma.user.delete({ where: { id: userId } });
+
+    this.logger.log(`Account deleted: ${user.email} (${userId})`);
+  }
+
+  async googleLogin(googleProfile: {
+    googleId: string;
+    email: string;
+    name: string;
+  }): Promise<AuthResponse> {
+    const { googleId, email, name } = googleProfile;
+
+    // 1. Try to find user by googleId
+    let user = await this.prisma.user.findUnique({
+      where: { googleId },
+    });
+
+    if (!user) {
+      // 2. Try to find by email
+      const existingByEmail = await this.prisma.user.findUnique({
+        where: { email },
+      });
+
+      if (existingByEmail) {
+        if (existingByEmail.googleId && existingByEmail.googleId !== googleId) {
+          // Different Google account already linked to this email
+          throw new ConflictException(
+            'This email is already linked to a different Google account',
+          );
+        }
+
+        // Link Google account to existing local user
+        user = await this.prisma.user.update({
+          where: { id: existingByEmail.id },
+          data: {
+            googleId,
+            authProvider: existingByEmail.authProvider === 'local' && existingByEmail.passwordHash
+              ? 'local' // Keep 'local' if they have a password (they can use both)
+              : 'google',
+          },
+        });
+      } else {
+        // 3. Create new user
+        user = await this.prisma.user.create({
+          data: {
+            email,
+            name,
+            googleId,
+            authProvider: 'google',
+            passwordHash: null,
+            role: UserRole.USER,
+            tier: UserTier.FREE,
+            creditBalance: FREE_SIGNUP_CREDITS,
+          },
+        });
+
+        this.activity.track({
+          userId: user.id,
+          eventType: 'signup',
+          category: 'auth',
+          metadata: { provider: 'google' },
+        });
+
+        // Record signup credits
+        if (FREE_SIGNUP_CREDITS > 0) {
+          await this.prisma.creditTransaction.create({
+            data: {
+              userId: user.id,
+              amount: FREE_SIGNUP_CREDITS,
+              reason: 'ADMIN_GRANT',
+              balanceAfter: FREE_SIGNUP_CREDITS,
+            },
+          });
+        }
+      }
+    }
+
+    if (!user) {
+      throw new InternalServerErrorException('Failed to create or find user');
+    }
+
+    const userDto = this.toUserDto(user);
+    const tokens = await this.generateTokens(userDto.id, userDto.email, userDto.role);
+    await this.updateRefreshTokenHash(userDto.id, tokens.refreshToken);
+
+    // Update login metadata
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: { lastLoginAt: new Date() },
+    });
+
+    this.activity.track({
+      userId: user.id,
+      eventType: 'login',
+      category: 'auth',
+      metadata: { provider: 'google' },
+    });
+
+    return { tokens, user: userDto };
   }
 
   private async generateTokens(

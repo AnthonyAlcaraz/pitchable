@@ -10,8 +10,10 @@ datasource db {
 model User {
   id                 String              @id @default(uuid()) @db.Uuid
   email              String              @unique
-  passwordHash       String
+  passwordHash       String?
   name               String
+  googleId           String?             @unique
+  authProvider       String              @default("local")
   role               UserRole            @default(USER)
   creditBalance      Int                 @default(0)
   tier               UserTier            @default(FREE)

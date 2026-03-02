@@ -156,8 +156,8 @@ class ApiClient {
     return this.request<T>('PATCH', url, body, options);
   }
 
-  delete<T>(url: string, options?: RequestOptions): Promise<T> {
-    return this.request<T>('DELETE', url, undefined, options);
+  delete<T>(url: string, body?: unknown, options?: RequestOptions): Promise<T> {
+    return this.request<T>('DELETE', url, body, options);
   }
 
   async uploadFile<T>(url: string, file: File, extraFields?: Record<string, string>): Promise<T> {
