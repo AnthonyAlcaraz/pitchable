@@ -1,6 +1,3 @@
-// Sentry must be initialized before anything else
-import './common/sentry.js';
-
 import { join } from 'node:path';
 import { existsSync, readFileSync } from 'node:fs';
 import { NestFactory } from '@nestjs/core';
@@ -21,16 +18,6 @@ async function bootstrap() {
   // Trust first proxy hop so req.ip returns real client IP behind load balancer
   const expressApp = app.getHttpAdapter().getInstance();
   expressApp.set('trust proxy', 1);
-
-  // HTTPS redirect in production (Railway sets x-forwarded-proto)
-  if (process.env['NODE_ENV'] === 'production') {
-    expressApp.use((req: { headers: Record<string, string>; url: string }, res: { redirect: (status: number, url: string) => void }, next: () => void) => {
-      if (req.headers['x-forwarded-proto'] !== 'https') {
-        return res.redirect(301, `https://${req.headers['host']}${req.url}`);
-      }
-      next();
-    });
-  }
 
   // Security
   app.use(
@@ -111,14 +98,4 @@ async function bootstrap() {
   httpServer.keepAliveTimeout = 620_000; // slightly longer than setTimeout
   Logger.log('Server timeout set to 600s', 'Bootstrap');
 }
-process.on('unhandledRejection', (reason) => {
-  console.error('Unhandled Rejection:', reason);
-});
-
-process.on('uncaughtException', (error) => {
-  console.error('Uncaught Exception:', error);
-  // Allow time for logs to flush, then exit
-  setTimeout(() => process.exit(1), 1000);
-});
-
 bootstrap();
