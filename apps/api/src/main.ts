@@ -98,4 +98,8 @@ async function bootstrap() {
   httpServer.keepAliveTimeout = 620_000; // slightly longer than setTimeout
   Logger.log('Server timeout set to 600s', 'Bootstrap');
 }
+process.on('unhandledRejection', (reason) => {
+  console.error('Unhandled Rejection:', reason);
+});
+
 bootstrap();
