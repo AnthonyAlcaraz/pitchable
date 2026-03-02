@@ -31,6 +31,7 @@ import { McpModule } from './mcp/mcp.module.js';
 import { AnalyticsModule } from './analytics/analytics.module.js';
 import { EmailModule } from './email/email.module.js';
 import { FigmaModule } from './figma/figma.module.js';
+import { AdminModule } from './admin/admin.module.js';
 import { validate } from './config/env.validation.js';
 
 // Parse REDIS_URL (Railway provides this) or fall back to host/port
@@ -92,6 +93,7 @@ const redisConnection = redisUrl
               '/figma/{*path}',
               '/email/{*path}',
               '/slides/{*path}',
+              '/admin/{*path}',
             ],
           }),
         ]
@@ -119,6 +121,7 @@ const redisConnection = redisUrl
     EmailModule,
     FigmaModule,
     HealthModule,
+    AdminModule,
   ],
   controllers: [AppController],
   providers: [
