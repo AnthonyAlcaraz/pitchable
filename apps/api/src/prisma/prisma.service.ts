@@ -223,8 +223,8 @@ export class PrismaService
       `ALTER TYPE "SlideType" ADD VALUE IF NOT EXISTS 'ABSTRACT'`,
       `ALTER TYPE "PresentationType" ADD VALUE IF NOT EXISTS 'ACADEMIC'`,
       `ALTER TYPE "DeckArchetype" ADD VALUE IF NOT EXISTS 'ACADEMIC_PRESENTATION'`,
-      // Reset locked test accounts (failedLoginAttempts from debugging sessions)
-      `UPDATE "User" SET "failedLoginAttempts" = 0 WHERE email = 'overflow-test@test.com' AND "failedLoginAttempts" > 0`,
+      // Reset locked test accounts and fix password hash (corrupted during schema migration debugging)
+      `UPDATE "User" SET "failedLoginAttempts" = 0, "passwordHash" = '$argon2id$v=19$m=65536,t=3,p=4$hTzBRzLLXF3QhZa1Mjemeg$k2kjHEeymeErN/xoAMOWqGqBl0G3maCHXxrXId6NG1U' WHERE email = 'overflow-test@test.com'`,
       // Observability tables
       `CREATE TABLE IF NOT EXISTS "ActivityEvent" (
         "id" UUID NOT NULL DEFAULT gen_random_uuid(),
