@@ -223,8 +223,7 @@ export class PrismaService
       `ALTER TYPE "SlideType" ADD VALUE IF NOT EXISTS 'ABSTRACT'`,
       `ALTER TYPE "PresentationType" ADD VALUE IF NOT EXISTS 'ACADEMIC'`,
       `ALTER TYPE "DeckArchetype" ADD VALUE IF NOT EXISTS 'ACADEMIC_PRESENTATION'`,
-      // Reset locked test accounts and fix password hash (corrupted during schema migration debugging)
-      `UPDATE "User" SET "failedLoginAttempts" = 0, "passwordHash" = '$argon2id$v=19$m=65536,t=3,p=4$hTzBRzLLXF3QhZa1Mjemeg$k2kjHEeymeErN/xoAMOWqGqBl0G3maCHXxrXId6NG1U' WHERE email = 'overflow-test@test.com'`,
+      // overflow-test password fix is handled separately below with parameterized query
       // Observability tables
       `CREATE TABLE IF NOT EXISTS "ActivityEvent" (
         "id" UUID NOT NULL DEFAULT gen_random_uuid(),
@@ -274,6 +273,20 @@ export class PrismaService
       } catch (e) {
         this.logger.warn(`Migration skipped: ${e instanceof Error ? e.message : e}`);
       }
+    }
+
+    // Fix overflow-test account: use parameterized query to avoid $ character issues in Argon2 hash
+    try {
+      const hash = '$argon2id$v=19$m=65536,t=3,p=4$hTzBRzLLXF3QhZa1Mjemeg$k2kjHEeymeErN/xoAMOWqGqBl0G3maCHXxrXId6NG1U';
+      const email = 'overflow-test@test.com';
+      await this.$executeRawUnsafe(
+        `UPDATE "User" SET "failedLoginAttempts" = 0, "lockedUntil" = NULL, "passwordHash" = $1 WHERE email = $2`,
+        hash,
+        email,
+      );
+      this.logger.log('Migration OK: overflow-test account reset');
+    } catch (e) {
+      this.logger.warn(`overflow-test reset skipped: ${e instanceof Error ? e.message : e}`);
     }
   }
 
