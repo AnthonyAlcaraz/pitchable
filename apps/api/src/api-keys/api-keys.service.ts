@@ -42,8 +42,11 @@ export class ApiKeysService {
     const prefix = raw.substring(0, 11); // "pk_" + 8 hex chars
     const keyHash = await argon2.hash(raw);
 
+    // Default expiration: 90 days if not specified
+    const effectiveExpiresAt = expiresAt ?? new Date(Date.now() + 90 * 86400000);
+
     const key = await this.prisma.apiKey.create({
-      data: { userId, name, keyHash, keyPrefix: prefix, scopes, expiresAt },
+      data: { userId, name, keyHash, keyPrefix: prefix, scopes, expiresAt: effectiveExpiresAt },
     });
 
     this.activity.track({ userId, eventType: 'api_key_create', category: 'api', metadata: { keyPrefix: prefix, scopes } });
