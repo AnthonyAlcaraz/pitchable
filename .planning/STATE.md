@@ -6,16 +6,16 @@ See: .planning/PROJECT.md (updated 2026-02-14)
 
 **Product name:** Pitchable
 **Core value:** Chat your way from knowledge base to polished deck
-**Current focus:** Observability instrumentation complete. All 8 core services tracked.
+**Current focus:** Admin dashboard frontend complete. 6-tab analytics dashboard for ADMIN users.
 
 ## Current Position
 
-Phase: 2B (Observability Instrumentation)
-Plan: 1 of 1 in current phase
-Status: Phase 2B complete. 8 services instrumented with activity tracking and generation metrics.
-Last activity: 2026-03-02 -- Completed 2b-01-PLAN (service instrumentation)
+Phase: 2B (Observability Instrumentation) + Admin Dashboard
+Plan: Admin dashboard (ad-hoc)
+Status: Admin dashboard frontend complete. Zustand store + 6-tab page + route + sidebar link.
+Last activity: 2026-03-02 -- Completed admin dashboard frontend (store, page, route, sidebar)
 
-Progress: [█████████████░░░░░░░] 25% (2 of 8 phases) + observability stack
+Progress: [█████████████░░░░░░░] 25% (2 of 8 phases) + observability + admin dashboard
 
 ## Performance Metrics
 
@@ -105,6 +105,7 @@ Recent decisions affecting current work:
 - **02-03**: OpenAI embeddings, pgvector storage, RAG search endpoint, full pipeline integration
 - **02-04**: Frontend KB page (upload, browse, search, delete, status badges, DeckPilot→Pitchable rename)
 - **2b-01**: Observability instrumentation (8 services: auth, billing, api-keys, presentations, knowledge-base, generation, sync-generation, exports)
+- **admin-dashboard**: Frontend admin dashboard (zustand store, 6-tab page, /admin route, sidebar ADMIN link)
 
 ### Blockers/Concerns
 
@@ -119,5 +120,5 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-03-02
-Stopped at: Phase 2B complete. 8 services instrumented. TypeScript clean.
-Resume: Continue with remaining observability work or proceed to next phase
+Stopped at: Admin dashboard frontend complete. 4 commits pushed.
+Resume: Backend admin analytics endpoints may need testing with live data
