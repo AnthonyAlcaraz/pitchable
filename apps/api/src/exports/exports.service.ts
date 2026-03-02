@@ -8,6 +8,7 @@ import { join } from 'path';
 import { mkdir } from 'fs/promises';
 import { readFile, writeFile, unlink } from 'fs/promises';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { ActivityService } from '../observability/activity.service.js';
 import { MarpExporterService } from './marp-exporter.service.js';
 import { RevealJsExporterService } from './revealjs-exporter.service.js';
 import { PptxGenJsExporterService } from './pptxgenjs-exporter.service.js';
@@ -107,6 +108,7 @@ export class ExportsService {
 
   constructor(
     private readonly prisma: PrismaService,
+    private readonly activity: ActivityService,
     private readonly marpExporter: MarpExporterService,
     private readonly revealJsExporter: RevealJsExporterService,
     private readonly pptxGenJsExporter: PptxGenJsExporterService,
@@ -246,6 +248,9 @@ export class ExportsService {
     if (!job) {
       throw new NotFoundException(`Export job "${jobId}" not found`);
     }
+
+    const exportStartTime = Date.now();
+    this.activity.track({ eventType: 'export_start', category: 'export', metadata: { jobId, format: job.format } });
 
     await this.prisma.exportJob.update({
       where: { id: jobId },
@@ -484,6 +489,8 @@ export class ExportsService {
         },
       });
 
+      this.activity.track({ eventType: 'export_complete', category: 'export', metadata: { jobId, format: job.format, duration: Date.now() - exportStartTime } });
+
       this.logger.log(
         `Export job ${jobId} completed: ${job.format} -> ${fileUrl}`,
       );
@@ -497,6 +504,8 @@ export class ExportsService {
     } catch (error: unknown) {
       const message =
         error instanceof Error ? error.message : 'Unknown export error';
+
+      this.activity.track({ eventType: 'export_fail', category: 'export', metadata: { jobId, error: message } });
 
       this.emitProgress(job.presentationId, jobId, 'error', -1, message);
 
