@@ -126,6 +126,11 @@ export class EventsGateway
   /** Track active connections per userId for rate limiting. */
   private readonly userConnections = new Map<string, Set<string>>();
 
+  /** Track message rates per socket for abuse prevention. */
+  private readonly messageRates = new Map<string, { count: number; windowStart: number }>();
+  private static readonly WS_RATE_LIMIT = 30;
+  private static readonly WS_RATE_WINDOW_MS = 10000;
+
   constructor(
     configService: ConfigService,
     private readonly prisma: PrismaService,
@@ -192,7 +197,25 @@ export class EventsGateway
         }
       }
     }
+    this.messageRates.delete(client.id);
     this.logger.log(`Client ${client.id} disconnected`);
+  }
+
+  private checkMessageRate(client: Socket): boolean {
+    const now = Date.now();
+    let rate = this.messageRates.get(client.id);
+    if (!rate || now - rate.windowStart > EventsGateway.WS_RATE_WINDOW_MS) {
+      rate = { count: 0, windowStart: now };
+      this.messageRates.set(client.id, rate);
+    }
+    rate.count++;
+    if (rate.count > EventsGateway.WS_RATE_LIMIT) {
+      this.logger.warn(`Client ${client.id} exceeded WS message rate limit`);
+      client.emit('error', { message: 'Rate limit exceeded' });
+      client.disconnect();
+      return false;
+    }
+    return true;
   }
 
   @SubscribeMessage('join:presentation')
@@ -200,6 +223,8 @@ export class EventsGateway
     @ConnectedSocket() client: Socket,
     @MessageBody() presentationId: string,
   ): Promise<void> {
+    if (!this.checkMessageRate(client)) return;
+
     // Verify ownership before allowing room join
     const userId = client.data['userId'] as string | undefined;
     if (!userId) {
@@ -237,6 +262,8 @@ export class EventsGateway
     @ConnectedSocket() client: Socket,
     @MessageBody() presentationId: string,
   ): void {
+    if (!this.checkMessageRate(client)) return;
+
     const room = `presentation:${presentationId}`;
     client.leave(room);
     this.logger.debug(

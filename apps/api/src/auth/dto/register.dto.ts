@@ -1,4 +1,5 @@
-import { IsEmail, IsString, MinLength } from 'class-validator';
+import { IsEmail, IsString, MinLength, MaxLength, Matches } from 'class-validator';
+import { PASSWORD_REGEX, PASSWORD_MESSAGE } from './password.constants.js';
 
 export class RegisterDto {
   @IsEmail()
@@ -6,6 +7,8 @@ export class RegisterDto {
 
   @IsString()
   @MinLength(8)
+  @MaxLength(128)
+  @Matches(PASSWORD_REGEX, { message: PASSWORD_MESSAGE })
   password!: string;
 
   @IsString()

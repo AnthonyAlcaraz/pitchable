@@ -50,14 +50,16 @@ async function bootstrap() {
   // Global filters
   app.useGlobalFilters(new AllExceptionsFilter());
 
-  // Swagger
-  const config = new DocumentBuilder()
-    .setTitle('Pitchable API')
-    .setVersion('1.0')
-    .addBearerAuth()
-    .build();
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api/docs', app, document);
+  // Swagger (disabled in production)
+  if (process.env['NODE_ENV'] !== 'production') {
+    const config = new DocumentBuilder()
+      .setTitle('Pitchable API')
+      .setVersion('1.0')
+      .addBearerAuth()
+      .build();
+    const document = SwaggerModule.createDocument(app, config);
+    SwaggerModule.setup('api/docs', app, document);
+  }
 
   // SPA collision middleware: routes where both SPA pages and API controllers
   // share the same prefix. Serves index.html for browser navigation (Accept:
@@ -87,4 +89,14 @@ async function bootstrap() {
   httpServer.keepAliveTimeout = 620_000; // slightly longer than setTimeout
   Logger.log('Server timeout set to 600s', 'Bootstrap');
 }
+process.on('unhandledRejection', (reason) => {
+  console.error('Unhandled Rejection:', reason);
+});
+
+process.on('uncaughtException', (error) => {
+  console.error('Uncaught Exception:', error);
+  // Allow time for logs to flush, then exit
+  setTimeout(() => process.exit(1), 1000);
+});
+
 bootstrap();

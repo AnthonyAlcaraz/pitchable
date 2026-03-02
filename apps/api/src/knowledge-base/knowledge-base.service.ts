@@ -15,6 +15,7 @@ import { CreditsService } from '../credits/credits.service.js';
 import { DOCUMENT_INGESTION_COST } from '../credits/tier-config.js';
 import { DocumentSourceType, DocumentStatus, CreditReason } from '../../generated/prisma/enums.js';
 import { randomUUID } from 'node:crypto';
+import { sanitizeFilename } from '../common/sanitize-filename.js';
 
 export interface DocumentProcessingJobData extends BaseJobData {
   documentId: string;
@@ -67,16 +68,17 @@ export class KnowledgeBaseService {
       );
     }
 
+    const safeFilename = sanitizeFilename(file.originalname);
     let s3Key: string | undefined;
 
     if (this.s3.isAvailable()) {
-      s3Key = `documents/${userId}/${randomUUID()}/${file.originalname}`;
+      s3Key = `documents/${userId}/${randomUUID()}/${safeFilename}`;
       await this.s3.upload(s3Key, file.buffer, file.mimetype);
     } else {
       this.logger.warn('S3 not available — passing file buffer inline via job data');
     }
 
-    const title = customTitle || file.originalname;
+    const title = customTitle || safeFilename;
     const document = await this.prisma.document.create({
       data: {
         userId,

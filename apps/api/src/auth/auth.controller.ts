@@ -58,6 +58,10 @@ export class AuthController {
   }
 
   @Post('login')
+  @Throttle({
+    short: { ttl: 60000, limit: 10 },     // 10 per minute
+    medium: { ttl: 3600000, limit: 50 },   // 50 per hour
+  })
   @HttpCode(HttpStatus.OK)
   async login(
     @Body() loginDto: LoginDto,
@@ -99,6 +103,11 @@ export class AuthController {
   }
 
   @Post('forgot-password')
+  @Throttle({
+    short: { ttl: 60000, limit: 3 },       // 3 per minute
+    medium: { ttl: 3600000, limit: 5 },     // 5 per hour
+    long: { ttl: 86400000, limit: 10 },     // 10 per day
+  })
   @HttpCode(HttpStatus.OK)
   async forgotPassword(@Body() dto: ForgotPasswordDto): Promise<{ message: string }> {
     await this.authService.forgotPassword(dto.email);

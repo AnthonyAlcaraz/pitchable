@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import Redis from 'ioredis';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { CreditsService } from '../credits/credits.service.js';
 import { TierEnforcementService } from '../credits/tier-enforcement.service.js';
@@ -18,12 +19,18 @@ export interface SubscriptionDto {
 @Injectable()
 export class BillingService {
   private readonly logger = new Logger(BillingService.name);
+  private readonly redis: Redis;
 
   constructor(
     private readonly prisma: PrismaService,
     private readonly credits: CreditsService,
     private readonly tierEnforcement: TierEnforcementService,
-  ) {}
+  ) {
+    const redisUrl = process.env['REDIS_URL'];
+    this.redis = redisUrl
+      ? new Redis(redisUrl)
+      : new Redis({ host: process.env['REDIS_HOST'] || 'localhost', port: parseInt(process.env['REDIS_PORT'] || '6379', 10) });
+  }
 
   /**
    * Get current subscription for a user.
@@ -49,6 +56,15 @@ export class BillingService {
    * Process a Stripe webhook event.
    */
   async handleWebhookEvent(event: Stripe.Event): Promise<void> {
+    // Redis-based idempotency check (48h TTL)
+    const idempotencyKey = `stripe:event:${event.id}`;
+    const alreadyProcessed = await this.redis.get(idempotencyKey);
+    if (alreadyProcessed) {
+      this.logger.warn(`Duplicate Stripe event ${event.id}, skipping`);
+      return;
+    }
+    await this.redis.set(idempotencyKey, '1', 'EX', 172800); // 48h TTL
+
     this.logger.log(`Processing webhook: ${event.type}`);
 
     switch (event.type) {
