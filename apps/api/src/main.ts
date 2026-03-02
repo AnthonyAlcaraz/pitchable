@@ -4,13 +4,16 @@ import { NestFactory } from '@nestjs/core';
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import helmet from 'helmet';
+import { Logger as PinoLogger } from 'nestjs-pino';
 import { AppModule } from './app.module.js';
 import { AllExceptionsFilter } from './common/filters/http-exception.filter.js';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
+    bufferLogs: true,
     rawBody: true, // Required for Stripe webhook signature verification
   });
+  app.useLogger(app.get(PinoLogger));
 
   // Trust first proxy hop so req.ip returns real client IP behind load balancer
   const expressApp = app.getHttpAdapter().getInstance();

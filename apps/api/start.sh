@@ -46,6 +46,47 @@ ALTER TYPE "SlideType" ADD VALUE IF NOT EXISTS 'DEMO_SCREENSHOT';
 ALTER TYPE "SlideType" ADD VALUE IF NOT EXISTS 'MILESTONE_TIMELINE';
 ALTER TYPE "SlideType" ADD VALUE IF NOT EXISTS 'PARTNERSHIP_LOGOS';
 ALTER TYPE "SlideType" ADD VALUE IF NOT EXISTS 'FINANCIAL_PROJECTION';ALTER TYPE "SlideType" ADD VALUE IF NOT EXISTS 'GO_TO_MARKET';ALTER TYPE "SlideType" ADD VALUE IF NOT EXISTS 'PERSONA';ALTER TYPE "SlideType" ADD VALUE IF NOT EXISTS 'TESTIMONIAL_WALL';ALTER TYPE "SlideType" ADD VALUE IF NOT EXISTS 'THANK_YOU';ALTER TYPE "SlideType" ADD VALUE IF NOT EXISTS 'SCENARIO_ANALYSIS';ALTER TYPE "SlideType" ADD VALUE IF NOT EXISTS 'VALUE_CHAIN';ALTER TYPE "SlideType" ADD VALUE IF NOT EXISTS 'GEOGRAPHIC_MAP';ALTER TYPE "SlideType" ADD VALUE IF NOT EXISTS 'IMPACT_SCORECARD';ALTER TYPE "SlideType" ADD VALUE IF NOT EXISTS 'EXIT_STRATEGY';ALTER TYPE "SlideType" ADD VALUE IF NOT EXISTS 'ORG_CHART';ALTER TYPE "SlideType" ADD VALUE IF NOT EXISTS 'FEATURE_COMPARISON';ALTER TYPE "SlideType" ADD VALUE IF NOT EXISTS 'DATA_TABLE';ALTER TYPE "SlideType" ADD VALUE IF NOT EXISTS 'ECOSYSTEM_MAP';ALTER TYPE "SlideType" ADD VALUE IF NOT EXISTS 'KPI_DASHBOARD';ALTER TYPE "SlideType" ADD VALUE IF NOT EXISTS 'REFERENCES';ALTER TYPE "SlideType" ADD VALUE IF NOT EXISTS 'ABSTRACT';ALTER TYPE "PresentationType" ADD VALUE IF NOT EXISTS 'ACADEMIC';ALTER TYPE "DeckArchetype" ADD VALUE IF NOT EXISTS 'ACADEMIC_PRESENTATION';
+
+CREATE TABLE IF NOT EXISTS "ActivityEvent" (
+  "id" UUID NOT NULL DEFAULT gen_random_uuid(),
+  "userId" UUID,
+  "eventType" TEXT NOT NULL,
+  "category" TEXT NOT NULL,
+  "metadata" JSONB NOT NULL DEFAULT '{}',
+  "ipHash" TEXT,
+  "duration" INTEGER,
+  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT "ActivityEvent_pkey" PRIMARY KEY ("id")
+);
+CREATE INDEX IF NOT EXISTS "ActivityEvent_eventType_idx" ON "ActivityEvent"("eventType");
+CREATE INDEX IF NOT EXISTS "ActivityEvent_category_idx" ON "ActivityEvent"("category");
+CREATE INDEX IF NOT EXISTS "ActivityEvent_userId_idx" ON "ActivityEvent"("userId");
+CREATE INDEX IF NOT EXISTS "ActivityEvent_createdAt_idx" ON "ActivityEvent"("createdAt");
+CREATE INDEX IF NOT EXISTS "ActivityEvent_userId_eventType_createdAt_idx" ON "ActivityEvent"("userId", "eventType", "createdAt");
+
+CREATE TABLE IF NOT EXISTS "GenerationMetric" (
+  "id" UUID NOT NULL DEFAULT gen_random_uuid(),
+  "userId" UUID NOT NULL,
+  "presentationId" UUID,
+  "operation" TEXT NOT NULL,
+  "model" TEXT NOT NULL,
+  "inputTokens" INTEGER NOT NULL DEFAULT 0,
+  "outputTokens" INTEGER NOT NULL DEFAULT 0,
+  "cacheReadTokens" INTEGER NOT NULL DEFAULT 0,
+  "cacheWriteTokens" INTEGER NOT NULL DEFAULT 0,
+  "durationMs" INTEGER NOT NULL,
+  "slideType" TEXT,
+  "slideCount" INTEGER,
+  "success" BOOLEAN NOT NULL DEFAULT true,
+  "errorMessage" TEXT,
+  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT "GenerationMetric_pkey" PRIMARY KEY ("id")
+);
+CREATE INDEX IF NOT EXISTS "GenerationMetric_userId_idx" ON "GenerationMetric"("userId");
+CREATE INDEX IF NOT EXISTS "GenerationMetric_presentationId_idx" ON "GenerationMetric"("presentationId");
+CREATE INDEX IF NOT EXISTS "GenerationMetric_operation_idx" ON "GenerationMetric"("operation");
+CREATE INDEX IF NOT EXISTS "GenerationMetric_createdAt_idx" ON "GenerationMetric"("createdAt");
+CREATE INDEX IF NOT EXISTS "GenerationMetric_model_createdAt_idx" ON "GenerationMetric"("model", "createdAt");
 SQLEOF
 
 npx prisma db execute --url "$DATABASE_URL" --file /tmp/enum_fixes.sql 2>&1 || echo "=== Enum fixes via prisma db execute FAILED ==="
