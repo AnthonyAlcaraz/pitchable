@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, ForbiddenException, Logger } from '@nest
 import { randomBytes } from 'crypto';
 import * as argon2 from 'argon2';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { ActivityService } from '../observability/activity.service.js';
 
 export interface VerifyResult {
   keyId: string;
@@ -19,7 +20,10 @@ export class ApiKeysService {
   private readonly logger = new Logger(ApiKeysService.name);
   private lastUsedUpdates = new Map<string, number>();
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly activity: ActivityService,
+  ) {}
 
   /** Create a new API key. Returns plaintext key ONCE. */
   async create(
@@ -41,6 +45,8 @@ export class ApiKeysService {
     const key = await this.prisma.apiKey.create({
       data: { userId, name, keyHash, keyPrefix: prefix, scopes, expiresAt },
     });
+
+    this.activity.track({ userId, eventType: 'api_key_create', category: 'api', metadata: { keyPrefix: prefix, scopes } });
 
     this.logger.log(`API key created: ${prefix}... for user ${userId}`);
     return { id: key.id, plaintext: raw, prefix };
@@ -115,6 +121,7 @@ export class ApiKeysService {
       where: { id: keyId },
       data: { isRevoked: true },
     });
+    this.activity.track({ userId, eventType: 'api_key_revoke', category: 'api', metadata: { keyId } });
   }
 
   /** Rotate: revoke old key, create new one with same scopes. */
