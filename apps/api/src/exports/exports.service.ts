@@ -1435,6 +1435,13 @@ export class ExportsService {
     const count = Math.min(buffers.length, sortedSlides.length);
     if (count === 0) return;
 
+    if (buffers.length < sortedSlides.length) {
+      this.logger.warn(
+        `Marp rendered ${buffers.length}/${sortedSlides.length} images for presentation ${presentation.id}. ` +
+        `Slides ${buffers.length + 1}-${sortedSlides.length} will not get JPEG previews.`,
+      );
+    }
+
     // Phase 1: Parallel S3 uploads
     const uploadResults = await Promise.allSettled(
       Array.from({ length: count }, (_, i) => {

@@ -61,8 +61,58 @@ function stripMarkdown(s: string): string {
     .replace(/\*/g, '');
 }
 
+/**
+ * Pre-process body text to ensure structured data entries are on separate lines
+ * even if the LLM concatenated them into one line.
+ *
+ * Handles patterns like:
+ * - "2025: $18M, $12.6M 2026: $45M ..." (FINANCIAL_PROJECTION)
+ * - "Q1 2026: Hire 5 engineers Q2 2026: ..." (HIRING_PLAN)
+ * - "Bear: $5M Base: $12M Bull: $25M" (SCENARIO_ANALYSIS)
+ * - "Stage1: desc Stage2: desc" (CUSTOMER_JOURNEY, VALUE_CHAIN)
+ */
+function normalizeConcatenatedEntries(body: string): string {
+  // Pattern 1: Year-based "2025: data 2026: data"
+  const yearMatches = [...body.matchAll(/\b(20\d{2})\s*:/g)];
+  if (yearMatches.length > 1) {
+    const segment = body.slice(yearMatches[0].index!, yearMatches[yearMatches.length - 1].index!);
+    if (!segment.includes('\n')) {
+      body = body.replace(/\s+(20\d{2})\s*:/g, '\n$1:');
+    }
+  }
+
+  // Pattern 2: Quarter-based "Q1 2026: data Q2 2026: data"
+  const qMatches = [...body.matchAll(/\b(Q[1-4]\s*20\d{2})\s*:/g)];
+  if (qMatches.length > 1) {
+    const segment = body.slice(qMatches[0].index!, qMatches[qMatches.length - 1].index!);
+    if (!segment.includes('\n')) {
+      body = body.replace(/\s+(Q[1-4]\s*20\d{2})\s*:/g, '\n$1:');
+    }
+  }
+
+  // Pattern 3: Scenario labels "Bear: data Base: data Bull: data"
+  const scenarioMatches = [...body.matchAll(/\b(Bear|Base|Bull|Worst|Expected|Best|Low|Medium|High)\s*:/gi)];
+  if (scenarioMatches.length > 1) {
+    const segment = body.slice(scenarioMatches[0].index!, scenarioMatches[scenarioMatches.length - 1].index!);
+    if (!segment.includes('\n')) {
+      body = body.replace(/\s+(Bear|Base|Bull|Worst|Expected|Best|Low|Medium|High)\s*:/gi, '\n$1:');
+    }
+  }
+
+  // Pattern 4: Phase/Stage numbered "Phase 1: data Phase 2: data" or "Stage 1: data"
+  const phaseMatches = [...body.matchAll(/\b((?:Phase|Stage|Step|Layer)\s*\d+)\s*:/gi)];
+  if (phaseMatches.length > 1) {
+    const segment = body.slice(phaseMatches[0].index!, phaseMatches[phaseMatches.length - 1].index!);
+    if (!segment.includes('\n')) {
+      body = body.replace(/\s+((?:Phase|Stage|Step|Layer)\s*\d+)\s*:/gi, '\n$1:');
+    }
+  }
+
+  return body;
+}
+
 function parseBodyLines(body: string): string[] {
-  return body
+  return normalizeConcatenatedEntries(body)
     .split('\n')
     .filter((l) => !/^\s*\|[-:\s|]+\|\s*$/.test(l))  // Remove table separator rows (|---|---|)
     .map((l) => {

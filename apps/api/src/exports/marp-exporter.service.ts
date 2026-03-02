@@ -571,11 +571,18 @@ export class MarpExporterService {
           lines.push('');
         }
       }
-      let figmaHtml = buildHtmlSlideContent(
-        { title: slide.title, body: slide.body || '', slideType: figmaType, imageUrl: slide.imageUrl ?? undefined, logoUrl },
-        palette,
-        { accentColorDiversity: accentColorDiversity !== false },
-      );
+      let figmaHtml: string;
+      try {
+        figmaHtml = buildHtmlSlideContent(
+          { title: slide.title, body: slide.body || '', slideType: figmaType, imageUrl: slide.imageUrl ?? undefined, logoUrl },
+          palette,
+          { accentColorDiversity: accentColorDiversity !== false },
+        );
+      } catch (templateErr) {
+        // If one template crashes, fall back to basic markdown so the rest of the deck still renders
+        this.logger.warn(`Figma template "${figmaType}" failed for slide ${slide.slideNumber}: ${templateErr instanceof Error ? templateErr.message : 'unknown'}. Falling back to plain markdown.`);
+        figmaHtml = `<div style="padding:60px;color:${palette.text}"><h1 style="font-size:28px;font-weight:800">${slide.title}</h1><div style="margin-top:24px;font-size:16px;line-height:1.6;white-space:pre-wrap">${(slide.body || '').replace(/</g, '&lt;')}</div></div>`;
+      }
       lines.push(figmaHtml);
       lines.push('');
       if (slide.speakerNotes) {
