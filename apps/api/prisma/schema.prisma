@@ -782,3 +782,44 @@ model ImageUsage {
   @@unique([userId, imagePoolId])
   @@index([userId])
 }
+
+model ActivityEvent {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String?  @db.Uuid
+  eventType String
+  category  String
+  metadata  Json     @default("{}")
+  ipHash    String?
+  duration  Int?
+  createdAt DateTime @default(now())
+
+  @@index([eventType])
+  @@index([category])
+  @@index([userId])
+  @@index([createdAt])
+  @@index([userId, eventType, createdAt])
+}
+
+model GenerationMetric {
+  id               String   @id @default(uuid()) @db.Uuid
+  userId           String   @db.Uuid
+  presentationId   String?  @db.Uuid
+  operation        String
+  model            String
+  inputTokens      Int      @default(0)
+  outputTokens     Int      @default(0)
+  cacheReadTokens  Int      @default(0)
+  cacheWriteTokens Int      @default(0)
+  durationMs       Int
+  slideType        String?
+  slideCount       Int?
+  success          Boolean  @default(true)
+  errorMessage     String?
+  createdAt        DateTime @default(now())
+
+  @@index([userId])
+  @@index([presentationId])
+  @@index([operation])
+  @@index([createdAt])
+  @@index([model, createdAt])
+}

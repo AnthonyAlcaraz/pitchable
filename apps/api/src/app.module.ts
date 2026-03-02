@@ -31,6 +31,8 @@ import { McpModule } from './mcp/mcp.module.js';
 import { AnalyticsModule } from './analytics/analytics.module.js';
 import { EmailModule } from './email/email.module.js';
 import { FigmaModule } from './figma/figma.module.js';
+import { LoggerModule } from 'nestjs-pino';
+import { ObservabilityModule } from './observability/observability.module.js';
 import { validate } from './config/env.validation.js';
 
 // Parse REDIS_URL (Railway provides this) or fall back to host/port
@@ -52,6 +54,24 @@ const redisConnection = redisUrl
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true, validate }),
+    LoggerModule.forRoot({
+      pinoHttp: {
+        transport: process.env['NODE_ENV'] !== 'production'
+          ? { target: 'pino-pretty', options: { colorize: true } }
+          : undefined,
+        level: process.env['NODE_ENV'] !== 'production' ? 'debug' : 'info',
+        redact: ['req.headers.authorization'],
+        serializers: {
+          req: (req: Record<string, unknown>) => ({
+            method: req.method,
+            url: req.url,
+          }),
+          res: (res: Record<string, unknown>) => ({
+            statusCode: res.statusCode,
+          }),
+        },
+      },
+    }),
     ThrottlerModule.forRoot([
       { name: 'short', ttl: 1000, limit: 30 },
       { name: 'medium', ttl: 10000, limit: 100 },
@@ -119,6 +139,7 @@ const redisConnection = redisUrl
     EmailModule,
     FigmaModule,
     HealthModule,
+    ObservabilityModule,
   ],
   controllers: [AppController],
   providers: [
