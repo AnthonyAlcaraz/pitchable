@@ -5,7 +5,7 @@ import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { createGzip } from 'node:zlib';
 import { pipeline } from 'node:stream/promises';
-import { Readable } from 'node:stream';
+import { Readable, Writable } from 'node:stream';
 import {
   S3Client,
   PutObjectCommand,
@@ -83,7 +83,7 @@ export class BackupCronService {
       const chunks: Buffer[] = [];
       const gzip = createGzip({ level: 6 });
       const input = Readable.from(Buffer.from(stdout, 'utf-8'));
-      const collectStream = new (await import('node:stream')).Writable({
+      const collectStream = new Writable({
         write(chunk: Buffer, _encoding: string, callback: () => void) {
           chunks.push(chunk);
           callback();

@@ -6,6 +6,7 @@ import {
   HttpStatus,
   Logger,
 } from '@nestjs/common';
+import { Sentry } from '../sentry.js';
 import type { HttpRequest, HttpResponse } from '../../types/express.js';
 
 @Catch()
@@ -40,6 +41,12 @@ export class AllExceptionsFilter implements ExceptionFilter {
         `Unhandled exception: ${exception instanceof Error ? exception.message : String(exception)}`,
         exception instanceof Error ? exception.stack : undefined,
       );
+      Sentry?.captureException(exception);
+    }
+
+    // Also capture explicit 5xx HttpExceptions
+    if (exception instanceof HttpException && statusCode >= 500) {
+      Sentry?.captureException(exception);
     }
 
     response.status(statusCode).json({
