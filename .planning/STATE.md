@@ -6,16 +6,16 @@ See: .planning/PROJECT.md (updated 2026-02-14)
 
 **Product name:** Pitchable
 **Core value:** Chat your way from knowledge base to polished deck
-**Current focus:** EdgeQuake Graph-RAG sidecar integrated. Ready for Phase 3.
+**Current focus:** Observability instrumentation complete. All 8 core services tracked.
 
 ## Current Position
 
-Phase: 2 of 8 (Knowledge Base) -- COMPLETE + EdgeQuake Integration
-Plan: 4 of 4 in current phase + EdgeQuake sidecar
-Status: EdgeQuake Graph-RAG integrated as sidecar. Ready to plan Phase 3 (Chat + Generation Engine).
-Last activity: 2026-02-14 -- EdgeQuake sidecar integration complete
+Phase: 2B (Observability Instrumentation)
+Plan: 1 of 1 in current phase
+Status: Phase 2B complete. 8 services instrumented with activity tracking and generation metrics.
+Last activity: 2026-03-02 -- Completed 2b-01-PLAN (service instrumentation)
 
-Progress: [█████████████░░░░░░░] 25% (2 of 8 phases)
+Progress: [█████████████░░░░░░░] 25% (2 of 8 phases) + observability stack
 
 ## Performance Metrics
 
@@ -104,6 +104,7 @@ Recent decisions affecting current work:
 - **02-02**: Parsing pipeline (pdf-parse v2, mammoth, marked, readability), heading-aware chunking, BullMQ processor
 - **02-03**: OpenAI embeddings, pgvector storage, RAG search endpoint, full pipeline integration
 - **02-04**: Frontend KB page (upload, browse, search, delete, status badges, DeckPilot→Pitchable rename)
+- **2b-01**: Observability instrumentation (8 services: auth, billing, api-keys, presentations, knowledge-base, generation, sync-generation, exports)
 
 ### Blockers/Concerns
 
@@ -111,8 +112,12 @@ Recent decisions affecting current work:
 - Constraint color validator has 4 pairs but REQUIREMENTS.md lists 8 -- gap to address in Phase 3 or constraints update
 - Docker not running during Phase 2 execution -- migration SQL created manually, needs `prisma migrate deploy` when Docker starts
 
+- [Phase 2B]: ObservabilityModule is @Global() -- no module imports needed, just constructor injection
+- [Phase 2B]: completeJsonWithUsage for generation token tracking (returns { data, usage, model })
+- [Phase 2B]: Fire-and-forget pattern for all activity/metrics tracking -- never blocks main flows
+
 ## Session Continuity
 
-Last session: 2026-02-14
-Stopped at: Phase 2 complete + EdgeQuake sidecar integrated. TypeScript clean.
-Resume: Plan and execute Phase 3 (Chat + Generation Engine)
+Last session: 2026-03-02
+Stopped at: Phase 2B complete. 8 services instrumented. TypeScript clean.
+Resume: Continue with remaining observability work or proceed to next phase
