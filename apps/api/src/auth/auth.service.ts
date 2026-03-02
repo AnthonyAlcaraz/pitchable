@@ -8,6 +8,7 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as argon2 from 'argon2';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { ActivityService } from '../observability/activity.service.js';
 import { UserRole, UserTier } from '../../generated/prisma/enums.js';
 import { FREE_SIGNUP_CREDITS } from '../credits/tier-config.js';
 
@@ -39,6 +40,7 @@ export class AuthService {
     private prisma: PrismaService,
     private jwtService: JwtService,
     private configService: ConfigService,
+    private readonly activity: ActivityService,
   ) {}
 
   async register(
@@ -68,6 +70,8 @@ export class AuthService {
         registrationIp: ip,
       },
     });
+
+    this.activity.track({ userId: user.id, eventType: 'signup', category: 'auth', ip });
 
     // Log registration IP for abuse tracking
     await this.prisma.registrationIpLog.create({
@@ -150,6 +154,8 @@ export class AuthService {
         ...(ip ? { lastLoginIp: ip, lastLoginAt: new Date() } : {}),
       },
     });
+    this.activity.track({ userId: user.id, eventType: 'login', category: 'auth', ip });
+
     return { tokens, user };
   }
 
@@ -185,6 +191,7 @@ export class AuthService {
       where: { id: userId },
       data: { refreshTokenHash: null },
     });
+    this.activity.track({ userId, eventType: 'logout', category: 'auth' });
   }
 
   async forgotPassword(email: string): Promise<void> {
@@ -258,6 +265,7 @@ export class AuthService {
           passwordResetUsedAt: new Date(),
         },
       });
+      this.activity.track({ userId: payload.sub, eventType: 'password_reset', category: 'auth' });
     } catch (error) {
       if (error instanceof UnauthorizedException) {
         throw error;
