@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import Redis from 'ioredis';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { ActivityService } from '../observability/activity.service.js';
 import { CreditsService } from '../credits/credits.service.js';
 import { TierEnforcementService } from '../credits/tier-enforcement.service.js';
 import { CREDIT_PACKS } from '../credits/tier-config.js';
@@ -23,6 +24,7 @@ export class BillingService {
 
   constructor(
     private readonly prisma: PrismaService,
+    private readonly activity: ActivityService,
     private readonly credits: CreditsService,
     private readonly tierEnforcement: TierEnforcementService,
   ) {
@@ -166,6 +168,8 @@ export class BillingService {
     // Allocate monthly credits
     await this.tierEnforcement.allocateMonthlyCredits(userId, tier);
 
+    this.activity.track({ userId, eventType: 'subscribe', category: 'billing', metadata: { tier } });
+
     this.logger.log(`Checkout complete: user ${userId} upgraded to ${tier}`);
   }
 
@@ -197,6 +201,8 @@ export class BillingService {
       CreditReason.PURCHASE,
       session.id,
     );
+
+    this.activity.track({ userId, eventType: 'credit_purchase', category: 'billing', metadata: { packId, credits: pack.credits } });
 
     this.logger.log(`Credit top-up: user ${userId} purchased ${pack.credits} credits (${pack.id})`);
   }
@@ -251,6 +257,8 @@ export class BillingService {
       where: { id: sub.userId },
       data: { tier: UserTier.FREE },
     });
+
+    this.activity.track({ userId: sub.userId, eventType: 'cancel_subscription', category: 'billing' });
 
     this.logger.log(`Subscription ${subscription.id} canceled, user ${sub.userId} downgraded to FREE`);
   }
