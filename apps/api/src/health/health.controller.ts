@@ -24,6 +24,16 @@ export class HealthController {
     ]);
   }
 
+  @Get('schema-debug')
+  async schemaDebug() {
+    const columns = await this.prisma.$queryRawUnsafe<
+      Array<{ column_name: string; data_type: string; is_nullable: string }>
+    >(
+      `SELECT column_name, data_type, is_nullable FROM information_schema.columns WHERE table_name = 'User' ORDER BY ordinal_position`,
+    );
+    return { userColumns: columns.map((c) => `${c.column_name} (${c.data_type}, ${c.is_nullable === 'YES' ? 'nullable' : 'not null'})`) };
+  }
+
   @Get('deep')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
