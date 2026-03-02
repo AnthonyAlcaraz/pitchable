@@ -48,7 +48,6 @@ FROM node:22-slim AS prod
 # Install Chromium and system deps for Marp CLI PDF export
 RUN apt-get update && apt-get install -y --no-install-recommends \
     chromium \
-    postgresql-client \
     libnss3 \
     libatk-bridge2.0-0 \
     libdrm2 \
@@ -88,8 +87,9 @@ COPY --from=build /app/apps/api/node_modules ./apps/api/node_modules
 COPY --from=build /app/package.json ./
 COPY --from=build /app/apps/api/package.json ./apps/api/
 
-# Copy startup script (runs prisma db push before app)
+# Copy startup script and migration helpers
 COPY apps/api/start.sh ./apps/api/start.sh
+COPY apps/api/scripts ./apps/api/scripts
 RUN chmod +x ./apps/api/start.sh
 
 EXPOSE 3000
