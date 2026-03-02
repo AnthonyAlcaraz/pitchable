@@ -48,6 +48,7 @@ FROM node:22-slim AS prod
 # Install Chromium and system deps for Marp CLI PDF export
 RUN apt-get update && apt-get install -y --no-install-recommends \
     chromium \
+    postgresql-client \
     libnss3 \
     libatk-bridge2.0-0 \
     libdrm2 \

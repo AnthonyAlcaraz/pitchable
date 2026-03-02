@@ -11,14 +11,27 @@ echo "=== Attempting prisma db push ==="
 npx prisma db push --accept-data-loss --url "$DATABASE_URL" 2>&1 || echo "=== prisma db push FAILED (exit $?) ==="
 echo "=== prisma db push completed ==="
 
-# Apply any missing enum values via raw SQL file (avoids ESM/CJS issues)
-echo "=== Applying supplemental enum values ==="
-cat > /tmp/enum_fixes.sql << 'SQLEOF'
+# Apply supplemental DDL and enum values via psql.
+# IMPORTANT: psql auto-commits each statement (no transaction wrapping).
+# This is required because ALTER TYPE ... ADD VALUE cannot run inside a
+# transaction block. prisma db execute wraps in a transaction, which causes
+# the entire SQL file to fail when enum additions are present.
+echo "=== Applying supplemental schema fixes ==="
+cat > /tmp/schema_fixes.sql << 'SQLEOF'
+-- User table additions (Google OAuth, email verification)
 ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "googleId" TEXT;
 ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "authProvider" TEXT NOT NULL DEFAULT 'local';
 DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'User_googleId_key') THEN CREATE UNIQUE INDEX "User_googleId_key" ON "User"("googleId"); END IF; END $$;
 ALTER TABLE "User" ALTER COLUMN "passwordHash" DROP NOT NULL;
+ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "emailVerified" BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "emailVerificationToken" TEXT;
+ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "emailVerificationSentAt" TIMESTAMP(3);
+ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "lowCreditsAlertedAt" TIMESTAMP(3);
+
+-- PitchLens additions
 ALTER TABLE "PitchLens" ADD COLUMN IF NOT EXISTS "accentColorDiversity" BOOLEAN NOT NULL DEFAULT true;
+
+-- Enum additions (MUST be outside transactions — psql auto-commits each)
 ALTER TYPE "SlideType" ADD VALUE IF NOT EXISTS 'MATRIX_2X2';
 ALTER TYPE "SlideType" ADD VALUE IF NOT EXISTS 'WATERFALL';
 ALTER TYPE "SlideType" ADD VALUE IF NOT EXISTS 'FUNNEL';
@@ -49,8 +62,27 @@ ALTER TYPE "SlideType" ADD VALUE IF NOT EXISTS 'RISK_MITIGATION';
 ALTER TYPE "SlideType" ADD VALUE IF NOT EXISTS 'DEMO_SCREENSHOT';
 ALTER TYPE "SlideType" ADD VALUE IF NOT EXISTS 'MILESTONE_TIMELINE';
 ALTER TYPE "SlideType" ADD VALUE IF NOT EXISTS 'PARTNERSHIP_LOGOS';
-ALTER TYPE "SlideType" ADD VALUE IF NOT EXISTS 'FINANCIAL_PROJECTION';ALTER TYPE "SlideType" ADD VALUE IF NOT EXISTS 'GO_TO_MARKET';ALTER TYPE "SlideType" ADD VALUE IF NOT EXISTS 'PERSONA';ALTER TYPE "SlideType" ADD VALUE IF NOT EXISTS 'TESTIMONIAL_WALL';ALTER TYPE "SlideType" ADD VALUE IF NOT EXISTS 'THANK_YOU';ALTER TYPE "SlideType" ADD VALUE IF NOT EXISTS 'SCENARIO_ANALYSIS';ALTER TYPE "SlideType" ADD VALUE IF NOT EXISTS 'VALUE_CHAIN';ALTER TYPE "SlideType" ADD VALUE IF NOT EXISTS 'GEOGRAPHIC_MAP';ALTER TYPE "SlideType" ADD VALUE IF NOT EXISTS 'IMPACT_SCORECARD';ALTER TYPE "SlideType" ADD VALUE IF NOT EXISTS 'EXIT_STRATEGY';ALTER TYPE "SlideType" ADD VALUE IF NOT EXISTS 'ORG_CHART';ALTER TYPE "SlideType" ADD VALUE IF NOT EXISTS 'FEATURE_COMPARISON';ALTER TYPE "SlideType" ADD VALUE IF NOT EXISTS 'DATA_TABLE';ALTER TYPE "SlideType" ADD VALUE IF NOT EXISTS 'ECOSYSTEM_MAP';ALTER TYPE "SlideType" ADD VALUE IF NOT EXISTS 'KPI_DASHBOARD';ALTER TYPE "SlideType" ADD VALUE IF NOT EXISTS 'REFERENCES';ALTER TYPE "SlideType" ADD VALUE IF NOT EXISTS 'ABSTRACT';ALTER TYPE "PresentationType" ADD VALUE IF NOT EXISTS 'ACADEMIC';ALTER TYPE "DeckArchetype" ADD VALUE IF NOT EXISTS 'ACADEMIC_PRESENTATION';
+ALTER TYPE "SlideType" ADD VALUE IF NOT EXISTS 'FINANCIAL_PROJECTION';
+ALTER TYPE "SlideType" ADD VALUE IF NOT EXISTS 'GO_TO_MARKET';
+ALTER TYPE "SlideType" ADD VALUE IF NOT EXISTS 'PERSONA';
+ALTER TYPE "SlideType" ADD VALUE IF NOT EXISTS 'TESTIMONIAL_WALL';
+ALTER TYPE "SlideType" ADD VALUE IF NOT EXISTS 'THANK_YOU';
+ALTER TYPE "SlideType" ADD VALUE IF NOT EXISTS 'SCENARIO_ANALYSIS';
+ALTER TYPE "SlideType" ADD VALUE IF NOT EXISTS 'VALUE_CHAIN';
+ALTER TYPE "SlideType" ADD VALUE IF NOT EXISTS 'GEOGRAPHIC_MAP';
+ALTER TYPE "SlideType" ADD VALUE IF NOT EXISTS 'IMPACT_SCORECARD';
+ALTER TYPE "SlideType" ADD VALUE IF NOT EXISTS 'EXIT_STRATEGY';
+ALTER TYPE "SlideType" ADD VALUE IF NOT EXISTS 'ORG_CHART';
+ALTER TYPE "SlideType" ADD VALUE IF NOT EXISTS 'FEATURE_COMPARISON';
+ALTER TYPE "SlideType" ADD VALUE IF NOT EXISTS 'DATA_TABLE';
+ALTER TYPE "SlideType" ADD VALUE IF NOT EXISTS 'ECOSYSTEM_MAP';
+ALTER TYPE "SlideType" ADD VALUE IF NOT EXISTS 'KPI_DASHBOARD';
+ALTER TYPE "SlideType" ADD VALUE IF NOT EXISTS 'REFERENCES';
+ALTER TYPE "SlideType" ADD VALUE IF NOT EXISTS 'ABSTRACT';
+ALTER TYPE "PresentationType" ADD VALUE IF NOT EXISTS 'ACADEMIC';
+ALTER TYPE "DeckArchetype" ADD VALUE IF NOT EXISTS 'ACADEMIC_PRESENTATION';
 
+-- Observability tables
 CREATE TABLE IF NOT EXISTS "ActivityEvent" (
   "id" UUID NOT NULL DEFAULT gen_random_uuid(),
   "userId" UUID,
@@ -91,14 +123,9 @@ CREATE INDEX IF NOT EXISTS "GenerationMetric_presentationId_idx" ON "GenerationM
 CREATE INDEX IF NOT EXISTS "GenerationMetric_operation_idx" ON "GenerationMetric"("operation");
 CREATE INDEX IF NOT EXISTS "GenerationMetric_createdAt_idx" ON "GenerationMetric"("createdAt");
 CREATE INDEX IF NOT EXISTS "GenerationMetric_model_createdAt_idx" ON "GenerationMetric"("model", "createdAt");
-
-ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "emailVerified" BOOLEAN NOT NULL DEFAULT false;
-ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "emailVerificationToken" TEXT;
-ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "emailVerificationSentAt" TIMESTAMP(3);
-ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "lowCreditsAlertedAt" TIMESTAMP(3);
 SQLEOF
 
-npx prisma db execute --url "$DATABASE_URL" --file /tmp/enum_fixes.sql 2>&1 || echo "=== Enum fixes via prisma db execute FAILED ==="
-echo "=== Enum fixes completed ==="
+psql "$DATABASE_URL" -f /tmp/schema_fixes.sql 2>&1 || echo "=== Schema fixes via psql FAILED (exit $?) ==="
+echo "=== Schema fixes completed ==="
 
 exec node /app/apps/api/dist/src/main.js
