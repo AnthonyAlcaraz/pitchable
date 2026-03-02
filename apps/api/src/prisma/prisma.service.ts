@@ -2,7 +2,6 @@ import { Inject, Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nest
 import { ConfigService } from '@nestjs/config';
 import { PrismaClient } from '../../generated/prisma/client.js';
 import { PrismaPg } from '@prisma/adapter-pg';
-import * as argon2 from 'argon2';
 
 @Injectable()
 export class PrismaService
@@ -224,7 +223,6 @@ export class PrismaService
       `ALTER TYPE "SlideType" ADD VALUE IF NOT EXISTS 'ABSTRACT'`,
       `ALTER TYPE "PresentationType" ADD VALUE IF NOT EXISTS 'ACADEMIC'`,
       `ALTER TYPE "DeckArchetype" ADD VALUE IF NOT EXISTS 'ACADEMIC_PRESENTATION'`,
-      // overflow-test password fix is handled separately below with parameterized query
       // Observability tables
       `CREATE TABLE IF NOT EXISTS "ActivityEvent" (
         "id" UUID NOT NULL DEFAULT gen_random_uuid(),
@@ -276,20 +274,6 @@ export class PrismaService
       }
     }
 
-    // Fix overflow-test account: use Prisma ORM + Argon2 to guarantee hash compatibility
-    try {
-      const testUser = await this.user.findUnique({ where: { email: 'overflow-test@test.com' } });
-      if (testUser) {
-        const freshHash = await argon2.hash('OverTest1234');
-        await this.user.update({
-          where: { id: testUser.id },
-          data: { passwordHash: freshHash, failedLoginAttempts: 0, lockedUntil: null },
-        });
-        this.logger.log('Migration OK: overflow-test account password reset');
-      }
-    } catch (e) {
-      this.logger.warn(`overflow-test reset skipped: ${e instanceof Error ? e.message : e}`);
-    }
   }
 
   async onModuleDestroy(): Promise<void> {
