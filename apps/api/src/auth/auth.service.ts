@@ -2,13 +2,16 @@ import {
   Injectable,
   ConflictException,
   UnauthorizedException,
+  BadRequestException,
   Logger,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as argon2 from 'argon2';
+import { randomUUID } from 'node:crypto';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { ActivityService } from '../observability/activity.service.js';
+import { EmailService } from '../email/email.service.js';
 import { UserRole, UserTier } from '../../generated/prisma/enums.js';
 import { FREE_SIGNUP_CREDITS } from '../credits/tier-config.js';
 
@@ -20,6 +23,7 @@ export interface UserDto {
   tier: UserTier;
   creditBalance: number;
   onboardingCompleted: boolean;
+  emailVerified: boolean;
   createdAt: Date;
 }
 
@@ -41,6 +45,7 @@ export class AuthService {
     private jwtService: JwtService,
     private configService: ConfigService,
     private readonly activity: ActivityService,
+    private readonly emailService: EmailService,
   ) {}
 
   async register(
@@ -89,6 +94,20 @@ export class AuthService {
         },
       });
     }
+
+    // Generate email verification token and send (fire-and-forget)
+    const verificationToken = randomUUID();
+    const tokenHash = await argon2.hash(verificationToken);
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        emailVerificationToken: tokenHash,
+        emailVerificationSentAt: new Date(),
+      },
+    });
+
+    // Fire-and-forget: don't block registration on email delivery
+    void this.emailService.sendVerificationEmail(user.email, user.name, verificationToken);
 
     const userDto = this.toUserDto(user);
     const tokens = await this.generateTokens(userDto.id, userDto.email, userDto.role);
@@ -213,15 +232,9 @@ export class AuthService {
       data: { passwordResetToken: tokenHash, passwordResetUsedAt: null },
     });
 
-    const frontendUrl = this.configService.get<string>('FRONTEND_URL', 'http://localhost:5173');
-    const resetUrl = `${frontendUrl}/reset-password?token=${token}`;
-
-    if (this.configService.get<string>('NODE_ENV') === 'production') {
-      // TODO: Send email via Resend in production
-      this.logger.warn(`Password reset email not configured for ${email}`);
-    } else {
-      this.logger.debug(`Password reset URL: ${resetUrl}`);
-    }
+    // Fire-and-forget email send
+    void this.emailService.sendPasswordResetEmail(user.email, user.name, token);
+    this.logger.log(`Password reset email queued for ${email}`);
   }
 
   async resetPassword(token: string, newPassword: string): Promise<void> {
@@ -274,6 +287,78 @@ export class AuthService {
     }
   }
 
+  async verifyEmail(token: string): Promise<{ message: string }> {
+    // Find all users with a verification token set (not yet verified)
+    const users = await this.prisma.user.findMany({
+      where: { emailVerified: false, emailVerificationToken: { not: null } },
+      select: { id: true, emailVerificationToken: true, email: true, name: true },
+    });
+
+    // Verify the token against each stored hash
+    for (const user of users) {
+      if (!user.emailVerificationToken) continue;
+      const matches = await argon2.verify(user.emailVerificationToken, token);
+      if (matches) {
+        await this.prisma.user.update({
+          where: { id: user.id },
+          data: {
+            emailVerified: true,
+            emailVerificationToken: null,
+            emailVerificationSentAt: null,
+          },
+        });
+
+        this.activity.track({ userId: user.id, eventType: 'email_verified', category: 'auth' });
+
+        // Send welcome email after verification (fire-and-forget)
+        void this.emailService.sendWelcomeEmail(user.email, user.name);
+
+        return { message: 'Email verified successfully' };
+      }
+    }
+
+    throw new UnauthorizedException('Invalid or expired verification token');
+  }
+
+  async resendVerification(userId: string): Promise<{ message: string }> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, email: true, name: true, emailVerified: true, emailVerificationSentAt: true },
+    });
+
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
+
+    if (user.emailVerified) {
+      return { message: 'Email is already verified' };
+    }
+
+    // Rate limit: 60 seconds between sends
+    if (user.emailVerificationSentAt) {
+      const elapsed = Date.now() - user.emailVerificationSentAt.getTime();
+      if (elapsed < 60_000) {
+        const seconds = Math.ceil((60_000 - elapsed) / 1000);
+        throw new BadRequestException(`Please wait ${seconds} seconds before requesting another email`);
+      }
+    }
+
+    const verificationToken = randomUUID();
+    const tokenHash = await argon2.hash(verificationToken);
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        emailVerificationToken: tokenHash,
+        emailVerificationSentAt: new Date(),
+      },
+    });
+
+    // Fire-and-forget
+    void this.emailService.sendVerificationEmail(user.email, user.name, verificationToken);
+
+    return { message: 'Verification email sent' };
+  }
+
   private async generateTokens(
     userId: string,
     email: string,
@@ -315,6 +400,7 @@ export class AuthService {
     tier: UserTier;
     creditBalance: number;
     onboardingCompleted: boolean;
+    emailVerified: boolean;
     createdAt: Date;
   }): UserDto {
     return {
@@ -325,6 +411,7 @@ export class AuthService {
       tier: user.tier,
       creditBalance: user.creditBalance,
       onboardingCompleted: user.onboardingCompleted,
+      emailVerified: user.emailVerified,
       createdAt: user.createdAt,
     };
   }

@@ -21,6 +21,7 @@ import { RegisterDto } from './dto/register.dto.js';
 import { LoginDto } from './dto/login.dto.js';
 import { ForgotPasswordDto } from './dto/forgot-password.dto.js';
 import { ResetPasswordDto } from './dto/reset-password.dto.js';
+import { VerifyEmailDto } from './dto/verify-email.dto.js';
 import { JwtAuthGuard } from './guards/jwt-auth.guard.js';
 import { RefreshTokenGuard } from './guards/refresh-token.guard.js';
 import { CurrentUser } from './decorators/current-user.decorator.js';
@@ -119,6 +120,28 @@ export class AuthController {
   async resetPassword(@Body() dto: ResetPasswordDto): Promise<{ message: string }> {
     await this.authService.resetPassword(dto.token, dto.newPassword);
     return { message: 'Password has been reset successfully' };
+  }
+
+  @Post('verify-email')
+  @Throttle({
+    short: { ttl: 60000, limit: 5 },
+    medium: { ttl: 3600000, limit: 20 },
+  })
+  @HttpCode(HttpStatus.OK)
+  async verifyEmail(@Body() dto: VerifyEmailDto): Promise<{ message: string }> {
+    return this.authService.verifyEmail(dto.token);
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Post('resend-verification')
+  @Throttle({
+    short: { ttl: 60000, limit: 1 },
+    medium: { ttl: 3600000, limit: 5 },
+  })
+  @HttpCode(HttpStatus.OK)
+  async resendVerification(@CurrentUser() user: RequestUser): Promise<{ message: string }> {
+    return this.authService.resendVerification(user.userId);
   }
 
   @ApiBearerAuth()
