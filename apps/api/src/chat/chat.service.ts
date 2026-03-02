@@ -151,8 +151,12 @@ export class ChatService {
 
     if (slideCount > 0) {
       // Use classified intent for slide-level operations
+      // Slide operations (modify, add, delete, regenerate) use a lower threshold
+      // because the LLM rarely misclassifies these — even moderate confidence is reliable.
+      const isSlideOp = ['modify_slide', 'add_slide', 'delete_slide', 'regenerate_slide'].includes(intent.intent);
+      const threshold = isSlideOp ? 0.3 : 0.7;
 
-      if (intent.confidence >= 0.7) {
+      if (intent.confidence >= threshold) {
         switch (intent.intent) {
           case 'modify_slide': {
             if (intent.slideNumber) {
@@ -174,7 +178,12 @@ export class ChatService {
               await this.persistAssistantMessage(presentationId, result.message);
               return;
             }
-            break;
+            // No slide number specified — ask user which slide
+            const askMsg = `Which slide would you like me to modify? You have ${slideCount} slides. Say something like "slide 2" or "the third slide".`;
+            yield { type: 'token', content: askMsg };
+            yield { type: 'done', content: '' };
+            await this.persistAssistantMessage(presentationId, askMsg);
+            return;
           }
           case 'add_slide': {
             const afterSlide = intent.slideNumber ?? slideCount;
@@ -212,7 +221,12 @@ export class ChatService {
               await this.persistAssistantMessage(presentationId, result.message);
               return;
             }
-            break;
+            // No slide number specified — ask user which slide
+            const askDelMsg = `Which slide would you like me to delete? You have ${slideCount} slides.`;
+            yield { type: 'token', content: askDelMsg };
+            yield { type: 'done', content: '' };
+            await this.persistAssistantMessage(presentationId, askDelMsg);
+            return;
           }
           case 'regenerate_slide': {
             if (intent.slideNumber) {
@@ -234,7 +248,12 @@ export class ChatService {
               await this.persistAssistantMessage(presentationId, result.message);
               return;
             }
-            break;
+            // No slide number specified — ask user which slide
+            const askRegenMsg = `Which slide would you like me to regenerate? You have ${slideCount} slides.`;
+            yield { type: 'token', content: askRegenMsg };
+            yield { type: 'done', content: '' };
+            await this.persistAssistantMessage(presentationId, askRegenMsg);
+            return;
           }
           case 'change_theme': {
             yield {
