@@ -29,6 +29,7 @@ const OnboardingPage = lazy(() => import('@/pages/OnboardingPage'));
 const FigmaTemplatesPage = lazy(() => import('@/pages/FigmaTemplatesPage'));
 const NewPresentationWizardPage = lazy(() => import('@/pages/NewPresentationWizardPage'));
 const AdminDashboardPage = lazy(() => import('@/pages/AdminDashboardPage'));
+const VerifyEmailPage = lazy(() => import('@/pages/VerifyEmailPage'));
 
 function PageFallback() {
   return (
@@ -52,6 +53,7 @@ function App() {
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
+          <Route path="/verify-email" element={<VerifyEmailPage />} />
 
           {/* Protected routes with app layout (sidebar + navbar) */}
           <Route

@@ -10,6 +10,7 @@ interface User {
   tier: string;
   creditBalance: number;
   onboardingCompleted: boolean;
+  emailVerified: boolean;
 }
 
 interface LoginResponse {

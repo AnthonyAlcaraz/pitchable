@@ -15,15 +15,20 @@ import {
   X,
   Focus,
   Shield,
+  Mail,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { PeachLogo } from '@/components/icons/PeachLogo';
 import { LanguageSwitcher } from './LanguageSwitcher';
+import { api } from '@/lib/api';
 
 export function AppLayout() {
   const { t } = useTranslation();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [bannerDismissed, setBannerDismissed] = useState(false);
+  const [resendingVerification, setResendingVerification] = useState(false);
+  const [resendMessage, setResendMessage] = useState('');
   const { user, logout } = useAuthStore();
   const location = useLocation();
   const navigate = useNavigate();
@@ -51,6 +56,21 @@ export function AppLayout() {
     await logout();
     navigate('/login', { replace: true });
   };
+
+  const handleResendVerification = async () => {
+    setResendingVerification(true);
+    setResendMessage('');
+    try {
+      await api.post<{ message: string }>('/auth/resend-verification');
+      setResendMessage('Verification email sent! Check your inbox.');
+    } catch (err) {
+      setResendMessage(err instanceof Error ? err.message : 'Failed to resend email');
+    } finally {
+      setResendingVerification(false);
+    }
+  };
+
+  const showVerificationBanner = user && !user.emailVerified && !bannerDismissed;
 
   return (
     <div className="flex h-screen bg-background">
@@ -179,6 +199,33 @@ export function AppLayout() {
           <PeachLogo className="h-5 w-5" />
           <span className="text-sm font-semibold text-foreground">{t('common.app_name')}</span>
         </header>
+
+        {/* Email verification banner */}
+        {showVerificationBanner && (
+          <div className="flex items-center gap-2 border-b border-amber-500/30 bg-amber-500/10 px-4 py-2.5">
+            <Mail className="h-4 w-4 shrink-0 text-amber-400" />
+            <p className="flex-1 text-sm text-amber-200">
+              Please verify your email. Check your inbox or{' '}
+              <button
+                onClick={() => void handleResendVerification()}
+                disabled={resendingVerification}
+                className="font-medium text-amber-400 underline hover:text-amber-300 disabled:opacity-50"
+              >
+                {resendingVerification ? 'sending...' : 'resend verification email'}
+              </button>
+              {resendMessage && (
+                <span className="ml-2 text-xs text-amber-300">{resendMessage}</span>
+              )}
+            </p>
+            <button
+              onClick={() => setBannerDismissed(true)}
+              className="shrink-0 rounded p-0.5 text-amber-400 hover:bg-amber-500/20"
+              aria-label="Dismiss"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        )}
 
         {/* Main content */}
         <main className="flex-1 overflow-auto">
