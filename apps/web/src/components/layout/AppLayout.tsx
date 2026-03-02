@@ -14,6 +14,7 @@ import {
   Menu,
   X,
   Focus,
+  Shield,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { PeachLogo } from '@/components/icons/PeachLogo';
@@ -27,7 +28,7 @@ export function AppLayout() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const NAV_ITEMS = [
+  const BASE_NAV_ITEMS = [
     { path: '/cockpit', label: t('nav.cockpit'), icon: Gauge },
     { path: '/analytics', label: t('nav.analytics'), icon: BarChart3 },
     { path: '/pitch-briefs', label: t('nav.pitch_briefs'), icon: BookOpen },
@@ -35,6 +36,10 @@ export function AppLayout() {
     { path: '/billing', label: t('nav.billing'), icon: CreditCard },
     { path: '/settings', label: t('nav.settings'), icon: Settings },
   ] as const;
+
+  const navItems = user?.role === 'ADMIN'
+    ? [...BASE_NAV_ITEMS, { path: '/admin' as const, label: 'Admin', icon: Shield }]
+    : [...BASE_NAV_ITEMS];
 
   useEffect(() => {
     if (user && !user.onboardingCompleted) {
@@ -87,7 +92,7 @@ export function AppLayout() {
 
         {/* Navigation */}
         <nav className="flex-1 space-y-1 p-2">
-          {NAV_ITEMS.map((item) => {
+          {navItems.map((item) => {
             const isActive = location.pathname === item.path || location.pathname.startsWith(item.path + '/');
             return (
               <Link
