@@ -3,6 +3,7 @@ import { Injectable, Logger, NotFoundException, BadRequestException } from '@nes
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { ActivityService } from '../observability/activity.service.js';
 import { S3Service } from './storage/s3.service.js';
 import { EmbeddingService } from './embedding/embedding.service.js';
 import { VectorStoreService } from './embedding/vector-store.service.js';
@@ -34,6 +35,7 @@ export class KnowledgeBaseService {
 
   constructor(
     private readonly prisma: PrismaService,
+    private readonly activity: ActivityService,
     private readonly s3: S3Service,
     @InjectQueue('document-processing') private readonly docQueue: Queue,
     private readonly embeddingService: EmbeddingService,
@@ -90,6 +92,8 @@ export class KnowledgeBaseService {
         status: DocumentStatus.UPLOADED,
       },
     });
+
+    this.activity.track({ userId, eventType: 'upload_doc', category: 'knowledge', metadata: { documentId: document.id, mimeType: file.mimetype } });
 
     // Deduct credits after successful upload
     await this.creditsService.deductCredits(
