@@ -34,6 +34,31 @@ export class HealthController {
     return { userColumns: columns.map((c) => `${c.column_name} (${c.data_type}, ${c.is_nullable === 'YES' ? 'nullable' : 'not null'})`) };
   }
 
+  @Get('apply-fixes')
+  async applyFixes() {
+    const results: string[] = [];
+    const statements = [
+      `ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "googleId" TEXT`,
+      `ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "authProvider" TEXT NOT NULL DEFAULT 'local'`,
+      `DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'User_googleId_key') THEN CREATE UNIQUE INDEX "User_googleId_key" ON "User"("googleId"); END IF; END $$`,
+      `ALTER TABLE "User" ALTER COLUMN "passwordHash" DROP NOT NULL`,
+      `ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "emailVerified" BOOLEAN NOT NULL DEFAULT false`,
+      `ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "emailVerificationToken" TEXT`,
+      `ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "emailVerificationSentAt" TIMESTAMP(3)`,
+      `ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "lowCreditsAlertedAt" TIMESTAMP(3)`,
+      `ALTER TABLE "PitchLens" ADD COLUMN IF NOT EXISTS "accentColorDiversity" BOOLEAN NOT NULL DEFAULT true`,
+    ];
+    for (const sql of statements) {
+      try {
+        await this.prisma.$executeRawUnsafe(sql);
+        results.push(`OK: ${sql.substring(0, 60)}`);
+      } catch (err) {
+        results.push(`FAIL: ${sql.substring(0, 60)} — ${err instanceof Error ? err.message : String(err)}`);
+      }
+    }
+    return { results };
+  }
+
   @Get('deep')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
