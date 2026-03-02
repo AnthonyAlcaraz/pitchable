@@ -1,6 +1,9 @@
 import { Injectable, Logger, Optional } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { ActivityService } from '../observability/activity.service.js';
+import { GenerationMetricsService } from '../observability/generation-metrics.service.js';
 import { LlmService, LlmModel } from './llm.service.js';
+import type { LlmUsage } from './llm.service.js';
 import { getModelForSlideType } from './model-router.js';
 import { ContextBuilderService } from './context-builder.service.js';
 import type { KbSource, KbContextResult } from './context-builder.service.js';
@@ -82,6 +85,8 @@ export class GenerationService {
 
   constructor(
     private readonly prisma: PrismaService,
+    private readonly activity: ActivityService,
+    private readonly generationMetrics: GenerationMetricsService,
     private readonly llm: LlmService,
     private readonly contextBuilder: ContextBuilderService,
     private readonly constraints: ConstraintsService,
@@ -182,7 +187,8 @@ export class GenerationService {
 
     let outline: GeneratedOutline;
     try {
-      outline = await this.llm.completeJson<GeneratedOutline>(
+      const tOutline = performance.now();
+      const outlineResult = await this.llm.completeJsonWithUsage<GeneratedOutline>(
         [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt },
@@ -191,9 +197,23 @@ export class GenerationService {
         isValidOutline,
         2,
       );
+      outline = outlineResult.data;
+      const outlineDurationMs = Math.round(performance.now() - tOutline);
+      this.generationMetrics.record({
+        userId,
+        presentationId,
+        operation: 'outline',
+        model: outlineResult.model,
+        ...outlineResult.usage,
+        durationMs: outlineDurationMs,
+        slideCount: outlineResult.data.slides?.length ?? 0,
+        success: true,
+      });
+      this.activity.track({ userId, eventType: 'generate_outline', category: 'generation', metadata: { presentationId, slideCount: outlineResult.data.slides?.length ?? 0 } });
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Unknown error';
       this.logger.error(`Outline generation failed: ${msg}`);
+      this.activity.track({ userId, eventType: 'generate_fail', category: 'generation', metadata: { presentationId, error: msg, stage: 'outline' } });
       await this.creditReservation.release(outlineReservationId);
       yield { type: 'error', content: `Failed to generate outline: ${msg}` };
       return;
@@ -862,6 +882,20 @@ OUTPUT: Valid JSON matching this schema (no markdown fences):
         const prep = wavePrepped[wi];
         const slideContent = waveLlmResults[wi];
 
+        // Record per-slide generation metrics (fire-and-forget)
+        if (slideContent._usage) {
+          this.generationMetrics.record({
+            userId,
+            presentationId,
+            operation: 'slide',
+            model: slideContent._model ?? 'unknown',
+            ...slideContent._usage,
+            durationMs: slideContent._durationMs ?? 0,
+            slideType: prep.effectiveSlideType,
+            success: true,
+          });
+        }
+
         // Programmatic density truncation (runs before content reviewer)
         const truncLimits = {
           maxBullets: densityOverrides?.maxBullets ?? 6,
@@ -1123,6 +1157,14 @@ OUTPUT: Valid JSON matching this schema (no markdown fences):
         };
       }
     }
+    // Track slides generation complete
+    this.activity.track({
+      userId,
+      eventType: 'generate_slides',
+      category: 'generation',
+      metadata: { presentationId, slideCount: outline.slides.length, themeId, model: 'multi' },
+    });
+
     // 6. Multi-Agent Quality Review (Style + Narrative + Fact Check — all Opus 4.6)
     yield { type: 'progress', content: 'Running quality review agents', metadata: { step: 'quality_review', status: 'running' } };
 
@@ -1354,6 +1396,10 @@ OUTPUT: Valid JSON matching this schema (no markdown fences):
 
     yield { type: 'done', content: '' };
     } catch (genErr) {
+      // Track generation failure
+      const errMsg = genErr instanceof Error ? genErr.message : 'Unknown error';
+      this.activity.track({ userId, eventType: 'generate_fail', category: 'generation', metadata: { presentationId, error: errMsg } });
+
       // Release credit reservation on generation failure
       if (reservationId) {
         await this.creditReservation.release(reservationId).catch(() => {});
@@ -1474,6 +1520,18 @@ OUTPUT: Valid JSON matching this schema (no markdown fences):
       };
 
       const raw = await this.generateSlideContent(slideSystemPrompt, outlineSlide, priorSlides);
+      if (raw._usage) {
+        this.generationMetrics.record({
+          userId,
+          presentationId,
+          operation: 'slide',
+          model: raw._model ?? 'unknown',
+          ...raw._usage,
+          durationMs: raw._durationMs ?? 0,
+          slideType: slide.slideType,
+          success: true,
+        });
+      }
       const validated = this.validateSlideContent(raw, outlineSlide, rewriteThemeColors);
 
       // Update slide in-place
@@ -1573,7 +1631,7 @@ OUTPUT: Valid JSON matching this schema (no markdown fences):
     priorSlides: Array<{ title: string; body: string }> = [],
     slideKbContext = '',
     totalSlides?: number,
-  ): Promise<GeneratedSlideContent> {
+  ): Promise<GeneratedSlideContent & { _usage?: LlmUsage; _model?: string; _durationMs?: number }> {
     let userPrompt = buildSlideGenerationUserPrompt(
       outlineSlide.slideNumber,
       outlineSlide.title,
@@ -1589,7 +1647,8 @@ OUTPUT: Valid JSON matching this schema (no markdown fences):
     }
 
     try {
-      return await this.llm.completeJson<GeneratedSlideContent>(
+      const tSlide = performance.now();
+      const result = await this.llm.completeJsonWithUsage<GeneratedSlideContent>(
         [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt },
@@ -1599,6 +1658,8 @@ OUTPUT: Valid JSON matching this schema (no markdown fences):
         2,
         { cacheSystemPrompt: true },
       );
+      const durationMs = Math.round(performance.now() - tSlide);
+      return { ...result.data, _usage: result.usage, _model: result.model, _durationMs: durationMs };
     } catch {
       // Fallback: use outline data directly
       return {
