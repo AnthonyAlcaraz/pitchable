@@ -229,11 +229,30 @@ export class AuthController {
         refreshToken: result.tokens.refreshToken,
       });
 
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
       res.redirect(`${frontendUrl}/oauth/callback?${params.toString()}`);
     } catch (error) {
       this.logger.error('Google OAuth callback failed', error);
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
       res.redirect(`${frontendUrl}/login?error=oauth_failed`);
     }
+  }
+
+  // Legacy fallback: redirect /auth/callback → /oauth/callback
+  // Prevents 404 for browsers that cached the old redirect path
+  @Get('callback')
+  @SkipThrottle()
+  legacyCallback(
+    @Req() req: HttpRequest,
+    @Res() res: HttpResponse,
+  ): void {
+    const frontendUrl = this.configService.get<string>(
+      'FRONTEND_URL',
+      'http://localhost:5173',
+    );
+    const query = req.url?.split('?')[1] ?? '';
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+    res.redirect(`${frontendUrl}/oauth/callback${query ? '?' + query : ''}`);
   }
 
   @Get('providers')
