@@ -1,9 +1,39 @@
+// Mock ESM modules that break Jest
+jest.mock('marked', () => ({ marked: (s: string) => s }));
+jest.mock('../../generated/prisma/enums', () => ({
+  ExportFormat: { PPTX: 'PPTX', PDF: 'PDF', GOOGLE_SLIDES: 'GOOGLE_SLIDES', REVEAL_JS: 'REVEAL_JS', FIGMA: 'FIGMA' },
+  JobStatus: { QUEUED: 'QUEUED', PROCESSING: 'PROCESSING', COMPLETED: 'COMPLETED', FAILED: 'FAILED', PENDING_RETRY: 'PENDING_RETRY' },
+  SlideType: { TITLE: 'TITLE', CONTENT: 'CONTENT' },
+  ImageSource: { AI_GENERATED: 'AI_GENERATED', FIGMA: 'FIGMA', UPLOADED: 'UPLOADED' },
+}));
+jest.mock('../constraints/index', () => ({
+  sampleImageLuminance: jest.fn().mockResolvedValue(0.5),
+}));
+jest.mock('./slide-visual-theme', () => ({}));
+
 // Mock PrismaService and S3Service to avoid ESM import.meta issues
 jest.mock('../prisma/prisma.service', () => ({
   PrismaService: class MockPrismaService {},
 }));
 jest.mock('../knowledge-base/storage/s3.service', () => ({
   S3Service: class MockS3Service {},
+}));
+jest.mock('../observability/activity.service', () => ({
+  ActivityService: class MockActivityService { track() {} },
+}));
+jest.mock('../observability/generation-rating.service', () => ({
+  GenerationRatingService: class MockGenerationRatingService { markExported() {} },
+}));
+jest.mock('../figma/figma-renderer.service', () => ({
+  FigmaRendererService: class MockFigmaRendererService {},
+}));
+jest.mock('../themes/themes.service', () => ({
+  ThemesService: class MockThemesService {},
+  getImageFrequencyForTheme: () => 0,
+  getThemeCategoryByName: () => 'dark',
+}));
+jest.mock('../events/events.gateway', () => ({
+  EventsGateway: class MockEventsGateway { emitExportProgress() {} },
 }));
 
 import { ExportsController } from './exports.controller';
@@ -41,16 +71,16 @@ describe('ExportsController', () => {
   });
 
   describe('createExport', () => {
-    it('should create job and fire-and-forget processExport', async () => {
-      const result = await controller.createExport('pres-1', { format: 'PPTX' as any });
+    it('should create jobs and fire-and-forget processExport', async () => {
+      const result = await controller.createExport('pres-1', { formats: ['PPTX' as any] });
 
-      expect(result).toEqual({
-        jobId: 'job-1',
+      expect(result).toEqual([{
+        id: 'job-1',
         status: 'QUEUED',
         format: 'PPTX',
-      });
+      }]);
       expect(exportsService.createExportJob).toHaveBeenCalledWith('pres-1', 'PPTX');
-      expect(exportsService.processExport).toHaveBeenCalledWith('job-1');
+      expect(exportsService.processExport).toHaveBeenCalledWith('job-1', undefined);
     });
   });
 
@@ -64,12 +94,12 @@ describe('ExportsController', () => {
 
   describe('downloadExport', () => {
     it('should redirect to signed S3 URL', async () => {
-      const res = { redirect: jest.fn() } as any;
+      const res = { redirect: jest.fn(), setHeader: jest.fn(), send: jest.fn() } as any;
 
       await controller.downloadExport('job-1', res);
 
       expect(exportsService.getSignedDownloadUrl).toHaveBeenCalledWith('job-1');
-      expect(res.redirect).toHaveBeenCalledWith(302, 'https://s3.example.com/signed-url');
+      expect(res.redirect).toHaveBeenCalledWith('https://s3.example.com/signed-url');
     });
   });
 });

@@ -1371,6 +1371,9 @@ OUTPUT: Valid JSON matching this schema (no markdown fences):
       return;
     }
 
+    // Track rewrite as a retrial
+    this.activity.track({ userId, eventType: 'generation_retrial', category: 'behavioral', metadata: { presentationId, type: 'rewrite' } });
+
     // Reserve credits for rewrite
     let rewriteReservationId: string | undefined;
     try {

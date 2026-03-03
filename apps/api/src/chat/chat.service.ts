@@ -18,6 +18,7 @@ import {
 } from './slash-command.parser.js';
 import type { LlmMessage } from './llm.service.js';
 import { TtlMap } from '../common/ttl-map.js';
+import { ActivityService } from '../observability/activity.service.js';
 
 export interface ChatStreamEvent {
   type: 'token' | 'done' | 'error' | 'action' | 'thinking' | 'progress';
@@ -47,6 +48,7 @@ export class ChatService {
     private readonly exportsService: ExportsService,
     private readonly emailService: EmailService,
     private readonly credits: CreditsService,
+    private readonly activity: ActivityService,
   ) {}
 
   async *handleMessage(
@@ -81,6 +83,8 @@ export class ChatService {
     // If outline is pending, only allow approval, retry, or slash commands — block free chat
     if (this.generation.hasPendingOutline(presentationId)) {
       if (this.generation.isRetryRequest(content)) {
+        // Track retrial for behavioral signals
+        this.activity.track({ userId, eventType: 'generation_retrial', category: 'behavioral', metadata: { presentationId } });
         // Clear old outline and regenerate with the user's feedback
         this.generation.clearPendingOutline(presentationId);
         yield* this.generation.generateOutline(userId, presentationId, {

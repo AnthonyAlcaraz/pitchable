@@ -48,6 +48,7 @@ model User {
   figmaIntegration   FigmaIntegration?
   figmaTemplates     FigmaTemplate[]
   figmaWebhooks      FigmaWebhook[]
+  ratings            GenerationRating[]
 
   @@index([email])
 }
@@ -84,6 +85,7 @@ model Presentation {
   views            PresentationView[]
   slides           Slide[]
   draftSlides      DraftSlide[]
+  rating           GenerationRating?
 
   @@index([userId])
   @@index([status])
@@ -828,4 +830,24 @@ model GenerationMetric {
   @@index([operation])
   @@index([createdAt])
   @@index([model, createdAt])
+}
+
+model GenerationRating {
+  id               String       @id @default(uuid()) @db.Uuid
+  userId           String       @db.Uuid
+  presentationId   String       @unique @db.Uuid
+  rating           Int
+  comment          String?
+  slideCount       Int?
+  chatTurnCount    Int?
+  editCountAfter   Int          @default(0)
+  exported         Boolean      @default(false)
+  createdAt        DateTime     @default(now())
+  user             User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  presentation     Presentation @relation(fields: [presentationId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, presentationId])
+  @@index([userId])
+  @@index([presentationId])
+  @@index([rating, createdAt])
 }

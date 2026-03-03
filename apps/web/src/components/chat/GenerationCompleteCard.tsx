@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { CheckCircle2, Download, Loader2, ExternalLink } from 'lucide-react';
 import { api } from '../../lib/api.js';
+import { GenerationRatingPopup } from './GenerationRatingPopup.js';
 
 export interface GenerationCompleteData {
   presentationId: string;
@@ -136,6 +137,7 @@ export function GenerationCompleteCard({ data, onExport }: GenerationCompleteCar
         </button>
       </div>
 
+      <GenerationRatingPopup presentationId={data.presentationId} />
     </div>
   );
 }

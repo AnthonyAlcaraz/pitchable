@@ -9,6 +9,7 @@ import { mkdir } from 'fs/promises';
 import { readFile, writeFile, unlink } from 'fs/promises';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { ActivityService } from '../observability/activity.service.js';
+import { GenerationRatingService } from '../observability/generation-rating.service.js';
 import { MarpExporterService } from './marp-exporter.service.js';
 import { RevealJsExporterService } from './revealjs-exporter.service.js';
 import { PptxGenJsExporterService } from './pptxgenjs-exporter.service.js';
@@ -119,6 +120,7 @@ export class ExportsService {
     private readonly themesService: ThemesService,
     private readonly rendererChooser: RendererChooserService,
     private readonly events: EventsGateway,
+    private readonly generationRating: GenerationRatingService,
   ) {}
 
 
@@ -491,6 +493,7 @@ export class ExportsService {
       });
 
       this.activity.track({ eventType: 'export_complete', category: 'export', metadata: { jobId, format: job.format, duration: Date.now() - exportStartTime } });
+      this.generationRating.markExported(job.presentationId);
 
       this.logger.log(
         `Export job ${jobId} completed: ${job.format} -> ${fileUrl}`,

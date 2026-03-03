@@ -19,6 +19,8 @@ import type { GeneratedSlideContent } from './validators.js';
 import { SlideType, CreditReason } from '../../generated/prisma/enums.js';
 import { CreditsService } from '../credits/credits.service.js';
 import { CreditReservationService } from '../credits/credit-reservation.service.js';
+import { ActivityService } from '../observability/activity.service.js';
+import { GenerationRatingService } from '../observability/generation-rating.service.js';
 import { SLIDE_MODIFICATION_COST } from '../credits/tier-config.js';
 
 @Injectable()
@@ -35,6 +37,8 @@ export class SlideModifierService {
     private readonly nanoBanana: NanoBananaService,
     private readonly credits: CreditsService,
     private readonly creditReservation: CreditReservationService,
+    private readonly activity: ActivityService,
+    private readonly generationRating: GenerationRatingService,
   ) {}
 
   /**
@@ -203,6 +207,10 @@ export class SlideModifierService {
 
       // Charge credit for successful modification
       await this.credits.deductCredits(userId, SLIDE_MODIFICATION_COST, CreditReason.SLIDE_MODIFICATION, slide.id);
+
+      // Track slide edit for behavioral signals
+      this.activity.track({ userId, eventType: 'slide_edited_post_gen', category: 'behavioral', metadata: { presentationId, slideId: slide.id } });
+      this.generationRating.incrementEditCount(presentationId);
 
       return {
         success: true,
