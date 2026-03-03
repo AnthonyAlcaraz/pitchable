@@ -440,6 +440,73 @@ export function LandingPage() {
         </div>
       </section>
 
+      {/* ── Slide Showroom ──────────────────────────────── */}
+      <section className="relative overflow-hidden py-24 sm:py-32">
+        <div className="absolute inset-0 bg-[#0a0a0a]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_100%,rgba(249,115,22,0.15),transparent)]" />
+
+        <div className="relative mx-auto max-w-5xl px-6">
+          <div className="mb-10 text-center">
+            <h2 className="mb-3 text-3xl font-bold text-white sm:text-4xl">
+              Built for high-stakes presentations
+            </h2>
+            <p className="mx-auto max-w-xl text-[#a1a1a1]">
+              16 professional themes from McKinsey to YC — each with AI imagery, action titles, and consulting frameworks.
+            </p>
+          </div>
+
+          {/* Main slide viewer */}
+          <div
+            className="group relative overflow-hidden rounded-xl border border-white/10 bg-black shadow-2xl shadow-orange-500/5"
+            style={{ aspectRatio: '16/9' }}
+            onMouseEnter={() => { isPaused.current = true; }}
+            onMouseLeave={() => { isPaused.current = false; }}
+          >
+            <img
+              key={`${SHOWCASE_SLIDES[activeSlide].themeSlug}-${SHOWCASE_SLIDES[activeSlide].slideNumber}`}
+              src={`/exports/showcase/${SHOWCASE_SLIDES[activeSlide].themeSlug}/${SHOWCASE_SLIDES[activeSlide].slideNumber}/preview`}
+              alt={SHOWCASE_SLIDES[activeSlide].title}
+              className="h-full w-full object-contain"
+              style={{ animation: 'fadeSlideIn 0.4s ease-out' }}
+            />
+            {/* Overlay info */}
+            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent px-6 pb-5 pt-12">
+              <span className="mb-1 inline-block rounded-full bg-orange-500/20 px-2.5 py-0.5 text-xs font-semibold text-orange-400">
+                {SHOWCASE_SLIDES[activeSlide].deck}
+              </span>
+              <p className="text-sm font-medium text-white/90">{SHOWCASE_SLIDES[activeSlide].title}</p>
+            </div>
+            {/* Slide counter */}
+            <div className="absolute right-3 top-3 rounded-full bg-black/60 px-3 py-1 text-xs text-white/70">
+              {activeSlide + 1} / {SHOWCASE_SLIDES.length}
+            </div>
+          </div>
+
+          {/* Thumbnail strip */}
+          <div className="mt-4 flex justify-center gap-2 overflow-x-auto pb-1">
+            {SHOWCASE_SLIDES.map((slide, i) => (
+              <button
+                key={`${slide.themeSlug}-${slide.slideNumber}-${i}`}
+                onClick={() => setActiveSlide(i)}
+                className={`flex-shrink-0 overflow-hidden rounded border transition-all ${
+                  i === activeSlide
+                    ? 'border-orange-500 ring-1 ring-orange-500/30'
+                    : 'border-white/10 opacity-40 hover:opacity-70'
+                }`}
+                style={{ width: 80, aspectRatio: '16/9' }}
+              >
+                <img
+                  src={`/exports/showcase/${slide.themeSlug}/${slide.slideNumber}/preview`}
+                  alt={slide.title}
+                  className="h-full w-full object-contain bg-black"
+                  loading="lazy"
+                />
+              </button>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* ── Personas ─────────────────────────────────── */}
       <section className="py-24">
         <div className="mx-auto max-w-6xl px-6">
@@ -556,73 +623,6 @@ export function LandingPage() {
         </div>
       </section>
 
-
-      {/* ── Slide Showroom ──────────────────────────────── */}
-      <section className="relative overflow-hidden py-24 sm:py-32">
-        <div className="absolute inset-0 bg-[#0a0a0a]" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_100%,rgba(249,115,22,0.15),transparent)]" />
-
-        <div className="relative mx-auto max-w-5xl px-6">
-          <div className="mb-10 text-center">
-            <h2 className="mb-3 text-3xl font-bold text-white sm:text-4xl">
-              Built for high-stakes presentations
-            </h2>
-            <p className="mx-auto max-w-xl text-[#a1a1a1]">
-              16 professional themes from McKinsey to YC — each with AI imagery, action titles, and consulting frameworks.
-            </p>
-          </div>
-
-          {/* Main slide viewer */}
-          <div
-            className="group relative overflow-hidden rounded-xl border border-white/10 bg-black shadow-2xl shadow-orange-500/5"
-            style={{ aspectRatio: '16/9' }}
-            onMouseEnter={() => { isPaused.current = true; }}
-            onMouseLeave={() => { isPaused.current = false; }}
-          >
-            <img
-              key={`${SHOWCASE_SLIDES[activeSlide].themeSlug}-${SHOWCASE_SLIDES[activeSlide].slideNumber}`}
-              src={`/exports/showcase/${SHOWCASE_SLIDES[activeSlide].themeSlug}/${SHOWCASE_SLIDES[activeSlide].slideNumber}/preview`}
-              alt={SHOWCASE_SLIDES[activeSlide].title}
-              className="h-full w-full object-contain"
-              style={{ animation: 'fadeSlideIn 0.4s ease-out' }}
-            />
-            {/* Overlay info */}
-            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent px-6 pb-5 pt-12">
-              <span className="mb-1 inline-block rounded-full bg-orange-500/20 px-2.5 py-0.5 text-xs font-semibold text-orange-400">
-                {SHOWCASE_SLIDES[activeSlide].deck}
-              </span>
-              <p className="text-sm font-medium text-white/90">{SHOWCASE_SLIDES[activeSlide].title}</p>
-            </div>
-            {/* Slide counter */}
-            <div className="absolute right-3 top-3 rounded-full bg-black/60 px-3 py-1 text-xs text-white/70">
-              {activeSlide + 1} / {SHOWCASE_SLIDES.length}
-            </div>
-          </div>
-
-          {/* Thumbnail strip */}
-          <div className="mt-4 flex justify-center gap-2 overflow-x-auto pb-1">
-            {SHOWCASE_SLIDES.map((slide, i) => (
-              <button
-                key={`${slide.themeSlug}-${slide.slideNumber}-${i}`}
-                onClick={() => setActiveSlide(i)}
-                className={`flex-shrink-0 overflow-hidden rounded border transition-all ${
-                  i === activeSlide
-                    ? 'border-orange-500 ring-1 ring-orange-500/30'
-                    : 'border-white/10 opacity-40 hover:opacity-70'
-                }`}
-                style={{ width: 80, aspectRatio: '16/9' }}
-              >
-                <img
-                  src={`/exports/showcase/${slide.themeSlug}/${slide.slideNumber}/preview`}
-                  alt={slide.title}
-                  className="h-full w-full object-contain bg-black"
-                  loading="lazy"
-                />
-              </button>
-            ))}
-          </div>
-        </div>
-      </section>
 
       {/* ── Footer — Lovable-style elevated panel ────────────── */}
       <footer className="bg-card py-10">
