@@ -360,12 +360,12 @@ export function LandingPage() {
               {t('landing.hero.cta_primary')}
               <ArrowRight className="h-4 w-4" />
             </Link>
-            <a
-              href="#gallery"
+            <Link
+              to="/gallery"
               className="flex items-center gap-2 rounded-xl border border-white/10 px-8 py-3.5 font-semibold text-white/80 transition-colors hover:border-white/20 hover:bg-white/5 hover:text-white"
             >
               {t('landing.hero.cta_secondary')}
-            </a>
+            </Link>
           </div>
         </div>
       </section>
