@@ -62,7 +62,7 @@ function App() {
           <Route path="/verify-email" element={<VerifyEmailPage />} />
           <Route path="/terms" element={<TermsPage />} />
           <Route path="/privacy" element={<PrivacyPolicyPage />} />
-          <Route path="/auth/callback" element={<AuthCallbackPage />} />
+          <Route path="/oauth/callback" element={<AuthCallbackPage />} />
 
           {/* Protected routes with app layout (sidebar + navbar) */}
           <Route

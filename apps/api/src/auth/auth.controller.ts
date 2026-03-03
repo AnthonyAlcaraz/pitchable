@@ -229,7 +229,7 @@ export class AuthController {
         refreshToken: result.tokens.refreshToken,
       });
 
-      res.redirect(`${frontendUrl}/auth/callback?${params.toString()}`);
+      res.redirect(`${frontendUrl}/oauth/callback?${params.toString()}`);
     } catch (error) {
       this.logger.error('Google OAuth callback failed', error);
       res.redirect(`${frontendUrl}/login?error=oauth_failed`);
