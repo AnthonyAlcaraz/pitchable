@@ -16,6 +16,8 @@ interface SlideHeaderProps {
 
 const EXPORT_FORMATS = [
   { key: 'pptx', label: 'PowerPoint' },
+  { key: 'canva', label: 'Open in Canva' },
+  { key: 'pdf', label: 'PDF' },
   { key: 'pptx-figma', label: 'PPTX (Figma Design)' },
   { key: 'html', label: 'Reveal.js (HTML)' },
   { key: 'figma', label: 'Figma Plugin JSON' },

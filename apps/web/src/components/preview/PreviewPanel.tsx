@@ -315,9 +315,10 @@ export function PreviewPanel({ presentationId }: PreviewPanelProps) {
       );
     }
     try {
+      const isCanva = format === 'canva';
       const formatMap: Record<string, string> = {
-        pptx: 'PPTX', html: 'REVEAL_JS',
-        'pptx-figma': 'PPTX',
+        pptx: 'PPTX', pdf: 'PDF', html: 'REVEAL_JS',
+        'pptx-figma': 'PPTX', canva: 'PPTX',
       };
       const exportFormat = formatMap[format] || 'PPTX';
       const jobs = await api.post<Array<{ id: string; format: string; status: string }>>(
@@ -336,7 +337,39 @@ export function PreviewPanel({ presentationId }: PreviewPanelProps) {
       }
       if (!completed) throw new Error('Export timed out. Please try again.');
       const dl = await api.get<{ url: string; filename: string }>(`/exports/${jobId}/download-url`, { silentAuth: true });
-      if (newTab) {
+      if (isCanva && newTab) {
+        // For Canva: download the PPTX first, then redirect to Canva upload
+        const raw = localStorage.getItem('auth-storage');
+        const accessToken = raw ? JSON.parse(raw)?.state?.accessToken : null;
+        let downloadUrl: string;
+        if (dl.url.startsWith('http')) {
+          downloadUrl = dl.url;
+        } else {
+          const resp = await fetch(dl.url, {
+            headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
+          });
+          const blob = await resp.blob();
+          downloadUrl = URL.createObjectURL(blob);
+        }
+        // Trigger PPTX download via hidden link
+        const a = document.createElement('a');
+        a.href = downloadUrl;
+        a.download = dl.filename || 'presentation.pptx';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        // Show Canva import instructions in the new tab
+        newTab.document.write(
+          '<html><body style="background:#0f0f1a;color:#fff;display:flex;align-items:center;justify-content:center;height:100vh;font-family:system-ui">' +
+          '<div style="text-align:center;max-width:500px">' +
+          '<p style="font-size:2.5rem">🍑</p>' +
+          '<p style="font-size:1.4rem;font-weight:700;margin-bottom:8px">Opening Canva...</p>' +
+          '<p style="color:#aaa;margin-bottom:24px">Your PPTX is downloading. Upload it to Canva to continue editing.</p>' +
+          '<a href="https://www.canva.com/create/import" target="_self" style="display:inline-block;background:#7c3aed;color:#fff;padding:12px 32px;border-radius:8px;text-decoration:none;font-weight:600;font-size:1rem">Open Canva Import →</a>' +
+          '<p style="color:#666;margin-top:16px;font-size:0.85rem">Drag your downloaded .pptx file into Canva</p>' +
+          '</div></body></html>',
+        );
+      } else if (newTab) {
         if (dl.url.startsWith('http')) {
           newTab.location.href = dl.url;
         } else {
@@ -501,13 +534,13 @@ export function PreviewPanel({ presentationId }: PreviewPanelProps) {
                 </button>
                 {showExportMenu && (
                   <div className="absolute right-0 top-full z-50 mt-1 min-w-[10rem] rounded-md border border-border bg-popover py-1 shadow-md">
-                    {(['pptx', 'pptx-figma', 'html'] as const).map((fmt) => (
+                    {(['pptx', 'canva', 'pdf', 'pptx-figma', 'html'] as const).map((fmt) => (
                       <button
                         key={fmt}
                         onClick={() => { handleExport(fmt); setShowExportMenu(false); }}
                         className="flex w-full items-center px-3 py-1.5 text-left text-sm text-popover-foreground transition-colors hover:bg-accent"
                       >
-                        {fmt === 'pptx' ? 'PowerPoint' : fmt === 'pptx-figma' ? 'PPTX (Figma)' : 'HTML'}
+                        {fmt === 'pptx' ? 'PowerPoint' : fmt === 'canva' ? 'Open in Canva' : fmt === 'pdf' ? 'PDF' : fmt === 'pptx-figma' ? 'PPTX (Figma)' : 'HTML'}
                       </button>
                     ))}
                   </div>
@@ -716,13 +749,13 @@ export function PreviewPanel({ presentationId }: PreviewPanelProps) {
                       </button>
                       {showExportMenu && (
                         <div className="absolute right-0 top-full z-50 mt-1 min-w-[10rem] rounded-md border border-border bg-popover py-1 shadow-md">
-                          {(['pptx', 'pptx-figma', 'html'] as const).map((fmt) => (
+                          {(['pptx', 'canva', 'pdf', 'pptx-figma', 'html'] as const).map((fmt) => (
                             <button
                               key={fmt}
                               onClick={() => { handleExport(fmt); setShowExportMenu(false); }}
                               className="flex w-full items-center px-3 py-1.5 text-left text-sm text-popover-foreground transition-colors hover:bg-accent"
                             >
-                              {fmt === 'pptx' ? 'PowerPoint' : fmt === 'pptx-figma' ? 'PPTX (Figma)' : 'HTML'}
+                              {fmt === 'pptx' ? 'PowerPoint' : fmt === 'canva' ? 'Open in Canva' : fmt === 'pdf' ? 'PDF' : fmt === 'pptx-figma' ? 'PPTX (Figma)' : 'HTML'}
                             </button>
                           ))}
                         </div>
