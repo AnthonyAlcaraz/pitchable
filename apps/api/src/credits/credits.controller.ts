@@ -50,20 +50,6 @@ export class CreditsController {
     return this.tierEnforcement.getTierStatus(user.userId);
   }
 
-  @UseGuards(JwtAuthGuard)
-  @Post('dev/self-grant')
-  async devSelfGrant(
-    @CurrentUserModule.CurrentUser() user: CurrentUserModule.RequestUser,
-    @Body() body: { credits: number },
-  ) {
-    if (!body.credits || body.credits <= 0 || body.credits > 1000) {
-      throw new ForbiddenException('Invalid credits amount');
-    }
-    await this.creditsService.addCredits(user.userId, body.credits, CreditReason.ADMIN_GRANT);
-    const balance = await this.creditsService.getBalance(user.userId);
-    return { balance };
-  }
-
   @Post('admin/grant')
   async adminGrant(
     @Headers('x-admin-secret') secret: string,
