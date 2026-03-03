@@ -7,7 +7,9 @@ import {
   Query,
   UseGuards,
   ForbiddenException,
+  Logger,
 } from '@nestjs/common';
+import { timingSafeEqual } from 'node:crypto';
 import { CreditsService } from './credits.service.js';
 import { TierEnforcementService } from './tier-enforcement.service.js';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
@@ -17,6 +19,8 @@ import { CreditReason, UserTier } from '../../generated/prisma/enums.js';
 
 @Controller('credits')
 export class CreditsController {
+  private readonly logger = new Logger(CreditsController.name);
+
   constructor(
     private readonly creditsService: CreditsService,
     private readonly tierEnforcement: TierEnforcementService,
@@ -55,7 +59,9 @@ export class CreditsController {
     @Headers('x-admin-secret') secret: string,
     @Body() body: { email: string; credits?: number; tier?: string },
   ) {
-    if (secret !== process.env['ADMIN_SECRET']) {
+    const expected = process.env['ADMIN_SECRET'] ?? '';
+    if (!secret || !expected || secret.length !== expected.length ||
+        !timingSafeEqual(Buffer.from(secret), Buffer.from(expected))) {
       throw new ForbiddenException('Invalid admin secret');
     }
     const user = await this.prisma.user.findUnique({ where: { email: body.email } });
@@ -71,6 +77,8 @@ export class CreditsController {
     if (Object.keys(updates).length > 0) {
       await this.prisma.user.update({ where: { id: user.id }, data: updates });
     }
+
+    this.logger.log(`Admin grant: email=${body.email} credits=${body.credits ?? 0} tier=${body.tier ?? 'unchanged'}`);
 
     const updated = await this.prisma.user.findUnique({
       where: { id: user.id },

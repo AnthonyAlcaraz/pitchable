@@ -448,6 +448,7 @@ export class AuthService {
           where: { id: existingByEmail.id },
           data: {
             googleId,
+            emailVerified: true, // Google already verified this email
             authProvider: existingByEmail.authProvider === 'local' && existingByEmail.passwordHash
               ? 'local' // Keep 'local' if they have a password (they can use both)
               : 'google',
@@ -465,6 +466,7 @@ export class AuthService {
             role: UserRole.USER,
             tier: UserTier.FREE,
             creditBalance: FREE_SIGNUP_CREDITS,
+            emailVerified: true, // Google already verified this email
           },
         });
 

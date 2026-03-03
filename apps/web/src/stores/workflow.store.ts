@@ -44,7 +44,7 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
     if (current === phase) return;
     const allowed = VALID_TRANSITIONS[current];
     if (!allowed.includes(phase)) {
-      console.warn(`[Workflow] Invalid phase transition: ${current} → ${phase} (allowed: ${allowed.join(', ')})`);
+      if (import.meta.env.DEV) console.warn(`[Workflow] Invalid phase transition: ${current} → ${phase} (allowed: ${allowed.join(', ')})`);
       // Allow it anyway but log — don't block UX
     }
     set({ phase });

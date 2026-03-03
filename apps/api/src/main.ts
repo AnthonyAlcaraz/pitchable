@@ -1,5 +1,6 @@
 // Sentry must be initialized before anything else (lazy: only loads SDK when SENTRY_DSN is set)
 import './common/sentry.js';
+import { Sentry } from './common/sentry.js';
 
 import { join } from 'node:path';
 import { existsSync, readFileSync } from 'node:fs';
@@ -103,10 +104,12 @@ async function bootstrap() {
 }
 process.on('unhandledRejection', (reason) => {
   console.error('Unhandled Rejection:', reason);
+  if (reason instanceof Error) Sentry?.captureException(reason);
 });
 
 process.on('uncaughtException', (error) => {
   console.error('Uncaught Exception:', error);
+  Sentry?.captureException(error);
 });
 
 bootstrap();

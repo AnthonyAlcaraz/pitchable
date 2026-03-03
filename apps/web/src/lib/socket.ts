@@ -95,15 +95,15 @@ export function getSocket(): Socket {
   });
 
   socket.on('connect', () => {
-    console.log('[socket] connected:', socket?.id);
+    if (import.meta.env.DEV) console.log('[socket] connected:', socket?.id);
   });
 
   socket.on('disconnect', (reason) => {
-    console.log('[socket] disconnected:', reason);
+    if (import.meta.env.DEV) console.log('[socket] disconnected:', reason);
   });
 
   socket.on('connect_error', (err) => {
-    console.warn('[socket] connect error:', err.message);
+    if (import.meta.env.DEV) console.warn('[socket] connect error:', err.message);
   });
 
   return socket;

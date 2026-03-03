@@ -136,9 +136,11 @@ export class EventsGateway
     private readonly prisma: PrismaService,
     private readonly eventStream: EventStreamService,
   ) {
-    this.jwtSecret =
-      configService.get<string>('JWT_ACCESS_SECRET') ||
-      configService.get<string>('JWT_SECRET', '');
+    const secret = configService.get<string>('JWT_ACCESS_SECRET');
+    if (!secret) {
+      throw new Error('JWT_ACCESS_SECRET is required for WebSocket authentication');
+    }
+    this.jwtSecret = secret;
   }
 
   handleConnection(client: Socket): void {

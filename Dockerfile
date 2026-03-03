@@ -93,4 +93,7 @@ RUN chmod +x ./apps/api/start.sh
 
 EXPOSE 3000
 
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+  CMD node -e "const http = require('http'); const req = http.get('http://localhost:3000/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1); }); req.on('error', () => process.exit(1)); req.setTimeout(5000, () => { req.destroy(); process.exit(1); });"
+
 CMD ["./apps/api/start.sh"]

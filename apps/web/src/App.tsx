@@ -1,5 +1,6 @@
 import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { AppLayout } from '@/components/layout/AppLayout';
 
@@ -45,6 +46,7 @@ function PageFallback() {
 
 function App() {
   return (
+    <ErrorBoundary>
     <BrowserRouter>
       <Suspense fallback={<PageFallback />}>
         <Routes>
@@ -124,6 +126,7 @@ function App() {
         </Routes>
       </Suspense>
     </BrowserRouter>
+    </ErrorBoundary>
   );
 }
 
