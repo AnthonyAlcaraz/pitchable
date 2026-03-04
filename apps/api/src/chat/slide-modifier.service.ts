@@ -23,7 +23,7 @@ import type { LayoutOverrides } from './layout-overrides.js';
 import { CreditReservationService } from '../credits/credit-reservation.service.js';
 import { ActivityService } from '../observability/activity.service.js';
 import { GenerationRatingService } from '../observability/generation-rating.service.js';
-import { SLIDE_MODIFICATION_COST } from '../credits/tier-config.js';
+import { SLIDE_MODIFICATION_COST, LAYOUT_MODIFICATION_COST } from '../credits/tier-config.js';
 
 @Injectable()
 export class SlideModifierService {
@@ -752,6 +752,12 @@ The new slide should fit naturally in the deck's narrative flow.`;
     slideNumber: number,
     overrides: LayoutOverrides,
   ): Promise<{ success: boolean; message: string }> {
+    // Credit pre-check
+    const hasCredits = await this.credits.hasEnoughCredits(userId, LAYOUT_MODIFICATION_COST);
+    if (!hasCredits) {
+      return { success: false, message: `Not enough credits. Layout modification costs ${LAYOUT_MODIFICATION_COST} credit.` };
+    }
+
     const slide = await this.prisma.slide.findFirst({
       where: { presentationId, slideNumber },
     });
@@ -773,6 +779,9 @@ The new slide should fit naturally in the deck's narrative flow.`;
         ...(overrides.slideType ? { slideType: overrides.slideType as any } : {}),
       },
     });
+
+    // Charge credit for successful layout modification
+    await this.credits.deductCredits(userId, LAYOUT_MODIFICATION_COST, CreditReason.LAYOUT_MODIFICATION, slide.id);
 
     // Broadcast via WebSocket (include previewUrl:null so clients refresh)
     this.events.emitSlideUpdated({
