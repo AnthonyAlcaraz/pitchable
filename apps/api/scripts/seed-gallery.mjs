@@ -23,7 +23,8 @@ import { config } from 'dotenv';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 config({ path: path.resolve(__dirname, '../../../.env') });
 
-import { PrismaClient } from '../../generated/prisma/client.js';
+import { PrismaClient } from '../generated/prisma/client.js';
+import { PrismaPg } from '@prisma/adapter-pg';
 import {
   EXTRA_CONTENT_A,
   EXTRA_CONTENT_B,
@@ -31,7 +32,8 @@ import {
   EXTRA_CONTENT_D,
 } from './extra-showcase-content.mjs';
 
-const prisma = new PrismaClient();
+const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
+const prisma = new PrismaClient({ adapter });
 
 // ── Gallery Owner ─────────────────────────────────────────────
 const GALLERY_EMAIL = 'gallery@pitchable.ai';

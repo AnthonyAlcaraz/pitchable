@@ -8,8 +8,12 @@ import {
   HttpCode,
   HttpStatus,
   ParseUUIDPipe,
+  Body,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
+import { RolesGuard } from '../auth/guards/roles.guard.js';
+import { Roles } from '../auth/decorators/roles.decorator.js';
+import { UserRole } from '../../generated/prisma/enums.js';
 import { CurrentUser, type RequestUser } from '../auth/decorators/current-user.decorator.js';
 import { GalleryService } from './gallery.service.js';
 import { GalleryQueryDto } from './dto/gallery-query.dto.js';
@@ -57,4 +61,5 @@ export class GalleryController {
   ) {
     return this.galleryService.forkPublicPresentation(id, user.userId);
   }
+@Post('seed')  @UseGuards(JwtAuthGuard, RolesGuard)  @Roles(UserRole.ADMIN)  @HttpCode(HttpStatus.OK)  async seedGallery(@Body() body: Record<string, Record<string, { title: string; body: string }>>) {    return this.galleryService.seedGallery(body);  }
 }
