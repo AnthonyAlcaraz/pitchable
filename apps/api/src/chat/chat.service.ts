@@ -121,15 +121,20 @@ export class ChatService {
       }
     }
 
-    // Check if user is requesting a presentation (heuristic detection)
-    const generationIntent = this.detectGenerationIntent(content);
-    if (generationIntent) {
-      yield* this.generation.generateOutline(userId, presentationId, generationIntent);
-      return;
-    }
-
     // Classify intent (works with or without slides)
     const slideCount = await this.prisma.slide.count({ where: { presentationId } });
+
+    // Check if user is requesting a presentation (heuristic detection)
+    // Only apply when NO slides exist — with existing slides, the intent classifier
+    // handles modify_layout/modify_slide accurately. The heuristic regex matches
+    // false positives like "make the font bigger on slide 1" (make + slide).
+    if (slideCount === 0) {
+      const generationIntent = this.detectGenerationIntent(content);
+      if (generationIntent) {
+        yield* this.generation.generateOutline(userId, presentationId, generationIntent);
+        return;
+      }
+    }
 
     // If this is a brand-new presentation (0 slides) and the first user message,
     // treat it as a generation request — the wizard sends bare topic text.

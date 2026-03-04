@@ -316,6 +316,7 @@ export class PresentationsService {
         figmaNodeId: s.figmaNodeId,
         figmaNodeName: s.figmaNodeName,
         previewUrl: s.previewUrl,
+        layoutOverrides: s.layoutOverrides as Record<string, unknown> | null,
         createdAt: s.createdAt,
       })),
     };
