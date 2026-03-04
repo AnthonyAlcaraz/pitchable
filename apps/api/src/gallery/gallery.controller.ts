@@ -66,6 +66,12 @@ export class GalleryController {
   async seedGallery(
     @Body() body: Record<string, Record<string, { title: string; body: string }>>,
   ) {
-    return this.galleryService.seedGallery(body);
+    try {
+      return await this.galleryService.seedGallery(body);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      const stack = err instanceof Error ? err.stack : undefined;
+      return { error: true, message: msg, stack };
+    }
   }
 }
