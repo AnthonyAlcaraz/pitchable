@@ -7,6 +7,20 @@ import type { RequestUser } from '../../auth/decorators/current-user.decorator.j
 // In-memory sliding window rate limiter
 const rateLimitWindows = new Map<string, number[]>();
 
+// Periodic cleanup to prevent unbounded Map growth (evict entries older than 2 minutes)
+const CLEANUP_INTERVAL = 60_000;
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, timestamps] of rateLimitWindows) {
+    const fresh = timestamps.filter(t => now - t < 120_000);
+    if (fresh.length === 0) {
+      rateLimitWindows.delete(key);
+    } else {
+      rateLimitWindows.set(key, fresh);
+    }
+  }
+}, CLEANUP_INTERVAL).unref();
+
 @Injectable()
 export class ApiKeyGuard implements CanActivate {
   constructor(

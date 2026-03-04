@@ -156,6 +156,7 @@ model CreditTransaction {
   user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+  @@index([userId, createdAt])
 }
 
 model Subscription {
@@ -317,6 +318,8 @@ model ChatMessage {
   presentation   Presentation @relation(fields: [presentationId], references: [id], onDelete: Cascade)
 
   @@index([presentationId])
+  @@index([presentationId, role])
+  @@index([presentationId, createdAt])
 }
 
 model FeedbackEntry {
@@ -806,6 +809,7 @@ model ActivityEvent {
   @@index([userId])
   @@index([createdAt])
   @@index([userId, eventType, createdAt])
+  @@index([eventType, createdAt])
 }
 
 model GenerationMetric {
@@ -830,6 +834,7 @@ model GenerationMetric {
   @@index([operation])
   @@index([createdAt])
   @@index([model, createdAt])
+  @@index([operation, createdAt])
 }
 
 model GenerationRating {

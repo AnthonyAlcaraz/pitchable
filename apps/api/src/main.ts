@@ -7,6 +7,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { NestFactory } from '@nestjs/core';
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import compression from 'compression';
 import helmet from 'helmet';
 import { Logger as PinoLogger } from 'nestjs-pino';
 import { AppModule } from './app.module.js';
@@ -47,6 +48,9 @@ async function bootstrap() {
     origin: process.env['FRONTEND_URL'] || 'http://localhost:5173',
     credentials: true,
   });
+
+  // HTTP compression (gzip/brotli) — skip responses smaller than 1KB
+  app.use(compression({ threshold: 1024 }));
 
   // Global pipes
   app.useGlobalPipes(

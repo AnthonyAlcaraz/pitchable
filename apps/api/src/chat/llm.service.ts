@@ -1,6 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import Anthropic from '@anthropic-ai/sdk';
+import pLimit from 'p-limit';
+
+/** Global concurrency limiter for Anthropic API calls (max 8 concurrent). */
+const llmLimiter = pLimit(8);
 
 /** Shared message type for all LLM interactions. */
 export interface LlmMessage {
@@ -122,22 +126,45 @@ export class LlmService {
   ): AsyncGenerator<LlmStreamChunk> {
     const { system, messages: nonSystem } = this.separateSystemMessages(messages);
 
-    const stream = this.anthropic.messages.stream({
-      model: model ?? this.defaultModel,
-      max_tokens: 4096,
-      ...(system ? { system } : {}),
-      messages: nonSystem,
+    // Acquire a concurrency slot and hold it until the stream is fully consumed.
+    // We create a release function that the limiter's promise resolves only after
+    // the entire stream has been read.
+    let releaseLimiter: (() => void) | undefined;
+    const limiterPromise = llmLimiter(
+      () => new Promise<void>((resolve) => { releaseLimiter = resolve; }),
+    );
+
+    // Wait for our slot to be granted (releaseLimiter is set once we enter the limiter)
+    await new Promise<void>((resolve) => {
+      const check = () => {
+        if (releaseLimiter) return resolve();
+        setTimeout(check, 1);
+      };
+      check();
     });
 
-    for await (const event of stream) {
-      if (
-        event.type === 'content_block_delta' &&
-        event.delta.type === 'text_delta'
-      ) {
-        yield { content: event.delta.text, done: false };
+    try {
+      const stream = this.anthropic.messages.stream({
+        model: model ?? this.defaultModel,
+        max_tokens: 4096,
+        ...(system ? { system } : {}),
+        messages: nonSystem,
+      });
+
+      for await (const event of stream) {
+        if (
+          event.type === 'content_block_delta' &&
+          event.delta.type === 'text_delta'
+        ) {
+          yield { content: event.delta.text, done: false };
+        }
       }
+      yield { content: '', done: true };
+    } finally {
+      // Release the concurrency slot once the stream is fully consumed or errored
+      releaseLimiter!();
+      await limiterPromise;
     }
-    yield { content: '', done: true };
   }
 
   /** Complete a chat and return content with token usage and resolved model. */
@@ -147,12 +174,14 @@ export class LlmService {
   ): Promise<LlmResult> {
     const { system, messages: nonSystem } = this.separateSystemMessages(messages);
 
-    const result = await this.anthropic.messages.create({
-      model: model ?? this.defaultModel,
-      max_tokens: 4096,
-      ...(system ? { system } : {}),
-      messages: nonSystem,
-    });
+    const result = await llmLimiter(() =>
+      this.anthropic.messages.create({
+        model: model ?? this.defaultModel,
+        max_tokens: 4096,
+        ...(system ? { system } : {}),
+        messages: nonSystem,
+      }),
+    );
 
     const textBlock = result.content.find((block) => block.type === 'text');
     return {
@@ -212,12 +241,14 @@ export class LlmService {
 
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
       try {
-        const result = await this.anthropic.messages.create({
-          model: model ?? this.defaultModel,
-          max_tokens: 4096,
-          system: systemParam,
-          messages: mutableNonSystem,
-        });
+        const result = await llmLimiter(() =>
+          this.anthropic.messages.create({
+            model: model ?? this.defaultModel,
+            max_tokens: 4096,
+            system: systemParam,
+            messages: mutableNonSystem,
+          }),
+        );
 
         lastUsage = this.extractUsage(result);
         lastModel = result.model;
@@ -350,12 +381,14 @@ export class LlmService {
 
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
       try {
-        const result = await this.anthropic.messages.create({
-          model: model ?? LlmModel.OPUS,
-          max_tokens: 4096,
-          system: fullSystem,
-          messages,
-        });
+        const result = await llmLimiter(() =>
+          this.anthropic.messages.create({
+            model: model ?? LlmModel.OPUS,
+            max_tokens: 4096,
+            system: fullSystem,
+            messages,
+          }),
+        );
 
         lastUsage = this.extractUsage(result);
         lastModel = result.model;

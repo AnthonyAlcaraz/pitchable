@@ -55,7 +55,7 @@ export class ContextBuilderService {
     const presentation = await this.prisma.presentation.findUnique({
       where: { id: presentationId },
       include: {
-        slides: { orderBy: { slideNumber: 'asc' }, select: { slideNumber: true, title: true, slideType: true, body: true } },
+        slides: { orderBy: { slideNumber: 'asc' }, take: 50, select: { slideNumber: true, title: true, slideType: true, body: true } },
         theme: { select: { name: true, displayName: true } },
         pitchLens: true,
       },

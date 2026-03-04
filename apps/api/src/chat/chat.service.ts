@@ -793,20 +793,19 @@ export class ChatService {
     const cached = this.suggestionCache.get(cacheKey);
     if (cached) return cached;
 
-    // Build context from lens
+    // Build context from lens + brief (parallelized)
+    const [lens, brief] = await Promise.all([
+      lensId ? this.prisma.pitchLens.findUnique({ where: { id: lensId } }) : null,
+      briefId ? this.prisma.pitchBrief.findUnique({ where: { id: briefId } }) : null,
+    ]);
+
     let context = '';
-    if (lensId) {
-      const lens = await this.prisma.pitchLens.findUnique({ where: { id: lensId } });
-      if (lens) {
-        context += `Audience: ${lens.audienceType}. Goal: ${lens.pitchGoal}. Industry: ${lens.industry}. Stage: ${lens.companyStage}. Tone: ${lens.toneStyle}.`;
-        if (lens.customGuidance) context += ` Custom guidance: ${lens.customGuidance}`;
-      }
+    if (lens) {
+      context += `Audience: ${lens.audienceType}. Goal: ${lens.pitchGoal}. Industry: ${lens.industry}. Stage: ${lens.companyStage}. Tone: ${lens.toneStyle}.`;
+      if (lens.customGuidance) context += ` Custom guidance: ${lens.customGuidance}`;
     }
-    if (briefId) {
-      const brief = await this.prisma.pitchBrief.findUnique({ where: { id: briefId } });
-      if (brief) {
-        context += ` Brief: ${brief.name}${brief.description ? '. ' + brief.description : ''}.`;
-      }
+    if (brief) {
+      context += ` Brief: ${brief.name}${brief.description ? '. ' + brief.description : ''}.`;
     }
 
     if (!context) {
@@ -841,7 +840,7 @@ export class ChatService {
     presentationId: string,
     options?: { limit?: number; cursor?: string },
   ) {
-    const take = Math.min(options?.limit ?? 200, 500);
+    const take = Math.min(options?.limit ?? 50, 100);
     const cursor = options?.cursor;
 
     const messages = await this.prisma.chatMessage.findMany({
