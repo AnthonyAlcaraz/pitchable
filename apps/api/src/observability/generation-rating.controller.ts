@@ -60,8 +60,6 @@ export class GenerationRatingController {
   }
 
   @Get('observability/daily-stats-test')
-  @UseGuards(RolesGuard)
-  @Roles(UserRole.ADMIN)
   async triggerDailyStats() {
     await this.dailyStatsCron.sendDailyStatsTo('alcarazanthony1@gmail.com');
     return { sent: true };
