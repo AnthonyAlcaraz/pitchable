@@ -33,7 +33,7 @@ export const FIGMA_GRADE_TYPES: Set<string> = new Set([
   'HOOK', 'MATRIX_2X2', 'WATERFALL', 'FUNNEL', 'COMPETITIVE_MATRIX', 'ROADMAP',
   'PRICING_TABLE', 'UNIT_ECONOMICS', 'SWOT', 'THREE_PILLARS', 'BEFORE_AFTER',
   'SOCIAL_PROOF', 'OBJECTION_HANDLER', 'FAQ', 'VERDICT', 'COHORT_TABLE', 'PROGRESS_TRACKER',
-  'PRODUCT_SHOWCASE', 'SPLIT_STATEMENT',
+  'PRODUCT_SHOWCASE', 'SPLIT_STATEMENT', 'OUTLINE',
   'FLYWHEEL', 'REVENUE_MODEL', 'CUSTOMER_JOURNEY', 'TECH_STACK', 'GROWTH_LOOPS', 'CASE_STUDY',
   'HIRING_PLAN', 'USE_OF_FUNDS', 'RISK_MITIGATION', 'DEMO_SCREENSHOT', 'MILESTONE_TIMELINE', 'PARTNERSHIP_LOGOS',
   'FINANCIAL_PROJECTION', 'GO_TO_MARKET', 'PERSONA', 'TESTIMONIAL_WALL', 'THANK_YOU', 'SCENARIO_ANALYSIS',
@@ -629,6 +629,8 @@ export function buildHtmlSlideContent(
       html = buildStoryArc(cleaned, palette, !!cleaned.imageUrl, accentDiversity); break;
     case 'TREND_INSIGHT':
       html = buildTrendInsight(cleaned, palette, !!cleaned.imageUrl, accentDiversity); break;
+    case 'OUTLINE':
+      html = buildOutline(cleaned, palette, !!cleaned.imageUrl, accentDiversity); break;
     case 'CONTRARIAN_VIEW':
       html = buildContrarianView(cleaned, palette, !!cleaned.imageUrl); break;
     default:
@@ -7653,6 +7655,53 @@ function buildTrendInsight(slide: SlideInput, p: ColorPalette, hasImage = false,
   return `${SCOPED_RESET}
 <div style="position:relative;width:${W}px;height:${H}px;background:${p.background};overflow:hidden">
   ${bgGradientOverlay(cW, H, p.primary, 0.04, '50%')}
+  <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;font-size:${titleFontSize(slide.title)}px;font-weight:800;letter-spacing:0.5px;overflow-wrap:break-word;word-wrap:break-word;color:${p.text};line-height:1.2">${escHtml(slide.title)}</div>
+  <div style="position:absolute;left:${PAD}px;top:${PAD + 56}px;width:50px;height:4px;background:${p.accent};border-radius:2px"></div>
+  ${html}
+</div>`;
+}
+
+// ── OUTLINE ──────────────────────────────────────────────────
+// Numbered agenda/outline with accent-colored badges
+
+function buildOutline(slide: SlideInput, p: ColorPalette, hasImage = false, accentDiversity = true): string {
+  const cW = hasImage ? CONTENT_W_IMG : W;
+  const lines = parseBodyLines(slide.body);
+  const accents = cardAccentColors(p, accentDiversity ? colorOffset(slide.title) : 0);
+
+  const items = lines.slice(0, 12);
+  const twoCol = items.length > 6;
+  const colW = twoCol ? Math.round((cW - PAD * 2 - 30) / 2) : cW - PAD * 2;
+
+  let html = '';
+  const startY = PAD + 80;
+  const itemH = twoCol ? 52 : 56;
+
+  for (let i = 0; i < items.length; i++) {
+    const col = twoCol ? Math.floor(i / Math.ceil(items.length / 2)) : 0;
+    const row = twoCol ? i % Math.ceil(items.length / 2) : i;
+    const x = PAD + col * (colW + 30);
+    const y = startY + row * itemH;
+    const ac = accents[i % accents.length];
+
+    // Number badge
+    html += `<div style="position:absolute;left:${x}px;top:${y}px;width:28px;height:28px;border-radius:50%;background:${ac};display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:${p.background}">${i + 1}</div>`;
+
+    // Label
+    html += `<div style="position:absolute;left:${x + 40}px;top:${y + 2}px;width:${colW - 50}px;font-size:16px;font-weight:600;line-height:1.4;color:${p.text};overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${escHtml(items[i])}</div>`;
+
+    // Separator line (not after last item in column)
+    const isLastInCol = twoCol
+      ? row === Math.ceil(items.length / 2) - 1 || i === items.length - 1
+      : i === items.length - 1;
+    if (!isLastInCol) {
+      html += `<div style="position:absolute;left:${x + 40}px;top:${y + itemH - 8}px;width:${colW - 50}px;height:1px;background:${hexToRgba(p.text, 0.08)}"></div>`;
+    }
+  }
+
+  return `${SCOPED_RESET}
+<div style="position:relative;width:${W}px;height:${H}px;background:${p.background};overflow:hidden">
+  ${bgGradientOverlay(cW, H, p.accent, 0.04, '40%')}
   <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;font-size:${titleFontSize(slide.title)}px;font-weight:800;letter-spacing:0.5px;overflow-wrap:break-word;word-wrap:break-word;color:${p.text};line-height:1.2">${escHtml(slide.title)}</div>
   <div style="position:absolute;left:${PAD}px;top:${PAD + 56}px;width:50px;height:4px;background:${p.accent};border-radius:2px"></div>
   ${html}
