@@ -684,13 +684,12 @@ export function buildHtmlSlideContent(
     html = html.replace(/font-size:\s*(\d+(?:\.\d+)?)px/g, (_, s) =>
       `font-size:${Math.round(Number(s) * overrides.fontScale!)}px`);
   }
-  // Post-process: spacing
-  if (overrides?.spacing === 'compact') {
-    html = html.replace(/(padding|gap):\s*(\d+)px/g, (_m, prop, v) =>
-      `${prop}:${Math.round(Number(v) * 0.7)}px`);
-  } else if (overrides?.spacing === 'spacious') {
-    html = html.replace(/(padding|gap):\s*(\d+)px/g, (_m, prop, v) =>
-      `${prop}:${Math.round(Number(v) * 1.35)}px`);
+  // Post-process: spacing — scale all px values in padding/gap/margin declarations
+  if (overrides?.spacing && overrides.spacing !== 'default') {
+    const spacingFactor = overrides.spacing === 'compact' ? 0.7 : 1.35;
+    html = html.replace(/(padding|gap|margin):[^;"]+/g, (match) =>
+      match.replace(/(\d+(?:\.\d+)?)px/g, (_, v) =>
+        `${Math.round(Number(v) * spacingFactor)}px`));
   }
 
   // Text stacking prevention: ensure body text divs have overflow:hidden

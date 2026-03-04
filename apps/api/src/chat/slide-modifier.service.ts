@@ -765,24 +765,20 @@ The new slide should fit naturally in the deck's narrative flow.`;
     const merged = { ...(existing ?? {}), ...overrides };
 
     // If slideType override, also update the actual slideType field
-    const data: Record<string, unknown> = {
-      layoutOverrides: merged,
-      previewUrl: null, // force re-render
-    };
-    if (overrides.slideType) {
-      data.slideType = overrides.slideType;
-    }
-
     await this.prisma.slide.update({
       where: { id: slide.id },
-      data,
+      data: {
+        layoutOverrides: merged,
+        previewUrl: null,
+        ...(overrides.slideType ? { slideType: overrides.slideType as any } : {}),
+      },
     });
 
-    // Broadcast via WebSocket
+    // Broadcast via WebSocket (include previewUrl:null so clients refresh)
     this.events.emitSlideUpdated({
       presentationId,
       slideId: slide.id,
-      data: { layoutOverrides: merged },
+      data: { layoutOverrides: merged, previewUrl: null },
     });
 
     // Fire-and-forget preview regeneration
