@@ -285,7 +285,7 @@ export class GalleryService {
 
     // Delete existing gallery presentations
     const deleted = await this.prisma.presentation.deleteMany({
-      where: { userId: user.id, isPublic: true },
+      where: { isPublic: true },
     });
 
     // Load themes

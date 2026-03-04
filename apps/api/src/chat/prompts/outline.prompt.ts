@@ -38,6 +38,12 @@ CONSTRAINTS:
 - Vary slide types for visual interest — avoid consecutive slides of the same type
 - ZERO REPETITION — each slide must cover a genuinely different topic. Never have 2 slides about the same concept (e.g. don't have both "The Data Problem" and "Data Fragmentation Crisis" — these are the same topic).
 
+NARRATIVE VARIETY (avoid structural monotony across decks):
+- Alternate slide types for the same concept. A problem can be PROBLEM, SPLIT_STATEMENT, or COMPARISON.
+- Vary opening hooks: some decks start with a bold stat (METRICS_HIGHLIGHT), others with a provocative question (HOOK), others with a visual metaphor (VISUAL_HUMOR).
+- Vary closing patterns: some end with CTA, others with THANK_YOU before CTA, others with a final SPLIT_STATEMENT + CTA.
+- Mid-deck rhythm: alternate between data-heavy and narrative slides. Never place 3 analytical slides in a row.
+
 SLIDE TITLE RULES:
 - Every title (except TITLE and CTA) MUST be a complete sentence with a subject, verb, and object
 - BAD: "Market Opportunity" — topic label, not a title

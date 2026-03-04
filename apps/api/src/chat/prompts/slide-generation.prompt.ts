@@ -209,6 +209,12 @@ Each slide uses EITHER a table OR bullet list \u2014 NEVER both on the same slid
 - If a concept needs both \u2192 split into two slides
 This prevents visual overload. One data container per slide, always.
 
+FORMAT VARIETY (CRITICAL — avoid structural monotony):
+Each slide type below shows multiple FORMAT VARIANTS (A, B, C). Do NOT always use the same variant.
+Pick the variant that best fits the content and deck position. NEVER use the same variant
+for the same slide type twice in one deck. If a prior slide of type X used Variant A,
+the next slide of type X MUST use a different variant.
+
 SLIDE TYPE FORMATTING GUIDE:
 Each slide type has a specific body format. Follow examples precisely.
 
@@ -216,30 +222,46 @@ TITLE: Write 2-3 short tagline phrases as separate lines (NOT bullets). No table
   Example body:
   "Transforming Enterprise AI\\nFrom Prototype to Production\\n$2.4B market by 2027"
 
-CONTENT: Lead sentence + table + takeaway + sources. The default for most informational slides.
-  Example body:
+CONTENT: Lead sentence + body + takeaway + sources. The default for most informational slides.
+  Variant A (table — default): Lead sentence + markdown table + ### takeaway + Sources
+  Variant B (bullets): Lead sentence + 3-4 bullet points + ### takeaway + Sources
+  Variant C (quote + context): Blockquote with key insight + 2 supporting bullets + ### takeaway + Sources
+  Example body (Variant A):
   "**$55B** in cumulative AI venture funding since 2020.\\n\\n| Metric | 2024 | 2025 |\\n|---|---|---|\\n| **Adoption** | 34% | 58% |\\n| **Deal size** | **$2.1M** | **$4.7M** |\\n| **ROI timeline** | 18 mo | 9 mo |\\n\\n### AI spending shifts from experimentation to production\\nSources: Gartner 2024, McKinsey AI Index"
 
-PROBLEM: Lead sentence with cost + bullet points + takeaway. Use **bold** on costs. PROBLEM slides use a visual template — use bullet format (- point) NOT tables. Tables will be flattened to flat text.
-  Example body:
+PROBLEM: Lead sentence with cost + body + takeaway. Use **bold** on costs. PROBLEM slides use a visual template — NOT tables.
+  Variant A (bullet list — default): Lead sentence + 3-4 bullet points with bold costs + ### takeaway + Sources
+  Variant B (stats grid): Lead sentence + 3 standalone stat lines (VALUE: label format, like METRICS_HIGHLIGHT) + ### takeaway + Sources
+  Variant C (narrative): 2-sentence narrative paragraph with **bold** stats woven inline + ### takeaway + Sources
+  Example body (Variant A):
   "Fragmented data costs enterprises **$12.9M annually**.\n\n- **Data silos** cost $12.9M/year in duplicate effort\n- **Manual prep** consumes 68% of analyst time\n- **Decision lag** averages 14 days per cycle\n\n### Inaction costs more than transformation\nSources: Forrester TEI, Deloitte 2024"
 
-SOLUTION: Mirror problem structure. Lead sentence + outcomes table + takeaway.
-  Example body:
+SOLUTION: Mirror problem structure. Lead sentence + body + takeaway.
+  Variant A (outcomes table — default): Lead sentence + outcomes table + ### takeaway + Sources
+  Variant B (numbered capabilities): Lead sentence + 3 numbered capabilities (1. **Verb**: outcome) + ### takeaway + Sources
+  Variant C (before/after): Lead sentence + two groups (**Before**: pain / **After**: outcome) + ### takeaway + Sources
+  Example body (Variant A):
   "**Unified data fabric** reduces analysis time by 73%.\\n\\n| Capability | Outcome |\\n|---|---|\\n| **Ingestion** | 40+ sources, real-time |\\n| **AI prep** | 73% time saved |\\n| **Query speed** | Sub-60s response |\\n\\n### From 14-day cycles to instant insights\\nSources: Internal benchmarks"
 
-DATA_METRICS: Lead stat sentence + metrics table + takeaway + sources.
-  Example body:
+DATA_METRICS: Lead stat sentence + body + takeaway + sources.
+  Variant A (metrics table — default): Lead stat sentence + metrics table + ### takeaway + Sources
+  Variant B (headline stats): 3-4 VALUE: label lines (METRICS_HIGHLIGHT format) + ### takeaway + Sources
+  Variant C (narrative + stat): Short paragraph with 2-3 **bold** inline metrics + ### takeaway + Sources
+  Example body (Variant A):
   "**$4.2M ARR** growing 127% YoY across 340 accounts.\\n\\n| Metric | Value |\\n|---|---|\\n| **Revenue** | $4.2M ARR (+127%) |\\n| **Customers** | 340 enterprise |\\n| **NRR** | **142%** |\\n| **Pipeline** | **$18M** qualified |\\n\\n### Unit economics signal product-market fit\\nSources: Internal financials Q4 2024"
 
-PROCESS: Numbered steps with LARGE visual anchors. Format step numbers as prominent markers. **Bold** on action verb. Max 4 steps, each under 10 words. Steps should read as a clear progression.
+PROCESS: Numbered steps with LARGE visual anchors. **Bold** on action verb. Max 4 steps, each under 10 words.
+  Variant A (numbered steps — default): 3-4 numbered steps with **bold** action verbs
+  Variant B (pipeline): Lead sentence + 3-step pipeline with arrows in description (Input → Transform → Output format) + ### takeaway
   PROCESS body MUST use numbered steps: 1. **Step Title**: Short description (max 10 words). NEVER write prose paragraphs for PROCESS. If content is conceptual, break into 3-5 discrete steps.
   Example body:
   "Four-stage pipeline from raw data to insights.\\n\\n1. **Ingest** from 40+ connectors via CDC\\n2. **Transform** with domain-specific NLP\\n3. **Validate** against compliance rules\\n4. **Deploy** with one-click rollback\\n\\n### Each stage independently scalable\\nSources: Architecture docs v3.2"
   Note: The exporter will render step numbers as large visual anchors (01, 02, 03, 04) — keep step text SHORT.
 
-COMPARISON: MUST use markdown table with | pipes. This is the ONLY slide type that uses table syntax. Lead sentence + table + takeaway. Max 4 data rows. NEVER use bullet points for COMPARISON — always use a table.
-  Example body:
+COMPARISON: Lead sentence + body + takeaway. Max 4 data rows.
+  Variant A (before/after table — default): Lead sentence + markdown table with | pipes + ### takeaway. MUST use table syntax.
+  Variant B (two-group): Two bold headers (**Option A** / **Option B**) with 2-3 bullets each + ### verdict takeaway
+  Example body (Variant A — table is default and preferred):
   "**89% cost reduction** with automation.\\n\\n| Dimension | Before | After |\\n|---|---|---|\\n| **Cycle time** | 4-6 weeks | Real-time |\\n| **Headcount** | 3 analysts | 1 oversight |\\n| **Error rate** | 23% | 0.3% |\\n\\n### Automation: faster, cheaper, more accurate\\nSources: Internal ROI study"
 
 QUOTE: Blockquote syntax for the quote. Attribution with bold. One supporting sentence max.
@@ -265,14 +287,21 @@ VISUAL_HUMOR: Title IS the punchline — max 8 words, dry wit preferred over sla
   body: ""
   imagePromptHint: "A single thread being pulled from an elaborate knitted sweater that is visibly unraveling, soft studio lighting, macro photography, photorealistic"
 
-TEAM: Plain text, one person per line. Format: Name - Role - Credential. Max 6 people. Never generate imagePromptHint (AI can't make good headshots). Title should describe the team strength. NEVER include HTML tags, CSS classes, or div wrappers — the visual layout is handled automatically by the renderer.
+TEAM: Plain text. Max 6 people.
+  Variant A (credentials — default): Name - Role - Credential (3-6 people, one per line)
+  Variant B (compact): Name - Role only (4-8 people, no credentials, larger team feel)
+  Variant C (narrative): "Founded by [Name] (ex-[Company]) and [Name] (ex-[Company])..." + ### Combined X years in [domain] Never generate imagePromptHint (AI can't make good headshots). Title should describe the team strength. NEVER include HTML tags, CSS classes, or div wrappers — the visual layout is handled automatically by the renderer.
   CRITICAL: ONLY use real team members from the knowledge base or pitch brief. NEVER fabricate team members, names, or credentials. If no team data is available in the context, write a generic team description like "Experienced team of engineers and operators" instead of inventing people.
   Example body:
   "Jane Smith - CEO - Ex-Google, Stanford
 John Doe - CTO - Ex-Meta, MIT
 Alice Chen - VP Engineering - Ex-Stripe"
 
-TIMELINE: Body must contain an ordered list where each item is **Date — Phase** Description. Max 5 milestones, 20 words per milestone max. End with ### takeaway. DO NOT include any <style> tags — CSS is injected automatically.
+TIMELINE: Milestone list showing roadmap, evolution, or historical progression. Max 5-6 milestones. End with ### takeaway.
+  Variant A (numbered list — default): Numbered list with **Date — Phase** Description (max 5 milestones)
+  Variant B (table): Lead sentence + | Quarter | Milestone | table + ### takeaway
+  Variant C (condensed): Bullet list with **bold dates** and short 5-word descriptions (up to 6 milestones) + ### takeaway
+  DO NOT include any <style> tags — CSS is injected automatically.
   Example body:
   "1. **Q1-Q2 2026 — Foundation** Build core infrastructure and refine methodology
 2. **Q3-Q4 2026 — Partnerships** Deploy with industrial partners, initiate data flywheel
@@ -325,7 +354,9 @@ LOGO_WALL: Grid of customer, partner, or investor names rendered as styled text 
 <div class=\"logo-badge\">Index Ventures</div>
 </div>"
 
-MARKET_SIZING: TAM/SAM/SOM market size visualization. Plain text, one market tier per line. Format: TIER: $VALUE - description. List TAM, SAM, SOM in order. Optionally add a revenue chain line. End with Sources line. NEVER include HTML tags, CSS classes, or div wrappers — the visual layout is handled automatically by the renderer.
+MARKET_SIZING: TAM/SAM/SOM market size visualization. NEVER include HTML tags — layout is automatic.
+  Variant A (tiers — default): One market tier per line (TAM: $VALUE - description, SAM, SOM) + revenue chain + Sources
+  Variant B (narrative): Lead sentence with TAM bold + 2 bullets (SAM rationale, SOM beachhead) + ### takeaway + Sources
   Example body:
   "TAM: $50B+ - Total addressable market
 SAM: $2B - Serviceable addressable market
@@ -395,13 +426,18 @@ COMPETITIVE_MATRIX: Markdown table with competitors as columns and features as r
 | Custom Themes | ✓ | ✗ | ✗ | ✓ |
 | API Access | ✓ | ✓ | ✓ | ✗ |"
 
-ROADMAP: Three planning lanes: Now, Next, Later. Each lane has 2-4 comma-separated items. Plain text, rendered as horizontal lanes automatically.
+ROADMAP: Planning lanes rendered as horizontal lanes automatically.
+  Variant A (now/next/later — default): Three planning lanes (Now, Next, Later) with 2-4 items each
+  Variant B (table): Lead sentence + | Phase | Timeline | Deliverable | table
+  Variant C (phases): 3-4 numbered phases with **bold** phase names and 2 bullets each
   Example body:
   "Now: Core platform stability, API v2 launch, Enterprise SSO
 Next: AI copilot beta, International expansion, Partner marketplace
 Later: Autonomous generation, Industry-specific templates, White-label offering"
 
-PRICING_TABLE: Tier name: price, then feature bullets indented with -. Mark one tier as (Recommended). Plain text, rendered as pricing cards automatically.
+PRICING_TABLE: Pricing rendered as cards automatically.
+  Variant A (tiers — default): Tier name: price, then feature bullets indented with -. Mark one tier as (Recommended).
+  Variant B (feature comparison): Lead sentence + | Feature | Free | Pro | Enterprise | table
   Example body:
   "Starter: $0/mo
 - 5 presentations/month
@@ -520,7 +556,9 @@ GROWTH_LOOPS: Nodes in a circular growth loop connected by arrows. 3-6 nodes. Fo
   Example body:
   "User Creates Content → Content Attracts Viewers → Viewers Sign Up → New Users Create Content"
 
-CASE_STUDY: Client name, quote, and KPI metrics. Format: Client name on first line, quote in double quotes on second line, then KPI: value pairs. Plain text, rendered as case study card automatically.
+CASE_STUDY: Client success story rendered as case study card automatically.
+  Variant A (card — default): Client name + quote in double quotes + KPI: value pairs
+  Variant B (narrative): Customer quote blockquote + 3 bullet results + ### takeaway
   Example body:
   "Acme Corporation
 "Pitchable cut our deck creation time from 6 hours to 10 minutes"
@@ -572,7 +610,9 @@ Integration: Slack, Notion, Figma, Zapier
 Channel: Deloitte, Accenture, McKinsey
 Strategic: Y Combinator, Sequoia, a16z"
 
-FINANCIAL_PROJECTION: Left table + right chart layout. Body lines: Year: $Revenue, $Cost, $Profit. First line is header. Plain text, rendered as table + SVG bar chart automatically.
+FINANCIAL_PROJECTION: Financial forecast rendered as table + SVG bar chart automatically.
+  Variant A (table — default): Year: $Revenue, $Cost, $Profit lines. Rendered as table + bar chart.
+  Variant B (milestones): Lead sentence + 3-4 milestone bullets (**Year X**: $Xm → **Year Y**: $Ym) + ### CAGR takeaway
   Example body:
   "2024: $2.1M, $1.4M, $700K
 2025: $5.8M, $3.2M, $2.6M
