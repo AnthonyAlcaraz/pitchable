@@ -4,6 +4,7 @@ import {
   Post,
   Param,
   Query,
+  Req,
   UseGuards,
   HttpCode,
   HttpStatus,
@@ -63,10 +64,9 @@ export class GalleryController {
   }
   @Post('seed')
   @HttpCode(HttpStatus.OK)
-  async seedGallery(
-    @Body() body: Record<string, Record<string, { title: string; body: string }>>,
-  ) {
+  async seedGallery(@Req() req: { body: unknown }) {
     try {
+      const body = req.body as Record<string, Record<string, { title: string; body: string }>>;
       return await this.galleryService.seedGallery(body);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
