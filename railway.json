@@ -4,7 +4,7 @@
     "dockerfilePath": "Dockerfile"
   },
   "deploy": {
-    "startCommand": "node apps/api/dist/src/main.js",
+    "startCommand": "./apps/api/start.sh",
     "healthcheckPath": "/health",
     "healthcheckTimeout": 120
   }
