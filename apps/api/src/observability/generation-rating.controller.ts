@@ -16,7 +16,7 @@ import { Roles } from '../auth/decorators/roles.decorator.js';
 import { CurrentUser, type RequestUser } from '../auth/decorators/current-user.decorator.js';
 import { UserRole } from '../../generated/prisma/enums.js';
 import { GenerationRatingService } from './generation-rating.service.js';
-import { WeeklyAnalysisCron } from './weekly-analysis.cron.js';
+
 
 export class SubmitRatingDto {
   @IsInt()
@@ -33,7 +33,7 @@ export class SubmitRatingDto {
 @Controller()
 @UseGuards(JwtAuthGuard)
 export class GenerationRatingController {
-  constructor(private readonly ratingService: GenerationRatingService, private readonly weeklyAnalysisCron: WeeklyAnalysisCron) {}
+  constructor(private readonly ratingService: GenerationRatingService) {}
 
   @Post('presentations/:id/rating')
   async submitRating(
@@ -59,9 +59,4 @@ export class GenerationRatingController {
     return this.ratingService.getInsights(bounded);
   }
 
-  @Get('observability/weekly-analysis-test')
-  async triggerWeeklyAnalysis() {
-    await this.weeklyAnalysisCron.sendWeeklyAnalysis();
-    return { sent: true };
-  }
 }
