@@ -10,6 +10,7 @@
  */
 
 import type { ColorPalette } from './slide-visual-theme.js';
+import type { LayoutOverrides } from '../chat/layout-overrides.js';
 
 // SlideModel shape (only fields we use)
 interface SlideInput {
@@ -478,12 +479,27 @@ function buildImageOverlay(imageUrl: string, palette: ColorPalette): string {
     `</div>`;
 }
 
+function buildImageOverlayLeft(imageUrl: string, palette: ColorPalette): string {
+  const imgW = Math.round(W * IMG_WIDTH_RATIO);
+  return `<div style="position:absolute;left:0;top:0;width:${imgW}px;height:${H}px;z-index:1;overflow:hidden">` +
+    `<img src="${imageUrl}" style="width:100%;height:100%;object-fit:cover;opacity:0.85" />` +
+    `<div style="position:absolute;right:0;top:0;width:60px;height:100%;background:linear-gradient(to left,${palette.background},transparent)"></div>` +
+    `</div>`;
+}
+
+function buildImageOverlayBackground(imageUrl: string): string {
+  return `<div style="position:absolute;left:0;top:0;width:${W}px;height:${H}px;z-index:0;overflow:hidden">` +
+    `<img src="${imageUrl}" style="width:100%;height:100%;object-fit:cover;opacity:0.35" />` +
+    `<div style="position:absolute;left:0;top:0;width:100%;height:100%;background:rgba(0,0,0,0.45)"></div>` +
+    `</div>`;
+}
+
 // ── Public API ───────────────────────────────────────────────
 
 export function buildHtmlSlideContent(
   slide: SlideInput,
-  palette: ColorPalette,
-  options?: { accentColorDiversity?: boolean },
+  inputPalette: ColorPalette,
+  options?: { accentColorDiversity?: boolean; layoutOverrides?: LayoutOverrides },
 ): string {
   // Skip logo types (full-bleed slides where logo would clash)
   const NO_LOGO_TYPES = new Set(['TITLE', 'CTA', 'SECTION_DIVIDER']);
@@ -496,6 +512,20 @@ export function buildHtmlSlideContent(
     body: slide.body,
   };
   const accentDiversity = options?.accentColorDiversity !== false;
+  const overrides = options?.layoutOverrides;
+
+  // Apply color overrides to a copy so all builders below use overridden colors
+  const palette: ColorPalette = overrides?.accentColor || overrides?.backgroundColor || overrides?.textColor
+    ? {
+        ...inputPalette,
+        ...(overrides.accentColor ? { accent: overrides.accentColor } : {}),
+        ...(overrides.backgroundColor ? { background: overrides.backgroundColor } : {}),
+        ...(overrides.textColor ? { text: overrides.textColor } : {}),
+      }
+    : inputPalette;
+
+  // Image position override
+  if (overrides?.imagePosition === 'hidden') cleaned.imageUrl = undefined;
 
   let html = '';
   switch (cleaned.slideType) {
@@ -649,6 +679,20 @@ export function buildHtmlSlideContent(
   // Global overflow prevention: clip entire slide
   html = `<div style="width:${W}px;height:${H}px;overflow:hidden;position:relative">${html}</div>`;
 
+  // Post-process: font scale
+  if (overrides?.fontScale && overrides.fontScale !== 1) {
+    html = html.replace(/font-size:\s*(\d+(?:\.\d+)?)px/g, (_, s) =>
+      `font-size:${Math.round(Number(s) * overrides.fontScale!)}px`);
+  }
+  // Post-process: spacing
+  if (overrides?.spacing === 'compact') {
+    html = html.replace(/(padding|gap):\s*(\d+)px/g, (_m, prop, v) =>
+      `${prop}:${Math.round(Number(v) * 0.7)}px`);
+  } else if (overrides?.spacing === 'spacious') {
+    html = html.replace(/(padding|gap):\s*(\d+)px/g, (_m, prop, v) =>
+      `${prop}:${Math.round(Number(v) * 1.35)}px`);
+  }
+
   // Text stacking prevention: ensure body text divs have overflow:hidden
   html = html.replace(
     /opacity:0\.8[5-9](?!.*overflow:hidden)/g,
@@ -748,10 +792,17 @@ export function buildHtmlSlideContent(
 
   // Inject image overlay if the slide has an image
   if (cleaned.imageUrl && html) {
-    // Insert the image overlay just before the closing </div> of the wrapper
     const closingIdx = html.lastIndexOf('</div>');
     if (closingIdx > -1) {
-      html = html.slice(0, closingIdx) + buildImageOverlay(cleaned.imageUrl, palette) + html.slice(closingIdx);
+      let overlay: string;
+      if (overrides?.imagePosition === 'left') {
+        overlay = buildImageOverlayLeft(cleaned.imageUrl, palette);
+      } else if (overrides?.imagePosition === 'background') {
+        overlay = buildImageOverlayBackground(cleaned.imageUrl);
+      } else {
+        overlay = buildImageOverlay(cleaned.imageUrl, palette);
+      }
+      html = html.slice(0, closingIdx) + overlay + html.slice(closingIdx);
     }
   }
 

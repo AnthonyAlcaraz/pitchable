@@ -18,6 +18,8 @@ import { isValidSlideContent } from './validators.js';
 import type { GeneratedSlideContent } from './validators.js';
 import { SlideType, CreditReason } from '../../generated/prisma/enums.js';
 import { CreditsService } from '../credits/credits.service.js';
+import { ExportsService } from '../exports/exports.service.js';
+import type { LayoutOverrides } from './layout-overrides.js';
 import { CreditReservationService } from '../credits/credit-reservation.service.js';
 import { ActivityService } from '../observability/activity.service.js';
 import { GenerationRatingService } from '../observability/generation-rating.service.js';
@@ -39,6 +41,7 @@ export class SlideModifierService {
     private readonly creditReservation: CreditReservationService,
     private readonly activity: ActivityService,
     private readonly generationRating: GenerationRatingService,
+    private readonly exportsService: ExportsService,
   ) {}
 
   /**
@@ -737,6 +740,61 @@ The new slide should fit naturally in the deck's narrative flow.`;
     this.events.emitSlideRemoved({ presentationId, slideId: slide.id });
 
     return { success: true, message: `Deleted slide ${slideNumber}: "${slide.title}"` };
+  }
+
+  /**
+   * Apply layout/rendering overrides to a slide. Merges with existing overrides.
+   * FREE operation — no credit charge. Triggers preview re-render.
+   */
+  async modifyLayout(
+    userId: string,
+    presentationId: string,
+    slideNumber: number,
+    overrides: LayoutOverrides,
+  ): Promise<{ success: boolean; message: string }> {
+    const slide = await this.prisma.slide.findFirst({
+      where: { presentationId, slideNumber },
+    });
+
+    if (!slide) {
+      return { success: false, message: `Slide ${slideNumber} not found.` };
+    }
+
+    // Merge with existing overrides
+    const existing = (slide as Record<string, unknown>).layoutOverrides as Record<string, unknown> | null;
+    const merged = { ...(existing ?? {}), ...overrides };
+
+    // If slideType override, also update the actual slideType field
+    const data: Record<string, unknown> = {
+      layoutOverrides: merged,
+      previewUrl: null, // force re-render
+    };
+    if (overrides.slideType) {
+      data.slideType = overrides.slideType;
+    }
+
+    await this.prisma.slide.update({
+      where: { id: slide.id },
+      data,
+    });
+
+    // Broadcast via WebSocket
+    this.events.emitSlideUpdated({
+      presentationId,
+      slideId: slide.id,
+      data: { layoutOverrides: merged },
+    });
+
+    // Fire-and-forget preview regeneration
+    this.exportsService.generateIncrementalPreviews(presentationId).catch((err) => {
+      this.logger.warn(`Preview regen failed after layout change: ${err instanceof Error ? err.message : 'unknown'}`);
+    });
+
+    const changes = Object.keys(overrides).filter((k) => (overrides as Record<string, unknown>)[k] !== undefined);
+    return {
+      success: true,
+      message: `Updated layout on slide ${slideNumber}: ${changes.join(', ')}.`,
+    };
   }
 
   /**

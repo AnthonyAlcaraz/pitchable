@@ -5,6 +5,7 @@ import { ContextBuilderService } from './context-builder.service.js';
 import { GenerationService } from './generation.service.js';
 import { IntentClassifierService } from './intent-classifier.service.js';
 import { SlideModifierService } from './slide-modifier.service.js';
+import { LayoutInterpreterService } from './layout-interpreter.service.js';
 import { ValidationGateService } from './validation-gate.service.js';
 import { ExportsService } from '../exports/exports.service.js';
 import { EmailService } from '../email/email.service.js';
@@ -49,6 +50,7 @@ export class ChatService {
     private readonly emailService: EmailService,
     private readonly credits: CreditsService,
     private readonly activity: ActivityService,
+    private readonly layoutInterpreter: LayoutInterpreterService,
   ) {}
 
   async *handleMessage(
@@ -157,7 +159,7 @@ export class ChatService {
       // Use classified intent for slide-level operations
       // Slide operations (modify, add, delete, regenerate) use a lower threshold
       // because the LLM rarely misclassifies these — even moderate confidence is reliable.
-      const isSlideOp = ['modify_slide', 'add_slide', 'delete_slide', 'regenerate_slide'].includes(intent.intent);
+      const isSlideOp = ['modify_slide', 'modify_layout', 'add_slide', 'delete_slide', 'regenerate_slide'].includes(intent.intent);
       const threshold = isSlideOp ? 0.3 : 0.7;
 
       if (intent.confidence >= threshold) {
@@ -187,6 +189,44 @@ export class ChatService {
             yield { type: 'token', content: askMsg };
             yield { type: 'done', content: '' };
             await this.persistAssistantMessage(presentationId, askMsg);
+            return;
+          }
+          case 'modify_layout': {
+            if (intent.slideNumber) {
+              yield { type: 'thinking', content: 'Interpreting layout change...' };
+              yield { type: 'progress', content: `Reading slide ${intent.slideNumber}`, metadata: { step: 'read_slide', status: 'running' } };
+              const layoutSlide = await this.prisma.slide.findFirst({
+                where: { presentationId, slideNumber: intent.slideNumber },
+                select: { slideType: true, title: true, imageUrl: true },
+              });
+              yield { type: 'progress', content: `Reading slide ${intent.slideNumber}`, metadata: { step: 'read_slide', status: 'complete' } };
+              yield { type: 'progress', content: 'Interpreting layout instructions', metadata: { step: 'interpret', status: 'running' } };
+              const overrides = await this.layoutInterpreter.interpret(
+                intent.instruction ?? content,
+                {
+                  slideType: layoutSlide?.slideType ?? 'CONTENT',
+                  title: layoutSlide?.title ?? '',
+                  hasImage: !!layoutSlide?.imageUrl,
+                },
+              );
+              yield { type: 'progress', content: 'Interpreting layout instructions', metadata: { step: 'interpret', status: 'complete' } };
+              yield { type: 'progress', content: 'Applying layout changes', metadata: { step: 'apply', status: 'running' } };
+              const layoutResult = await this.slideModifier.modifyLayout(
+                userId,
+                presentationId,
+                intent.slideNumber,
+                overrides,
+              );
+              yield { type: 'progress', content: 'Applying layout changes', metadata: { step: 'apply', status: 'complete' } };
+              yield { type: 'token', content: layoutResult.message };
+              yield { type: 'done', content: '' };
+              await this.persistAssistantMessage(presentationId, layoutResult.message);
+              return;
+            }
+            const askLayoutMsg = `Which slide would you like me to change the layout of? You have ${slideCount} slides.`;
+            yield { type: 'token', content: askLayoutMsg };
+            yield { type: 'done', content: '' };
+            await this.persistAssistantMessage(presentationId, askLayoutMsg);
             return;
           }
           case 'add_slide': {

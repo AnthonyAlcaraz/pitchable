@@ -32,6 +32,7 @@ import {
   type ContentMood,
   type MoodTextColors,
 } from './html-slide-templates.js';
+import type { LayoutOverrides } from '../chat/layout-overrides.js';
 
 
 // Ã¢ÂÂÃ¢ÂÂ Layout profiles Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
@@ -573,10 +574,11 @@ export class MarpExporterService {
       }
       let figmaHtml: string;
       try {
+        const layoutOverrides = (slide as Record<string, unknown>).layoutOverrides as LayoutOverrides | null;
         figmaHtml = buildHtmlSlideContent(
           { title: slide.title, body: slide.body || '', slideType: figmaType, imageUrl: slide.imageUrl ?? undefined, logoUrl },
           palette,
-          { accentColorDiversity: accentColorDiversity !== false },
+          { accentColorDiversity: accentColorDiversity !== false, layoutOverrides: layoutOverrides ?? undefined },
         );
       } catch (templateErr) {
         // If one template crashes, fall back to basic markdown so the rest of the deck still renders

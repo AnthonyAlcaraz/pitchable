@@ -10,6 +10,7 @@ export type IntentType =
   | 'regenerate_slide'
   | 'generate_outline'
   | 'general_chat'
+  | 'modify_layout'
   | 'off_topic';
 
 export interface ClassifiedIntent {
@@ -22,6 +23,7 @@ export interface ClassifiedIntent {
 const CLASSIFICATION_PROMPT = `You are an intent classifier for a presentation builder AI. Classify the user's message into one of these intents:
 
 - modify_slide: User wants to change content of a specific slide (e.g., "make slide 3 more concise", "add a bullet to slide 5")
+- modify_layout: User wants to change visual appearance/rendering of a slide (e.g., "make font bigger", "use blue accent", "change to grid layout", "remove the image", "more compact spacing", "dark background")
 - add_slide: User wants to add a new slide (e.g., "add a slide about pricing")
 - delete_slide: User wants to remove a slide (e.g., "delete slide 4", "remove the last slide")
 - reorder_slides: User wants to change slide order (e.g., "move slide 3 before slide 2")
