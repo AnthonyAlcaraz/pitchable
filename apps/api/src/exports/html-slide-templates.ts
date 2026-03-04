@@ -7389,30 +7389,33 @@ function buildAbstract(slide: SlideInput, p: ColorPalette, hasImage = false, acc
   }
 
   const startY = PAD + 85;
-  const sectionGap = 20;
+  const sectionGap = 14;
   const contentW = cW - PAD * 2 - 20;
   const availH = H - startY - PAD - (keywords ? 36 : 0);
-  const sectionH = Math.min(120, Math.max(50, Math.round((availH - (sections.length - 1) * sectionGap) / sections.length)));
+  const maxSections = Math.min(sections.length, 5);
+  const sectionH = Math.min(120, Math.max(60, Math.round((availH - (maxSections - 1) * sectionGap) / maxSections)));
 
   let sectionsHtml = '';
 
-  for (let i = 0; i < Math.min(sections.length, 5); i++) {
+  for (let i = 0; i < maxSections; i++) {
     const sy = startY + i * (sectionH + sectionGap);
     if (sy + 40 > H - PAD - (keywords ? 36 : 0)) break;
     const section = sections[i];
     const accentCol = accents[i % accents.length];
+    const cardBg = dark ? hexToRgba(p.surface, 0.3) : hexToRgba(p.surface, 0.55);
 
-    // Section label: uppercase, accent color, bold
-    sectionsHtml += `<div style="position:absolute;left:${PAD}px;top:${sy}px;display:flex;align-items:center;gap:10px">`;
-    // Accent dot
-    sectionsHtml += `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${accentCol};box-shadow:0 0 6px ${hexToRgba(accentCol, 0.4)};flex-shrink:0"></span>`;
-    sectionsHtml += `<span style="font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:1.2px;color:${accentCol}">${escHtml(section.label)}</span>`;
+    // Card container with left accent border
+    sectionsHtml += `<div style="position:absolute;left:${PAD}px;top:${sy}px;width:${contentW}px;height:${sectionH}px;background:${cardBg};border:1px solid ${hexToRgba(p.border, 0.2)};border-left:4px solid ${hexToRgba(accentCol, 0.7)};border-radius:10px;box-sizing:border-box;padding:10px 16px;overflow:hidden">`;
+
+    // Section label: uppercase, accent color
+    sectionsHtml += `<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">`;
+    sectionsHtml += `<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${accentCol};box-shadow:0 0 6px ${hexToRgba(accentCol, 0.4)};flex-shrink:0"></span>`;
+    sectionsHtml += `<span style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:1.2px;color:${accentCol}">${escHtml(section.label)}</span>`;
     sectionsHtml += `</div>`;
 
-    // Section text paragraph
-    const textY = sy + 26;
-    const maxTextH = sectionH - 26;
-    sectionsHtml += `<div style="position:absolute;left:${PAD + 18}px;top:${textY}px;width:${contentW}px;max-height:${maxTextH}px;font-size:14px;font-weight:400;color:${p.text};opacity:0.85;line-height:1.6;overflow:hidden">${escHtml(section.text)}</div>`;
+    // Section text — larger font for readability
+    sectionsHtml += `<div style="font-size:16px;font-weight:400;color:${p.text};opacity:0.85;line-height:1.55;overflow:hidden;display:-webkit-box;-webkit-line-clamp:${sectionH >= 90 ? 3 : 2};-webkit-box-orient:vertical">${escHtml(section.text)}</div>`;
+    sectionsHtml += `</div>`;
   }
 
   // Keywords line at bottom
@@ -7536,16 +7539,32 @@ function buildNumberStory(slide: SlideInput, p: ColorPalette, hasImage = false):
   const bigNumber = numberMatch ? numberMatch[1] : number.split(/\s/)[0];
   const label = number.replace(bigNumber, '').replace(/^[\s:\u2014-]+/, '').trim();
 
+  // Big number section
+  const numFontSize = bigNumber.length > 8 ? 72 : bigNumber.length > 5 ? 88 : 110;
+  const numberCenterY = narrative ? Math.round(H * 0.18) : Math.round(H * 0.25);
+
+  let narrativeHtml = '';
+  if (narrative) {
+    // Frosted glass card enclosure for narrative
+    const cardTop = Math.round(H * 0.52);
+    const cardH = H - cardTop - PAD - 10;
+    const cardW = cW - PAD * 2 - 40;
+    const cardBg = dark ? hexToRgba(p.surface, 0.35) : hexToRgba(p.surface, 0.6);
+    narrativeHtml = `<div style="position:absolute;left:${PAD + 20}px;top:${cardTop}px;width:${cardW}px;height:${cardH}px;background:${cardBg};border:1px solid ${hexToRgba(p.border, 0.25)};border-radius:14px;border-top:3px solid ${hexToRgba(p.accent, 0.5)};backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);box-sizing:border-box;padding:20px 28px;overflow:hidden">
+  <div style="font-size:18px;line-height:1.65;color:${p.text};opacity:0.85;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden">${escHtml(narrative)}</div>
+</div>`;
+  }
+
   return `${SCOPED_RESET}
 <div style="position:relative;width:${W}px;height:${H}px;background:${p.background};overflow:hidden">
   ${bgGradientOverlay(cW, H, p.accent, 0.06, '40%')}
   <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;font-size:${titleFontSize(slide.title, 32)}px;font-weight:700;color:${p.text};opacity:0.7;line-height:1.2;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${escHtml(slide.title)}</div>
   <div style="position:absolute;left:${PAD}px;top:${PAD + 48}px;width:50px;height:4px;background:${p.accent};border-radius:2px"></div>
-  <div style="position:absolute;left:${PAD}px;top:${Math.round(H * 0.22)}px;width:${cW - PAD * 2}px;text-align:center">
-    <div style="font-size:${bigNumber.length > 8 ? 72 : bigNumber.length > 5 ? 88 : 110}px;font-weight:900;color:${p.accent};line-height:1.1;letter-spacing:-2px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${escHtml(bigNumber)}</div>
+  <div style="position:absolute;left:${PAD}px;top:${numberCenterY}px;width:${cW - PAD * 2}px;text-align:center">
+    <div style="font-size:${numFontSize}px;font-weight:900;color:${p.accent};line-height:1.1;letter-spacing:-2px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;${dark ? `text-shadow:${textGlow(p.accent, 0.3)}` : ''}">${escHtml(bigNumber)}</div>
     ${label ? `<div style="font-size:20px;font-weight:600;color:${p.text};opacity:0.7;margin-top:8px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${escHtml(label)}</div>` : ''}
   </div>
-  ${narrative ? `<div style="position:absolute;left:${PAD + 40}px;bottom:${PAD + 20}px;width:${cW - PAD * 2 - 80}px;font-size:18px;line-height:1.6;color:${p.text};opacity:0.8;text-align:center;overflow:hidden;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical">${escHtml(narrative)}</div>` : ''}
+  ${narrativeHtml}
   <div style="position:absolute;left:50%;bottom:${PAD + 6}px;transform:translateX(-50%);width:80px;height:3px;background:${hexToRgba(p.accent, 0.4)};border-radius:2px"></div>
 </div>`;
 }
@@ -7680,17 +7699,23 @@ function buildTrendInsight(slide: SlideInput, p: ColorPalette, hasImage = false,
   html += `<div style="font-size:24px;font-weight:800;color:${p.text};line-height:1.2;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">${escHtml(trendName)}</div>`;
   html += `</div></div>`;
 
-  // Implications
+  // Implications — now in card enclosures
   const impTop = badgeTop + 110;
   const impH = H - impTop - PAD - (dataPoint ? 40 : 0);
   const maxImps = Math.min(implications.length, 4);
-  const impSpacing = Math.min(70, Math.round(impH / Math.max(maxImps, 1)));
+  const cardGap = 10;
+  const cardHeight = Math.min(65, Math.round((impH - (maxImps - 1) * cardGap) / Math.max(maxImps, 1)));
+  const cardW = cW - PAD * 2 - 16;
 
   for (let i = 0; i < maxImps; i++) {
-    const y = impTop + i * impSpacing;
+    const y = impTop + i * (cardHeight + cardGap);
     const accent = accents[i % accents.length];
-    html += `<div style="position:absolute;left:${PAD + 8}px;top:${y}px;width:10px;height:10px;border-radius:50%;background:${accent}"></div>`;
-    html += `<div style="position:absolute;left:${PAD + 30}px;top:${y - 3}px;width:${cW - PAD * 2 - 40}px;font-size:16px;line-height:1.5;color:${p.text};opacity:0.85;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">${escHtml(implications[i])}</div>`;
+    const cardBg = dark ? hexToRgba(p.surface, 0.25) : hexToRgba(p.surface, 0.5);
+
+    html += `<div style="position:absolute;left:${PAD + 8}px;top:${y}px;width:${cardW}px;height:${cardHeight}px;background:${cardBg};border:1px solid ${hexToRgba(p.border, 0.2)};border-left:3px solid ${hexToRgba(accent, 0.6)};border-radius:8px;box-sizing:border-box;display:flex;align-items:center;padding:0 16px;gap:12px;overflow:hidden">`;
+    html += `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${accent};box-shadow:0 0 6px ${hexToRgba(accent, 0.3)};flex-shrink:0"></span>`;
+    html += `<span style="font-size:16px;line-height:1.5;color:${p.text};opacity:0.85;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">${escHtml(implications[i])}</span>`;
+    html += `</div>`;
   }
 
   // Data point at bottom
