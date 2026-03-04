@@ -15,6 +15,7 @@ import {
   luminance,
   contrastRatio,
 } from '../constraints/index.js';
+import type { LayoutOverrides } from '../chat/layout-overrides.js';
 
 // ── Types ──────────────────────────────────────────────────
 
@@ -322,67 +323,84 @@ export class PptxGenJsExporterService {
       ? { ...slide, imageUrl: imageCache.get(slide.id)! }
       : slide;
 
+    // Extract layout overrides (colors + imagePosition apply to PPTX; fontScale/spacing are Marp-only)
+    const overrides = (slide as Record<string, unknown>).layoutOverrides as LayoutOverrides | null;
+
+    // Apply color overrides to base palette before contrast safety
+    const basePalette: ColorPalette = {
+      ...palette,
+      ...(overrides?.accentColor ? { accent: overrides.accentColor } : {}),
+      ...(overrides?.backgroundColor ? { background: overrides.backgroundColor } : {}),
+      ...(overrides?.textColor ? { text: overrides.textColor } : {}),
+    };
+
+    // Apply imagePosition override: hidden → clear imageUrl
+    let processedSlide = cachedSlide;
+    if (overrides?.imagePosition === 'hidden') {
+      processedSlide = { ...cachedSlide, imageUrl: null };
+    }
+
     // Compute per-slide accent color for color variation
     const slideAccent = getSlideAccentColor(
       slide.slideNumber,
-      palette as unknown as VisualColorPalette,
+      basePalette as unknown as VisualColorPalette,
     );
 
     // Ensure text colors contrast against background for this palette
     const safePalette: ColorPalette = {
-      ...palette,
-      text: '#' + this.safeColor(palette.text, palette.background, 7.0),
-      primary: '#' + this.safeColor(palette.primary, palette.background, 4.5),
-      accent: '#' + this.safeColor(palette.accent, palette.background, 4.5),
-      secondary: '#' + this.safeColor(palette.secondary, palette.background, 4.5),
+      ...basePalette,
+      text: '#' + this.safeColor(basePalette.text, basePalette.background, 7.0),
+      primary: '#' + this.safeColor(basePalette.primary, basePalette.background, 4.5),
+      accent: '#' + this.safeColor(basePalette.accent, basePalette.background, 4.5),
+      secondary: '#' + this.safeColor(basePalette.secondary, basePalette.background, 4.5),
     };
 
     // McKinsey routing: TITLE/CTA → navy divider, all others → clean 5-zone content
     if (this.isMcKinseyTheme) {
       if (slide.slideType === 'TITLE' || slide.slideType === 'CTA') {
-        this.addMcKinseySectionDivider(pres, cachedSlide, safePalette, theme);
+        this.addMcKinseySectionDivider(pres, processedSlide, safePalette, theme);
       } else {
-        this.addMcKinseyContentSlide(pres, cachedSlide, safePalette, theme, totalSlides);
+        this.addMcKinseyContentSlide(pres, processedSlide, safePalette, theme, totalSlides);
       }
       return;
     }
 
     switch (slide.slideType) {
       case 'TITLE':
-        this.addTitleSlide(pres, cachedSlide, safePalette, theme);
+        this.addTitleSlide(pres, processedSlide, safePalette, theme);
         break;
       case 'CTA':
-        this.addCTASlide(pres, cachedSlide, safePalette, theme);
+        this.addCTASlide(pres, processedSlide, safePalette, theme);
         break;
       case 'VISUAL_HUMOR':
-        this.addVisualHumorSlide(pres, cachedSlide, safePalette, theme, totalSlides);
+        this.addVisualHumorSlide(pres, processedSlide, safePalette, theme, totalSlides);
         break;
       case 'QUOTE':
-        this.addQuoteSlide(pres, cachedSlide, safePalette, theme, totalSlides);
+        this.addQuoteSlide(pres, processedSlide, safePalette, theme, totalSlides);
         break;
       case 'ARCHITECTURE':
-        this.addArchitectureSlide(pres, cachedSlide, safePalette, theme, totalSlides);
+        this.addArchitectureSlide(pres, processedSlide, safePalette, theme, totalSlides);
         break;
       case 'COMPARISON':
-        this.addComparisonSlide(pres, cachedSlide, safePalette, theme, totalSlides);
+        this.addComparisonSlide(pres, processedSlide, safePalette, theme, totalSlides);
         break;
       case 'DATA_METRICS':
-        this.addDataMetricsSlide(pres, cachedSlide, safePalette, theme, totalSlides);
+        this.addDataMetricsSlide(pres, processedSlide, safePalette, theme, totalSlides);
         break;
       case 'PROCESS':
-        this.addProcessSlide(pres, cachedSlide, safePalette, theme, totalSlides);
+        this.addProcessSlide(pres, processedSlide, safePalette, theme, totalSlides);
         break;
       case 'OUTLINE':
-        this.addOutlineSlide(pres, cachedSlide, safePalette, theme, totalSlides);
+        this.addOutlineSlide(pres, processedSlide, safePalette, theme, totalSlides);
         break;
       case 'PROBLEM':
-        this.addAccentBarSlide(pres, cachedSlide, safePalette, theme, totalSlides, safePalette.error);
+        this.addAccentBarSlide(pres, processedSlide, safePalette, theme, totalSlides, safePalette.error);
         break;
       case 'SOLUTION':
-        this.addAccentBarSlide(pres, cachedSlide, safePalette, theme, totalSlides, safePalette.success);
+        this.addAccentBarSlide(pres, processedSlide, safePalette, theme, totalSlides, safePalette.success);
         break;
       default:
-        this.addContentSlide(pres, cachedSlide, safePalette, theme, totalSlides);
+        this.addContentSlide(pres, processedSlide, safePalette, theme, totalSlides);
         break;
     }
   }
