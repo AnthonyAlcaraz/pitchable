@@ -754,6 +754,41 @@ Results: AI-generated presentations achieved 23% higher information retention sc
 Conclusion: AI slide generation produces measurably superior audience outcomes while reducing creation time by 85%.
 Keywords: artificial intelligence, presentation design, audience engagement, information retention"
 
+MYTH_VS_REALITY: Two-panel debunking layout. Left panel (red) shows the crossed-out myth, right panel (green) shows the bold reality with evidence. Plain text, parsed by section labels.
+  Body format: Myth: text on first labeled line, Reality: text on second, Evidence: optional footer data.
+  Example body:
+  "Myth: AI will replace all human jobs within 5 years
+Reality: AI augments 85% of roles while creating entirely new job categories
+Evidence: McKinsey 2025 — 12M new AI-adjacent roles created vs 8M displaced"
+
+NUMBER_STORY: Single oversized dramatic number with narrative context. First line is the number/stat, remaining lines are the narrative explanation.
+  Example body:
+  "10,000 hours
+That's how long the average enterprise wastes on manual data entry per year. At /hour fully loaded, that's (,000 in invisible costs — more than most Series A rounds."
+
+STORY_ARC: Three-panel narrative showing Setup, Conflict, and Resolution. Each section is labeled (Setup:/Conflict:/Resolution: or Beginning:/Middle:/End:). Parsed into three equal panels.
+  Example body:
+  "Setup: In 2019, three engineers at Google watched analysts spend 6 hours building every quarterly deck
+Conflict: They built an internal tool, but enterprise sales teams needed 10x more customization than consumer users
+Resolution: A modular AI architecture that adapts content density per audience — now powering 2,400 enterprise teams"
+
+TREND_INSIGHT: Emerging trend with directional indicator and implications. First labeled line is the trend name, direction label (up/down/emerging), then implication bullets, optional data footer.
+  Example body:
+  "Trend: Agentic AI replaces point-solution SaaS
+Direction: rising
+Enterprises now prefer AI agents that orchestrate workflows over single-purpose tools
+Gartner predicts 40% of SaaS vendors will pivot to agent-first by 2027
+Winner-take-most dynamics favor platforms with proprietary data flywheels
+Data: Gartner Hype Cycle 2025, a16z State of AI Report"
+
+CONTRARIAN_VIEW: Crossed-out conventional wisdom + bold contrarian thesis with evidence. Parsed by section labels (Conventional:/Thesis: or Myth:/Reality:).
+  Example body:
+  "Conventional: More data always leads to better AI models
+Thesis: Data quality and curation matter 10x more than volume — the best models train on 1/100th the data
+Smaller, curated datasets produce 23% higher accuracy on domain tasks
+Google's Med-PaLM achieved SOTA with 10x less medical data than competitors
+The marginal value of additional training data hits zero after domain saturation"
+
 PRESENTATION TYPE: ${presentationType}
 ${themeBlock}
 ${mcKinseyBlock}

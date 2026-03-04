@@ -47,15 +47,20 @@ export function getLayoutForSlideType(slideType: string): LayoutType {
     case 'CONTENT':
     case 'PROBLEM':
     case 'SOLUTION':
+    case 'NUMBER_STORY':
+    case 'TREND_INSIGHT':
       return LayoutType.TITLE_BODY;
 
     case 'ARCHITECTURE':
     case 'PROCESS':
     case 'TIMELINE':
+    case 'STORY_ARC':
       return LayoutType.PROCESS_FLOW;
 
     case 'COMPARISON':
     case 'SPLIT_STATEMENT':
+    case 'MYTH_VS_REALITY':
+    case 'CONTRARIAN_VIEW':
       return LayoutType.COMPARISON_SPLIT;
 
     case 'DATA_METRICS':

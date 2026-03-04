@@ -151,6 +151,26 @@ const EXTRA_CONTENT_A = {
     title: 'Platform Health Metrics',
     body: 'platform_uptime: 99.97%\navg_api_latency: 47ms\ndaily_deployments: 84,000\nactive_pipelines: 12,400\ninfra_cost_per_deploy: $0.024\nincident_mttr: 3.2min',
   },
+  MYTH_VS_REALITY: {
+    title: 'The monolith myth is holding teams back',
+    body: 'Myth: Microservices are always better than monoliths for scaling engineering teams\nReality: 78% of successful scale-ups start with a well-structured monolith and extract services only at proven bottlenecks\nEvidence: Shopify, Basecamp, and Stack Overflow all scaled to billions on monolithic architectures — Thoughtworks Technology Radar 2025',
+  },
+  NUMBER_STORY: {
+    title: 'The hidden cost of context switching',
+    body: '23 minutes\nThat\'s how long it takes a developer to regain deep focus after a single interruption. With an average of 7 context switches per day, engineering teams lose 2.7 productive hours daily — $340,000 per year for a 20-person team.',
+  },
+  STORY_ARC: {
+    title: 'How Nexus was born from frustration',
+    body: 'Setup: In 2021, our founding team managed 47 different CI/CD tools across 12 engineering squads at a Fortune 500 company\nConflict: A critical production incident took 6 hours to diagnose because logs were scattered across 8 different systems with no unified timeline\nResolution: We built the unified developer platform that reduced incident resolution from 6 hours to 12 minutes — now serving 2,400 engineering teams globally',
+  },
+  TREND_INSIGHT: {
+    title: 'Platform engineering is eating DevOps',
+    body: 'Trend: Internal Developer Platforms replace DIY DevOps toolchains\nDirection: rising\nGartner predicts 80% of software orgs will have platform teams by 2026, up from 15% in 2022\nPlatform teams reduce cognitive load by centralizing infrastructure decisions behind golden paths\nThe shift mirrors the cloud transition: from build-it-yourself to managed platforms\nData: Gartner 2025 Platform Engineering Report, CNCF Survey 2024',
+  },
+  CONTRARIAN_VIEW: {
+    title: 'Why "ship fast, fix later" is destroying engineering culture',
+    body: 'Conventional: Move fast and break things — speed matters more than quality in startups\nThesis: Teams that invest 20% of sprint capacity in developer experience ship 3x faster within 6 months\nInternal DX investment has 340% ROI over 18 months according to McKinsey\nGoogle\'s DORA research proves elite teams optimize for both speed AND stability\nThe fastest teams are the ones with the best tooling, not the loosest standards',
+  },
 };
 
 const EXTRA_CONTENT_B = {
@@ -306,6 +326,26 @@ const EXTRA_CONTENT_B = {
     title: 'Transformation KPIs at Glance',
     body: 'margin_improvement: 340bps\ncost_reduction_identified: $890M\nquick_wins_captured: $120M\ndecision_cycle_reduction: 71%\nprocess_consolidation: 70%\nclient_roi_multiple: 8.4x',
   },
+  MYTH_VS_REALITY: {
+    title: 'Digital transformation success rates are misunderstood',
+    body: 'Myth: 70% of digital transformations fail — so most initiatives are doomed from the start\nReality: The 70% figure conflates partial underperformance with outright failure. Organizations that define specific, measurable outcomes achieve 83% of their transformation goals\nEvidence: McKinsey Digital Transformation Survey 2025 — failure rate drops to 16% when transformation is tied to 3 or fewer measurable outcomes',
+  },
+  NUMBER_STORY: {
+    title: 'The executive attention window is shrinking',
+    body: '8 seconds\nThat\'s the average time a C-suite executive spends on a strategy slide before deciding whether to engage or check their phone. Every slide must earn its place in the first 8 seconds — or it\'s invisible.',
+  },
+  STORY_ARC: {
+    title: 'From cost center to strategic advantage',
+    body: 'Setup: The IT department was seen as a cost center — budgets cut 15% annually, team morale at historic lows, and the CEO publicly called tech "a necessary expense"\nConflict: A competitor launched an AI-powered product that captured 23% market share in 6 months. The board demanded a response, but the tech team lacked the infrastructure to move fast\nResolution: A 90-day sprint transformed IT into a strategic function. The AI response launched in 4 months, recaptured 18% share, and the CTO now sits on the executive committee',
+  },
+  TREND_INSIGHT: {
+    title: 'Boards are demanding AI literacy from every executive',
+    body: 'Trend: AI competency becomes a board-level requirement\nDirection: rising\n67% of Fortune 500 boards now require AI literacy training for all directors\nExecutive teams without AI strategy face 2.3x higher shareholder activist pressure\nThe gap between AI-literate and AI-illiterate leadership correlates with 340bps margin difference\nData: Spencer Stuart Board Index 2025, McKinsey Global Survey',
+  },
+  CONTRARIAN_VIEW: {
+    title: 'Why consensus-driven strategy produces mediocre outcomes',
+    body: 'Conventional: Good strategy requires buy-in from all stakeholders before execution\nThesis: The most successful strategic pivots in the past decade were driven by conviction, not consensus — decisive leadership outperforms democratic strategy 4:1\nAmazon\'s AWS, Apple\'s iPhone pivot, and Netflix\'s streaming transition were all opposed by majority stakeholders\nConsensus optimizes for the average opinion, which by definition cannot produce outlier outcomes\nThe best boards empower conviction-driven bets with clear kill criteria',
+  },
 };
 
 const EXTRA_CONTENT_C = {
@@ -460,6 +500,26 @@ const EXTRA_CONTENT_C = {
   DATA_METRICS: {
     title: 'Platform Vitals',
     body: 'monthly_active_creators: 12.4M\ncreator_earnings_facilitated: $780M\navg_revenue_per_creator: $3,760/mo\nbrand_deal_close_rate: 34%\ncontent_production_speedup: 3x\ncreator_retention: 92%',
+  },
+  MYTH_VS_REALITY: {
+    title: 'The "overnight success" myth harms real creators',
+    body: 'Myth: Viral content creates overnight success — one TikTok can launch a career\nReality: 94% of creators who sustain full-time income built audiences over 2+ years with consistent weekly publishing. The median "overnight success" had 847 posts before their breakout moment\nEvidence: ConvertKit Creator Economy Report 2025, Patreon Earnings Data',
+  },
+  NUMBER_STORY: {
+    title: 'The creator middle class is real and growing',
+    body: '$68,000\nMedian annual income for creators with 10,000-50,000 engaged followers across multiple revenue streams. The creator economy\'s middle class is quietly outearning the average US household — and they\'re just getting started.',
+  },
+  STORY_ARC: {
+    title: 'From side hustle to sustainable business',
+    body: 'Setup: Sarah started a newsletter about sustainable fashion in 2022 with 47 subscribers and zero revenue, writing every Sunday night after her kids went to bed\nConflict: At 5,000 subscribers she hit a wall — ad revenue was $200/month, sponsorships were inconsistent, and she nearly quit when a brand deal fell through the week before rent was due\nResolution: She launched a $9/month community membership. 340 members joined in the first month. Today she earns $4,200/month from memberships alone, with 12,000 subscribers and growing',
+  },
+  TREND_INSIGHT: {
+    title: 'Community-powered commerce is replacing influencer marketing',
+    body: 'Trend: Creator-led communities drive higher conversion than traditional influencer posts\nDirection: rising\nCommunity-based recommendations convert at 8.4% vs 1.2% for sponsored posts\nCreators with engaged communities of 5,000 outperform influencers with 500,000 followers on revenue per post\nBrands are shifting 35% of influencer budgets to community partnerships by 2026\nData: CreatorIQ 2025 Benchmark, HubSpot Community Commerce Report',
+  },
+  CONTRARIAN_VIEW: {
+    title: 'Why chasing followers is the worst creator strategy',
+    body: 'Conventional: More followers equals more success — growth hacking and viral content should be every creator\'s priority\nThesis: Creators with 5,000 deeply engaged followers earn 3.2x more than creators with 100,000 passive followers\nThe top 1% of Patreon creators have smaller audiences but 12x higher revenue per follower\nAlgorithm-chasing creates content debt — viral posts attract audiences that don\'t convert\nThe sustainable path is depth over breadth: serve 1,000 true fans, not 100,000 spectators',
   },
 };
 
@@ -617,4 +677,24 @@ const EXTRA_CONTENT_D = {
     body: 'knowledge_graph_nodes: 247M\ndaily_papers_ingested: 52,000\nhypothesis_confidence_avg: 0.87\nreproducibility_rate: 89%\napi_latency_p99: 120ms\nenterprise_pilot_conversion: 72%',
   },
 };
-export { EXTRA_CONTENT_A, EXTRA_CONTENT_B, EXTRA_CONTENT_C, EXTRA_CONTENT_D };
+export { EXTRA_CONTENT_A, EXTRA_CONTENT_B, EXTRA_CONTENT_C, EXTRA_CONTENT_D   MYTH_VS_REALITY: {
+    title: 'Bigger models are not always better models',
+    body: 'Myth: Scaling model parameters is the primary driver of AI capability — bigger is always better\nReality: Chinchilla-optimal training, mixture-of-experts, and domain-specific fine-tuning consistently outperform brute-force scaling. A 7B parameter model fine-tuned on domain data beats a 70B general model on 73% of specialized benchmarks\nEvidence: Scaling Laws Revisited — DeepMind 2025, Mistral AI Benchmark Suite',
+  },
+  NUMBER_STORY: {
+    title: 'The inference cost revolution',
+    body: '$0.002\nCost per 1,000 tokens of inference on a state-of-the-art language model in 2025 — down from $0.12 in 2023. A 60x cost reduction in 24 months means AI capabilities that were economically impossible are now viable for every startup.',
+  },
+  STORY_ARC: {
+    title: 'From research paper to production system',
+    body: 'Setup: Our team published a novel attention mechanism at NeurIPS 2023 that achieved 34% faster inference with no quality degradation on standard benchmarks\nConflict: Moving from research to production exposed 47 failure modes not captured by benchmarks — hallucination rates spiked 3x on real enterprise data, latency was unpredictable under load, and the model couldn\'t handle the messy, incomplete data that enterprises actually have\nResolution: 14 months of production hardening, 2,400 edge case tests, and a retrieval-augmented architecture reduced hallucination to 0.3% and achieved 99.97% uptime serving 84,000 daily queries',
+  },
+  TREND_INSIGHT: {
+    title: 'Small language models are winning enterprise adoption',
+    body: 'Trend: Enterprises deploy specialized small models over general-purpose large models\nDirection: rising\n68% of enterprise AI deployments in 2025 use models under 13B parameters\nSmall models offer 10x lower inference cost, on-premise deployment, and domain-specific accuracy\nThe trend mirrors cloud computing: general-purpose gave way to purpose-built services\nData: a16z Enterprise AI Survey 2025, Hugging Face Enterprise Tracker',
+  },
+  CONTRARIAN_VIEW: {
+    title: 'Why AGI timelines are the wrong question for researchers',
+    body: 'Conventional: The most important question in AI is when we will achieve AGI\nThesis: Focusing on AGI timelines distracts from the transformative impact of narrow AI systems that are already reshaping every industry today\nNarrow AI systems generated $340B in economic value in 2024 — AGI contributed $0\nEvery major AI breakthrough of the past 5 years came from focused, domain-specific research\nThe scientists who changed medicine, materials science, and climate modeling weren\'t chasing AGI — they were solving specific problems with specific tools',
+  },
+};
