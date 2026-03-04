@@ -828,8 +828,8 @@ export const DECK_ARCHETYPES: DeckArchetypeConfig[] = [
     defaultAudience: 'INVESTORS',
     defaultGoal: 'RAISE_FUNDING',
     densityProfile: {
-      maxBulletsPerSlide: 3,
-      maxWordsPerSlide: 40,
+      maxBulletsPerSlide: 4,
+      maxWordsPerSlide: 45,
       maxTableRows: 4,
       maxConceptsPerSlide: 1,
       maxNestedListDepth: 1,
@@ -899,6 +899,234 @@ export const DECK_ARCHETYPES: DeckArchetypeConfig[] = [
       'NEVER position the deck like a Series A (detailed financials, cohort analysis). Keep it vision-forward.',
       'NEVER end with "Questions?" — end with a specific ask and timeline.',
       'NEVER write more than 3 bullets on any slide — pre-seed decks must be scannable in seconds.',
+    ],
+  },
+
+  // ── 12. QBR ─────────────────────────────────────────────────
+  {
+    id: 'QBR',
+    name: 'Quarterly Business Review',
+    description:
+      'QBR Review + What/So What/Now What. Data-dense executive review with KPI dashboards and period comparisons.',
+    bookSources: [
+      'Measure What Matters (John Doerr)',
+      'The McKinsey Way (Ethan Rasiel)',
+    ],
+    defaultFrameworks: ['QBR_REVIEW', 'WHAT_SO_WHAT_NOW_WHAT'],
+    defaultThemes: ['mckinsey-executive', 'bcg-strategy', 'light-minimal'],
+    defaultTone: 'FORMAL',
+    defaultAudience: 'BOARD',
+    defaultGoal: 'REPORT_RESULTS',
+    densityProfile: {
+      maxBulletsPerSlide: 5,
+      maxWordsPerSlide: 70,
+      maxTableRows: 6,
+      maxConceptsPerSlide: 1,
+      maxNestedListDepth: 1,
+    },
+    slideRange: { min: 8, max: 14 },
+    narrativeRules: [
+      'EXECUTIVE SUMMARY on slide 2: 3-5 bullet points covering the entire quarter. Board members who read nothing else should get the full picture here.',
+      'Every KPI must show current value, target, and period-over-period comparison (QoQ or YoY).',
+      'Use red/yellow/green status indicators for KPIs when possible (use accent colors for status).',
+      'Revenue slide must break down by segment, product, or region with actuals vs. plan.',
+      'Customer health section must include at least one NPS/CSAT metric and a retention rate.',
+      'Risks section: each risk has an owner and a mitigation plan. No vague "we are monitoring" language.',
+      'Asks section: specific decision requests in "Approve X by Y date" format. No open-ended discussion prompts.',
+    ],
+    qualityGates: [
+      {
+        agent: 'narrative',
+        threshold: 0.7,
+        extraRules: [
+          'Verify executive summary slide exists by slide 2.',
+          'Verify every data table includes period-over-period comparison.',
+          'Verify Asks section contains specific decision requests.',
+        ],
+      },
+      {
+        agent: 'fact_check',
+        threshold: 0.8,
+        extraRules: [
+          'KPI numbers must be internally consistent across slides.',
+          'Period comparisons must use matching timeframes.',
+        ],
+      },
+    ],
+    slideTypeDistribution: [
+      {
+        slideType: 'DATA_METRICS',
+        min: 4,
+        description: 'KPIs, revenue, customer health with comparisons',
+      },
+      {
+        slideType: 'KPI_DASHBOARD',
+        min: 1,
+        description: 'Executive KPI dashboard',
+      },
+      {
+        slideType: 'CTA',
+        min: 1,
+        description: 'Decision requests and asks',
+      },
+    ],
+    antiPatterns: [
+      'NEVER bury the executive summary. It goes on slide 2.',
+      'NEVER present data without period-over-period comparison.',
+      'NEVER end without specific decision requests ("Approve X by Y date").',
+      'NEVER use vague implications ("results are encouraging" -> "18% growth exceeds 12% target by 50%").',
+      'NEVER skip customer health metrics in a QBR.',
+    ],
+  },
+
+  // ── 13. INCIDENT_POSTMORTEM ─────────────────────────────────
+  {
+    id: 'INCIDENT_POSTMORTEM',
+    name: 'Incident Postmortem',
+    description:
+      'Postmortem 5 Whys + STAR framework. Blameless root cause analysis with quantified impact and assigned action items.',
+    bookSources: [
+      'The Field Guide to Understanding Human Error (Sidney Dekker)',
+      'Accelerate (Forsgren, Humble & Kim)',
+    ],
+    defaultFrameworks: ['POSTMORTEM_5WHY', 'STAR'],
+    defaultThemes: ['technical-teal', 'light-minimal', 'dark-professional'],
+    defaultTone: 'ANALYTICAL',
+    defaultAudience: 'TECHNICAL',
+    defaultGoal: 'EDUCATE',
+    densityProfile: {
+      maxBulletsPerSlide: 5,
+      maxWordsPerSlide: 60,
+      maxTableRows: 5,
+      maxConceptsPerSlide: 1,
+      maxNestedListDepth: 2,
+    },
+    slideRange: { min: 7, max: 10 },
+    narrativeRules: [
+      'BLAMELESS LANGUAGE is mandatory. Never say "X person caused" — say "the system allowed." Focus on systemic improvements.',
+      'Incident summary slide must include: what happened, severity, duration, affected users/systems.',
+      'Impact must be quantified: revenue lost, users affected, SLA breaches, time to resolution. Specific numbers only.',
+      'Timeline must include timestamps. Minute-by-minute or phase-by-phase chronology from detection to resolution.',
+      '5 Whys analysis: each layer must be a complete sentence explaining causation, not a topic label.',
+      'What Went Well section is mandatory — acknowledge effective responses to reinforce blameless culture.',
+      'Every action item must have: owner name, deadline, and priority level (P0/P1/P2).',
+    ],
+    qualityGates: [
+      {
+        agent: 'narrative',
+        threshold: 0.75,
+        extraRules: [
+          'Verify blameless language throughout — flag any "X caused" or blame-assigning phrases.',
+          'Verify impact section contains specific numbers.',
+          'Verify every action item has an owner and deadline.',
+          'Verify "What Went Well" section exists.',
+        ],
+      },
+    ],
+    slideTypeDistribution: [
+      {
+        slideType: 'TIMELINE',
+        min: 1,
+        description: 'Incident chronology with timestamps',
+      },
+      {
+        slideType: 'DATA_METRICS',
+        min: 1,
+        description: 'Impact quantification',
+      },
+      {
+        slideType: 'PROCESS',
+        min: 1,
+        description: '5 Whys root cause chain',
+      },
+    ],
+    antiPatterns: [
+      'NEVER use blame language ("X person failed to..." -> "the monitoring system did not alert...").',
+      'NEVER present impact without specific numbers ("significant downtime" -> "47 minutes of downtime affecting 12,000 users").',
+      'NEVER list action items without owners and deadlines.',
+      'NEVER skip the "What Went Well" section.',
+      'NEVER exceed 10 slides — postmortems should be concise and actionable.',
+    ],
+  },
+
+  // ── 14. TECHNICAL_PROPOSAL ──────────────────────────────────
+  {
+    id: 'TECHNICAL_PROPOSAL',
+    name: 'Technical Proposal',
+    description:
+      'Minto Pyramid + STAR framework. Requirements-mapped technical proposal with phased implementation and named technologies.',
+    bookSources: [
+      'The Pragmatic Programmer (Hunt & Thomas)',
+      'The Pyramid Principle (Barbara Minto)',
+    ],
+    defaultFrameworks: ['MINTO_PYRAMID', 'STAR'],
+    defaultThemes: ['technical-teal', 'stripe-fintech', 'light-minimal'],
+    defaultTone: 'ANALYTICAL',
+    defaultAudience: 'TECHNICAL',
+    defaultGoal: 'GET_BUYIN',
+    densityProfile: {
+      maxBulletsPerSlide: 5,
+      maxWordsPerSlide: 65,
+      maxTableRows: 5,
+      maxConceptsPerSlide: 1,
+      maxNestedListDepth: 2,
+    },
+    slideRange: { min: 10, max: 16 },
+    narrativeRules: [
+      'Open with the problem statement and requirements. Map every proposed solution back to a specific requirement.',
+      'Name specific technologies, libraries, and tools. No hand-waving ("modern stack" -> "NestJS + PostgreSQL + Redis").',
+      'Architecture slides must describe system layers with technology choices justified.',
+      'Implementation must be phased: Phase 1 (MVP/core), Phase 2 (enhancements), Phase 3 (scale). Each phase has deliverables and timeline.',
+      'Include a requirements traceability section: table mapping each requirement to the component that addresses it.',
+      'Risk assessment slide: technical risks with likelihood, impact, and mitigation strategy.',
+      'Close with resource requirements (team, infrastructure, budget) and decision request.',
+    ],
+    qualityGates: [
+      {
+        agent: 'narrative',
+        threshold: 0.75,
+        extraRules: [
+          'Verify requirements are explicitly listed and traced to solutions.',
+          'Verify implementation is phased with specific deliverables per phase.',
+          'Verify at least one ARCHITECTURE slide exists with named technologies.',
+        ],
+      },
+      {
+        agent: 'style',
+        extraRules: [
+          'Technical jargon is expected. Do not flag acronyms or technology names.',
+          'Architecture slides should have imagePromptHint for system diagrams.',
+        ],
+      },
+    ],
+    slideTypeDistribution: [
+      {
+        slideType: 'ARCHITECTURE',
+        min: 2,
+        description: 'System architecture with technology choices',
+      },
+      {
+        slideType: 'PROCESS',
+        min: 1,
+        description: 'Phased implementation timeline',
+      },
+      {
+        slideType: 'DATA_METRICS',
+        min: 1,
+        description: 'Requirements traceability or risk matrix',
+      },
+      {
+        slideType: 'COMPARISON',
+        min: 1,
+        description: 'Technology alternatives evaluation',
+      },
+    ],
+    antiPatterns: [
+      'NEVER propose technologies without justification ("we chose React" -> "we chose React for its component model and ecosystem maturity").',
+      'NEVER skip the requirements mapping. Every solution must trace to a requirement.',
+      'NEVER present a single-phase implementation. Break it into phases with milestones.',
+      'NEVER use vague timelines ("soon" -> "Phase 1: 6 weeks, Phase 2: 4 weeks").',
+      'NEVER end without a resource requirements slide and decision request.',
     ],
   },
 ];

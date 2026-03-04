@@ -35,8 +35,8 @@ export interface ArchetypePitchLensDefaults {
 const STAGE_AFFINITY: Record<string, DeckArchetype[]> = {
   IDEA: ['PRE_SEED_PITCH', 'PRODUCT_LAUNCH'],
   MVP: ['PRE_SEED_PITCH', 'INVESTOR_PITCH', 'PRODUCT_LAUNCH'],
-  GROWTH: ['INVESTOR_PITCH', 'SALES_DECK', 'STRATEGY_BRIEF'],
-  ENTERPRISE: ['SALES_DECK', 'STRATEGY_BRIEF', 'BOARD_UPDATE'],
+  GROWTH: ['INVESTOR_PITCH', 'SALES_DECK', 'STRATEGY_BRIEF', 'QBR'],
+  ENTERPRISE: ['SALES_DECK', 'STRATEGY_BRIEF', 'BOARD_UPDATE', 'QBR', 'TECHNICAL_PROPOSAL'],
 };
 
 // ── Content signal patterns for framework recommendation ─────

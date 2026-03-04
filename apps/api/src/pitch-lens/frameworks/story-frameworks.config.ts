@@ -462,6 +462,66 @@ Tone: Personal, authentic, conviction-driven. First-person voice is welcome. The
     bestForGoals: ['RAISE_FUNDING', 'INSPIRE'],
     idealSlideRange: { min: 10, max: 14 },
   },
+  // ── QBR Review ───────────────────────────────────────────────
+  {
+    id: 'QBR_REVIEW',
+    name: 'QBR Review',
+    shortDescription:
+      'Structured quarterly business review. Exec summary first, then KPIs, revenue, customer health, ops, risks, and asks.',
+    detailedGuidance: `Structure the presentation as a Quarterly Business Review:
+1. EXECUTIVE SUMMARY: One slide with 3-5 bullet takeaways covering the entire quarter. Board members who read nothing else should get the full picture here.
+2. KPI REVIEW: Present each key metric with current value, target, and trend. Use red/yellow/green status indicators. Period-over-period comparison is mandatory.
+3. REVENUE DEEP DIVE: Breakdown by segment, product, or region. Include ARR, MRR, churn, expansion revenue. Show actuals vs. plan.
+4. CUSTOMER HEALTH: NPS/CSAT scores, retention rates, notable wins and losses. Include at least one customer quote or story.
+5. OPERATIONS: Headcount, burn rate, runway, key hires. Infrastructure or process improvements.
+6. RISKS AND BLOCKERS: Be transparent. Each risk should have an owner and a mitigation plan.
+7. ASKS AND DECISIONS: Specific requests to the board or leadership. "Approve X by Y date" format.
+
+The exec summary is the most important slide. Write it last but present it first. Every data slide must have period-over-period comparison. Use "So What" framing — do not just present numbers, explain what they mean for the business.`,
+    slideStructure: [
+      'Executive Summary',
+      'KPI Dashboard',
+      'Revenue Deep Dive',
+      'Revenue by Segment',
+      'Customer Health',
+      'Notable Wins / Losses',
+      'Operations Update',
+      'Risks and Blockers',
+      'Asks and Decisions',
+    ],
+    bestFor: ['BOARD', 'EXECUTIVES'],
+    bestForGoals: ['REPORT_RESULTS', 'GET_BUYIN'],
+    idealSlideRange: { min: 8, max: 14 },
+  },
+  // ── Postmortem 5 Whys ────────────────────────────────────────
+  {
+    id: 'POSTMORTEM_5WHY',
+    name: 'Postmortem (5 Whys)',
+    shortDescription:
+      'Blameless incident postmortem using 5 Whys root cause analysis. Timeline, impact, contributing factors, and action items.',
+    detailedGuidance: `Structure the presentation as a blameless postmortem:
+1. INCIDENT SUMMARY: One slide with what happened, severity level, duration, and affected users/systems. Include the incident timeline in brief.
+2. IMPACT: Quantify the damage — revenue lost, users affected, SLA breaches, time to resolution. Use specific numbers, not vague descriptions.
+3. TIMELINE: Minute-by-minute or phase-by-phase chronology from detection to resolution. Include who did what and when.
+4. 5 WHYS ROOT CAUSE: Walk through each "Why" layer. Why 1: proximate cause. Why 2-4: deeper systemic causes. Why 5: the root cause that, if fixed, prevents recurrence.
+5. CONTRIBUTING FACTORS: Other factors that made the incident worse — missing monitoring, documentation gaps, process failures. Not blame — systemic issues.
+6. WHAT WENT WELL: Acknowledge what worked — fast detection, good communication, effective rollback. This reinforces blameless culture.
+7. ACTION ITEMS: Each action has an owner, a deadline, and a priority. Group by: prevent recurrence, improve detection, improve response.
+
+Blameless language is mandatory. Never say "X person caused" — say "the system allowed." Focus on systemic improvements, not individual performance. Every action item must have an owner and deadline.`,
+    slideStructure: [
+      'Incident Summary',
+      'Impact Assessment',
+      'Timeline',
+      '5 Whys Analysis',
+      'Contributing Factors',
+      'What Went Well',
+      'Action Items',
+    ],
+    bestFor: ['TECHNICAL', 'TEAM'],
+    bestForGoals: ['EDUCATE', 'REPORT_RESULTS'],
+    idealSlideRange: { min: 7, max: 10 },
+  },
 ];
 
 /**
