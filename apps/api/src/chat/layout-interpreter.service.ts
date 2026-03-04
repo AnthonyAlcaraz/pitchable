@@ -46,15 +46,20 @@ export class LayoutInterpreterService {
 Instruction: ${instruction}`;
 
     try {
-      const result = await this.llm.completeJson<LayoutOverrides>(
-        [
-          { role: 'system', content: SYSTEM_PROMPT },
-          { role: 'user', content: userContent },
-        ],
-        LlmModel.SONNET,
-        isValidLayoutOverrides,
-        2,
-      );
+      const result = await Promise.race([
+        this.llm.completeJson<LayoutOverrides>(
+          [
+            { role: 'system', content: SYSTEM_PROMPT },
+            { role: 'user', content: userContent },
+          ],
+          LlmModel.SONNET,
+          isValidLayoutOverrides,
+          2,
+        ),
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error('Layout interpretation timed out after 10s')), 10_000),
+        ),
+      ]);
 
       return result;
     } catch (err) {

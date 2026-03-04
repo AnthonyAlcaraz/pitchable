@@ -12,6 +12,26 @@ export interface LayoutOverrides {
   slideType?: string;
 }
 
+const VALID_SLIDE_TYPES = new Set([
+  'TITLE', 'PROBLEM', 'SOLUTION', 'ARCHITECTURE', 'PROCESS', 'COMPARISON',
+  'DATA_METRICS', 'CTA', 'CONTENT', 'QUOTE', 'VISUAL_HUMOR', 'OUTLINE',
+  'TEAM', 'TIMELINE', 'SECTION_DIVIDER', 'METRICS_HIGHLIGHT', 'FEATURE_GRID',
+  'PRODUCT_SHOWCASE', 'LOGO_WALL', 'MARKET_SIZING', 'SPLIT_STATEMENT',
+  'MATRIX_2X2', 'WATERFALL', 'FUNNEL', 'COMPETITIVE_MATRIX', 'ROADMAP',
+  'PRICING_TABLE', 'UNIT_ECONOMICS', 'SWOT', 'THREE_PILLARS', 'HOOK',
+  'BEFORE_AFTER', 'SOCIAL_PROOF', 'OBJECTION_HANDLER', 'FAQ', 'VERDICT',
+  'COHORT_TABLE', 'PROGRESS_TRACKER', 'FLYWHEEL', 'REVENUE_MODEL',
+  'CUSTOMER_JOURNEY', 'TECH_STACK', 'GROWTH_LOOPS', 'CASE_STUDY',
+  'HIRING_PLAN', 'USE_OF_FUNDS', 'RISK_MITIGATION', 'DEMO_SCREENSHOT',
+  'MILESTONE_TIMELINE', 'PARTNERSHIP_LOGOS', 'FINANCIAL_PROJECTION',
+  'GO_TO_MARKET', 'PERSONA', 'TESTIMONIAL_WALL', 'THANK_YOU',
+  'SCENARIO_ANALYSIS', 'VALUE_CHAIN', 'GEOGRAPHIC_MAP', 'IMPACT_SCORECARD',
+  'EXIT_STRATEGY', 'ORG_CHART', 'FEATURE_COMPARISON', 'DATA_TABLE',
+  'ECOSYSTEM_MAP', 'KPI_DASHBOARD', 'REFERENCES', 'ABSTRACT',
+  'MYTH_VS_REALITY', 'NUMBER_STORY', 'STORY_ARC', 'TREND_INSIGHT',
+  'CONTRARIAN_VIEW',
+]);
+
 const VALID_IMAGE_POSITIONS = new Set(['right', 'left', 'background', 'hidden']);
 const VALID_SPACINGS = new Set(['compact', 'default', 'spacious']);
 const HEX_COLOR_RE = /^#[0-9a-fA-F]{6}$/;
@@ -30,7 +50,7 @@ export function isValidLayoutOverrides(val: unknown): val is LayoutOverrides {
 
   if (obj.imagePosition !== undefined && (typeof obj.imagePosition !== 'string' || !VALID_IMAGE_POSITIONS.has(obj.imagePosition))) return false;
   if (obj.spacing !== undefined && (typeof obj.spacing !== 'string' || !VALID_SPACINGS.has(obj.spacing))) return false;
-  if (obj.slideType !== undefined && typeof obj.slideType !== 'string') return false;
+  if (obj.slideType !== undefined && (typeof obj.slideType !== 'string' || !VALID_SLIDE_TYPES.has(obj.slideType))) return false;
 
   return true;
 }

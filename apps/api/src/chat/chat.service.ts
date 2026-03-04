@@ -234,6 +234,22 @@ export class ChatService {
                 },
               );
               yield { type: 'progress', content: 'Interpreting layout instructions', metadata: { step: 'interpret', status: 'complete' } };
+
+              // If no overrides were interpreted, show help message
+              if (Object.keys(overrides).length === 0) {
+                const helpMsg = "I couldn't determine what layout change you'd like. Try something like:\n" +
+                  '- "make the font bigger"\n' +
+                  '- "use blue accent color"\n' +
+                  '- "dark background"\n' +
+                  '- "more compact spacing"\n' +
+                  '- "remove the image"\n' +
+                  '- "change to timeline layout"';
+                yield { type: 'token', content: helpMsg };
+                yield { type: 'done', content: '' };
+                await this.persistAssistantMessage(presentationId, helpMsg);
+                return;
+              }
+
               yield { type: 'progress', content: 'Applying layout changes', metadata: { step: 'apply', status: 'running' } };
 
               let layoutResult: { success: boolean; message: string };
