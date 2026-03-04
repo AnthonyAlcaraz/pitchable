@@ -2,7 +2,6 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service.js';
-import { EmailService } from '../email/email.service.js';
 
 interface DailyStatsData {
   dateLabel: string;
@@ -25,7 +24,6 @@ export class DailyStatsCron {
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly emailService: EmailService,
     private readonly configService: ConfigService,
   ) {}
 
@@ -43,13 +41,30 @@ export class DailyStatsCron {
       const data = await this.gatherStats(yesterday, dayBefore, today);
       const html = this.buildStatsEmailHtml(data);
 
-      await this.emailService.sendEmail({
-        to: recipient,
-        subject: `Pitchable Daily Stats — ${data.dateLabel}`,
-        html,
-      });
+      const apiKey = this.configService.get<string>('RESEND_API_KEY');
+      if (!apiKey) {
+        this.logger.warn('RESEND_API_KEY not set — skipping daily stats email');
+        return;
+      }
 
-      this.logger.log(`Daily stats email sent to ${recipient}`);
+      const res = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: { Authorization: 'Bearer ' + apiKey, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          from: 'Pitchable <onboarding@resend.dev>',
+          to: [recipient],
+          subject: 'Pitchable Daily Stats — ' + data.dateLabel,
+          html,
+        }),
+      });
+      const result = await res.json() as Record<string, unknown>;
+
+      if (!res.ok) {
+        this.logger.error('Resend API error: ' + JSON.stringify(result));
+        return;
+      }
+
+      this.logger.log(`Daily stats email sent to ${recipient} (id: ${result.id})`);
     } catch (error) {
       const msg = error instanceof Error ? error.message : String(error);
       this.logger.error(`Failed to send daily stats: ${msg}`);
