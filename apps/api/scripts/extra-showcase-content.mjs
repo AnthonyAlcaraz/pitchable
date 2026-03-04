@@ -1,6 +1,6 @@
 const EXTRA_CONTENT_A = {
   TITLE: {
-    title: 'DevOps Platform — Investor Pitch',
+    title: 'DevOps Platform —” Investor Pitch',
     body: 'Nexus Technologies | Series B | Alex Thornton, CEO & Co-Founder',
   },
   CONTENT: {
@@ -60,7 +60,7 @@ const EXTRA_CONTENT_A = {
     body: 'Risk 1: Hyperscaler native tooling (AWS, GCP) commoditizes platform features | Mitigation: Multi-cloud abstraction layer makes Nexus the neutral orchestrator across all providers\nRisk 2: Open-source alternatives reduce willingness to pay | Mitigation: Enterprise features (SSO, audit logs, compliance) plus managed service reliability create defensible value\nRisk 3: Economic downturn reduces developer tool budgets | Mitigation: Platform consolidation saves customers 40% vs fragmented tool stack, making Nexus a cost reduction play\nRisk 4: Key engineering talent attrition | Mitigation: Top-quartile compensation, 4-year vesting with 1-year cliff, and strong engineering culture with 94% Glassdoor rating',
   },
   DEMO_SCREENSHOT: {
-    title: 'Pipeline Studio — Live Demo',
+    title: 'Pipeline Studio —” Live Demo',
     body: 'The Pipeline Studio dashboard shows a visual DAG of the CI/CD pipeline with 12 connected stages. The left panel displays the service catalog with 3 recently deployed services highlighted in green. The center canvas renders the pipeline graph with parallel execution paths, each node showing estimated duration and resource cost. The right panel shows real-time logs streaming from the currently executing stage, with AI-generated deployment risk score of 0.02 displayed prominently at the top.',
   },
   MILESTONE_TIMELINE: {
@@ -77,7 +77,7 @@ const EXTRA_CONTENT_A = {
   },
   GO_TO_MARKET: {
     title: 'Go-to-Market Strategy',
-    body: 'Phase 1: Product-Led Growth — Free tier with open-source CLI drives 24K GitHub stars and 8.4K monthly sign-ups through developer word-of-mouth\nPhase 2: Sales-Assisted Expansion — Inside sales team converts high-usage free teams to paid plans, targeting 15% conversion rate on teams with 5+ active developers\nPhase 3: Enterprise Direct — Field sales targeting VP Engineering and CTO buyers at companies with 200+ developers, $120K average contract value\nPhase 4: Channel & Partnerships — AWS and GCP marketplace listings plus SI partnerships with Accenture and Deloitte for enterprise implementation',
+    body: 'Phase 1: Product-Led Growth —” Free tier with open-source CLI drives 24K GitHub stars and 8.4K monthly sign-ups through developer word-of-mouth\nPhase 2: Sales-Assisted Expansion —” Inside sales team converts high-usage free teams to paid plans, targeting 15% conversion rate on teams with 5+ active developers\nPhase 3: Enterprise Direct —” Field sales targeting VP Engineering and CTO buyers at companies with 200+ developers, $120K average contract value\nPhase 4: Channel & Partnerships —” AWS and GCP marketplace listings plus SI partnerships with Accenture and Deloitte for enterprise implementation',
   },
   PERSONA: {
     title: 'Target Buyer: Platform Engineering Lead',
@@ -93,15 +93,15 @@ const EXTRA_CONTENT_A = {
   },
   SCENARIO_ANALYSIS: {
     title: 'Growth Scenario Analysis (2028)',
-    body: 'Base Case: $89M ARR, 12,000 paying teams, 78% gross margin, break-even EBITDA — assumes 85% of current pipeline converts and NRR holds at 125%\nBull Case: $134M ARR, 18,000 paying teams, 82% gross margin, $28M EBITDA — assumes enterprise acceleration with 2 hyperscaler co-sell partnerships and international expansion driving 40% of new logos\nBear Case: $52M ARR, 7,200 paying teams, 72% gross margin, -$18M EBITDA — assumes macro headwinds reduce seat expansion by 30% and sales cycle elongates by 2 months',
+    body: 'Base Case: $89M ARR, 12,000 paying teams, 78% gross margin, break-even EBITDA —” assumes 85% of current pipeline converts and NRR holds at 125%\nBull Case: $134M ARR, 18,000 paying teams, 82% gross margin, $28M EBITDA —” assumes enterprise acceleration with 2 hyperscaler co-sell partnerships and international expansion driving 40% of new logos\nBear Case: $52M ARR, 7,200 paying teams, 72% gross margin, -$18M EBITDA —” assumes macro headwinds reduce seat expansion by 30% and sales cycle elongates by 2 months',
   },
   VALUE_CHAIN: {
     title: 'Developer Platform Value Chain',
-    body: 'Stage 1: Code Commit — Developer pushes code, triggering automated quality gates and security scans -> Stage 2: Build & Test — Parallel CI execution with AI-optimized test selection reducing suite runtime by 60% -> Stage 3: Deploy & Release — Canary deployments with automated traffic shifting and rollback triggers -> Stage 4: Observe & Optimize — Real-time performance monitoring with cost attribution per deployment and feature flag -> Stage 5: Feedback Loop — Production metrics feed back into development priorities and platform improvements',
+    body: 'Stage 1: Code Commit —” Developer pushes code, triggering automated quality gates and security scans -> Stage 2: Build & Test —” Parallel CI execution with AI-optimized test selection reducing suite runtime by 60% -> Stage 3: Deploy & Release —” Canary deployments with automated traffic shifting and rollback triggers -> Stage 4: Observe & Optimize —” Real-time performance monitoring with cost attribution per deployment and feature flag -> Stage 5: Feedback Loop —” Production metrics feed back into development priorities and platform improvements',
   },
   GEOGRAPHIC_MAP: {
     title: 'Global Developer Footprint',
-    body: 'North America: $8.2M revenue, 6,400 teams, 58% of total ARR — headquarters in San Francisco\nEurope: $3.1M revenue, 2,800 teams, 22% — London office opening Q3 2026\nAsia-Pacific: $1.4M revenue, 1,200 teams, 10% — Singapore hub planned for 2027\nLatin America: $0.8M revenue, 940 teams, 6% — strong organic growth in Brazil and Mexico\nMiddle East & Africa: $0.5M revenue, 420 teams, 4% — early-stage with UAE enterprise deals',
+    body: 'North America: $8.2M revenue, 6,400 teams, 58% of total ARR —” headquarters in San Francisco\nEurope: $3.1M revenue, 2,800 teams, 22% —” London office opening Q3 2026\nAsia-Pacific: $1.4M revenue, 1,200 teams, 10% —” Singapore hub planned for 2027\nLatin America: $0.8M revenue, 940 teams, 6% —” strong organic growth in Brazil and Mexico\nMiddle East & Africa: $0.5M revenue, 420 teams, 4% —” early-stage with UAE enterprise deals',
   },
   IMPACT_SCORECARD: {
     title: 'Customer Impact Metrics',
@@ -152,30 +152,30 @@ const EXTRA_CONTENT_A = {
     body: 'platform_uptime: 99.97%\navg_api_latency: 47ms\ndaily_deployments: 84,000\nactive_pipelines: 12,400\ninfra_cost_per_deploy: $0.024\nincident_mttr: 3.2min',
   },
   MYTH_VS_REALITY: {
-    title: 'The monolith myth is holding teams back',
-    body: 'Myth: Microservices are always better than monoliths for scaling engineering teams\nReality: 78% of successful scale-ups start with a well-structured monolith and extract services only at proven bottlenecks\nEvidence: Shopify, Basecamp, and Stack Overflow all scaled to billions on monolithic architectures — Thoughtworks Technology Radar 2025',
+    title: 'Bigger models are not always better models',
+    body: 'Myth: Scaling model parameters is the primary driver of AI capability — bigger is always better\nReality: Chinchilla-optimal training, mixture-of-experts, and domain-specific fine-tuning consistently outperform brute-force scaling. A 7B parameter model fine-tuned on domain data beats a 70B general model on 73% of specialized benchmarks\nEvidence: Scaling Laws Revisited — DeepMind 2025, Mistral AI Benchmark Suite',
   },
   NUMBER_STORY: {
-    title: 'The hidden cost of context switching',
-    body: '23 minutes\nThat\'s how long it takes a developer to regain deep focus after a single interruption. With an average of 7 context switches per day, engineering teams lose 2.7 productive hours daily — $340,000 per year for a 20-person team.',
+    title: 'The inference cost revolution',
+    body: '$0.002\nCost per 1,000 tokens of inference on a state-of-the-art language model in 2025 — down from $0.12 in 2023. A 60x cost reduction in 24 months means AI capabilities that were economically impossible are now viable for every startup.',
   },
   STORY_ARC: {
-    title: 'How Nexus was born from frustration',
-    body: 'Setup: In 2021, our founding team managed 47 different CI/CD tools across 12 engineering squads at a Fortune 500 company\nConflict: A critical production incident took 6 hours to diagnose because logs were scattered across 8 different systems with no unified timeline\nResolution: We built the unified developer platform that reduced incident resolution from 6 hours to 12 minutes — now serving 2,400 engineering teams globally',
+    title: 'From research paper to production system',
+    body: "Setup: Our team published a novel attention mechanism at NeurIPS 2023 that achieved 34% faster inference with no quality degradation on standard benchmarks\nConflict: Moving from research to production exposed 47 failure modes not captured by benchmarks — hallucination rates spiked 3x on real enterprise data, latency was unpredictable under load, and the model couldn't handle the messy, incomplete data that enterprises actually have\nResolution: 14 months of production hardening, 2,400 edge case tests, and a retrieval-augmented architecture reduced hallucination to 0.3% and achieved 99.97% uptime serving 84,000 daily queries",
   },
   TREND_INSIGHT: {
-    title: 'Platform engineering is eating DevOps',
-    body: 'Trend: Internal Developer Platforms replace DIY DevOps toolchains\nDirection: rising\nGartner predicts 80% of software orgs will have platform teams by 2026, up from 15% in 2022\nPlatform teams reduce cognitive load by centralizing infrastructure decisions behind golden paths\nThe shift mirrors the cloud transition: from build-it-yourself to managed platforms\nData: Gartner 2025 Platform Engineering Report, CNCF Survey 2024',
+    title: 'Small language models are winning enterprise adoption',
+    body: 'Trend: Enterprises deploy specialized small models over general-purpose large models\nDirection: rising\n68% of enterprise AI deployments in 2025 use models under 13B parameters\nSmall models offer 10x lower inference cost, on-premise deployment, and domain-specific accuracy\nThe trend mirrors cloud computing: general-purpose gave way to purpose-built services\nData: a16z Enterprise AI Survey 2025, Hugging Face Enterprise Tracker',
   },
   CONTRARIAN_VIEW: {
-    title: 'Why "ship fast, fix later" is destroying engineering culture',
-    body: 'Conventional: Move fast and break things — speed matters more than quality in startups\nThesis: Teams that invest 20% of sprint capacity in developer experience ship 3x faster within 6 months\nInternal DX investment has 340% ROI over 18 months according to McKinsey\nGoogle\'s DORA research proves elite teams optimize for both speed AND stability\nThe fastest teams are the ones with the best tooling, not the loosest standards',
+    title: 'Why AGI timelines are the wrong question for researchers',
+    body: "Conventional: The most important question in AI is when we will achieve AGI\nThesis: Focusing on AGI timelines distracts from the transformative impact of narrow AI systems that are already reshaping every industry today\nNarrow AI systems generated $340B in economic value in 2024 — AGI contributed $0\nEvery major AI breakthrough of the past 5 years came from focused, domain-specific research\nThe scientists who changed medicine, materials science, and climate modeling weren't chasing AGI — they were solving specific problems with specific tools",
   },
 };
 
 const EXTRA_CONTENT_B = {
   TITLE: {
-    title: 'Strategic Transformation — Executive Brief',
+    title: 'Strategic Transformation —” Executive Brief',
     body: 'Meridian Advisory Partners | Board-Level Strategic Review | Margaret Hartwell, Chair',
   },
   CONTENT: {
@@ -235,7 +235,7 @@ const EXTRA_CONTENT_B = {
     body: 'Risk 1: Client organizational resistance to change slows adoption below critical mass | Mitigation: Behavioral science-based change program with 89% historical adoption rate and executive sponsor coaching\nRisk 2: Key partner departure mid-engagement disrupts client relationship | Mitigation: Dual-partner coverage model with shared knowledge base and engagement continuity protocol\nRisk 3: Economic downturn reduces client willingness to invest in transformation | Mitigation: Quick-wins-first sequencing generates self-funding savings within 120 days, reframing transformation as cost reduction\nRisk 4: AI commoditizes diagnostic and benchmarking capabilities | Mitigation: Proprietary industry ontology and 12,000+ engagement dataset create defensible analytical advantage',
   },
   DEMO_SCREENSHOT: {
-    title: 'AI Diagnostic Dashboard — Live View',
+    title: 'AI Diagnostic Dashboard —” Live View',
     body: 'The Meridian Diagnostic Dashboard displays a heat map of 400+ operational metrics across 6 business divisions. The left column ranks 24 value creation levers by estimated P&L impact, with the top 5 highlighted in green showing combined $340M opportunity. The center panel shows a waterfall chart bridging current EBITDA to target state. The right panel displays a transformation roadmap with initiative dependencies mapped as a directed acyclic graph, with quick wins flagged in amber for immediate execution.',
   },
   MILESTONE_TIMELINE: {
@@ -252,7 +252,7 @@ const EXTRA_CONTENT_B = {
   },
   GO_TO_MARKET: {
     title: 'Market Development Strategy',
-    body: 'Phase 1: Diagnostic-Led Entry — $250K diagnostic assessments serve as land-and-expand wedge, converting at 72% to full transformation engagements\nPhase 2: Industry Vertical Deepening — Dedicated practice leads for financial services, industrials, healthcare, and consumer goods build sector-specific benchmarks and case studies\nPhase 3: C-Suite Relationship Network — Board advisory program and executive roundtables generate $14M in annual retainer revenue with 94% renewal rate\nPhase 4: Global Expansion — Singapore, Dubai, and São Paulo offices target multinational clients seeking cross-border transformation programs',
+    body: 'Phase 1: Diagnostic-Led Entry —” $250K diagnostic assessments serve as land-and-expand wedge, converting at 72% to full transformation engagements\nPhase 2: Industry Vertical Deepening —” Dedicated practice leads for financial services, industrials, healthcare, and consumer goods build sector-specific benchmarks and case studies\nPhase 3: C-Suite Relationship Network —” Board advisory program and executive roundtables generate $14M in annual retainer revenue with 94% renewal rate\nPhase 4: Global Expansion —” Singapore, Dubai, and São Paulo offices target multinational clients seeking cross-border transformation programs',
   },
   PERSONA: {
     title: 'Target Client: Group CEO Under Margin Pressure',
@@ -260,7 +260,7 @@ const EXTRA_CONTENT_B = {
   },
   TESTIMONIAL_WALL: {
     title: 'Client Testimonials',
-    body: '"Meridian identified $340M in savings we had been overlooking for years. Their AI diagnostic changed how we think about operational efficiency." - Klaus Weber, CEO at Siemens Digital Industries\n"The transformation paid for itself within 4 months. That is not consulting — that is value engineering." - Sarah Mitchell, CFO at Unilever\n"Their change management approach achieved 89% adoption. Previous consultants could not get past 40%." - James Okafor, CHRO at Boeing\n"Meridian is the only advisory firm that ties fees to outcomes. That alignment makes all the difference." - Catherine Liu, Board Chair at HSBC Asia',
+    body: '"Meridian identified $340M in savings we had been overlooking for years. Their AI diagnostic changed how we think about operational efficiency." - Klaus Weber, CEO at Siemens Digital Industries\n"The transformation paid for itself within 4 months. That is not consulting —” that is value engineering." - Sarah Mitchell, CFO at Unilever\n"Their change management approach achieved 89% adoption. Previous consultants could not get past 40%." - James Okafor, CHRO at Boeing\n"Meridian is the only advisory firm that ties fees to outcomes. That alignment makes all the difference." - Catherine Liu, Board Chair at HSBC Asia',
   },
   THANK_YOU: {
     title: 'Thank You',
@@ -268,15 +268,15 @@ const EXTRA_CONTENT_B = {
   },
   SCENARIO_ANALYSIS: {
     title: 'Transformation Outcome Scenarios',
-    body: 'Base Case: $472M EBITDA improvement over 18 months, 340bps margin recovery, 87% client retention — assumes full program execution with standard adoption curve\nBull Case: $620M EBITDA improvement, 450bps margin recovery, cross-sell into 3 additional divisions — assumes accelerated adoption driven by early quick wins exceeding $180M target\nBear Case: $280M EBITDA improvement, 200bps margin recovery, 24-month timeline extension — assumes organizational resistance delays Phase 3 implementation by 6 months and two division pilots require redesign',
+    body: 'Base Case: $472M EBITDA improvement over 18 months, 340bps margin recovery, 87% client retention —” assumes full program execution with standard adoption curve\nBull Case: $620M EBITDA improvement, 450bps margin recovery, cross-sell into 3 additional divisions —” assumes accelerated adoption driven by early quick wins exceeding $180M target\nBear Case: $280M EBITDA improvement, 200bps margin recovery, 24-month timeline extension —” assumes organizational resistance delays Phase 3 implementation by 6 months and two division pilots require redesign',
   },
   VALUE_CHAIN: {
     title: 'Strategic Value Creation Chain',
-    body: 'Stage 1: Diagnostic Assessment — AI-powered scan of 400+ metrics identifies 24 value levers totaling $890M -> Stage 2: Quick Wins Execution — Top 8 levers captured in 4 months delivering $120M self-funding savings -> Stage 3: Operating Model Redesign — Shared services, process automation, and governance restructuring -> Stage 4: Enterprise Rollout — Change management program drives 89% adoption across all divisions -> Stage 5: Continuous Improvement — Value realization tracking and iterative optimization sustains gains',
+    body: 'Stage 1: Diagnostic Assessment —” AI-powered scan of 400+ metrics identifies 24 value levers totaling $890M -> Stage 2: Quick Wins Execution —” Top 8 levers captured in 4 months delivering $120M self-funding savings -> Stage 3: Operating Model Redesign —” Shared services, process automation, and governance restructuring -> Stage 4: Enterprise Rollout —” Change management program drives 89% adoption across all divisions -> Stage 5: Continuous Improvement —” Value realization tracking and iterative optimization sustains gains',
   },
   GEOGRAPHIC_MAP: {
     title: 'Global Practice Footprint',
-    body: 'Europe: $38M revenue, 84 partners, 44% of practice revenue — London HQ, Frankfurt, Paris offices\nNorth America: $31M revenue, 62 partners, 36% — New York, Chicago, San Francisco offices\nAsia-Pacific: $12M revenue, 28 partners, 14% — Singapore, Sydney, Tokyo offices\nMiddle East & Africa: $4M revenue, 12 partners, 4% — Dubai office, expanding to Riyadh 2027\nLatin America: $2M revenue, 6 partners, 2% — São Paulo office opening Q4 2026',
+    body: 'Europe: $38M revenue, 84 partners, 44% of practice revenue —” London HQ, Frankfurt, Paris offices\nNorth America: $31M revenue, 62 partners, 36% —” New York, Chicago, San Francisco offices\nAsia-Pacific: $12M revenue, 28 partners, 14% —” Singapore, Sydney, Tokyo offices\nMiddle East & Africa: $4M revenue, 12 partners, 4% —” Dubai office, expanding to Riyadh 2027\nLatin America: $2M revenue, 6 partners, 2% —” São Paulo office opening Q4 2026',
   },
   IMPACT_SCORECARD: {
     title: 'Transformation Impact Dashboard',
@@ -328,15 +328,15 @@ const EXTRA_CONTENT_B = {
   },
   MYTH_VS_REALITY: {
     title: 'Digital transformation success rates are misunderstood',
-    body: 'Myth: 70% of digital transformations fail — so most initiatives are doomed from the start\nReality: The 70% figure conflates partial underperformance with outright failure. Organizations that define specific, measurable outcomes achieve 83% of their transformation goals\nEvidence: McKinsey Digital Transformation Survey 2025 — failure rate drops to 16% when transformation is tied to 3 or fewer measurable outcomes',
+    body: 'Myth: 70% of digital transformations fail —” so most initiatives are doomed from the start\nReality: The 70% figure conflates partial underperformance with outright failure. Organizations that define specific, measurable outcomes achieve 83% of their transformation goals\nEvidence: McKinsey Digital Transformation Survey 2025 —” failure rate drops to 16% when transformation is tied to 3 or fewer measurable outcomes',
   },
   NUMBER_STORY: {
     title: 'The executive attention window is shrinking',
-    body: '8 seconds\nThat\'s the average time a C-suite executive spends on a strategy slide before deciding whether to engage or check their phone. Every slide must earn its place in the first 8 seconds — or it\'s invisible.',
+    body: '8 seconds\nThat\'s the average time a C-suite executive spends on a strategy slide before deciding whether to engage or check their phone. Every slide must earn its place in the first 8 seconds —” or it\'s invisible.',
   },
   STORY_ARC: {
     title: 'From cost center to strategic advantage',
-    body: 'Setup: The IT department was seen as a cost center — budgets cut 15% annually, team morale at historic lows, and the CEO publicly called tech "a necessary expense"\nConflict: A competitor launched an AI-powered product that captured 23% market share in 6 months. The board demanded a response, but the tech team lacked the infrastructure to move fast\nResolution: A 90-day sprint transformed IT into a strategic function. The AI response launched in 4 months, recaptured 18% share, and the CTO now sits on the executive committee',
+    body: 'Setup: The IT department was seen as a cost center —” budgets cut 15% annually, team morale at historic lows, and the CEO publicly called tech "a necessary expense"\nConflict: A competitor launched an AI-powered product that captured 23% market share in 6 months. The board demanded a response, but the tech team lacked the infrastructure to move fast\nResolution: A 90-day sprint transformed IT into a strategic function. The AI response launched in 4 months, recaptured 18% share, and the CTO now sits on the executive committee',
   },
   TREND_INSIGHT: {
     title: 'Boards are demanding AI literacy from every executive',
@@ -344,13 +344,13 @@ const EXTRA_CONTENT_B = {
   },
   CONTRARIAN_VIEW: {
     title: 'Why consensus-driven strategy produces mediocre outcomes',
-    body: 'Conventional: Good strategy requires buy-in from all stakeholders before execution\nThesis: The most successful strategic pivots in the past decade were driven by conviction, not consensus — decisive leadership outperforms democratic strategy 4:1\nAmazon\'s AWS, Apple\'s iPhone pivot, and Netflix\'s streaming transition were all opposed by majority stakeholders\nConsensus optimizes for the average opinion, which by definition cannot produce outlier outcomes\nThe best boards empower conviction-driven bets with clear kill criteria',
+    body: 'Conventional: Good strategy requires buy-in from all stakeholders before execution\nThesis: The most successful strategic pivots in the past decade were driven by conviction, not consensus —” decisive leadership outperforms democratic strategy 4:1\nAmazon\'s AWS, Apple\'s iPhone pivot, and Netflix\'s streaming transition were all opposed by majority stakeholders\nConsensus optimizes for the average opinion, which by definition cannot produce outlier outcomes\nThe best boards empower conviction-driven bets with clear kill criteria',
   },
 };
 
 const EXTRA_CONTENT_C = {
   TITLE: {
-    title: 'Creator Economy — Growth Story',
+    title: 'Creator Economy —” Growth Story',
     body: 'Luminary Creative | Series B | Naomi Sato, CEO & Co-Founder',
   },
   CONTENT: {
@@ -407,10 +407,10 @@ const EXTRA_CONTENT_C = {
   },
   RISK_MITIGATION: {
     title: 'Risk Assessment & Mitigation',
-    body: 'Risk 1: Platform algorithm changes reduce creator reach and content distribution | Mitigation: Multi-platform publishing tools and owned audience channels (email, SMS) reduce dependency on any single algorithm\nRisk 2: Large platforms (YouTube, TikTok) build competing creator monetization tools | Mitigation: Platform-agnostic approach means Luminary benefits regardless of which platforms creators use — we are the layer above\nRisk 3: Creator burnout leads to high churn rates | Mitigation: Wellbeing features including sustainable content calendars, batch creation tools, and burnout detection alerts reduce creator attrition by 40%\nRisk 4: Economic downturn reduces brand marketing budgets for creator partnerships | Mitigation: Creator marketing delivers 8.2% engagement vs 0.3% traditional — budget-conscious brands shift to creators during downturns, not away from them',
+    body: 'Risk 1: Platform algorithm changes reduce creator reach and content distribution | Mitigation: Multi-platform publishing tools and owned audience channels (email, SMS) reduce dependency on any single algorithm\nRisk 2: Large platforms (YouTube, TikTok) build competing creator monetization tools | Mitigation: Platform-agnostic approach means Luminary benefits regardless of which platforms creators use —” we are the layer above\nRisk 3: Creator burnout leads to high churn rates | Mitigation: Wellbeing features including sustainable content calendars, batch creation tools, and burnout detection alerts reduce creator attrition by 40%\nRisk 4: Economic downturn reduces brand marketing budgets for creator partnerships | Mitigation: Creator marketing delivers 8.2% engagement vs 0.3% traditional —” budget-conscious brands shift to creators during downturns, not away from them',
   },
   DEMO_SCREENSHOT: {
-    title: 'Creator Dashboard — Live Demo',
+    title: 'Creator Dashboard —” Live Demo',
     body: 'The Luminary Creator Dashboard shows a unified view of a creator with 340K followers. The top row displays four revenue streams: Sponsorships ($8,400 this month), Subscriptions ($4,200), Digital Products ($3,600), and Merchandise ($2,800). The center panel shows the Brand Matchmaker with 6 pending partnership opportunities ranked by audience fit score. The bottom section displays a content calendar with 12 scheduled posts across YouTube, TikTok, and Instagram, each showing predicted engagement rates from the AI recommendation engine.',
   },
   MILESTONE_TIMELINE: {
@@ -427,7 +427,7 @@ const EXTRA_CONTENT_C = {
   },
   GO_TO_MARKET: {
     title: 'Go-to-Market Strategy',
-    body: 'Phase 1: Creator-First Growth — Free tier drives viral adoption through Smart Studio watermarks and creator referral program with $10 credit per sign-up\nPhase 2: Brand Marketplace — Self-serve brand platform with automated matchmaking generates 28% of revenue through 8% commission on creator partnerships\nPhase 3: Enterprise Brands — Dedicated sales team targets Fortune 500 marketing departments seeking managed creator campaign programs at $50K+ average deal size\nPhase 4: International Localization — Expand to 30 markets with localized creator programs, local brand partnerships, and region-specific payment methods',
+    body: 'Phase 1: Creator-First Growth —” Free tier drives viral adoption through Smart Studio watermarks and creator referral program with $10 credit per sign-up\nPhase 2: Brand Marketplace —” Self-serve brand platform with automated matchmaking generates 28% of revenue through 8% commission on creator partnerships\nPhase 3: Enterprise Brands —” Dedicated sales team targets Fortune 500 marketing departments seeking managed creator campaign programs at $50K+ average deal size\nPhase 4: International Localization —” Expand to 30 markets with localized creator programs, local brand partnerships, and region-specific payment methods',
   },
   PERSONA: {
     title: 'Target Creator: The Emerging Professional',
@@ -443,15 +443,15 @@ const EXTRA_CONTENT_C = {
   },
   SCENARIO_ANALYSIS: {
     title: 'Growth Scenario Analysis (2028)',
-    body: 'Base Case: $72M ARR, 28M monthly active creators, 8% take rate, break-even EBITDA — assumes creator acquisition continues at 15% monthly growth and brand partnership pipeline converts at current 34% rate\nBull Case: $108M ARR, 42M monthly active creators, 9% take rate, $24M EBITDA — assumes creator storefronts accelerate monetization, enterprise brand contracts exceed $80K ACV, and international markets contribute 35% of revenue\nBear Case: $42M ARR, 18M monthly active creators, 7% take rate, -$12M EBITDA — assumes platform algorithm changes reduce creator acquisition by 40% and brand budgets contract due to economic headwinds',
+    body: 'Base Case: $72M ARR, 28M monthly active creators, 8% take rate, break-even EBITDA —” assumes creator acquisition continues at 15% monthly growth and brand partnership pipeline converts at current 34% rate\nBull Case: $108M ARR, 42M monthly active creators, 9% take rate, $24M EBITDA —” assumes creator storefronts accelerate monetization, enterprise brand contracts exceed $80K ACV, and international markets contribute 35% of revenue\nBear Case: $42M ARR, 18M monthly active creators, 7% take rate, -$12M EBITDA —” assumes platform algorithm changes reduce creator acquisition by 40% and brand budgets contract due to economic headwinds',
   },
   VALUE_CHAIN: {
     title: 'Creator Value Chain',
-    body: 'Stage 1: Content Creation — Smart Studio AI reduces production from 15 hours to 4 hours per piece with auto-editing and optimization -> Stage 2: Distribution — Multi-platform publishing ensures content reaches audiences across YouTube, TikTok, Instagram, and newsletters simultaneously -> Stage 3: Monetization — Brand Matchmaker, subscription tools, and digital product storefront generate 4.7x more revenue than creator managed alone -> Stage 4: Community Building — Engagement tools and audience analytics help creators build owned audiences independent of any single platform -> Stage 5: Business Scaling — Revenue Hub automates invoicing, tax prep, and financial planning so creators focus on creating',
+    body: 'Stage 1: Content Creation —” Smart Studio AI reduces production from 15 hours to 4 hours per piece with auto-editing and optimization -> Stage 2: Distribution —” Multi-platform publishing ensures content reaches audiences across YouTube, TikTok, Instagram, and newsletters simultaneously -> Stage 3: Monetization —” Brand Matchmaker, subscription tools, and digital product storefront generate 4.7x more revenue than creator managed alone -> Stage 4: Community Building —” Engagement tools and audience analytics help creators build owned audiences independent of any single platform -> Stage 5: Business Scaling —” Revenue Hub automates invoicing, tax prep, and financial planning so creators focus on creating',
   },
   GEOGRAPHIC_MAP: {
     title: 'Global Creator Community',
-    body: 'North America: $5.6M revenue, 5.2M creators, 49% of total — Los Angeles HQ\nEurope: $3.1M revenue, 3.4M creators, 27% — London office launched Q1 2026\nAsia-Pacific: $1.8M revenue, 2.6M creators, 16% — Tokyo and Seoul offices planned for Q3 2026\nLatin America: $0.6M revenue, 0.8M creators, 5% — strong organic growth in Brazil and Mexico\nMiddle East & Africa: $0.3M revenue, 0.4M creators, 3% — emerging creator ecosystems in UAE and Nigeria',
+    body: 'North America: $5.6M revenue, 5.2M creators, 49% of total —” Los Angeles HQ\nEurope: $3.1M revenue, 3.4M creators, 27% —” London office launched Q1 2026\nAsia-Pacific: $1.8M revenue, 2.6M creators, 16% —” Tokyo and Seoul offices planned for Q3 2026\nLatin America: $0.6M revenue, 0.8M creators, 5% —” strong organic growth in Brazil and Mexico\nMiddle East & Africa: $0.3M revenue, 0.4M creators, 3% —” emerging creator ecosystems in UAE and Nigeria',
   },
   IMPACT_SCORECARD: {
     title: 'Creator Impact Metrics',
@@ -503,15 +503,15 @@ const EXTRA_CONTENT_C = {
   },
   MYTH_VS_REALITY: {
     title: 'The "overnight success" myth harms real creators',
-    body: 'Myth: Viral content creates overnight success — one TikTok can launch a career\nReality: 94% of creators who sustain full-time income built audiences over 2+ years with consistent weekly publishing. The median "overnight success" had 847 posts before their breakout moment\nEvidence: ConvertKit Creator Economy Report 2025, Patreon Earnings Data',
+    body: 'Myth: Viral content creates overnight success —” one TikTok can launch a career\nReality: 94% of creators who sustain full-time income built audiences over 2+ years with consistent weekly publishing. The median "overnight success" had 847 posts before their breakout moment\nEvidence: ConvertKit Creator Economy Report 2025, Patreon Earnings Data',
   },
   NUMBER_STORY: {
     title: 'The creator middle class is real and growing',
-    body: '$68,000\nMedian annual income for creators with 10,000-50,000 engaged followers across multiple revenue streams. The creator economy\'s middle class is quietly outearning the average US household — and they\'re just getting started.',
+    body: '$68,000\nMedian annual income for creators with 10,000-50,000 engaged followers across multiple revenue streams. The creator economy\'s middle class is quietly outearning the average US household —” and they\'re just getting started.',
   },
   STORY_ARC: {
     title: 'From side hustle to sustainable business',
-    body: 'Setup: Sarah started a newsletter about sustainable fashion in 2022 with 47 subscribers and zero revenue, writing every Sunday night after her kids went to bed\nConflict: At 5,000 subscribers she hit a wall — ad revenue was $200/month, sponsorships were inconsistent, and she nearly quit when a brand deal fell through the week before rent was due\nResolution: She launched a $9/month community membership. 340 members joined in the first month. Today she earns $4,200/month from memberships alone, with 12,000 subscribers and growing',
+    body: 'Setup: Sarah started a newsletter about sustainable fashion in 2022 with 47 subscribers and zero revenue, writing every Sunday night after her kids went to bed\nConflict: At 5,000 subscribers she hit a wall —” ad revenue was $200/month, sponsorships were inconsistent, and she nearly quit when a brand deal fell through the week before rent was due\nResolution: She launched a $9/month community membership. 340 members joined in the first month. Today she earns $4,200/month from memberships alone, with 12,000 subscribers and growing',
   },
   TREND_INSIGHT: {
     title: 'Community-powered commerce is replacing influencer marketing',
@@ -519,13 +519,13 @@ const EXTRA_CONTENT_C = {
   },
   CONTRARIAN_VIEW: {
     title: 'Why chasing followers is the worst creator strategy',
-    body: 'Conventional: More followers equals more success — growth hacking and viral content should be every creator\'s priority\nThesis: Creators with 5,000 deeply engaged followers earn 3.2x more than creators with 100,000 passive followers\nThe top 1% of Patreon creators have smaller audiences but 12x higher revenue per follower\nAlgorithm-chasing creates content debt — viral posts attract audiences that don\'t convert\nThe sustainable path is depth over breadth: serve 1,000 true fans, not 100,000 spectators',
+    body: 'Conventional: More followers equals more success —” growth hacking and viral content should be every creator\'s priority\nThesis: Creators with 5,000 deeply engaged followers earn 3.2x more than creators with 100,000 passive followers\nThe top 1% of Patreon creators have smaller audiences but 12x higher revenue per follower\nAlgorithm-chasing creates content debt —” viral posts attract audiences that don\'t convert\nThe sustainable path is depth over breadth: serve 1,000 true fans, not 100,000 spectators',
   },
 };
 
 const EXTRA_CONTENT_D = {
   TITLE: {
-    title: 'AI Research Platform — Technical Overview',
+    title: 'AI Research Platform —” Technical Overview',
     body: 'Helios Labs | Series A | Dr. Viktor Andreev, CEO & Chief Scientist',
   },
   CONTENT: {
@@ -585,7 +585,7 @@ const EXTRA_CONTENT_D = {
     body: 'Risk 1: Data access restrictions from publishers limit knowledge graph completeness | Mitigation: Partnerships with Elsevier, Springer Nature, and open-access mandates cover 94% of scientific literature; proprietary NLP extracts structured data from PDFs\nRisk 2: AI-generated hypotheses produce false positives that waste researcher time | Mitigation: Confidence scoring with supporting evidence chains allows researchers to filter by statistical significance; 89% reproducibility rate validated across 14 institutions\nRisk 3: Enterprise pharma sales cycles exceed 18 months, straining cash runway | Mitigation: Academic free tier creates institutional champions who accelerate enterprise procurement; median enterprise sales cycle has compressed from 14 to 8 months\nRisk 4: Competing platforms from Google DeepMind or Meta AI Research commoditize capabilities | Mitigation: Proprietary knowledge graph with institution-specific data creates switching costs; enterprise deployment with on-premise option addresses data sovereignty requirements that big tech cannot match',
   },
   DEMO_SCREENSHOT: {
-    title: 'Knowledge Graph Explorer — Live Demo',
+    title: 'Knowledge Graph Explorer —” Live Demo',
     body: 'The Helios Knowledge Graph Explorer displays an interactive 3D visualization of 2,400 interconnected research papers across oncology and immunology. The center cluster shows a novel drug target highlighted in gold, with 47 supporting papers connected by citation edges. The left panel displays the Hypothesis Engine output ranking 8 candidate research directions by confidence score (0.94, 0.89, 0.87, 0.82...). The right panel shows the Protocol Designer with a recommended experiment protocol, including sample sizes, control groups, and a predicted reproducibility score of 91%.',
   },
   MILESTONE_TIMELINE: {
@@ -602,11 +602,11 @@ const EXTRA_CONTENT_D = {
   },
   GO_TO_MARKET: {
     title: 'Go-to-Market Strategy',
-    body: 'Phase 1: Academic Seeding — Free tier for academic researchers creates institutional champions and generates published case studies citing Helios methodology\nPhase 2: Enterprise Pilots — 90-day paid pilots with pharma and biotech R&D teams, targeting $120K pilot fee with 72% conversion to annual contracts\nPhase 3: Enterprise Expansion — Field sales targeting VP R&D and CSO buyers at top-200 research institutions, $480K average annual contract value\nPhase 4: Platform Network Effects — Cross-institutional collaboration features create multi-sided network where each new institution increases value for all participants',
+    body: 'Phase 1: Academic Seeding —” Free tier for academic researchers creates institutional champions and generates published case studies citing Helios methodology\nPhase 2: Enterprise Pilots —” 90-day paid pilots with pharma and biotech R&D teams, targeting $120K pilot fee with 72% conversion to annual contracts\nPhase 3: Enterprise Expansion —” Field sales targeting VP R&D and CSO buyers at top-200 research institutions, $480K average annual contract value\nPhase 4: Platform Network Effects —” Cross-institutional collaboration features create multi-sided network where each new institution increases value for all participants',
   },
   PERSONA: {
     title: 'Target Buyer: VP of R&D at Global Pharma',
-    body: 'Name: Dr. Christine Mueller\nRole: VP of Research & Development at a top-20 pharmaceutical company with $4.8B annual R&D budget and 3,200 researchers across 6 therapeutic areas\nPain Points: Drug target identification pipeline averaging 4.2 years per candidate, 78% Phase I failure rate costing $2.1B per approved drug, researchers spending 42% of time on literature review instead of experimentation, cross-therapeutic collaboration happening in only 8% of projects\nGoals: Reduce discovery-to-IND timeline by 50%, improve Phase I success rate by 20 percentage points, enable cross-therapeutic area collaboration to surface novel combination therapies, demonstrate R&D productivity improvement to board and investors\nQuote: "We publish 800 papers a year internally, and I guarantee our researchers have read less than 10% of them. The knowledge is there — we just cannot connect it."',
+    body: 'Name: Dr. Christine Mueller\nRole: VP of Research & Development at a top-20 pharmaceutical company with $4.8B annual R&D budget and 3,200 researchers across 6 therapeutic areas\nPain Points: Drug target identification pipeline averaging 4.2 years per candidate, 78% Phase I failure rate costing $2.1B per approved drug, researchers spending 42% of time on literature review instead of experimentation, cross-therapeutic collaboration happening in only 8% of projects\nGoals: Reduce discovery-to-IND timeline by 50%, improve Phase I success rate by 20 percentage points, enable cross-therapeutic area collaboration to surface novel combination therapies, demonstrate R&D productivity improvement to board and investors\nQuote: "We publish 800 papers a year internally, and I guarantee our researchers have read less than 10% of them. The knowledge is there —” we just cannot connect it."',
   },
   TESTIMONIAL_WALL: {
     title: 'What Research Leaders Say',
@@ -618,15 +618,15 @@ const EXTRA_CONTENT_D = {
   },
   SCENARIO_ANALYSIS: {
     title: 'Growth Scenario Analysis (2028)',
-    body: 'Base Case: $94M ARR, 50 enterprise customers, 84% gross margin, $22M EBITDA — assumes 72% pilot conversion rate holds, academic-to-enterprise pipeline delivers 40% of new logos, and NRR stays at 128%\nBull Case: $142M ARR, 78 enterprise customers, 87% gross margin, $48M EBITDA — assumes 2 top-10 pharma enterprise-wide deployments, cross-institutional network effects accelerate adoption, and government research mandates drive academic expansion\nBear Case: $58M ARR, 32 enterprise customers, 78% gross margin, -$8M EBITDA — assumes enterprise sales cycles elongate to 14 months due to data sovereignty concerns and 2 major pharma accounts delay procurement due to M&A activity',
+    body: 'Base Case: $94M ARR, 50 enterprise customers, 84% gross margin, $22M EBITDA —” assumes 72% pilot conversion rate holds, academic-to-enterprise pipeline delivers 40% of new logos, and NRR stays at 128%\nBull Case: $142M ARR, 78 enterprise customers, 87% gross margin, $48M EBITDA —” assumes 2 top-10 pharma enterprise-wide deployments, cross-institutional network effects accelerate adoption, and government research mandates drive academic expansion\nBear Case: $58M ARR, 32 enterprise customers, 78% gross margin, -$8M EBITDA —” assumes enterprise sales cycles elongate to 14 months due to data sovereignty concerns and 2 major pharma accounts delay procurement due to M&A activity',
   },
   VALUE_CHAIN: {
     title: 'Research Acceleration Value Chain',
-    body: 'Stage 1: Knowledge Ingestion — NLP pipeline processes 50K new papers daily, extracts entities and relationships, updates 200M-node knowledge graph -> Stage 2: Hypothesis Generation — Graph neural networks identify non-obvious connections across domains, ranking candidates by novelty and feasibility -> Stage 3: Experiment Design — ML models create optimized protocols with statistical power analysis, predicting reproducibility before lab work begins -> Stage 4: Execution & Capture — Automated data collection with anomaly detection feeds results back into knowledge graph -> Stage 5: Translation — IP analysis and commercial viability scoring accelerate pathway from discovery to patent filing',
+    body: 'Stage 1: Knowledge Ingestion —” NLP pipeline processes 50K new papers daily, extracts entities and relationships, updates 200M-node knowledge graph -> Stage 2: Hypothesis Generation —” Graph neural networks identify non-obvious connections across domains, ranking candidates by novelty and feasibility -> Stage 3: Experiment Design —” ML models create optimized protocols with statistical power analysis, predicting reproducibility before lab work begins -> Stage 4: Execution & Capture —” Automated data collection with anomaly detection feeds results back into knowledge graph -> Stage 5: Translation —” IP analysis and commercial viability scoring accelerate pathway from discovery to patent filing',
   },
   GEOGRAPHIC_MAP: {
     title: 'Global Research Network',
-    body: 'North America: $9.8M revenue, 22 institutions, 61% of ARR — Boston HQ, San Francisco office\nEurope: $4.2M revenue, 14 institutions, 26% — Basel and Cambridge offices\nAsia-Pacific: $1.4M revenue, 8 institutions, 9% — Tokyo partnership office, Singapore planned Q4 2026\nMiddle East: $0.5M revenue, 4 institutions, 3% — KAUST and Weizmann Institute partnerships\nLatin America: $0.2M revenue, 2 institutions, 1% — University of São Paulo pilot active',
+    body: 'North America: $9.8M revenue, 22 institutions, 61% of ARR —” Boston HQ, San Francisco office\nEurope: $4.2M revenue, 14 institutions, 26% —” Basel and Cambridge offices\nAsia-Pacific: $1.4M revenue, 8 institutions, 9% —” Tokyo partnership office, Singapore planned Q4 2026\nMiddle East: $0.5M revenue, 4 institutions, 3% —” KAUST and Weizmann Institute partnerships\nLatin America: $0.2M revenue, 2 institutions, 1% —” University of São Paulo pilot active',
   },
   IMPACT_SCORECARD: {
     title: 'Research Impact Metrics',
@@ -676,18 +676,18 @@ const EXTRA_CONTENT_D = {
     title: 'Platform Health Metrics',
     body: 'knowledge_graph_nodes: 247M\ndaily_papers_ingested: 52,000\nhypothesis_confidence_avg: 0.87\nreproducibility_rate: 89%\napi_latency_p99: 120ms\nenterprise_pilot_conversion: 72%',
   },
-};
-export { EXTRA_CONTENT_A, EXTRA_CONTENT_B, EXTRA_CONTENT_C, EXTRA_CONTENT_D   MYTH_VS_REALITY: {
+
+  MYTH_VS_REALITY: {
     title: 'Bigger models are not always better models',
-    body: 'Myth: Scaling model parameters is the primary driver of AI capability — bigger is always better\nReality: Chinchilla-optimal training, mixture-of-experts, and domain-specific fine-tuning consistently outperform brute-force scaling. A 7B parameter model fine-tuned on domain data beats a 70B general model on 73% of specialized benchmarks\nEvidence: Scaling Laws Revisited — DeepMind 2025, Mistral AI Benchmark Suite',
+    body: 'Myth: Scaling model parameters is the primary driver of AI capability —” bigger is always better\nReality: Chinchilla-optimal training, mixture-of-experts, and domain-specific fine-tuning consistently outperform brute-force scaling. A 7B parameter model fine-tuned on domain data beats a 70B general model on 73% of specialized benchmarks\nEvidence: Scaling Laws Revisited —” DeepMind 2025, Mistral AI Benchmark Suite',
   },
   NUMBER_STORY: {
     title: 'The inference cost revolution',
-    body: '$0.002\nCost per 1,000 tokens of inference on a state-of-the-art language model in 2025 — down from $0.12 in 2023. A 60x cost reduction in 24 months means AI capabilities that were economically impossible are now viable for every startup.',
+    body: '$0.002\nCost per 1,000 tokens of inference on a state-of-the-art language model in 2025 —” down from $0.12 in 2023. A 60x cost reduction in 24 months means AI capabilities that were economically impossible are now viable for every startup.',
   },
   STORY_ARC: {
     title: 'From research paper to production system',
-    body: 'Setup: Our team published a novel attention mechanism at NeurIPS 2023 that achieved 34% faster inference with no quality degradation on standard benchmarks\nConflict: Moving from research to production exposed 47 failure modes not captured by benchmarks — hallucination rates spiked 3x on real enterprise data, latency was unpredictable under load, and the model couldn\'t handle the messy, incomplete data that enterprises actually have\nResolution: 14 months of production hardening, 2,400 edge case tests, and a retrieval-augmented architecture reduced hallucination to 0.3% and achieved 99.97% uptime serving 84,000 daily queries',
+    body: "Setup: Our team published a novel attention mechanism at NeurIPS 2023 that achieved 34% faster inference with no quality degradation on standard benchmarks\nConflict: Moving from research to production exposed 47 failure modes not captured by benchmarks —” hallucination rates spiked 3x on real enterprise data, latency was unpredictable under load, and the model couldn't handle the messy, incomplete data that enterprises actually have\nResolution: 14 months of production hardening, 2,400 edge case tests, and a retrieval-augmented architecture reduced hallucination to 0.3% and achieved 99.97% uptime serving 84,000 daily queries",
   },
   TREND_INSIGHT: {
     title: 'Small language models are winning enterprise adoption',
@@ -695,6 +695,8 @@ export { EXTRA_CONTENT_A, EXTRA_CONTENT_B, EXTRA_CONTENT_C, EXTRA_CONTENT_D   MY
   },
   CONTRARIAN_VIEW: {
     title: 'Why AGI timelines are the wrong question for researchers',
-    body: 'Conventional: The most important question in AI is when we will achieve AGI\nThesis: Focusing on AGI timelines distracts from the transformative impact of narrow AI systems that are already reshaping every industry today\nNarrow AI systems generated $340B in economic value in 2024 — AGI contributed $0\nEvery major AI breakthrough of the past 5 years came from focused, domain-specific research\nThe scientists who changed medicine, materials science, and climate modeling weren\'t chasing AGI — they were solving specific problems with specific tools',
+    body: "Conventional: The most important question in AI is when we will achieve AGI\nThesis: Focusing on AGI timelines distracts from the transformative impact of narrow AI systems that are already reshaping every industry today\nNarrow AI systems generated $340B in economic value in 2024 —” AGI contributed $0\nEvery major AI breakthrough of the past 5 years came from focused, domain-specific research\nThe scientists who changed medicine, materials science, and climate modeling weren't chasing AGI —” they were solving specific problems with specific tools",
   },
 };
+
+export { EXTRA_CONTENT_A, EXTRA_CONTENT_B, EXTRA_CONTENT_C, EXTRA_CONTENT_D };
