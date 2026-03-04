@@ -55,16 +55,6 @@ export class DailyStatsCron {
       this.logger.error(`Failed to send daily stats: ${msg}`);
     }
   }
-  async sendDailyStatsTo(email: string) {
-    const now = new Date();
-    const today = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
-    const yesterday = new Date(today.getTime() - 86400000);
-    const dayBefore = new Date(today.getTime() - 2 * 86400000);
-    const data = await this.gatherStats(yesterday, dayBefore, today);
-    const html = this.buildStatsEmailHtml(data);
-    await this.emailService.sendEmail({ to: email, subject: `Pitchable Daily Stats — ${data.dateLabel}`, html });
-    this.logger.log(`Daily stats email sent to ${email}`);
-  }
 
   private async gatherStats(yesterday: Date, dayBefore: Date, today: Date): Promise<DailyStatsData> {
     const dateLabel = yesterday.toISOString().slice(0, 10);
