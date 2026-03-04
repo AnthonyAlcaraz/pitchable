@@ -63,15 +63,11 @@ export class GalleryController {
     return this.galleryService.forkPublicPresentation(id, user.userId);
   }
   @Post('seed')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
   @HttpCode(HttpStatus.OK)
   async seedGallery(@Req() req: { body: unknown }) {
-    try {
-      const body = req.body as Record<string, Record<string, { title: string; body: string }>>;
-      return await this.galleryService.seedGallery(body);
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err);
-      const stack = err instanceof Error ? err.stack : undefined;
-      return { error: true, message: msg, stack };
-    }
+    const body = req.body as Record<string, Record<string, { title: string; body: string }>>;
+    return this.galleryService.seedGallery(body);
   }
 }
