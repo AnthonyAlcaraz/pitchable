@@ -729,12 +729,12 @@ OUTPUT: Valid JSON matching this schema (no markdown fences):
     );
 
     // Pre-fetch all per-slide KB contexts in parallel (zero risk to narrative coherence)
-    const dataHeavyTypes = ['DATA_METRICS', 'CONTENT', 'PROBLEM', 'SOLUTION', 'COMPARISON', 'ARCHITECTURE', 'PROCESS'];
+    const dataHeavyTypes = ['DATA_METRICS', 'CONTENT', 'PROBLEM', 'SOLUTION', 'COMPARISON', 'ARCHITECTURE', 'PROCESS', 'CASE_STUDY', 'FINANCIAL_PROJECTION', 'MARKET_SIZING', 'COMPETITIVE_MATRIX', 'UNIT_ECONOMICS', 'SWOT'];
     const emptyKbResult: KbContextResult = { contextString: '', sources: [] };
     const slideKbResults = await Promise.all(
       outline.slides.map((slide) =>
         dataHeavyTypes.includes(slide.slideType)
-          ? this.contextBuilder.retrieveSlideContextWithSources(userId, slide.title, slide.bulletPoints, 2, 2)
+          ? this.contextBuilder.retrieveSlideContextWithSources(userId, slide.title, slide.bulletPoints, 4, 3)
           : Promise.resolve(emptyKbResult)
       ),
     );
