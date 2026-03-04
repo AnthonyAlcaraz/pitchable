@@ -34,6 +34,7 @@ export const FIGMA_GRADE_TYPES: Set<string> = new Set([
   'PRICING_TABLE', 'UNIT_ECONOMICS', 'SWOT', 'THREE_PILLARS', 'BEFORE_AFTER',
   'SOCIAL_PROOF', 'OBJECTION_HANDLER', 'FAQ', 'VERDICT', 'COHORT_TABLE', 'PROGRESS_TRACKER',
   'PRODUCT_SHOWCASE', 'SPLIT_STATEMENT', 'OUTLINE', 'VISUAL_HUMOR',
+  'TITLE', 'SECTION_DIVIDER', 'LOGO_WALL',
   'FLYWHEEL', 'REVENUE_MODEL', 'CUSTOMER_JOURNEY', 'TECH_STACK', 'GROWTH_LOOPS', 'CASE_STUDY',
   'HIRING_PLAN', 'USE_OF_FUNDS', 'RISK_MITIGATION', 'DEMO_SCREENSHOT', 'MILESTONE_TIMELINE', 'PARTNERSHIP_LOGOS',
   'FINANCIAL_PROJECTION', 'GO_TO_MARKET', 'PERSONA', 'TESTIMONIAL_WALL', 'THANK_YOU', 'SCENARIO_ANALYSIS',
@@ -498,6 +499,12 @@ export function buildHtmlSlideContent(
 
   let html = '';
   switch (cleaned.slideType) {
+    case 'TITLE':
+      html = buildTitle(cleaned, palette, !!cleaned.imageUrl); break;
+    case 'SECTION_DIVIDER':
+      html = buildSectionDivider(cleaned, palette, !!cleaned.imageUrl); break;
+    case 'LOGO_WALL':
+      html = buildLogoWall(cleaned, palette, !!cleaned.imageUrl, accentDiversity); break;
     case 'MARKET_SIZING':
       html = buildMarketSizing(cleaned, palette, !!cleaned.imageUrl); break;
     case 'TIMELINE':
@@ -2729,25 +2736,62 @@ function buildQuote(slide: SlideInput, p: ColorPalette, hasImage = false): strin
   // Last line that looks like an attribution (starts with - or em-dash, or contains title keywords)
   let quoteLines = [...lines];
   let attribution = '';
+  let role = '';
   if (quoteLines.length > 1) {
     const lastLine = quoteLines[quoteLines.length - 1];
     if (/^[-\u2014\u2013]/.test(lastLine) || /\b(CEO|CTO|Author|Founder|VP|Director|Manager|Head of)\b/i.test(lastLine)) {
-      attribution = lastLine.replace(/^[-\u2014\u2013]\s*/, '');
+      const raw = lastLine.replace(/^[-\u2014\u2013]\s*/, '');
+      // Split "Name, Role" or "Name — Role"
+      const parts = raw.split(/[,\u2014\u2013]\s*/);
+      attribution = parts[0].trim();
+      role = parts.length > 1 ? parts.slice(1).join(', ').trim() : '';
       quoteLines = quoteLines.slice(0, -1);
     }
   }
 
   const quoteText = quoteLines.join(' ');
   const fontSize = quoteText.length > 200 ? 18 : quoteText.length > 100 ? 22 : 28;
-  const quoteY = Math.round(H * 0.3);
+
+  // Card container for the quote
+  const cardX = PAD + 20;
+  const cardY = PAD + 70;
+  const cardW = cW - PAD * 2 - 40;
+  const cardH = Math.round(H * 0.55);
+  const cardBg = dark ? hexToRgba(p.text, 0.04) : hexToRgba(p.accent, 0.03);
+  const quoteMaxH = attribution ? cardH - 80 : cardH - 40;
+
+  // Accent vertical bar on left of card
+  const barHtml = `<div style="position:absolute;left:${cardX}px;top:${cardY + 20}px;width:4px;height:${cardH - 40}px;background:linear-gradient(to bottom,${p.accent},${hexToRgba(p.accent, 0.2)});border-radius:2px"></div>`;
+
+  // Big decorative quotation mark
+  const quoteMark = `<div style="position:absolute;left:${cardX + 24}px;top:${cardY - 10}px;font-size:120px;font-family:Georgia,serif;color:${p.accent};opacity:0.15;line-height:1;pointer-events:none">\u201C</div>`;
+
+  // Quote text inside card
+  const textHtml = `<div style="position:absolute;left:${cardX + 28}px;top:${cardY + 24}px;width:${cardW - 56}px;max-height:${quoteMaxH}px;font-size:${fontSize}px;font-style:italic;line-height:1.6;color:${p.text};overflow:hidden;display:-webkit-box;-webkit-line-clamp:${fontSize > 22 ? 8 : 6};-webkit-box-orient:vertical${dark ? ';' + textGlow(p.accent, 0.2) : ''}">${escHtml(quoteText)}</div>`;
+
+  // Attribution area at bottom of card
+  let attrHtml = '';
+  if (attribution) {
+    const attrY = cardY + cardH - 50;
+    // Separator line
+    attrHtml += `<div style="position:absolute;left:${cardX + 28}px;top:${attrY - 8}px;width:${cardW - 56}px;height:1px;background:${hexToRgba(p.text, 0.08)}"></div>`;
+    // Accent dot + name + role
+    attrHtml += `<div style="position:absolute;left:${cardX + 28}px;top:${attrY + 4}px;display:flex;align-items:center;gap:10px">
+      <div style="width:8px;height:8px;border-radius:50%;background:${p.accent};flex-shrink:0"></div>
+      <div style="font-size:15px;font-weight:700;color:${p.text};white-space:nowrap">${escHtml(attribution)}</div>
+      ${role ? `<div style="font-size:13px;color:${p.text};opacity:0.5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(role)}</div>` : ''}
+    </div>`;
+  }
 
   return `${SCOPED_RESET}
-<div style="position:relative;width:${W}px;height:${H}px;background:${p.background};">
-  ${bgGradientOverlay(cW, H, p.accent, 0.05, '50%')}
-  <div style="position:absolute;left:${PAD + 40}px;top:${quoteY - 80}px;font-size:160px;font-family:Georgia,serif;color:${p.accent};opacity:0.12;line-height:1">\u201C</div>
-  <div style="position:absolute;left:${PAD + 80}px;top:${quoteY}px;width:${cW - PAD * 2 - 160}px;max-height:${Math.round(H * 0.45)}px;font-size:${fontSize}px;font-style:italic;line-height:1.5;color:${p.text};text-align:center;overflow:hidden;${dark ? textGlow(p.accent, 0.25) : ''}">${escHtml(quoteText)}</div>
-  ${attribution ? `<div style="position:absolute;left:${PAD + 80}px;bottom:${PAD + 60}px;width:${cW - PAD * 2 - 160}px;font-size:14px;color:${p.text};opacity:0.6;text-align:center;letter-spacing:0.04em">\u2014 ${escHtml(attribution)}</div>` : ''}
-  <div style="position:absolute;left:${Math.round((cW - 60) / 2)}px;bottom:${PAD + 30}px;width:60px;height:4px;background:${p.accent};border-radius:2px"></div>
+<div style="position:relative;width:${W}px;height:${H}px;background:${p.background};overflow:hidden">
+  ${bgGradientOverlay(cW, H, p.accent, 0.04, '50%')}
+  <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;font-size:${titleFontSize(slide.title)}px;font-weight:800;letter-spacing:0.5px;color:${p.text};line-height:1.2;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${escHtml(slide.title)}</div>
+  <div style="position:absolute;left:${cardX}px;top:${cardY}px;width:${cardW}px;height:${cardH}px;background:${cardBg};border-radius:12px;border:1px solid ${hexToRgba(p.text, 0.06)}"></div>
+  ${barHtml}
+  ${quoteMark}
+  ${textHtml}
+  ${attrHtml}
 </div>`;
 }
 
@@ -7691,6 +7735,121 @@ function buildVisualHumor(slide: SlideInput, p: ColorPalette, hasImage = false):
   ${bgGradientOverlay(W, H, p.accent, 0.06, '50%')}
   <div style="position:absolute;left:${PAD + 40}px;top:${Math.round(H * 0.3)}px;width:${W - PAD * 2 - 80}px;text-align:center;font-size:48px;font-weight:900;line-height:1.3;color:${p.text};overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical">${escHtml(slide.title)}</div>
   ${subtitle ? `<div style="position:absolute;left:${PAD + 40}px;top:${Math.round(H * 0.6)}px;width:${W - PAD * 2 - 80}px;text-align:center;font-size:22px;color:${p.text};opacity:0.6;line-height:1.4;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">${escHtml(subtitle)}</div>` : ''}
+</div>`;
+}
+
+// ── TITLE ────────────────────────────────────────────────────
+// Hero title slide with accent underline, optional subtitle, and gradient depth
+
+function buildTitle(slide: SlideInput, p: ColorPalette, hasImage = false): string {
+  const lines = parseBodyLines(slide.body);
+  const subtitle = lines[0] || '';
+  const dark = isDarkBackground(p.background);
+
+  if (hasImage && slide.imageUrl) {
+    // With image: full-bleed image + dark overlay + centered text
+    return `${SCOPED_RESET}
+<div style="position:relative;width:${W}px;height:${H}px;background:#000;overflow:hidden">
+  <img src="${slide.imageUrl}" style="position:absolute;left:0;top:0;width:${W}px;height:${H}px;object-fit:cover;opacity:0.4" />
+  <div style="position:absolute;left:0;top:0;width:${W}px;height:${H}px;background:linear-gradient(to bottom,rgba(0,0,0,0.3) 0%,rgba(0,0,0,0.6) 100%)"></div>
+  <div style="position:absolute;left:${PAD + 20}px;top:${Math.round(H * 0.32)}px;width:${W - PAD * 2 - 40}px;text-align:center;font-size:${slide.title.length > 40 ? 42 : 54}px;font-weight:900;color:#ffffff;line-height:1.15;letter-spacing:-0.5px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;text-shadow:0 2px 20px rgba(0,0,0,0.5)">${escHtml(slide.title)}</div>
+  <div style="position:absolute;left:${Math.round((W - 80) / 2)}px;top:${Math.round(H * 0.58)}px;width:80px;height:4px;background:${p.accent};border-radius:2px"></div>
+  ${subtitle ? `<div style="position:absolute;left:${PAD + 40}px;top:${Math.round(H * 0.63)}px;width:${W - PAD * 2 - 80}px;text-align:center;font-size:20px;color:rgba(255,255,255,0.8);line-height:1.5;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">${escHtml(subtitle)}</div>` : ''}
+</div>`;
+  }
+
+  // Without image: bold centered title with accent underline and gradient depth
+  const titleFs = slide.title.length > 40 ? 48 : slide.title.length > 25 ? 56 : 64;
+  return `${SCOPED_RESET}
+<div style="position:relative;width:${W}px;height:${H}px;background:${p.background};overflow:hidden">
+  ${bgGradientOverlay(W, H, p.accent, 0.06, '50%')}
+  <div style="position:absolute;left:${PAD + 20}px;top:${Math.round(H * 0.30)}px;width:${W - PAD * 2 - 40}px;text-align:center;font-size:${titleFs}px;font-weight:900;color:${p.text};line-height:1.15;letter-spacing:-0.5px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical${dark ? ';' + textGlow(p.accent, 0.3) : ''}">${escHtml(slide.title)}</div>
+  <div style="position:absolute;left:${Math.round((W - 100) / 2)}px;top:${Math.round(H * 0.56)}px;width:100px;height:5px;background:linear-gradient(90deg,transparent,${p.accent},transparent);border-radius:3px"></div>
+  ${subtitle ? `<div style="position:absolute;left:${PAD + 60}px;top:${Math.round(H * 0.62)}px;width:${W - PAD * 2 - 120}px;text-align:center;font-size:22px;color:${p.text};opacity:0.6;line-height:1.5;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">${escHtml(subtitle)}</div>` : ''}
+</div>`;
+}
+
+// ── SECTION_DIVIDER ──────────────────────────────────────────
+// Full-bleed section break with large section label and optional number
+
+function buildSectionDivider(slide: SlideInput, p: ColorPalette, hasImage = false): string {
+  const lines = parseBodyLines(slide.body);
+  const dark = isDarkBackground(p.background);
+
+  // Extract section number if title starts with digit
+  const numMatch = slide.title.match(/^(\d+)\.?\s*/);
+  const sectionNum = numMatch ? numMatch[1] : '';
+  const titleText = numMatch ? slide.title.replace(numMatch[0], '') : slide.title;
+  const subtitle = lines[0] || '';
+
+  if (hasImage && slide.imageUrl) {
+    return `${SCOPED_RESET}
+<div style="position:relative;width:${W}px;height:${H}px;background:#000;overflow:hidden">
+  <img src="${slide.imageUrl}" style="position:absolute;left:0;top:0;width:${W}px;height:${H}px;object-fit:cover;opacity:0.35" />
+  <div style="position:absolute;left:0;top:0;width:${W}px;height:${H}px;background:linear-gradient(135deg,rgba(0,0,0,0.5) 0%,transparent 60%)"></div>
+  ${sectionNum ? `<div style="position:absolute;left:${PAD + 20}px;top:${Math.round(H * 0.25)}px;font-size:80px;font-weight:900;color:${p.accent};opacity:0.6;line-height:1">${sectionNum}</div>` : ''}
+  <div style="position:absolute;left:${PAD + 20}px;top:${sectionNum ? Math.round(H * 0.48) : Math.round(H * 0.38)}px;width:${W - PAD * 2 - 40}px;font-size:${titleFontSize(titleText, 48)}px;font-weight:900;color:#ffffff;line-height:1.2;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">${escHtml(titleText)}</div>
+  <div style="position:absolute;left:${PAD + 20}px;top:${sectionNum ? Math.round(H * 0.48) + 66 : Math.round(H * 0.38) + 66}px;width:60px;height:4px;background:${p.accent};border-radius:2px"></div>
+  ${subtitle ? `<div style="position:absolute;left:${PAD + 20}px;top:${sectionNum ? Math.round(H * 0.48) + 86 : Math.round(H * 0.38) + 86}px;width:${W - PAD * 2 - 40}px;font-size:18px;color:rgba(255,255,255,0.7);line-height:1.5;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${escHtml(subtitle)}</div>` : ''}
+</div>`;
+  }
+
+  // Without image: large section number + title on gradient
+  return `${SCOPED_RESET}
+<div style="position:relative;width:${W}px;height:${H}px;background:${p.background};overflow:hidden">
+  ${bgGradientOverlay(W, H, p.accent, 0.06, '45%')}
+  ${sectionNum ? `<div style="position:absolute;left:${PAD + 20}px;top:${Math.round(H * 0.18)}px;font-size:120px;font-weight:900;color:${p.accent};opacity:0.12;line-height:1;pointer-events:none">${sectionNum}</div>` : ''}
+  ${sectionNum ? `<div style="position:absolute;left:${PAD + 20}px;top:${Math.round(H * 0.28)}px;font-size:14px;font-weight:700;letter-spacing:3px;color:${p.accent};text-transform:uppercase">SECTION ${sectionNum}</div>` : ''}
+  <div style="position:absolute;left:${PAD + 20}px;top:${sectionNum ? Math.round(H * 0.38) : Math.round(H * 0.35)}px;width:${W - PAD * 2 - 40}px;font-size:${titleFontSize(titleText, 52)}px;font-weight:900;color:${p.text};line-height:1.2;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical${dark ? ';' + textGlow(p.accent, 0.25) : ''}">${escHtml(titleText)}</div>
+  <div style="position:absolute;left:${PAD + 20}px;top:${sectionNum ? Math.round(H * 0.38) + 72 : Math.round(H * 0.35) + 72}px;width:60px;height:4px;background:${p.accent};border-radius:2px"></div>
+  ${subtitle ? `<div style="position:absolute;left:${PAD + 20}px;top:${sectionNum ? Math.round(H * 0.38) + 96 : Math.round(H * 0.35) + 96}px;width:${W - PAD * 2 - 40}px;font-size:20px;color:${p.text};opacity:0.5;line-height:1.5;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${escHtml(subtitle)}</div>` : ''}
+</div>`;
+}
+
+// ── LOGO_WALL ────────────────────────────────────────────────
+// Grid of partner/customer logos with labeled placeholders
+
+function buildLogoWall(slide: SlideInput, p: ColorPalette, hasImage = false, accentDiversity = true): string {
+  const cW = hasImage ? CONTENT_W_IMG : W;
+  const lines = parseBodyLines(slide.body);
+  const dark = isDarkBackground(p.background);
+  const accents = cardAccentColors(p, accentDiversity ? colorOffset(slide.title) : 0);
+
+  // Each line = one logo/company name
+  const logos = lines.slice(0, 12);
+  const count = logos.length || 4;
+
+  // Grid layout: 3 or 4 columns
+  const cols = count <= 6 ? 3 : 4;
+  const rows = Math.ceil(count / cols);
+  const cellW = Math.round((cW - PAD * 2 - (cols - 1) * 20) / cols);
+  const cellH = Math.min(100, Math.round((H - PAD - 100 - (rows - 1) * 16) / rows));
+  const startY = PAD + 80;
+
+  let html = '';
+  for (let i = 0; i < count; i++) {
+    const col = i % cols;
+    const row = Math.floor(i / cols);
+    const x = PAD + col * (cellW + 20);
+    const y = startY + row * (cellH + 16);
+    const ac = accents[i % accents.length];
+    const name = logos[i] || `Partner ${i + 1}`;
+
+    // Placeholder card with subtle border and centered text
+    const cardBg = dark ? hexToRgba(p.text, 0.03) : hexToRgba(p.accent, 0.02);
+    html += `<div style="position:absolute;left:${x}px;top:${y}px;width:${cellW}px;height:${cellH}px;background:${cardBg};border:1px solid ${hexToRgba(p.text, 0.08)};border-radius:10px;display:flex;align-items:center;justify-content:center;padding:0 16px;box-sizing:border-box">
+      <div style="font-size:${name.length > 20 ? 13 : 15}px;font-weight:700;color:${p.text};opacity:0.7;text-align:center;letter-spacing:0.5px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;width:100%">${escHtml(name)}</div>
+    </div>`;
+    // Top accent line on each card
+    html += `<div style="position:absolute;left:${x + 20}px;top:${y}px;width:${cellW - 40}px;height:3px;background:${ac};border-radius:0 0 2px 2px;opacity:0.6"></div>`;
+  }
+
+  return `${SCOPED_RESET}
+<div style="position:relative;width:${W}px;height:${H}px;background:${p.background};overflow:hidden">
+  ${bgGradientOverlay(cW, H, p.accent, 0.03, '40%')}
+  <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;font-size:${titleFontSize(slide.title)}px;font-weight:800;letter-spacing:0.5px;overflow-wrap:break-word;word-wrap:break-word;color:${p.text};line-height:1.2">${escHtml(slide.title)}</div>
+  <div style="position:absolute;left:${PAD}px;top:${PAD + 56}px;width:50px;height:4px;background:${p.accent};border-radius:2px"></div>
+  ${html}
 </div>`;
 }
 
