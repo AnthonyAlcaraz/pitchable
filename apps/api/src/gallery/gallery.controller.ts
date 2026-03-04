@@ -63,8 +63,8 @@ export class GalleryController {
     return this.galleryService.forkPublicPresentation(id, user.userId);
   }
   @Post('seed')
-  // @UseGuards(JwtAuthGuard, RolesGuard)
-  // @Roles(UserRole.ADMIN)
+  //   @UseGuards(JwtAuthGuard, RolesGuard)
+  //   @Roles(UserRole.ADMIN)
   @HttpCode(HttpStatus.OK)
   async seedGallery(@Req() req: { body: unknown }) {
     const body = req.body as Record<string, Record<string, { title: string; body: string }>>;
