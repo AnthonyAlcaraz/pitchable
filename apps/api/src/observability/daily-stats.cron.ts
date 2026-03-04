@@ -56,6 +56,24 @@ export class DailyStatsCron {
     }
   }
 
+  async sendDailyStatsTest(recipient: string) {
+    const now = new Date();
+    const today = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+    const yesterday = new Date(today.getTime() - 86400000);
+    const dayBefore = new Date(today.getTime() - 2 * 86400000);
+    const data = await this.gatherStats(yesterday, dayBefore, today);
+    const html = this.buildStatsEmailHtml(data);
+    const apiKey = this.configService.get<string>('RESEND_API_KEY');
+    const res = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + apiKey, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ from: 'Pitchable <onboarding@resend.dev>', to: [recipient], subject: 'Pitchable Daily Stats - ' + data.dateLabel, html }),
+    });
+    const result = await res.json() as Record<string, unknown>;
+    this.logger.log('Test stats email: ' + JSON.stringify(result));
+    return result;
+  }
+
   private async gatherStats(yesterday: Date, dayBefore: Date, today: Date): Promise<DailyStatsData> {
     const dateLabel = yesterday.toISOString().slice(0, 10);
 
