@@ -15,7 +15,6 @@ export function GalleryPage() {
   const [sort, setSort] = useState<'recent' | 'trending'>('recent');
   const [page, setPage] = useState(1);
   const [pageCount, setPageCount] = useState(1);
-  const [total, setTotal] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
 
   const THEME_OPTIONS = [
@@ -56,7 +55,6 @@ export function GalleryPage() {
       const data = await res.json();
       setPresentations(data.items ?? []);
       setPageCount(data.pageCount ?? 1);
-      setTotal(data.total ?? 0);
     } catch {
       setPresentations([]);
     } finally {
@@ -82,9 +80,7 @@ export function GalleryPage() {
         <div className="mb-8">
           <h1 className="mb-1 text-3xl font-bold text-foreground">{t('gallery.page.title')}</h1>
           <p className="text-muted-foreground">
-            {total > 0
-              ? t('gallery.page.subtitle', { count: total })
-              : t('gallery.page.subtitle_empty')}
+            {t('gallery.page.subtitle_empty')}
           </p>
         </div>
 
