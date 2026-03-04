@@ -744,7 +744,7 @@ The new slide should fit naturally in the deck's narrative flow.`;
 
   /**
    * Apply layout/rendering overrides to a slide. Merges with existing overrides.
-   * FREE operation — no credit charge. Triggers preview re-render.
+   * Costs 1 credit per modification. Triggers preview re-render.
    */
   async modifyLayout(
     userId: string,
@@ -783,6 +783,9 @@ The new slide should fit naturally in the deck's narrative flow.`;
     // Charge credit for successful layout modification
     await this.credits.deductCredits(userId, LAYOUT_MODIFICATION_COST, CreditReason.LAYOUT_MODIFICATION, slide.id);
 
+    // Charge credit for successful layout modification
+    await this.credits.deductCredits(userId, LAYOUT_MODIFICATION_COST, CreditReason.LAYOUT_MODIFICATION, slide.id);
+
     // Broadcast via WebSocket (include previewUrl:null so clients refresh)
     this.events.emitSlideUpdated({
       presentationId,
@@ -799,6 +802,75 @@ The new slide should fit naturally in the deck's narrative flow.`;
     return {
       success: true,
       message: `Updated layout on slide ${slideNumber}: ${changes.join(', ')}.`,
+    };
+  }
+
+  /**
+   * Apply layout overrides to multiple slides in a batch. Uses a transaction for atomicity.
+   * Costs 1 credit per slide modified.
+   */
+  async modifyLayoutBatch(
+    userId: string,
+    presentationId: string,
+    slideNumbers: number[],
+    overrides: LayoutOverrides,
+  ): Promise<{ success: boolean; message: string }> {
+    const totalCost = slideNumbers.length * LAYOUT_MODIFICATION_COST;
+
+    // Credit pre-check for entire batch
+    const hasCredits = await this.credits.hasEnoughCredits(userId, totalCost);
+    if (!hasCredits) {
+      return { success: false, message: `Not enough credits. Modifying ${slideNumbers.length} slides costs ${totalCost} credits.` };
+    }
+
+    // Fetch all target slides in one query
+    const slides = await this.prisma.slide.findMany({
+      where: { presentationId, slideNumber: { in: slideNumbers } },
+    });
+
+    if (slides.length === 0) {
+      return { success: false, message: 'No matching slides found.' };
+    }
+
+    // Update all slides in a transaction
+    await this.prisma.$transaction(
+      slides.map((slide) => {
+        const existing = (slide as Record<string, unknown>).layoutOverrides as Record<string, unknown> | null;
+        const merged = { ...(existing ?? {}), ...overrides };
+        return this.prisma.slide.update({
+          where: { id: slide.id },
+          data: {
+            layoutOverrides: merged,
+            previewUrl: null,
+            ...(overrides.slideType ? { slideType: overrides.slideType as any } : {}),
+          },
+        });
+      }),
+    );
+
+    // Deduct credits atomically
+    await this.credits.deductCredits(userId, totalCost, CreditReason.LAYOUT_MODIFICATION, presentationId);
+
+    // Broadcast WebSocket events for each slide
+    for (const slide of slides) {
+      const existing = (slide as Record<string, unknown>).layoutOverrides as Record<string, unknown> | null;
+      const merged = { ...(existing ?? {}), ...overrides };
+      this.events.emitSlideUpdated({
+        presentationId,
+        slideId: slide.id,
+        data: { layoutOverrides: merged, previewUrl: null },
+      });
+    }
+
+    // Fire-and-forget preview regeneration
+    this.exportsService.generateIncrementalPreviews(presentationId).catch((err) => {
+      this.logger.warn(`Preview regen failed after batch layout change: ${err instanceof Error ? err.message : 'unknown'}`);
+    });
+
+    const changes = Object.keys(overrides).filter((k) => (overrides as Record<string, unknown>)[k] !== undefined);
+    return {
+      success: true,
+      message: `Updated layout on ${slides.length} slides: ${changes.join(', ')}.`,
     };
   }
 

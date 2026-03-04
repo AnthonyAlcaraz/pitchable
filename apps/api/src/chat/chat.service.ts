@@ -197,14 +197,33 @@ export class ChatService {
             return;
           }
           case 'modify_layout': {
-            if (intent.slideNumber) {
+            // Determine target slides: explicit slideNumbers, single slideNumber, or "all slides" heuristic
+            let targetSlides: number[] | null = intent.slideNumbers ?? (intent.slideNumber ? [intent.slideNumber] : null);
+
+            // "all slides" expansion: if no slide specified but message mentions "all slides"/"every slide"
+            if (!targetSlides) {
+              const lowerContent = content.toLowerCase();
+              if (lowerContent.includes('all slides') || lowerContent.includes('every slide') || lowerContent.includes('all the slides')) {
+                const allSlides = await this.prisma.slide.findMany({
+                  where: { presentationId },
+                  select: { slideNumber: true },
+                  orderBy: { slideNumber: 'asc' },
+                });
+                targetSlides = allSlides.map((s) => s.slideNumber);
+              }
+            }
+
+            if (targetSlides && targetSlides.length > 0) {
               yield { type: 'thinking', content: 'Interpreting layout change...' };
-              yield { type: 'progress', content: `Reading slide ${intent.slideNumber}`, metadata: { step: 'read_slide', status: 'running' } };
+
+              // Get context from first target slide for interpretation
+              const firstSlideNum = targetSlides[0];
+              yield { type: 'progress', content: `Reading slide ${firstSlideNum}`, metadata: { step: 'read_slide', status: 'running' } };
               const layoutSlide = await this.prisma.slide.findFirst({
-                where: { presentationId, slideNumber: intent.slideNumber },
+                where: { presentationId, slideNumber: firstSlideNum },
                 select: { slideType: true, title: true, imageUrl: true },
               });
-              yield { type: 'progress', content: `Reading slide ${intent.slideNumber}`, metadata: { step: 'read_slide', status: 'complete' } };
+              yield { type: 'progress', content: `Reading slide ${firstSlideNum}`, metadata: { step: 'read_slide', status: 'complete' } };
               yield { type: 'progress', content: 'Interpreting layout instructions', metadata: { step: 'interpret', status: 'running' } };
               const overrides = await this.layoutInterpreter.interpret(
                 intent.instruction ?? content,
@@ -216,12 +235,24 @@ export class ChatService {
               );
               yield { type: 'progress', content: 'Interpreting layout instructions', metadata: { step: 'interpret', status: 'complete' } };
               yield { type: 'progress', content: 'Applying layout changes', metadata: { step: 'apply', status: 'running' } };
-              const layoutResult = await this.slideModifier.modifyLayout(
-                userId,
-                presentationId,
-                intent.slideNumber,
-                overrides,
-              );
+
+              let layoutResult: { success: boolean; message: string };
+              if (targetSlides.length === 1) {
+                layoutResult = await this.slideModifier.modifyLayout(
+                  userId,
+                  presentationId,
+                  targetSlides[0],
+                  overrides,
+                );
+              } else {
+                layoutResult = await this.slideModifier.modifyLayoutBatch(
+                  userId,
+                  presentationId,
+                  targetSlides,
+                  overrides,
+                );
+              }
+
               yield { type: 'progress', content: 'Applying layout changes', metadata: { step: 'apply', status: 'complete' } };
               yield { type: 'token', content: layoutResult.message };
               yield { type: 'done', content: '' };
