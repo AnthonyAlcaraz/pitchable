@@ -196,6 +196,7 @@ export class GenerationService {
         LlmModel.SONNET,
         isValidOutline,
         2,
+        { cacheSystemPrompt: true },
       );
       outline = outlineResult.data;
       const outlineDurationMs = Math.round(performance.now() - tOutline);
@@ -209,7 +210,7 @@ export class GenerationService {
         slideCount: outlineResult.data.slides?.length ?? 0,
         success: true,
       });
-      this.activity.track({ userId, eventType: 'generate_outline', category: 'generation', metadata: { presentationId, slideCount: outlineResult.data.slides?.length ?? 0 } });
+      this.activity.track({ userId, eventType: 'generate_outline', category: 'generation', metadata: { presentationId, slideCount: outlineResult.data.slides?.length ?? 0 }, duration: outlineDurationMs });
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Unknown error';
       this.logger.error(`Outline generation failed: ${msg}`);
@@ -774,6 +775,7 @@ OUTPUT: Valid JSON matching this schema (no markdown fences):
     }
 
     // Wave-based parallel slide generation: LLM calls fire concurrently within each wave
+    const tSlidesStart = Date.now();
     const WAVE_SIZE = 4;
     for (let waveStart = 0; waveStart < outline.slides.length; waveStart += WAVE_SIZE) {
       const waveSlides = outline.slides.slice(waveStart, Math.min(waveStart + WAVE_SIZE, outline.slides.length));
@@ -1176,6 +1178,7 @@ OUTPUT: Valid JSON matching this schema (no markdown fences):
       eventType: 'generate_slides',
       category: 'generation',
       metadata: { presentationId, slideCount: outline.slides.length, themeId, model: 'multi' },
+      duration: Date.now() - tSlidesStart,
     });
 
     // 6. Multi-Agent Quality Review (Style + Narrative + Fact Check — all Opus 4.6)

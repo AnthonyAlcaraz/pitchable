@@ -80,7 +80,7 @@ export class QualityAgentsService {
 
   /**
    * Run the full multi-agent quality review pipeline.
-   * All agents use Opus 4.6 for maximum quality.
+   * All agents use Sonnet 4.6 for quality + speed balance.
    *
    * Pipeline:
    * 1. Style Enforcer — per-slide, per-theme validation (parallel across slides)

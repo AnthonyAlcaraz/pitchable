@@ -55,9 +55,9 @@ const DEFAULT_TIMEOUT_MS = 120_000;
 /**
  * Model routing for cost optimization.
  *
- * OPUS   — Quality-critical: slide content generation ($5/$25 per MTok)
- * SONNET — Mid-tier: outline gen, chat, slide modification, renderer chooser ($3/$15 per MTok)
+ * SONNET — Primary: outline gen, slide content, quality agents, chat ($3/$15 per MTok)
  * HAIKU  — Fast/cheap: intent classification, content review ($0.80/$4 per MTok)
+ * OPUS   — Reserved for future use ($5/$25 per MTok)
  */
 export const LlmModel = {
   OPUS: 'claude-opus-4-6',

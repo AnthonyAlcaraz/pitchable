@@ -229,6 +229,7 @@ export class SyncGenerationService {
           LlmModel.SONNET,
           isValidOutline,
           2,
+          { cacheSystemPrompt: true },
         );
         outline = outlineResult.data;
         const outlineDurationMs = Math.round(performance.now() - tOutlinePerf);
@@ -242,7 +243,7 @@ export class SyncGenerationService {
           slideCount: outline.slides?.length ?? 0,
           success: true,
         });
-        this.activity.track({ userId, eventType: 'generate_outline', category: 'generation', metadata: { presentationId: presentation.id, slideCount: outline.slides?.length ?? 0 } });
+        this.activity.track({ userId, eventType: 'generate_outline', category: 'generation', metadata: { presentationId: presentation.id, slideCount: outline.slides?.length ?? 0 }, duration: outlineDurationMs });
         timings['outline'] = Date.now() - tOutline;
         this.logger.log(`[TIMING] Outline generation (Opus): ${((Date.now() - tOutline) / 1000).toFixed(1)}s — ${outline.slides?.length ?? 0} slides planned`);
       }
@@ -543,6 +544,7 @@ export class SyncGenerationService {
         eventType: 'generate_slides',
         category: 'generation',
         metadata: { presentationId: presentation.id, slideCount: outline.slides.length, themeId, model: 'multi', presentationType: presType },
+        duration: timings['slides_loop'],
       });
 
       // 12. Multi-Agent Quality Review (Style + Narrative + Fact Check — all Opus 4.6)
