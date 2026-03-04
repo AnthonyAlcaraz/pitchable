@@ -33,7 +33,7 @@ export const FIGMA_GRADE_TYPES: Set<string> = new Set([
   'HOOK', 'MATRIX_2X2', 'WATERFALL', 'FUNNEL', 'COMPETITIVE_MATRIX', 'ROADMAP',
   'PRICING_TABLE', 'UNIT_ECONOMICS', 'SWOT', 'THREE_PILLARS', 'BEFORE_AFTER',
   'SOCIAL_PROOF', 'OBJECTION_HANDLER', 'FAQ', 'VERDICT', 'COHORT_TABLE', 'PROGRESS_TRACKER',
-  'PRODUCT_SHOWCASE', 'SPLIT_STATEMENT', 'OUTLINE',
+  'PRODUCT_SHOWCASE', 'SPLIT_STATEMENT', 'OUTLINE', 'VISUAL_HUMOR',
   'FLYWHEEL', 'REVENUE_MODEL', 'CUSTOMER_JOURNEY', 'TECH_STACK', 'GROWTH_LOOPS', 'CASE_STUDY',
   'HIRING_PLAN', 'USE_OF_FUNDS', 'RISK_MITIGATION', 'DEMO_SCREENSHOT', 'MILESTONE_TIMELINE', 'PARTNERSHIP_LOGOS',
   'FINANCIAL_PROJECTION', 'GO_TO_MARKET', 'PERSONA', 'TESTIMONIAL_WALL', 'THANK_YOU', 'SCENARIO_ANALYSIS',
@@ -629,6 +629,8 @@ export function buildHtmlSlideContent(
       html = buildStoryArc(cleaned, palette, !!cleaned.imageUrl, accentDiversity); break;
     case 'TREND_INSIGHT':
       html = buildTrendInsight(cleaned, palette, !!cleaned.imageUrl, accentDiversity); break;
+    case 'VISUAL_HUMOR':
+      html = buildVisualHumor(cleaned, palette, !!cleaned.imageUrl); break;
     case 'OUTLINE':
       html = buildOutline(cleaned, palette, !!cleaned.imageUrl, accentDiversity); break;
     case 'CONTRARIAN_VIEW':
@@ -7658,6 +7660,37 @@ function buildTrendInsight(slide: SlideInput, p: ColorPalette, hasImage = false,
   <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;font-size:${titleFontSize(slide.title)}px;font-weight:800;letter-spacing:0.5px;overflow-wrap:break-word;word-wrap:break-word;color:${p.text};line-height:1.2">${escHtml(slide.title)}</div>
   <div style="position:absolute;left:${PAD}px;top:${PAD + 56}px;width:50px;height:4px;background:${p.accent};border-radius:2px"></div>
   ${html}
+</div>`;
+}
+
+// ── VISUAL_HUMOR ─────────────────────────────────────────────
+// Meme/humor slide — image-first with caption bar, or centered title on dark gradient
+
+function buildVisualHumor(slide: SlideInput, p: ColorPalette, hasImage = false): string {
+  const lines = parseBodyLines(slide.body);
+  const subtitle = lines.length > 0 ? lines[0] : '';
+
+  if (hasImage && slide.imageUrl) {
+    // With image: full-bleed image + bottom caption bar
+    const barH = subtitle ? 140 : 100;
+    const barY = H - barH;
+
+    return `${SCOPED_RESET}
+<div style="position:relative;width:${W}px;height:${H}px;background:#000;overflow:hidden">
+  <img src="${slide.imageUrl}" style="position:absolute;left:0;top:0;width:${W}px;height:${H}px;object-fit:cover;opacity:0.9" />
+  <div style="position:absolute;left:0;top:${barY}px;width:${W}px;height:${barH}px;background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)">
+    <div style="position:absolute;left:${PAD}px;top:${subtitle ? 18 : 30}px;width:${W - PAD * 2}px;font-size:${titleFontSize(slide.title, 36)}px;font-weight:800;color:#ffffff;line-height:1.3;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">${escHtml(slide.title)}</div>
+    ${subtitle ? `<div style="position:absolute;left:${PAD}px;top:68px;width:${W - PAD * 2}px;font-size:18px;color:rgba(255,255,255,0.7);line-height:1.4;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${escHtml(subtitle)}</div>` : ''}
+  </div>
+</div>`;
+  }
+
+  // Without image: centered title on dark gradient
+  return `${SCOPED_RESET}
+<div style="position:relative;width:${W}px;height:${H}px;background:${p.background};overflow:hidden">
+  ${bgGradientOverlay(W, H, p.accent, 0.06, '50%')}
+  <div style="position:absolute;left:${PAD + 40}px;top:${Math.round(H * 0.3)}px;width:${W - PAD * 2 - 80}px;text-align:center;font-size:48px;font-weight:900;line-height:1.3;color:${p.text};overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical">${escHtml(slide.title)}</div>
+  ${subtitle ? `<div style="position:absolute;left:${PAD + 40}px;top:${Math.round(H * 0.6)}px;width:${W - PAD * 2 - 80}px;text-align:center;font-size:22px;color:${p.text};opacity:0.6;line-height:1.4;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">${escHtml(subtitle)}</div>` : ''}
 </div>`;
 }
 
