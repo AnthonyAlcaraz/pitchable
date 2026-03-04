@@ -2918,8 +2918,14 @@ function buildHook(slide: SlideInput, p: ColorPalette, hasImage = false): string
   // Gradient glow behind text
   const glowHtml = `<div style="position:absolute;left:${Math.round(cW * 0.15)}px;top:${Math.round(H * 0.25)}px;width:${Math.round(cW * 0.7)}px;height:${Math.round(H * 0.5)}px;background:radial-gradient(ellipse at center,${hexToRgba(p.accent, 0.12)} 0%,transparent 70%);pointer-events:none"></div>`;
 
+  // Frosted glass card enclosure for hook text
+  const cardTop = Math.round(H * 0.3);
+  const cardH = subtitle ? Math.round(H * 0.38) : Math.round(H * 0.3);
+  const cardW = cW - PAD * 2 - 40;
+  const cardBg = dark ? hexToRgba(p.surface, 0.25) : hexToRgba(p.surface, 0.45);
+
   const subtitleHtml = subtitle
-    ? `<div style="position:absolute;left:${PAD}px;top:${Math.round(H * 0.62)}px;width:${cW - PAD * 2}px;text-align:center;font-size:18px;line-height:1.5;color:${p.text};opacity:0.7;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">${escHtml(subtitle)}</div>`
+    ? `<div style="margin-top:16px;font-size:18px;line-height:1.5;color:${p.text};opacity:0.7;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">${escHtml(subtitle)}</div>`
     : '';
 
   return `${SCOPED_RESET}
@@ -2929,11 +2935,13 @@ function buildHook(slide: SlideInput, p: ColorPalette, hasImage = false): string
   ${glowHtml}
   <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;text-align:center;font-size:${titleFontSize(slide.title)}px;font-weight:800;letter-spacing:0.5px;overflow-wrap:break-word;word-wrap:break-word;color:${p.text};line-height:1.2">${escHtml(slide.title)}</div>
   <div style="position:absolute;left:${Math.round((cW - 60) / 2)}px;top:${PAD + 56}px;width:60px;height:4px;background:${p.accent};border-radius:2px"></div>
-  <div style="position:absolute;left:${PAD + 20}px;top:${Math.round(H * 0.38)}px;width:${cW - PAD * 2 - 40}px;text-align:center;font-size:${hookFontSize}px;font-weight:bold;line-height:1.3;color:${p.text}${titleGlowCss};overflow:hidden;max-height:${Math.round(H * 0.28)}px">${escHtml(hookText)}</div>
-  ${subtitleHtml}
+  <div style="position:absolute;left:${PAD + 20}px;top:${cardTop}px;width:${cardW}px;min-height:${cardH}px;background:${cardBg};border:1px solid ${hexToRgba(p.border, 0.2)};border-radius:16px;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);box-sizing:border-box;padding:28px 32px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center">
+    <div style="font-size:${hookFontSize}px;font-weight:bold;line-height:1.3;color:${p.text}${titleGlowCss};overflow:hidden;max-height:${Math.round(H * 0.28)}px">${escHtml(hookText)}</div>
+    ${subtitleHtml}
+  </div>
+  <div style="position:absolute;left:50%;bottom:${PAD + 6}px;transform:translateX(-50%);width:80px;height:3px;background:${hexToRgba(p.accent, 0.35)};border-radius:2px"></div>
 </div>`;
 }
-
 
 // ── MATRIX_2X2 ──────────────────────────────────────────────
 // BCG/McKinsey 2x2 quadrant grid with labeled axes
@@ -4190,25 +4198,33 @@ function buildVerdict(slide: SlideInput, p: ColorPalette, hasImage = false): str
     verdictColor = p.warning || '#eab308';
   }
 
-  const verdictY = Math.round(H * 0.32);
-  const barY = verdictY + 50;
-  const barW = Math.round((cW - PAD * 2) * 0.6);
-  const barLeft = Math.round((cW - barW) / 2);
+  const verdictY = Math.round(H * 0.22);
+  const cardBg = dark ? hexToRgba(verdictColor, 0.06) : hexToRgba(verdictColor, 0.04);
 
   let html = '';
 
-  // Verdict text
-  html += `<div style="position:absolute;left:${PAD}px;top:${verdictY}px;width:${cW - PAD * 2}px;text-align:center;font-size:32px;font-weight:bold;color:${verdictColor};line-height:1.3;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">${escHtml(verdictText)}</div>`;
+  // Verdict card with sentiment border
+  const cardW = cW - PAD * 2 - 40;
+  const cardX = PAD + 20;
+  html += `<div style="position:absolute;left:${cardX}px;top:${verdictY}px;width:${cardW}px;background:${cardBg};border:1px solid ${hexToRgba(verdictColor, 0.2)};border-left:5px solid ${verdictColor};border-radius:14px;box-sizing:border-box;padding:20px 28px">`;
+  html += `<div style="font-size:30px;font-weight:800;color:${verdictColor};line-height:1.3;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">${escHtml(verdictText)}</div>`;
+  // Verdict bar inside card
+  const barW = Math.round(cardW * 0.5);
+  html += `<div style="margin-top:12px;width:${barW}px;height:5px;background:${hexToRgba(p.border, 0.12)};border-radius:3px;position:relative"><div style="position:absolute;left:0;top:0;width:100%;height:100%;background:${verdictColor};border-radius:3px;box-shadow:0 0 12px ${hexToRgba(verdictColor, 0.4)}"></div></div>`;
+  html += `</div>`;
 
-  // Verdict bar
-  html += `<div style="position:absolute;left:${barLeft}px;top:${barY}px;width:${barW}px;height:6px;background:${hexToRgba(p.border, 0.15)};border-radius:3px"></div>`;
-  html += `<div style="position:absolute;left:${barLeft}px;top:${barY}px;width:${barW}px;height:6px;background:${verdictColor};border-radius:3px;box-shadow:0 0 12px ${hexToRgba(verdictColor, 0.4)}"></div>`;
+  // Rationale items in cards
+  const rationaleTop = verdictY + 120;
+  const rationaleW = cW - PAD * 2 - 16;
+  const rCardH = Math.min(55, Math.round((H - rationaleTop - PAD - 10) / Math.max(rationale.length, 1)) - 8);
 
-  // Rationale
-  let ry = barY + 30;
-  for (const item of rationale.slice(0, 5)) {
-    html += `<div style="position:absolute;left:${PAD + 40}px;top:${ry}px;width:${cW - PAD * 2 - 80}px;text-align:center;font-size:15px;line-height:1.5;color:${p.text};opacity:0.8">${escHtml(item)}</div>`;
-    ry += 36;
+  for (let i = 0; i < rationale.length; i++) {
+    const ry = rationaleTop + i * (rCardH + 8);
+    if (ry + rCardH > H - PAD) break;
+    const rBg = dark ? hexToRgba(p.surface, 0.2) : hexToRgba(p.surface, 0.45);
+    html += `<div style="position:absolute;left:${PAD + 8}px;top:${ry}px;width:${rationaleW}px;height:${rCardH}px;background:${rBg};border:1px solid ${hexToRgba(p.border, 0.15)};border-left:3px solid ${hexToRgba(verdictColor, 0.4)};border-radius:8px;box-sizing:border-box;display:flex;align-items:center;padding:0 18px;overflow:hidden">`;
+    html += `<span style="font-size:15px;line-height:1.5;color:${p.text};opacity:0.85;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">${escHtml(rationale[i])}</span>`;
+    html += `</div>`;
   }
 
   return `${SCOPED_RESET}
@@ -4219,7 +4235,6 @@ function buildVerdict(slide: SlideInput, p: ColorPalette, hasImage = false): str
   ${html}
 </div>`;
 }
-
 
 // ── COHORT_TABLE ────────────────────────────────────────────
 // Retention matrix with color-intensity cells
@@ -6192,8 +6207,8 @@ function buildThankYou(slide: SlideInput, p: ColorPalette, hasImage = false): st
   const centerX = Math.round(cW / 2);
   let html = '';
 
-  // Large centered title (override normal title positioning)
-  const titleY = Math.round(H * 0.22);
+  // Large centered title
+  const titleY = Math.round(H * 0.18);
   html += `<div style="position:absolute;left:${PAD}px;top:${titleY}px;width:${cW - PAD * 2}px;text-align:center;font-size:${Math.min(48, titleFontSize(slide.title, 48))}px;font-weight:800;color:${p.text};line-height:1.2;letter-spacing:0.5px;${dark ? `text-shadow:${textGlow(p.accent, 0.4)}` : ''}">${escHtml(slide.title)}</div>`;
 
   // Accent divider
@@ -6201,23 +6216,36 @@ function buildThankYou(slide: SlideInput, p: ColorPalette, hasImage = false): st
   const dividerW = 80;
   html += `<div style="position:absolute;left:${centerX - dividerW / 2}px;top:${dividerY}px;width:${dividerW}px;height:4px;background:linear-gradient(90deg,${p.accent},${hexToRgba(p.accent, 0.3)});border-radius:2px"></div>`;
 
-  // Contact lines
-  let cy = dividerY + 30;
-  for (const item of contactLines.slice(0, 5)) {
-    html += `<div style="position:absolute;left:${PAD}px;top:${cy}px;width:${cW - PAD * 2}px;display:flex;align-items:center;justify-content:center">`;
-    html += `<span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:${hexToRgba(p.accent, dark ? 0.15 : 0.1)};margin-right:12px;font-size:13px;font-weight:700;color:${p.accent};flex-shrink:0">${escHtml(item.icon)}</span>`;
-    html += `<span style="font-size:15px;color:${p.text};opacity:0.85">${escHtml(item.text)}</span>`;
-    html += `</div>`;
-    cy += 40;
-  }
+  // Frosted glass contact card
+  if (contactLines.length > 0) {
+    const cardTop = dividerY + 28;
+    const cardW = Math.min(540, cW - PAD * 2 - 60);
+    const lineH = 44;
+    const cardPadY = 24;
+    const cardH = contactLines.slice(0, 5).length * lineH + cardPadY * 2;
+    const cardX = Math.round((cW - cardW) / 2);
+    const cardBg = dark ? hexToRgba(p.surface, 0.25) : hexToRgba(p.surface, 0.5);
 
-  // CTA button
-  if (ctaText) {
-    const btnY = cy + 20;
-    const btnW = Math.min(280, ctaText.length * 12 + 48);
-    html += `<div style="position:absolute;left:${centerX - btnW / 2}px;top:${btnY}px;width:${btnW}px;height:48px;background:linear-gradient(135deg,${p.accent},${hexToRgba(p.accent, 0.8)});border-radius:24px;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 24px ${hexToRgba(p.accent, 0.3)};cursor:pointer">`;
-    html += `<span style="font-size:15px;font-weight:700;color:#fff;letter-spacing:0.5px">${escHtml(ctaText)}</span>`;
+    html += `<div style="position:absolute;left:${cardX}px;top:${cardTop}px;width:${cardW}px;height:${cardH}px;background:${cardBg};border:1px solid ${hexToRgba(p.border, 0.2)};border-radius:16px;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);box-sizing:border-box;padding:${cardPadY}px 28px">`;
+
+    for (let i = 0; i < Math.min(contactLines.length, 5); i++) {
+      const item = contactLines[i];
+      html += `<div style="display:flex;align-items:center;height:${lineH}px;gap:14px;${i < Math.min(contactLines.length, 5) - 1 ? `border-bottom:1px solid ${hexToRgba(p.border, 0.1)}` : ''}">`;
+      html += `<span style="display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:50%;background:${hexToRgba(p.accent, dark ? 0.15 : 0.1)};font-size:13px;font-weight:700;color:${p.accent};flex-shrink:0">${escHtml(item.icon)}</span>`;
+      html += `<span style="font-size:15px;color:${p.text};opacity:0.85;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${escHtml(item.text)}</span>`;
+      html += `</div>`;
+    }
+
     html += `</div>`;
+
+    // CTA button below card
+    if (ctaText) {
+      const btnY = cardTop + cardH + 20;
+      const btnW = Math.min(280, ctaText.length * 12 + 48);
+      html += `<div style="position:absolute;left:${centerX - btnW / 2}px;top:${btnY}px;width:${btnW}px;height:48px;background:linear-gradient(135deg,${p.accent},${hexToRgba(p.accent, 0.8)});border-radius:24px;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 24px ${hexToRgba(p.accent, 0.3)}">`;
+      html += `<span style="font-size:15px;font-weight:700;color:#fff;letter-spacing:0.5px">${escHtml(ctaText)}</span>`;
+      html += `</div>`;
+    }
   }
 
   return `${SCOPED_RESET}
@@ -6226,7 +6254,6 @@ function buildThankYou(slide: SlideInput, p: ColorPalette, hasImage = false): st
   ${html}
 </div>`;
 }
-
 
 // ── SCENARIO_ANALYSIS ─────────────────────────────────────
 // Three columns: Bear / Base / Bull scenarios with colored headers
@@ -7884,6 +7911,7 @@ function buildLogoWall(slide: SlideInput, p: ColorPalette, hasImage = false, acc
 function buildOutline(slide: SlideInput, p: ColorPalette, hasImage = false, accentDiversity = true): string {
   const cW = hasImage ? CONTENT_W_IMG : W;
   const lines = parseBodyLines(slide.body);
+  const dark = isDarkBackground(p.background);
   const accents = cardAccentColors(p, accentDiversity ? colorOffset(slide.title) : 0);
 
   const items = lines.slice(0, 12);
@@ -7900,20 +7928,18 @@ function buildOutline(slide: SlideInput, p: ColorPalette, hasImage = false, acce
     const x = PAD + col * (colW + 30);
     const y = startY + row * itemH;
     const ac = accents[i % accents.length];
+    const cardBg = dark ? hexToRgba(p.surface, 0.2) : hexToRgba(p.surface, 0.4);
+
+    // Card container for each item
+    html += `<div style="position:absolute;left:${x}px;top:${y}px;width:${colW}px;height:${itemH - 6}px;background:${cardBg};border:1px solid ${hexToRgba(p.border, 0.15)};border-left:3px solid ${hexToRgba(ac, 0.6)};border-radius:8px;box-sizing:border-box;display:flex;align-items:center;padding:0 14px;gap:12px;overflow:hidden">`;
 
     // Number badge
-    html += `<div style="position:absolute;left:${x}px;top:${y}px;width:28px;height:28px;border-radius:50%;background:${ac};display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:${p.background}">${i + 1}</div>`;
+    html += `<span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:${ac};font-size:13px;font-weight:800;color:${p.background};flex-shrink:0">${i + 1}</span>`;
 
     // Label
-    html += `<div style="position:absolute;left:${x + 40}px;top:${y + 2}px;width:${colW - 50}px;font-size:16px;font-weight:600;line-height:1.4;color:${p.text};overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${escHtml(items[i])}</div>`;
+    html += `<span style="font-size:16px;font-weight:600;line-height:1.4;color:${p.text};overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${escHtml(items[i])}</span>`;
 
-    // Separator line (not after last item in column)
-    const isLastInCol = twoCol
-      ? row === Math.ceil(items.length / 2) - 1 || i === items.length - 1
-      : i === items.length - 1;
-    if (!isLastInCol) {
-      html += `<div style="position:absolute;left:${x + 40}px;top:${y + itemH - 8}px;width:${colW - 50}px;height:1px;background:${hexToRgba(p.text, 0.08)}"></div>`;
-    }
+    html += `</div>`;
   }
 
   return `${SCOPED_RESET}
