@@ -11,6 +11,7 @@ import {
 import type { HttpResponse } from '../types/express.js';
 import { ExportsService } from './exports.service.js';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
+import { CurrentUser, type RequestUser } from '../auth/decorators/current-user.decorator.js';
 import { SkipThrottle } from '@nestjs/throttler';
 import { ExportFormat } from '../../generated/prisma/enums.js';
 
@@ -51,14 +52,20 @@ export class ExportsController {
 
   @UseGuards(JwtAuthGuard)
   @Get('exports/:jobId')
-  async getExportStatus(@Param('jobId') jobId: string) {
-    return this.exportsService.getExportStatus(jobId);
+  async getExportStatus(
+    @Param('jobId') jobId: string,
+    @CurrentUser() user: RequestUser,
+  ) {
+    return this.exportsService.getExportStatus(jobId, user.userId);
   }
 
   @UseGuards(JwtAuthGuard)
   @Get('exports/:jobId/download-url')
-  async getDownloadUrl(@Param('jobId') jobId: string) {
-    return this.exportsService.getSignedDownloadUrl(jobId);
+  async getDownloadUrl(
+    @Param('jobId') jobId: string,
+    @CurrentUser() user: RequestUser,
+  ) {
+    return this.exportsService.getSignedDownloadUrl(jobId, user.userId);
   }
 
 
@@ -66,14 +73,15 @@ export class ExportsController {
   @Get('exports/:jobId/download')
   async downloadExport(
     @Param('jobId') jobId: string,
+    @CurrentUser() user: RequestUser,
     @Res() res: HttpResponse,
   ) {
-    const { url } = await this.exportsService.getSignedDownloadUrl(jobId);
+    const { url } = await this.exportsService.getSignedDownloadUrl(jobId, user.userId);
 
     // If URL is a local path (S3 unavailable), serve the file directly
     if (url.startsWith('/exports/')) {
       const { buffer, filename, contentType } =
-        await this.exportsService.getExportBuffer(jobId);
+        await this.exportsService.getExportBuffer(jobId, user.userId);
       res.setHeader('Content-Type', contentType);
       res.setHeader(
         'Content-Disposition',

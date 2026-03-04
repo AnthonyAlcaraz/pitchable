@@ -85,20 +85,22 @@ describe('ExportsController', () => {
   });
 
   describe('getExportStatus', () => {
-    it('should delegate to service', async () => {
-      const result = await controller.getExportStatus('job-1');
+    it('should delegate to service with userId', async () => {
+      const user = { userId: 'user-1', email: 'test@test.com', role: 'USER' };
+      const result = await controller.getExportStatus('job-1', user as any);
       expect(result.status).toBe('COMPLETED');
-      expect(exportsService.getExportStatus).toHaveBeenCalledWith('job-1');
+      expect(exportsService.getExportStatus).toHaveBeenCalledWith('job-1', 'user-1');
     });
   });
 
   describe('downloadExport', () => {
     it('should redirect to signed S3 URL', async () => {
+      const user = { userId: 'user-1', email: 'test@test.com', role: 'USER' };
       const res = { redirect: jest.fn(), setHeader: jest.fn(), send: jest.fn() } as any;
 
-      await controller.downloadExport('job-1', res);
+      await controller.downloadExport('job-1', user as any, res);
 
-      expect(exportsService.getSignedDownloadUrl).toHaveBeenCalledWith('job-1');
+      expect(exportsService.getSignedDownloadUrl).toHaveBeenCalledWith('job-1', 'user-1');
       expect(res.redirect).toHaveBeenCalledWith('https://s3.example.com/signed-url');
     });
   });

@@ -736,13 +736,18 @@ export class ExportsService {
 
   async getSignedDownloadUrl(
     jobId: string,
+    userId?: string,
   ): Promise<{ url: string; filename: string }> {
     const job = await this.prisma.exportJob.findUnique({
       where: { id: jobId },
-      include: { presentation: { select: { title: true } } },
+      include: { presentation: { select: { title: true, userId: true } } },
     });
 
     if (!job) {
+      throw new NotFoundException(`Export job "${jobId}" not found`);
+    }
+
+    if (userId && job.presentation && job.presentation.userId !== userId) {
       throw new NotFoundException(`Export job "${jobId}" not found`);
     }
 
@@ -779,13 +784,18 @@ export class ExportsService {
    */
   async getExportBuffer(
     jobId: string,
+    userId?: string,
   ): Promise<{ buffer: Buffer; filename: string; contentType: string }> {
     const job = await this.prisma.exportJob.findUnique({
       where: { id: jobId },
-      include: { presentation: { select: { title: true } } },
+      include: { presentation: { select: { title: true, userId: true } } },
     });
 
     if (!job) {
+      throw new NotFoundException(`Export job "${jobId}" not found`);
+    }
+
+    if (userId && job.presentation && job.presentation.userId !== userId) {
       throw new NotFoundException(`Export job "${jobId}" not found`);
     }
 
@@ -834,12 +844,17 @@ export class ExportsService {
     }
   }
 
-  async getExportStatus(jobId: string) {
+  async getExportStatus(jobId: string, userId?: string) {
     const job = await this.prisma.exportJob.findUnique({
       where: { id: jobId },
+      include: { presentation: { select: { userId: true } } },
     });
 
     if (!job) {
+      throw new NotFoundException(`Export job "${jobId}" not found`);
+    }
+
+    if (userId && job.presentation && job.presentation.userId !== userId) {
       throw new NotFoundException(`Export job "${jobId}" not found`);
     }
 
