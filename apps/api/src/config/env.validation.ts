@@ -146,6 +146,10 @@ class EnvironmentVariables {
   @IsOptional()
   @IsString()
   ENABLE_DB_BACKUPS?: string = 'false';
+
+  @IsOptional()
+  @IsString()
+  DAILY_STATS_EMAIL?: string;
 }
 
 export function validate(config: Record<string, unknown>): EnvironmentVariables {

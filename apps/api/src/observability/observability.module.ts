@@ -1,5 +1,7 @@
 import { Global, Module } from '@nestjs/common';
 import { ActivityService } from './activity.service.js';
+import { EmailModule } from '../email/email.module.js';
+import { DailyStatsCron } from './daily-stats.cron.js';
 import { GenerationMetricsService } from './generation-metrics.service.js';
 import { ObservabilityCleanupCron } from './cleanup.cron.js';
 import { GenerationRatingService } from './generation-rating.service.js';
@@ -12,8 +14,9 @@ const backupProviders = process.env['ENABLE_DB_BACKUPS'] === 'true' ? [BackupCro
 
 @Global()
 @Module({
+  imports: [EmailModule],
   controllers: [GenerationRatingController],
-  providers: [ActivityService, GenerationMetricsService, GenerationRatingService, ObservabilityCleanupCron, ...backupProviders],
+  providers: [ActivityService, GenerationMetricsService, GenerationRatingService, ObservabilityCleanupCron, DailyStatsCron, ...backupProviders],
   exports: [ActivityService, GenerationMetricsService, GenerationRatingService],
 })
 export class ObservabilityModule {}
