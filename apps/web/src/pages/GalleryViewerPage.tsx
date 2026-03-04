@@ -56,6 +56,7 @@ export function GalleryViewerPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isForking, setIsForking] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [previewError, setPreviewError] = useState(false);
 
   const TYPE_LABELS: Record<string, string> = {
     STANDARD: t('gallery.type_options.STANDARD'),
@@ -119,6 +120,11 @@ export function GalleryViewerPage() {
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
   });
+
+  // Reset preview error state when slide changes
+  useEffect(() => {
+    setPreviewError(false);
+  }, [currentSlide]);
 
   if (isLoading) {
     return (
@@ -230,9 +236,24 @@ export function GalleryViewerPage() {
         </div>
 
         {/* Main slide viewer */}
-        {slideData && (
+        {slide && (
           <div className="relative">
-            <SlideRenderer slide={slideData} theme={presentation.theme} scale={1} className="w-full" />
+            <div
+              className="overflow-hidden rounded-xl border border-white/10 bg-black shadow-2xl"
+              style={{ aspectRatio: '16/9' }}
+            >
+              {previewError ? (
+                <SlideRenderer slide={slideData!} theme={presentation.theme} scale={1} className="h-full w-full" />
+              ) : (
+                <img
+                  key={slide.id}
+                  src={`/slides/${slide.id}/preview`}
+                  alt={slide.title}
+                  className="h-full w-full object-contain"
+                  onError={() => setPreviewError(true)}
+                />
+              )}
+            </div>
 
             {/* Navigation arrows */}
             {presentation.slides.length > 1 && (
@@ -264,37 +285,25 @@ export function GalleryViewerPage() {
         {/* Thumbnail strip */}
         {presentation.slides.length > 1 && (
           <div className="mt-6 flex gap-3 overflow-x-auto pb-2">
-            {presentation.slides.map((s, i) => {
-              const thumbData = {
-                id: s.id,
-                slideNumber: s.slideNumber,
-                title: s.title,
-                body: s.body,
-                speakerNotes: null,
-                slideType: s.slideType,
-                imageUrl: s.imageUrl,
-                imagePrompt: null,
-                imageSource: 'AI_GENERATED' as const,
-                figmaFileKey: null,
-                figmaNodeId: null,
-                figmaNodeName: null,
-                previewUrl: null,
-                createdAt: '',
-              };
-              return (
-                <div
-                  key={s.id}
-                  className={`w-32 flex-shrink-0 cursor-pointer rounded-lg transition-all sm:w-48 ${
-                    i === currentSlide
-                      ? 'ring-2 ring-orange-500 ring-offset-2 ring-offset-background'
-                      : 'opacity-60 hover:opacity-100'
-                  }`}
-                  onClick={() => setCurrentSlide(i)}
-                >
-                  <SlideRenderer slide={thumbData} theme={presentation.theme} scale={0.35} />
-                </div>
-              );
-            })}
+            {presentation.slides.map((s, i) => (
+              <button
+                key={s.id}
+                className={`flex-shrink-0 overflow-hidden rounded-lg border-2 transition-all ${
+                  i === currentSlide
+                    ? 'border-orange-500 ring-1 ring-orange-500/30'
+                    : 'border-transparent opacity-60 hover:opacity-100'
+                }`}
+                style={{ width: 160, aspectRatio: '16/9' }}
+                onClick={() => setCurrentSlide(i)}
+              >
+                <img
+                  src={`/slides/${s.id}/preview`}
+                  alt={s.title}
+                  className="h-full w-full object-cover bg-black"
+                  loading="lazy"
+                />
+              </button>
+            ))}
           </div>
         )}
       </div>

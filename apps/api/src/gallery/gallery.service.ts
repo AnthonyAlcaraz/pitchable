@@ -13,6 +13,7 @@ export class GalleryService {
     search?: string;
     type?: string;
     sort?: 'recent' | 'trending';
+    theme?: string;
   }) {
     const where: Record<string, unknown> = {
       isPublic: true,
@@ -24,6 +25,9 @@ export class GalleryService {
     }
     if (opts.type) {
       where['presentationType'] = opts.type as PresentationType;
+    }
+    if (opts.theme) {
+      where['theme'] = { name: opts.theme };
     }
 
     const orderBy = opts.sort === 'trending'

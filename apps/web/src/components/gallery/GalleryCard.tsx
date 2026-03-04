@@ -80,6 +80,7 @@ export function GalleryCard({ presentation }: GalleryCardProps) {
           <span className="rounded-full bg-orange-500/10 px-2 py-0.5 text-[10px] font-semibold text-orange-400">
             {TYPE_LABELS[presentation.presentationType] ?? presentation.presentationType}
           </span>
+          <span className="text-[10px] text-muted-foreground">{presentation.themeName}</span>
           <span className="text-xs text-muted-foreground">
             {presentation.slideCount} slide{presentation.slideCount !== 1 ? 's' : ''}
           </span>

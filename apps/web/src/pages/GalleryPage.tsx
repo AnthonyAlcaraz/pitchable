@@ -11,11 +11,31 @@ export function GalleryPage() {
   const [presentations, setPresentations] = useState<GalleryPresentation[]>([]);
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState('');
+  const [themeFilter, setThemeFilter] = useState('');
   const [sort, setSort] = useState<'recent' | 'trending'>('recent');
   const [page, setPage] = useState(1);
   const [pageCount, setPageCount] = useState(1);
   const [total, setTotal] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
+
+  const THEME_OPTIONS = [
+    { value: '', label: 'All Themes' },
+    { value: 'pitchable-dark', label: 'Pitchable Dark' },
+    { value: 'mckinsey-executive', label: 'McKinsey Executive' },
+    { value: 'apple-keynote', label: 'Apple Keynote' },
+    { value: 'sequoia-capital', label: 'Sequoia Capital' },
+    { value: 'stripe-fintech', label: 'Stripe Fintech' },
+    { value: 'airbnb-story', label: 'Airbnb Story' },
+    { value: 'creative-warm', label: 'Creative Warm' },
+    { value: 'bcg-strategy', label: 'BCG Strategy' },
+    { value: 'ted-talk', label: 'TED Talk' },
+    { value: 'academic-research', label: 'Academic Research' },
+    { value: 'light-minimal', label: 'Light Minimal' },
+    { value: 'corporate-blue', label: 'Corporate Blue' },
+    { value: 'dark-professional', label: 'Dark Professional' },
+    { value: 'yc-startup', label: 'YC Startup' },
+    { value: 'technical-teal', label: 'Technical Teal' },
+  ];
 
   const TYPE_OPTIONS = [
     { value: '', label: t('gallery.type_options.all') },
@@ -31,6 +51,7 @@ export function GalleryPage() {
       const params = new URLSearchParams({ page: String(page), limit: '12', sort });
       if (search) params.set('search', search);
       if (typeFilter) params.set('type', typeFilter);
+      if (themeFilter) params.set('theme', themeFilter);
       const res = await fetch(`/gallery/presentations?${params}`);
       const data = await res.json();
       setPresentations(data.items ?? []);
@@ -41,7 +62,7 @@ export function GalleryPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [page, search, typeFilter, sort]);
+  }, [page, search, typeFilter, themeFilter, sort]);
 
   useEffect(() => {
     fetchGallery();
@@ -50,7 +71,7 @@ export function GalleryPage() {
   // Reset to page 1 when filters change
   useEffect(() => {
     setPage(1);
-  }, [search, typeFilter, sort]);
+  }, [search, typeFilter, themeFilter, sort]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -107,6 +128,17 @@ export function GalleryPage() {
               </option>
             ))}
           </select>
+          <select
+            value={themeFilter}
+            onChange={(e) => setThemeFilter(e.target.value)}
+            className="rounded-lg border border-border bg-card px-4 py-2.5 text-sm text-foreground focus:border-orange-500/50 focus:outline-none focus:ring-2 focus:ring-orange-500/20"
+          >
+            {THEME_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
         </div>
 
         {/* Grid */}
@@ -125,7 +157,7 @@ export function GalleryPage() {
             <Layers className="mb-4 h-12 w-12 text-muted-foreground/30" />
             <p className="mb-1 text-lg font-medium text-muted-foreground">{t('gallery.page.no_presentations_title')}</p>
             <p className="text-sm text-muted-foreground">
-              {search || typeFilter
+              {search || typeFilter || themeFilter
                 ? t('gallery.page.no_presentations_hint_filter')
                 : t('gallery.page.no_presentations_hint_empty')}
             </p>
