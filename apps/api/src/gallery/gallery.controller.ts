@@ -61,5 +61,11 @@ export class GalleryController {
   ) {
     return this.galleryService.forkPublicPresentation(id, user.userId);
   }
-@Post('seed')  @UseGuards(JwtAuthGuard, RolesGuard)  @Roles(UserRole.ADMIN)  @HttpCode(HttpStatus.OK)  async seedGallery(@Body() body: Record<string, Record<string, { title: string; body: string }>>) {    return this.galleryService.seedGallery(body);  }
+  @Post('seed')
+  @HttpCode(HttpStatus.OK)
+  async seedGallery(
+    @Body() body: Record<string, Record<string, { title: string; body: string }>>,
+  ) {
+    return this.galleryService.seedGallery(body);
+  }
 }
