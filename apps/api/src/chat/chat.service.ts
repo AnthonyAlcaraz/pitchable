@@ -164,7 +164,7 @@ export class ChatService {
       // Use classified intent for slide-level operations
       // Slide operations (modify, add, delete, regenerate) use a lower threshold
       // because the LLM rarely misclassifies these — even moderate confidence is reliable.
-      const isSlideOp = ['modify_slide', 'modify_layout', 'add_slide', 'delete_slide', 'regenerate_slide'].includes(intent.intent);
+      const isSlideOp = ['modify_slide', 'modify_layout', 'reset_layout', 'add_slide', 'delete_slide', 'regenerate_slide'].includes(intent.intent);
       const threshold = isSlideOp ? 0.3 : 0.7;
 
       if (intent.confidence >= threshold) {
@@ -263,6 +263,28 @@ export class ChatService {
             yield { type: 'token', content: askLayoutMsg };
             yield { type: 'done', content: '' };
             await this.persistAssistantMessage(presentationId, askLayoutMsg);
+            return;
+          }
+          case 'reset_layout': {
+            const resetSlideNum = intent.slideNumber;
+            if (resetSlideNum) {
+              yield { type: 'thinking', content: 'Resetting layout overrides...' };
+              yield { type: 'progress', content: `Resetting slide ${resetSlideNum}`, metadata: { step: 'reset', status: 'running' } };
+              const resetResult = await this.slideModifier.resetLayout(
+                userId,
+                presentationId,
+                resetSlideNum,
+              );
+              yield { type: 'progress', content: `Resetting slide ${resetSlideNum}`, metadata: { step: 'reset', status: 'complete' } };
+              yield { type: 'token', content: resetResult.message };
+              yield { type: 'done', content: '' };
+              await this.persistAssistantMessage(presentationId, resetResult.message);
+              return;
+            }
+            const askResetMsg = `Which slide would you like me to reset the layout of? You have ${slideCount} slides.`;
+            yield { type: 'token', content: askResetMsg };
+            yield { type: 'done', content: '' };
+            await this.persistAssistantMessage(presentationId, askResetMsg);
             return;
           }
           case 'add_slide': {

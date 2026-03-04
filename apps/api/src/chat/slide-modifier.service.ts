@@ -806,6 +806,54 @@ The new slide should fit naturally in the deck's narrative flow.`;
   }
 
   /**
+   * Reset all layout overrides on a slide back to defaults.
+   * FREE operation — no credit charge. Incentivizes cleanup.
+   */
+  async resetLayout(
+    userId: string,
+    presentationId: string,
+    slideNumber: number,
+  ): Promise<{ success: boolean; message: string }> {
+    const slide = await this.prisma.slide.findFirst({
+      where: { presentationId, slideNumber },
+    });
+
+    if (!slide) {
+      return { success: false, message: `Slide ${slideNumber} not found.` };
+    }
+
+    const existing = (slide as Record<string, unknown>).layoutOverrides as Record<string, unknown> | null;
+    if (!existing || Object.keys(existing).length === 0) {
+      return { success: false, message: `Slide ${slideNumber} has no layout overrides to reset.` };
+    }
+
+    await this.prisma.slide.update({
+      where: { id: slide.id },
+      data: {
+        layoutOverrides: null as any,
+        previewUrl: null,
+      },
+    });
+
+    // Broadcast via WebSocket
+    this.events.emitSlideUpdated({
+      presentationId,
+      slideId: slide.id,
+      data: { layoutOverrides: null, previewUrl: null },
+    });
+
+    // Fire-and-forget preview regeneration
+    this.exportsService.generateIncrementalPreviews(presentationId).catch((err) => {
+      this.logger.warn(`Preview regen failed after layout reset: ${err instanceof Error ? err.message : 'unknown'}`);
+    });
+
+    return {
+      success: true,
+      message: `Reset layout overrides on slide ${slideNumber}.`,
+    };
+  }
+
+  /**
    * Apply layout overrides to multiple slides in a batch. Uses a transaction for atomicity.
    * Costs 1 credit per slide modified.
    */
