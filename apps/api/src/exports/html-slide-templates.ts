@@ -39,6 +39,7 @@ export const FIGMA_GRADE_TYPES: Set<string> = new Set([
   'FINANCIAL_PROJECTION', 'GO_TO_MARKET', 'PERSONA', 'TESTIMONIAL_WALL', 'THANK_YOU', 'SCENARIO_ANALYSIS',
   'VALUE_CHAIN', 'GEOGRAPHIC_MAP', 'IMPACT_SCORECARD', 'EXIT_STRATEGY', 'ORG_CHART', 'FEATURE_COMPARISON',
   'DATA_TABLE', 'ECOSYSTEM_MAP', 'KPI_DASHBOARD', 'REFERENCES', 'ABSTRACT',
+  'MYTH_VS_REALITY', 'NUMBER_STORY', 'STORY_ARC', 'TREND_INSIGHT', 'CONTRARIAN_VIEW',
 ]);
 
 // ── Helpers ──────────────────────────────────────────────────
@@ -620,6 +621,16 @@ export function buildHtmlSlideContent(
       html = buildReferences(cleaned, palette, !!cleaned.imageUrl); break;
     case 'ABSTRACT':
       html = buildAbstract(cleaned, palette, !!cleaned.imageUrl, accentDiversity); break;
+    case 'MYTH_VS_REALITY':
+      html = buildMythVsReality(cleaned, palette, !!cleaned.imageUrl); break;
+    case 'NUMBER_STORY':
+      html = buildNumberStory(cleaned, palette, !!cleaned.imageUrl); break;
+    case 'STORY_ARC':
+      html = buildStoryArc(cleaned, palette, !!cleaned.imageUrl, accentDiversity); break;
+    case 'TREND_INSIGHT':
+      html = buildTrendInsight(cleaned, palette, !!cleaned.imageUrl, accentDiversity); break;
+    case 'CONTRARIAN_VIEW':
+      html = buildContrarianView(cleaned, palette, !!cleaned.imageUrl); break;
     default:
       return '';
   }
@@ -7370,5 +7381,346 @@ function buildAbstract(slide: SlideInput, p: ColorPalette, hasImage = false, acc
   <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;font-size:${titleFontSize(slide.title)}px;font-weight:800;overflow-wrap:break-word;word-wrap:break-word;color:${p.text};line-height:1.2;letter-spacing:0.5px;${dark ? `text-shadow:${textGlow(p.accent, 0.3)}` : ''}">${escHtml(slide.title)}</div>
   <div style="position:absolute;left:${PAD}px;top:${PAD + 56}px;width:50px;height:4px;background:${p.accent};border-radius:2px"></div>
   ${sectionsHtml}
+</div>`;
+}
+
+// ── MYTH_VS_REALITY ────────────────────────────────────────────
+
+function buildMythVsReality(slide: SlideInput, p: ColorPalette, hasImage = false): string {
+  const cW = hasImage ? CONTENT_W_IMG : W;
+  const lines = parseBodyLines(slide.body);
+  const dark = isDarkBackground(p.background);
+
+  const mythLines: string[] = [];
+  const realityLines: string[] = [];
+  const evidenceLines: string[] = [];
+  let section: 'myth' | 'reality' | 'evidence' = 'myth';
+
+  for (const line of lines) {
+    const lower = line.toLowerCase().trim();
+    if (lower.startsWith('myth:') || lower.startsWith('myth ')) {
+      section = 'myth';
+      const cleaned = line.replace(/^myth\s*[:]\s*/i, '').trim();
+      if (cleaned) mythLines.push(cleaned);
+    } else if (lower.startsWith('reality:') || lower.startsWith('reality ') || lower.startsWith('truth:')) {
+      section = 'reality';
+      const cleaned = line.replace(/^(reality|truth)\s*[:]\s*/i, '').trim();
+      if (cleaned) realityLines.push(cleaned);
+    } else if (lower.startsWith('evidence:') || lower.startsWith('data:') || lower.startsWith('source')) {
+      section = 'evidence';
+      const cleaned = line.replace(/^(evidence|data|sources?)\s*[:]\s*/i, '').trim();
+      if (cleaned) evidenceLines.push(cleaned);
+    } else {
+      if (section === 'myth') mythLines.push(line);
+      else if (section === 'reality') realityLines.push(line);
+      else evidenceLines.push(line);
+    }
+  }
+
+  // Fallback: first line myth, rest reality
+  if (mythLines.length === 0 && realityLines.length === 0 && lines.length > 0) {
+    mythLines.push(lines[0]);
+    realityLines.push(...lines.slice(1));
+  }
+
+  const panelTop = PAD + 90;
+  const panelH = H - panelTop - PAD;
+  const totalW = cW - PAD * 2;
+  const leftW = Math.round(totalW * 0.42);
+  const rightW = totalW - leftW - 24;
+  const leftX = PAD;
+  const rightX = PAD + leftW + 24;
+
+  let html = '';
+
+  // Left panel — Myth (red, crossed out)
+  const mythBg = dark ? hexToRgba(p.error || '#ef4444', 0.06) : hexToRgba(p.error || '#ef4444', 0.04);
+  html += `<div style="position:absolute;left:${leftX}px;top:${panelTop}px;width:${leftW}px;height:${panelH}px;background:${mythBg};border:1px solid ${hexToRgba(p.error || '#ef4444', 0.15)};border-radius:12px;border-top:4px solid ${p.error || '#ef4444'};box-shadow:${cardShadow(2, dark)}"></div>`;
+  html += `<div style="position:absolute;left:${leftX + 20}px;top:${panelTop + 16}px;font-size:13px;font-weight:800;letter-spacing:2px;color:${p.error || '#ef4444'};text-transform:uppercase">MYTH</div>`;
+  // X icon
+  html += `<div style="position:absolute;right:${cW - leftX - leftW + 16}px;top:${panelTop + 12}px;width:28px;height:28px;border-radius:50%;background:${hexToRgba(p.error || '#ef4444', 0.15)};display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:bold;color:${p.error || '#ef4444'}">\u2717</div>`;
+
+  let my = panelTop + 52;
+  for (const item of mythLines.slice(0, 4)) {
+    html += `<div style="position:absolute;left:${leftX + 20}px;top:${my}px;width:${leftW - 40}px;font-size:16px;line-height:1.5;color:${p.text};opacity:0.6;text-decoration:line-through;overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical">${escHtml(item)}</div>`;
+    my += 65;
+  }
+
+  // Right panel — Reality (green, bold)
+  const realBg = dark ? hexToRgba(p.success || '#22c55e', 0.05) : hexToRgba(p.success || '#22c55e', 0.03);
+  html += `<div style="position:absolute;left:${rightX}px;top:${panelTop}px;width:${rightW}px;height:${panelH}px;background:${realBg};border:1px solid ${hexToRgba(p.success || '#22c55e', 0.15)};border-radius:12px;border-top:4px solid ${p.success || '#22c55e'};box-shadow:${cardShadow(2, dark)}"></div>`;
+  html += `<div style="position:absolute;left:${rightX + 20}px;top:${panelTop + 16}px;font-size:13px;font-weight:800;letter-spacing:2px;color:${p.success || '#22c55e'};text-transform:uppercase">REALITY</div>`;
+  // Check icon
+  html += `<div style="position:absolute;right:${cW - rightX - rightW + 16}px;top:${panelTop + 12}px;width:28px;height:28px;border-radius:50%;background:${hexToRgba(p.success || '#22c55e', 0.15)};display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:bold;color:${p.success || '#22c55e'}">\u2713</div>`;
+
+  let ry = panelTop + 52;
+  for (const item of realityLines.slice(0, 4)) {
+    html += `<div style="position:absolute;left:${rightX + 20}px;top:${ry}px;width:${rightW - 40}px;font-size:16px;font-weight:600;line-height:1.5;color:${p.text};overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical">${escHtml(item)}</div>`;
+    ry += 65;
+  }
+
+  // Evidence at bottom
+  if (evidenceLines.length > 0) {
+    html += `<div style="position:absolute;left:${PAD}px;bottom:${PAD}px;width:${cW - PAD * 2}px;font-size:12px;color:${p.text};opacity:0.5;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${escHtml(evidenceLines.join(' | '))}</div>`;
+  }
+
+  return `${SCOPED_RESET}
+<div style="position:relative;width:${W}px;height:${H}px;background:${p.background};overflow:hidden">
+  ${bgGradientOverlay(cW, H, p.primary, 0.04, '50%')}
+  <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;font-size:${titleFontSize(slide.title)}px;font-weight:800;letter-spacing:0.5px;overflow-wrap:break-word;word-wrap:break-word;color:${p.text};line-height:1.2">${escHtml(slide.title)}</div>
+  <div style="position:absolute;left:${PAD}px;top:${PAD + 56}px;width:50px;height:4px;background:${p.accent};border-radius:2px"></div>
+  ${html}
+</div>`;
+}
+
+// ── NUMBER_STORY ────────────────────────────────────────────
+
+function buildNumberStory(slide: SlideInput, p: ColorPalette, hasImage = false): string {
+  const cW = hasImage ? CONTENT_W_IMG : W;
+  const lines = parseBodyLines(slide.body);
+  const dark = isDarkBackground(p.background);
+
+  const number = lines[0] || '0';
+  const narrative = lines.slice(1).join(' ').trim();
+
+  // Extract just the number part for oversized display
+  const numberMatch = number.match(/^([^\s:]+(?:\s*[%$\u20AC\u00A3\u00A5+x\u00D7])?)/);
+  const bigNumber = numberMatch ? numberMatch[1] : number.split(/\s/)[0];
+  const label = number.replace(bigNumber, '').replace(/^[\s:\u2014-]+/, '').trim();
+
+  return `${SCOPED_RESET}
+<div style="position:relative;width:${W}px;height:${H}px;background:${p.background};overflow:hidden">
+  ${bgGradientOverlay(cW, H, p.accent, 0.06, '40%')}
+  <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;font-size:${titleFontSize(slide.title, 32)}px;font-weight:700;color:${p.text};opacity:0.7;line-height:1.2;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${escHtml(slide.title)}</div>
+  <div style="position:absolute;left:${PAD}px;top:${PAD + 48}px;width:50px;height:4px;background:${p.accent};border-radius:2px"></div>
+  <div style="position:absolute;left:${PAD}px;top:${Math.round(H * 0.22)}px;width:${cW - PAD * 2}px;text-align:center">
+    <div style="font-size:${bigNumber.length > 8 ? 72 : bigNumber.length > 5 ? 88 : 110}px;font-weight:900;color:${p.accent};line-height:1.1;letter-spacing:-2px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${escHtml(bigNumber)}</div>
+    ${label ? `<div style="font-size:20px;font-weight:600;color:${p.text};opacity:0.7;margin-top:8px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${escHtml(label)}</div>` : ''}
+  </div>
+  ${narrative ? `<div style="position:absolute;left:${PAD + 40}px;bottom:${PAD + 20}px;width:${cW - PAD * 2 - 80}px;font-size:18px;line-height:1.6;color:${p.text};opacity:0.8;text-align:center;overflow:hidden;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical">${escHtml(narrative)}</div>` : ''}
+  <div style="position:absolute;left:50%;bottom:${PAD + 6}px;transform:translateX(-50%);width:80px;height:3px;background:${hexToRgba(p.accent, 0.4)};border-radius:2px"></div>
+</div>`;
+}
+
+// ── STORY_ARC ────────────────────────────────────────────
+
+function buildStoryArc(slide: SlideInput, p: ColorPalette, hasImage = false, accentDiversity = true): string {
+  const cW = hasImage ? CONTENT_W_IMG : W;
+  const lines = parseBodyLines(slide.body);
+  const dark = isDarkBackground(p.background);
+  const accents = cardAccentColors(p, accentDiversity ? colorOffset(slide.title) : 0);
+
+  const acts: Array<{ label: string; text: string }> = [];
+  let currentAct: { label: string; text: string } | null = null;
+
+  const actLabels = ['Setup', 'Conflict', 'Resolution'];
+  const actPatterns = /^(setup|beginning|act\s*1|conflict|middle|act\s*2|resolution|end|act\s*3|climax|outcome)\s*[:\u2014-]\s*/i;
+
+  for (const line of lines) {
+    const match = line.match(actPatterns);
+    if (match) {
+      if (currentAct) acts.push(currentAct);
+      const rawLabel = match[1].toLowerCase();
+      let label = rawLabel.charAt(0).toUpperCase() + rawLabel.slice(1);
+      if (/^(beginning|act\s*1)$/i.test(rawLabel)) label = 'Setup';
+      if (/^(middle|act\s*2|climax)$/i.test(rawLabel)) label = 'Conflict';
+      if (/^(end|act\s*3|outcome)$/i.test(rawLabel)) label = 'Resolution';
+      currentAct = { label, text: line.replace(actPatterns, '').trim() };
+    } else if (currentAct) {
+      currentAct.text += ' ' + line;
+    } else {
+      // No label — auto-assign
+      currentAct = { label: actLabels[acts.length] || 'Act ' + (acts.length + 1), text: line };
+    }
+  }
+  if (currentAct) acts.push(currentAct);
+
+  // Fallback: split lines into 3 acts
+  while (acts.length < 3 && lines.length > 0) {
+    const chunk = Math.ceil(lines.length / (3 - acts.length));
+    const actLines = lines.splice(0, chunk);
+    acts.push({ label: actLabels[acts.length] || 'Act', text: actLines.join(' ') });
+  }
+
+  const panelTop = PAD + 90;
+  const panelH = H - panelTop - PAD;
+  const gap = 16;
+  const panelW = Math.round((cW - PAD * 2 - gap * 2) / 3);
+
+  let html = '';
+
+  for (let i = 0; i < Math.min(acts.length, 3); i++) {
+    const act = acts[i];
+    const x = PAD + i * (panelW + gap);
+    const accent = accents[i % accents.length];
+    const bg = dark ? hexToRgba(accent, 0.06) : hexToRgba(accent, 0.03);
+
+    html += `<div style="position:absolute;left:${x}px;top:${panelTop}px;width:${panelW}px;height:${panelH}px;background:${bg};border:1px solid ${hexToRgba(accent, 0.15)};border-radius:12px;border-top:4px solid ${accent};box-shadow:${cardShadow(1, dark)}"></div>`;
+
+    // Act number circle
+    html += `<div style="position:absolute;left:${x + 16}px;top:${panelTop + 16}px;width:36px;height:36px;border-radius:50%;background:${accent};display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:900;color:#fff">${i + 1}</div>`;
+
+    // Act label
+    html += `<div style="position:absolute;left:${x + 62}px;top:${panelTop + 22}px;font-size:14px;font-weight:800;letter-spacing:1px;color:${accent};text-transform:uppercase;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;width:${panelW - 80}px">${escHtml(act.label)}</div>`;
+
+    // Act text
+    html += `<div style="position:absolute;left:${x + 16}px;top:${panelTop + 70}px;width:${panelW - 32}px;font-size:15px;line-height:1.6;color:${p.text};opacity:0.85;overflow:hidden;display:-webkit-box;-webkit-line-clamp:${Math.floor((panelH - 90) / 24)};-webkit-box-orient:vertical">${escHtml(act.text)}</div>`;
+
+    // Arrow between panels
+    if (i < 2) {
+      html += `<div style="position:absolute;left:${x + panelW + 2}px;top:${panelTop + Math.round(panelH / 2) - 8}px;font-size:18px;color:${p.text};opacity:0.3">\u2192</div>`;
+    }
+  }
+
+  return `${SCOPED_RESET}
+<div style="position:relative;width:${W}px;height:${H}px;background:${p.background};overflow:hidden">
+  ${bgGradientOverlay(cW, H, p.primary, 0.04, '50%')}
+  <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;font-size:${titleFontSize(slide.title)}px;font-weight:800;letter-spacing:0.5px;overflow-wrap:break-word;word-wrap:break-word;color:${p.text};line-height:1.2">${escHtml(slide.title)}</div>
+  <div style="position:absolute;left:${PAD}px;top:${PAD + 56}px;width:50px;height:4px;background:${p.accent};border-radius:2px"></div>
+  ${html}
+</div>`;
+}
+
+// ── TREND_INSIGHT ────────────────────────────────────────────
+
+function buildTrendInsight(slide: SlideInput, p: ColorPalette, hasImage = false, accentDiversity = true): string {
+  const cW = hasImage ? CONTENT_W_IMG : W;
+  const lines = parseBodyLines(slide.body);
+  const dark = isDarkBackground(p.background);
+  const accents = cardAccentColors(p, accentDiversity ? colorOffset(slide.title) : 0);
+
+  let trendName = '';
+  let direction = 'emerging';
+  const implications: string[] = [];
+  let dataPoint = '';
+
+  for (const line of lines) {
+    const lower = line.toLowerCase().trim();
+    if (lower.startsWith('trend:')) {
+      trendName = line.replace(/^trend\s*[:]\s*/i, '').trim();
+    } else if (lower.startsWith('direction:')) {
+      direction = line.replace(/^direction\s*[:]\s*/i, '').trim().toLowerCase();
+    } else if (lower.startsWith('data:') || lower.startsWith('source') || lower.startsWith('stat:')) {
+      dataPoint = line.replace(/^(data|sources?|stat)\s*[:]\s*/i, '').trim();
+    } else {
+      implications.push(line);
+    }
+  }
+
+  if (!trendName && implications.length > 0) {
+    trendName = implications.shift() || '';
+  }
+
+  const arrowUp = '\u2191';
+  const arrowDown = '\u2193';
+  const arrowFlat = '\u2192';
+  const dirArrow = direction.includes('up') || direction.includes('growing') || direction.includes('rising') ? arrowUp
+    : direction.includes('down') || direction.includes('declining') || direction.includes('falling') ? arrowDown
+    : arrowFlat;
+  const dirColor = dirArrow === arrowUp ? (p.success || '#22c55e')
+    : dirArrow === arrowDown ? (p.error || '#ef4444')
+    : p.accent;
+
+  let html = '';
+
+  // Trend badge
+  const badgeTop = PAD + 85;
+  const badgeBg = dark ? hexToRgba(dirColor, 0.08) : hexToRgba(dirColor, 0.05);
+  html += `<div style="position:absolute;left:${PAD}px;top:${badgeTop}px;width:${cW - PAD * 2}px;padding:20px 24px;background:${badgeBg};border:1px solid ${hexToRgba(dirColor, 0.2)};border-radius:16px;border-left:5px solid ${dirColor};box-sizing:border-box">`;
+  html += `<div style="display:flex;align-items:center;gap:16px">`;
+  html += `<div style="font-size:42px;color:${dirColor};line-height:1">${dirArrow}</div>`;
+  html += `<div style="font-size:24px;font-weight:800;color:${p.text};line-height:1.2;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">${escHtml(trendName)}</div>`;
+  html += `</div></div>`;
+
+  // Implications
+  const impTop = badgeTop + 110;
+  const impH = H - impTop - PAD - (dataPoint ? 40 : 0);
+  const maxImps = Math.min(implications.length, 4);
+  const impSpacing = Math.min(70, Math.round(impH / Math.max(maxImps, 1)));
+
+  for (let i = 0; i < maxImps; i++) {
+    const y = impTop + i * impSpacing;
+    const accent = accents[i % accents.length];
+    html += `<div style="position:absolute;left:${PAD + 8}px;top:${y}px;width:10px;height:10px;border-radius:50%;background:${accent}"></div>`;
+    html += `<div style="position:absolute;left:${PAD + 30}px;top:${y - 3}px;width:${cW - PAD * 2 - 40}px;font-size:16px;line-height:1.5;color:${p.text};opacity:0.85;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">${escHtml(implications[i])}</div>`;
+  }
+
+  // Data point at bottom
+  if (dataPoint) {
+    html += `<div style="position:absolute;left:${PAD}px;bottom:${PAD}px;width:${cW - PAD * 2}px;font-size:12px;color:${p.text};opacity:0.5;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${escHtml(dataPoint)}</div>`;
+  }
+
+  return `${SCOPED_RESET}
+<div style="position:relative;width:${W}px;height:${H}px;background:${p.background};overflow:hidden">
+  ${bgGradientOverlay(cW, H, p.primary, 0.04, '50%')}
+  <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;font-size:${titleFontSize(slide.title)}px;font-weight:800;letter-spacing:0.5px;overflow-wrap:break-word;word-wrap:break-word;color:${p.text};line-height:1.2">${escHtml(slide.title)}</div>
+  <div style="position:absolute;left:${PAD}px;top:${PAD + 56}px;width:50px;height:4px;background:${p.accent};border-radius:2px"></div>
+  ${html}
+</div>`;
+}
+
+// ── CONTRARIAN_VIEW ────────────────────────────────────────────
+
+function buildContrarianView(slide: SlideInput, p: ColorPalette, hasImage = false): string {
+  const cW = hasImage ? CONTENT_W_IMG : W;
+  const lines = parseBodyLines(slide.body);
+  const dark = isDarkBackground(p.background);
+
+  let conventional = '';
+  let thesis = '';
+  const evidence: string[] = [];
+
+  for (const line of lines) {
+    const lower = line.toLowerCase().trim();
+    if (lower.startsWith('conventional:') || lower.startsWith('common belief:') || lower.startsWith('everyone thinks:') || lower.startsWith('myth:')) {
+      conventional = line.replace(/^(conventional|common belief|everyone thinks|myth)\s*[:]\s*/i, '').trim();
+    } else if (lower.startsWith('thesis:') || lower.startsWith('reality:') || lower.startsWith('actually:') || lower.startsWith('contrarian:')) {
+      thesis = line.replace(/^(thesis|reality|actually|contrarian)\s*[:]\s*/i, '').trim();
+    } else {
+      evidence.push(line);
+    }
+  }
+
+  // Fallback
+  if (!conventional && !thesis && lines.length >= 2) {
+    conventional = lines[0];
+    thesis = lines[1];
+    evidence.push(...lines.slice(2));
+  }
+
+  let html = '';
+
+  // Conventional wisdom — crossed out section
+  const convTop = PAD + 85;
+  const convH = 90;
+  const convBg = dark ? hexToRgba(p.text, 0.04) : hexToRgba(p.text, 0.03);
+  html += `<div style="position:absolute;left:${PAD}px;top:${convTop}px;width:${cW - PAD * 2}px;height:${convH}px;background:${convBg};border-radius:12px;border:1px solid ${hexToRgba(p.text, 0.08)};display:flex;align-items:center;padding:0 24px;box-sizing:border-box"></div>`;
+  html += `<div style="position:absolute;left:${PAD + 24}px;top:${convTop + 14}px;font-size:12px;font-weight:700;letter-spacing:2px;color:${p.error || '#ef4444'};text-transform:uppercase;opacity:0.8">\u2717 CONVENTIONAL WISDOM</div>`;
+  html += `<div style="position:absolute;left:${PAD + 24}px;top:${convTop + 40}px;width:${cW - PAD * 2 - 48}px;font-size:18px;line-height:1.4;color:${p.text};opacity:0.4;text-decoration:line-through;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${escHtml(conventional)}</div>`;
+  // Red diagonal line through the box
+  html += `<svg style="position:absolute;left:${PAD}px;top:${convTop}px;width:${cW - PAD * 2}px;height:${convH}px;pointer-events:none"><line x1="0" y1="${convH}" x2="${cW - PAD * 2}" y2="0" stroke="${p.error || '#ef4444'}" stroke-width="2" opacity="0.2"/></svg>`;
+
+  // Thesis — bold contrarian view
+  const thesisTop = convTop + convH + 24;
+  const thesisBg = dark ? hexToRgba(p.accent, 0.08) : hexToRgba(p.accent, 0.05);
+  html += `<div style="position:absolute;left:${PAD}px;top:${thesisTop}px;width:${cW - PAD * 2}px;padding:20px 24px;background:${thesisBg};border:1px solid ${hexToRgba(p.accent, 0.2)};border-radius:12px;border-left:5px solid ${p.accent};box-sizing:border-box">`;
+  html += `<div style="font-size:12px;font-weight:700;letter-spacing:2px;color:${p.accent};text-transform:uppercase;margin-bottom:8px">\u2713 THE REALITY</div>`;
+  html += `<div style="font-size:22px;font-weight:800;line-height:1.3;color:${p.text};overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical">${escHtml(thesis)}</div>`;
+  html += `</div>`;
+
+  // Evidence bullets
+  const evTop = thesisTop + 130;
+  let ey = evTop;
+  for (const item of evidence.slice(0, 4)) {
+    html += `<div style="position:absolute;left:${PAD + 16}px;top:${ey}px;width:${cW - PAD * 2 - 32}px;font-size:15px;line-height:1.5;color:${p.text};opacity:0.8;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical"><span style="color:${p.accent};font-weight:bold;margin-right:8px">\u2022</span>${escHtml(item)}</div>`;
+    ey += 48;
+  }
+
+  return `${SCOPED_RESET}
+<div style="position:relative;width:${W}px;height:${H}px;background:${p.background};overflow:hidden">
+  ${bgGradientOverlay(cW, H, p.primary, 0.04, '50%')}
+  <div style="position:absolute;left:${PAD}px;top:${PAD}px;width:${cW - PAD * 2}px;font-size:${titleFontSize(slide.title)}px;font-weight:800;letter-spacing:0.5px;overflow-wrap:break-word;word-wrap:break-word;color:${p.text};line-height:1.2">${escHtml(slide.title)}</div>
+  <div style="position:absolute;left:${PAD}px;top:${PAD + 56}px;width:50px;height:4px;background:${p.accent};border-radius:2px"></div>
+  ${html}
 </div>`;
 }
