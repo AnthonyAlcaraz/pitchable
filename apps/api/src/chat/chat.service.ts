@@ -337,7 +337,7 @@ export class ChatService {
 
     yield { type: 'progress', content: 'Generating response', metadata: { step: 'llm_stream', status: 'running' } };
     let fullResponse = '';
-    for await (const chunk of this.llm.streamChat(messages, LlmModel.OPUS)) {
+    for await (const chunk of this.llm.streamChat(messages, LlmModel.SONNET)) {
       if (chunk.done) {
         yield { type: 'done', content: '' };
         break;
@@ -822,7 +822,7 @@ export class ChatService {
           { role: 'system', content: 'Generate 3 specific presentation topic suggestions based on the context. Each should have a concise title (max 8 words) and a one-sentence description. Return JSON: { "suggestions": [{ "title": "...", "description": "..." }] }' },
           { role: 'user', content: context },
         ],
-        LlmModel.OPUS,
+        LlmModel.SONNET,
       );
       const result = (suggestions.suggestions ?? []).map((s) => ({ ...s, source: lensId ? 'pitchlens' : 'brief' }));
       this.suggestionCache.set(cacheKey, result);

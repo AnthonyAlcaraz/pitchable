@@ -226,7 +226,7 @@ export class SyncGenerationService {
             { role: 'system', content: outlineSystemPrompt },
             { role: 'user', content: outlineUserPrompt },
           ],
-          LlmModel.OPUS,
+          LlmModel.SONNET,
           isValidOutline,
           2,
         );

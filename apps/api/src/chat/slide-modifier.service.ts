@@ -161,7 +161,7 @@ export class SlideModifierService {
             content: `Current slide:\n${currentContent}\n\nInstruction: ${instruction}`,
           },
         ],
-        LlmModel.OPUS,
+        LlmModel.SONNET,
         isValidModifiedSlideContent,
         2,
       );
@@ -380,7 +380,7 @@ export class SlideModifierService {
           { role: 'system', content: systemPrompt },
           { role: 'user', content: `Current slide:\n${currentContent}\n\nInstruction: ${instruction}` },
         ],
-        LlmModel.OPUS,
+        LlmModel.SONNET,
         isValidModifiedSlideContent,
         2,
       );
@@ -469,7 +469,7 @@ export class SlideModifierService {
           { role: 'system', content: systemPrompt },
           { role: 'user', content: 'Adapt this slide for narrative coherence with the updated preceding slides.' },
         ],
-        LlmModel.OPUS,
+        LlmModel.SONNET,
         isValidModifiedSlideContent,
         2,
       );
@@ -587,7 +587,7 @@ The new slide should fit naturally in the deck's narrative flow.`;
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt },
         ],
-        LlmModel.OPUS,
+        LlmModel.SONNET,
         isValidSlideContent,
         2,
       );

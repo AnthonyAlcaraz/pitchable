@@ -17,5 +17,5 @@ const HAIKU_SLIDE_TYPES = new Set([
 ]);
 
 export function getModelForSlideType(slideType: string): LlmModelId {
-  return LlmModel.OPUS;
+  return LlmModel.SONNET;
 }

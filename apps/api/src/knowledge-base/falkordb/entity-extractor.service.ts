@@ -81,7 +81,7 @@ export class EntityExtractorService {
         { role: 'system', content: EXTRACTION_SYSTEM_PROMPT },
         { role: 'user', content: truncated },
       ],
-      LlmModel.OPUS,
+      LlmModel.SONNET,
     );
 
     return this.parseExtractionResult(raw);

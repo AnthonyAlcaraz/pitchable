@@ -295,7 +295,7 @@ export class FigmaAiMapperService {
     const result = await this.llm.completeJsonVision<AiClassificationResult>(
       VISION_SYSTEM_PROMPT,
       contentBlocks,
-      LlmModel.OPUS,
+      LlmModel.SONNET,
       validator,
       1,
     );

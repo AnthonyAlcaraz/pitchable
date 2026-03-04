@@ -193,7 +193,7 @@ export class GenerationService {
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt },
         ],
-        LlmModel.OPUS,
+        LlmModel.SONNET,
         isValidOutline,
         2,
       );
@@ -449,7 +449,7 @@ OUTPUT: Valid JSON matching this schema (no markdown fences):
     try {
       const updatedSlide = await this.llm.completeJson<OutlineSlide>(
         [{ role: 'user', content: prompt }],
-        LlmModel.OPUS,
+        LlmModel.SONNET,
         isValidOutlineSlide,
         1,
       );

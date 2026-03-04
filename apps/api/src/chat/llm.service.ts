@@ -80,7 +80,7 @@ export class LlmService {
     });
     this.defaultModel = configService.get<string>(
       'ANTHROPIC_MODEL',
-      LlmModel.OPUS,
+      LlmModel.SONNET,
     );
   }
 
@@ -207,7 +207,7 @@ export class LlmService {
    * Instead we rely on strong system prompt instruction for JSON output.
    *
    * @param messages - Chat messages
-   * @param model - Model to use (use LlmModel.OPUS/SONNET/HAIKU for cost routing)
+   * @param model - Model to use (use LlmModel.SONNET/SONNET/HAIKU for cost routing)
    * @param validator - Optional type guard to validate the parsed structure
    * @param maxRetries - Number of retries on parse/validation failure (default: 1)
    */
@@ -369,7 +369,7 @@ export class LlmService {
   ): Promise<LlmJsonResult<T>> {
     let lastError: Error | null = null;
     let lastUsage: LlmUsage = { inputTokens: 0, outputTokens: 0, cacheReadTokens: 0, cacheWriteTokens: 0 };
-    let lastModel = model ?? LlmModel.OPUS;
+    let lastModel = model ?? LlmModel.SONNET;
 
     const jsonInstruction = '\n\nIMPORTANT: You MUST respond with valid JSON only. No markdown fences, no explanation, no text before or after the JSON. Output ONLY a single JSON object.';
     const fullSystem = systemPrompt + jsonInstruction;
@@ -383,7 +383,7 @@ export class LlmService {
       try {
         const result = await llmLimiter(() =>
           this.anthropic.messages.create({
-            model: model ?? LlmModel.OPUS,
+            model: model ?? LlmModel.SONNET,
             max_tokens: 4096,
             system: fullSystem,
             messages,
