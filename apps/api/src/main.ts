@@ -4,6 +4,7 @@ import { Sentry } from './common/sentry.js';
 
 import { join } from 'node:path';
 import { existsSync, readFileSync } from 'node:fs';
+import { json } from 'express';
 import { NestFactory } from '@nestjs/core';
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
@@ -23,6 +24,9 @@ async function bootstrap() {
   // Trust first proxy hop so req.ip returns real client IP behind load balancer
   const expressApp = app.getHttpAdapter().getInstance();
   expressApp.set('trust proxy', 1);
+
+  // Increase JSON body limit (default 100KB is too small for gallery seed)
+  app.use(json({ limit: '2mb' }));
 
   // Security
   app.use(
