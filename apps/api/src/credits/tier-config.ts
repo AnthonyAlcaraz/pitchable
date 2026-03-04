@@ -77,6 +77,9 @@ export const ENTITY_EXTRACTION_COST = 1;
 /** Credits deducted per Figma AI template mapping (Opus 4.6 vision). */
 export const FIGMA_AI_MAPPING_COST = 1;
 
+/** Credits deducted per layout modification (visual overrides). */
+export const LAYOUT_MODIFICATION_COST = 1;
+
 /** Credits deducted per document ingestion (flat rate regardless of size). */
 export const DOCUMENT_INGESTION_COST = 1;
 
