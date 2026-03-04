@@ -109,7 +109,7 @@ const EXTRA_CONTENT_A = {
   },
   EXIT_STRATEGY: {
     title: 'Path to Liquidity',
-    body: 'Primary: IPO targeting 2029-2030 at $2B+ valuation, benchmarked against HashiCorp ($5.7B at IPO), GitLab ($11B at IPO), and Datadog ($10.5B at IPO)\nSecondary: Strategic acquisition by cloud hyperscaler (AWS, Google Cloud, Microsoft Azure) seeking developer platform capabilities — comparable transactions include Heroku ($212M), CloudBees ($1B+), and JFrog ($6.3B market cap)\nComparables: Trading multiples of 15-25x ARR for high-growth developer infrastructure companies with 130%+ NRR and 75%+ gross margins',
+    body: '2027: Secondary Sale - $50M valuation\n2028: Strategic Acquisition - $200M valuation\n2029: Growth Round - $500M valuation\n2030: IPO - $2B+ valuation',
   },
   ORG_CHART: {
     title: 'Organization Structure',
@@ -264,7 +264,7 @@ const EXTRA_CONTENT_B = {
   },
   EXIT_STRATEGY: {
     title: 'Strategic Options Analysis',
-    body: 'Primary: IPO of advisory platform business at $1.8B+ valuation, benchmarked against Huron Consulting ($2.1B), FTI Consulting ($7.8B), and AlixPartners ($4.2B at last private valuation)\nSecondary: Strategic merger with global consulting firm seeking AI-augmented diagnostic capabilities — comparable transactions include EY-Parthenon acquisition, McKinsey digital acquisitions, and Bain capital partnerships\nComparables: Advisory firms with proprietary technology platforms trade at 3.5-6x revenue versus 1.5-2.5x for traditional consulting, reflecting technology-enabled scalability',
+    body: 'Year 3: Management Buyout - $340M valuation\nYear 5: Strategic Merger - $800M valuation\nYear 7: IPO - $1.8B+ valuation',
   },
   ORG_CHART: {
     title: 'Practice Leadership Structure',
@@ -419,7 +419,7 @@ const EXTRA_CONTENT_C = {
   },
   EXIT_STRATEGY: {
     title: 'Path to Liquidity',
-    body: 'Primary: IPO targeting 2029-2030 at $3B+ valuation, benchmarked against Etsy ($7.8B at IPO), Fiverr ($6.5B peak), and Pinterest ($12.7B at IPO) as creator/marketplace platforms\nSecondary: Strategic acquisition by social media platform (Meta, Alphabet, ByteDance) or commerce platform (Shopify, Amazon) seeking integrated creator monetization infrastructure — comparable: YouTube acquired FameBit for $90M at 1/10th Luminary scale\nComparables: Creator economy platforms with strong network effects trade at 12-20x revenue, with premium for platforms demonstrating 140%+ NRR and multi-sided marketplace dynamics',
+    body: '2027: Brand Acquisition - $120M valuation\n2028: Strategic M&A - $450M valuation\n2029: Secondary Sale - $1.2B valuation\n2030: IPO - $3B+ valuation',
   },
   ORG_CHART: {
     title: 'Organization Structure',
@@ -574,7 +574,7 @@ const EXTRA_CONTENT_D = {
   },
   EXIT_STRATEGY: {
     title: 'Path to Liquidity',
-    body: 'Primary: IPO targeting 2030-2031 at $4B+ valuation, benchmarked against Veeva Systems ($28B at IPO), Schrodinger ($5.8B peak), and Recursion Pharmaceuticals ($4.2B peak) as research/life science platforms\nSecondary: Strategic acquisition by large pharma (Roche, Pfizer, Novartis) or technology company (Google DeepMind, Microsoft Research) seeking research AI capabilities — comparable transactions include Recursion-Cyclica ($60M), Schrodinger partnerships ($3B+ cumulative), and BenevolentAI ($1.5B SPAC)\nComparables: Research AI platforms with validated pharma outcomes trade at 20-35x ARR, with significant premium for platforms demonstrating reproducibility improvements and IP generation acceleration',
+    body: '2028: Research License - $80M valuation\n2029: Strategic Acquisition - $350M valuation\n2030: Growth Round - $1.5B valuation\n2031: IPO - $4B+ valuation',
   },
   ORG_CHART: {
     title: 'Organization Structure',

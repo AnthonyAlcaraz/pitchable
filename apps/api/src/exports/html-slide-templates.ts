@@ -6535,18 +6535,40 @@ function buildExitStrategy(slide: SlideInput, p: ColorPalette, hasImage = false,
   const dark = isDarkBackground(p.background);
   const accents = cardAccentColors(p, accentDiversity ? colorOffset(slide.title) : 0);
 
-  // Parse "Year: Exit Type - $Valuation"
+  // Parse exit options — supports multiple body formats:
+  //   Format A: "2026: Secondary Sale - $50M"         (Year: Type - Valuation)
+  //   Format B: "Primary: IPO targeting 2029..."       (Label: long description)
+  //   Format C: "IPO — $2B+ valuation by 2030"        (free-form)
   const exits: { year: string; exitType: string; valuation: string }[] = [];
+  const truncate = (s: string, max: number): string => s.length > max ? s.slice(0, max - 1) + '\u2026' : s;
+
   for (const line of lines.slice(0, 6)) {
     const sep = line.indexOf(':');
     if (sep <= 0) continue;
-    const year = line.slice(0, sep).trim();
+    const label = line.slice(0, sep).trim();
     const rest = line.slice(sep + 1).trim();
-    const dashSep = rest.indexOf('-');
-    if (dashSep > 0) {
-      exits.push({ year, exitType: rest.slice(0, dashSep).trim(), valuation: rest.slice(dashSep + 1).trim() });
+
+    // Try extracting a dollar valuation from anywhere in the line
+    const valMatch = rest.match(/\$[\d,.]+[BMK]?\+?(?:\s*(?:valuation|market cap))?/i);
+    const valuation = valMatch ? valMatch[0] : '';
+
+    // Detect format A: label looks like a year (e.g. "2026", "Year 3")
+    const isYear = /^\d{4}$|^year\s*\d/i.test(label);
+    if (isYear) {
+      const dashSep = rest.indexOf('-');
+      if (dashSep > 0) {
+        exits.push({ year: label, exitType: truncate(rest.slice(0, dashSep).trim(), 22), valuation: valuation || truncate(rest.slice(dashSep + 1).trim(), 16) });
+      } else {
+        exits.push({ year: label, exitType: truncate(rest.split(/[,.]/).at(0)?.trim() || rest, 22), valuation });
+      }
     } else {
-      exits.push({ year, exitType: rest, valuation: '' });
+      // Format B: label is "Primary", "Secondary", "Comparables" etc.
+      // Extract the exit type keyword from the description
+      const typeMatch = rest.match(/\b(IPO|M&A|acquisition|merger|secondary\s*sale|buyback|strategic\s*(?:acquisition|sale)|listing)\b/i);
+      const exitType = typeMatch ? typeMatch[0] : truncate(label, 18);
+      const yearMatch = rest.match(/\b(20\d{2}(?:\s*[-–]\s*20\d{2})?|year\s*\d+)/i);
+      const year = yearMatch ? yearMatch[0] : label;
+      exits.push({ year: truncate(year, 12), exitType: truncate(exitType, 22), valuation: truncate(valuation, 16) });
     }
   }
 
@@ -6586,25 +6608,25 @@ function buildExitStrategy(slide: SlideInput, p: ColorPalette, hasImage = false,
     // Connector dot on timeline
     svgContent += `<circle cx="${cx}" cy="${timelineY}" r="6" fill="${color}" stroke="${p.background}" stroke-width="2" />`;
 
-    // Year label above
-    nodesHtml += `<div style="position:absolute;left:${cx - 50}px;top:${timelineY - 80}px;width:100px;text-align:center;font-size:14px;font-weight:700;color:${p.text};opacity:0.8">${escHtml(exit.year)}</div>`;
+    // Year label above node
+    nodesHtml += `<div style="position:absolute;left:${cx - 55}px;top:${timelineY - 90}px;width:110px;text-align:center;font-size:13px;font-weight:700;color:${p.text};opacity:0.8;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${escHtml(exit.year)}</div>`;
 
     // Exit type node
-    const nodeW = 130;
-    const nodeH = 52;
+    const nodeW = 140;
+    const nodeH = 44;
     const nodeX = cx - Math.round(nodeW / 2);
-    const nodeY = timelineY - 60;
+    const nodeY = timelineY - 65;
     const glassProps = dark
       ? `backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1.5px solid ${hexToRgba(color, 0.5)}`
       : `border:1.5px solid ${hexToRgba(color, 0.4)}`;
-    nodesHtml += `<div style="position:absolute;left:${nodeX}px;top:${nodeY}px;width:${nodeW}px;height:${nodeH}px;background:${hexToRgba(color, dark ? 0.15 : 0.08)};border-radius:12px;${glassProps};box-shadow:${cardShadow(2, dark)};display:flex;align-items:center;justify-content:center">`;
-    nodesHtml += `<span style="font-size:14px;font-weight:700;color:${color};${dark ? `text-shadow:0 0 10px ${hexToRgba(color, 0.4)}` : ''}">${escHtml(exit.exitType)}</span>`;
+    nodesHtml += `<div style="position:absolute;left:${nodeX}px;top:${nodeY}px;width:${nodeW}px;height:${nodeH}px;background:${hexToRgba(color, dark ? 0.15 : 0.08)};border-radius:12px;${glassProps};box-shadow:${cardShadow(2, dark)};display:flex;align-items:center;justify-content:center;overflow:hidden;padding:0 8px">`;
+    nodesHtml += `<span style="font-size:13px;font-weight:700;color:${color};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;${dark ? `text-shadow:0 0 10px ${hexToRgba(color, 0.4)}` : ''}">${escHtml(exit.exitType)}</span>`;
     nodesHtml += `</div>`;
 
     // Valuation below timeline
     if (exit.valuation) {
-      nodesHtml += `<div style="position:absolute;left:${cx - 60}px;top:${timelineY + 20}px;width:120px;text-align:center">`;
-      nodesHtml += `<div style="font-size:20px;font-weight:800;color:${color};${dark ? textGlow(color, 0.3) : ''}">${escHtml(exit.valuation)}</div>`;
+      nodesHtml += `<div style="position:absolute;left:${cx - 65}px;top:${timelineY + 20}px;width:130px;text-align:center;overflow:hidden">`;
+      nodesHtml += `<div style="font-size:20px;font-weight:800;color:${color};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;${dark ? textGlow(color, 0.3) : ''}">${escHtml(exit.valuation)}</div>`;
       nodesHtml += `</div>`;
     }
 
