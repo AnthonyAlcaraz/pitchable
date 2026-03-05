@@ -368,7 +368,7 @@ export function PitchLensWizardPage() {
                 <label className="text-sm font-medium text-foreground">{t('pitch_lenses.wizard.figma_integration_title')}</label>
               </div>
               <p className="mb-3 text-xs text-muted-foreground">
-                Paste a Figma URL to import your template. AI will auto-map frames to slide types.
+                {t('pitch_lenses.wizard.figma_description')}
               </p>
 
               <div className="flex gap-2">
@@ -389,7 +389,7 @@ export function PitchLensWizardPage() {
                   ) : (
                     <Sparkles className="h-3.5 w-3.5" />
                   )}
-                  Import
+                  {t('pitch_lenses.wizard.figma_import')}
                 </button>
               </div>
 
@@ -400,19 +400,19 @@ export function PitchLensWizardPage() {
               {form.figmaTemplateId && (
                 <p className="mt-2 flex items-center gap-1.5 text-xs text-green-600">
                   <Figma className="h-3 w-3" />
-                  Template linked &mdash; AI mappings applied
+                  {t('pitch_lenses.wizard.figma_template_linked')}
                 </p>
               )}
 
               {!form.figmaTemplateId && figmaTemplates.length > 0 && (
                 <div className="mt-3">
-                  <label className="mb-1 block text-xs text-muted-foreground">Or select existing template</label>
+                  <label className="mb-1 block text-xs text-muted-foreground">{t('pitch_lenses.wizard.figma_select_existing')}</label>
                   <select
                     value={form.figmaTemplateId ?? ''}
                     onChange={(e) => setForm({ ...form, figmaTemplateId: e.target.value || undefined })}
                     className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                   >
-                    <option value="">None</option>
+                    <option value="">{t('pitch_lenses.wizard.figma_none')}</option>
                     {figmaTemplates.map((tmpl) => (
                       <option key={tmpl.id} value={tmpl.id}>
                         {tmpl.name} ({tmpl.mappingCount} mapped)
@@ -506,7 +506,7 @@ export function PitchLensWizardPage() {
               />
               <div className="mt-1 flex items-center justify-between text-xs">
                 <span className="text-muted-foreground">
-                  {maxGuidanceLength <= 200 ? 'Upgrade for more characters' : ''}
+                  {maxGuidanceLength <= 200 ? t('pitch_lenses.wizard.upgrade_for_more') : ''}
                 </span>
                 <span className={(form.customGuidance?.length ?? 0) >= maxGuidanceLength ? 'text-amber-500 font-medium' : 'text-muted-foreground'}>
                   {form.customGuidance?.length ?? 0}/{maxGuidanceLength}
@@ -518,17 +518,17 @@ export function PitchLensWizardPage() {
             <div className="border-t border-border pt-4">
               <div className="mb-3 flex items-center gap-2">
                 <ImageIcon className="h-4 w-4 text-muted-foreground" />
-                <label className="text-sm font-medium text-foreground">Image Generation</label>
+                <label className="text-sm font-medium text-foreground">{t('pitch_lenses.wizard.image_generation')}</label>
               </div>
 
               <div className="mb-4">
-                <label className="mb-1.5 block text-xs text-muted-foreground">Background images (full-slide, 15% opacity)</label>
+                <label className="mb-1.5 block text-xs text-muted-foreground">{t('pitch_lenses.wizard.bg_images_label')}</label>
                 <div className="flex gap-2">
                   {[
-                    { value: 0, label: 'None' },
-                    { value: 5, label: 'Few (~2)' },
-                    { value: 3, label: 'Some (~4)' },
-                    { value: 2, label: 'Many (~6)' },
+                    { value: 0, label: t('pitch_lenses.wizard.img_none') },
+                    { value: 5, label: t('pitch_lenses.wizard.img_few') },
+                    { value: 3, label: t('pitch_lenses.wizard.img_some') },
+                    { value: 2, label: t('pitch_lenses.wizard.img_many') },
                   ].map((opt) => (
                     <button
                       key={opt.value}
@@ -547,13 +547,13 @@ export function PitchLensWizardPage() {
               </div>
 
               <div className="mb-4">
-                <label className="mb-1.5 block text-xs text-muted-foreground">Side panel images (right side, 35% width)</label>
+                <label className="mb-1.5 block text-xs text-muted-foreground">{t('pitch_lenses.wizard.side_panel_label')}</label>
                 <div className="flex gap-2">
                   {[
-                    { value: 0, label: 'None' },
-                    { value: 5, label: 'Few (~2)' },
-                    { value: 3, label: 'Some (~4)' },
-                    { value: 2, label: 'Many (~6)' },
+                    { value: 0, label: t('pitch_lenses.wizard.img_none') },
+                    { value: 5, label: t('pitch_lenses.wizard.img_few') },
+                    { value: 3, label: t('pitch_lenses.wizard.img_some') },
+                    { value: 2, label: t('pitch_lenses.wizard.img_many') },
                   ].map((opt) => (
                     <button
                       key={opt.value}
@@ -639,8 +639,8 @@ export function PitchLensWizardPage() {
                 />
               </button>
               <div>
-                <label className="text-sm font-medium text-foreground">Accent Color Diversity</label>
-                <p className="text-xs text-muted-foreground">Vary accent colors across slide elements for visual variety</p>
+                <label className="text-sm font-medium text-foreground">{t('pitch_lenses.wizard.accent_color_diversity')}</label>
+                <p className="text-xs text-muted-foreground">{t('pitch_lenses.wizard.accent_color_diversity_desc')}</p>
               </div>
             </div>
           </div>
@@ -702,21 +702,21 @@ export function PitchLensWizardPage() {
             </div>
 
             <div className="border-t border-border pt-3">
-              <p className="text-xs text-muted-foreground">Accent Color Diversity</p>
+              <p className="text-xs text-muted-foreground">{t('pitch_lenses.wizard.review_accent_color')}</p>
               <p className="text-sm font-medium text-foreground">{form.accentColorDiversity ? t('common.enabled') : t('common.disabled')}</p>
             </div>
 
             <div className="border-t border-border pt-3">
-              <p className="text-xs text-muted-foreground">Background images</p>
+              <p className="text-xs text-muted-foreground">{t('pitch_lenses.wizard.review_bg_images')}</p>
               <p className="text-sm font-medium text-foreground">
-                {form.backgroundImageFrequency === 0 ? 'None' : form.backgroundImageFrequency === 5 ? 'Few (~2 per deck)' : form.backgroundImageFrequency === 3 ? 'Some (~4 per deck)' : form.backgroundImageFrequency === 2 ? 'Many (~6 per deck)' : `Custom (1 per ${form.backgroundImageFrequency} slides)`}
+                {form.backgroundImageFrequency === 0 ? t('pitch_lenses.wizard.img_freq_none') : form.backgroundImageFrequency === 5 ? t('pitch_lenses.wizard.img_freq_few') : form.backgroundImageFrequency === 3 ? t('pitch_lenses.wizard.img_freq_some') : form.backgroundImageFrequency === 2 ? t('pitch_lenses.wizard.img_freq_many') : t('pitch_lenses.wizard.img_freq_custom', { n: form.backgroundImageFrequency })}
               </p>
             </div>
 
             <div className="border-t border-border pt-3">
-              <p className="text-xs text-muted-foreground">Side panel images</p>
+              <p className="text-xs text-muted-foreground">{t('pitch_lenses.wizard.review_side_images')}</p>
               <p className="text-sm font-medium text-foreground">
-                {form.sidePanelImageFrequency === 0 ? 'None' : form.sidePanelImageFrequency === 5 ? 'Few (~2 per deck)' : form.sidePanelImageFrequency === 3 ? 'Some (~4 per deck)' : form.sidePanelImageFrequency === 2 ? 'Many (~6 per deck)' : `Custom (1 per ${form.sidePanelImageFrequency} slides)`}
+                {form.sidePanelImageFrequency === 0 ? t('pitch_lenses.wizard.img_freq_none') : form.sidePanelImageFrequency === 5 ? t('pitch_lenses.wizard.img_freq_few') : form.sidePanelImageFrequency === 3 ? t('pitch_lenses.wizard.img_freq_some') : form.sidePanelImageFrequency === 2 ? t('pitch_lenses.wizard.img_freq_many') : t('pitch_lenses.wizard.img_freq_custom', { n: form.sidePanelImageFrequency })}
               </p>
             </div>
 
@@ -724,7 +724,7 @@ export function PitchLensWizardPage() {
               <div className="border-t border-border pt-3">
                 <div className="flex items-center gap-1.5">
                   <Figma className="h-3.5 w-3.5 text-muted-foreground" />
-                  <p className="text-xs text-muted-foreground">Figma Template</p>
+                  <p className="text-xs text-muted-foreground">{t('pitch_lenses.wizard.review_figma_template')}</p>
                 </div>
                 <p className="mt-1 text-sm font-medium text-foreground">
                   {figmaTemplates.find((t) => t.id === form.figmaTemplateId)?.name ?? 'Linked'}
