@@ -62,8 +62,9 @@ export function formatElapsed(startedAt: number, completedAt?: number): string {
   return `${(ms / 1000).toFixed(1)}s`;
 }
 
-export const PHASE_LABELS: Record<string, string> = {
-  prepare: 'Preparing',
-  generate: 'Generating',
-  finalize: 'Saving',
+/** i18n keys — resolved at render time via t(`chat.phases.${phase}`) */
+export const PHASE_KEYS: Record<string, string> = {
+  prepare: 'chat.phases.prepare',
+  generate: 'chat.phases.generate',
+  finalize: 'chat.phases.finalize',
 };

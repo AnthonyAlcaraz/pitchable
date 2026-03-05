@@ -556,10 +556,10 @@ export function LandingPage() {
         <div className="relative mx-auto max-w-5xl px-6">
           <div className="mb-10 text-center" style={revealStyle(showroomReveal.isVisible)}>
             <h2 className="mb-3 text-3xl font-bold text-white sm:text-4xl">
-              Built for high-stakes presentations
+              {t('landing.showroom.title')}
             </h2>
             <p className="mx-auto max-w-xl text-[#a1a1a1]">
-              16 professional themes from McKinsey to YC — each with AI imagery, action titles, and consulting frameworks.
+              {t('landing.showroom.subtitle')}
             </p>
           </div>
 

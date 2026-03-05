@@ -104,11 +104,17 @@ export function CockpitPage() {
       <div className="mb-8">
         <div className="mb-1 flex items-center gap-3">
           <Gauge className="h-7 w-7 text-primary" />
-          <h1 className="text-2xl font-bold text-foreground">{t('cockpit.title')}</h1>
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">
+              {user?.name
+                ? t('cockpit.welcome', { name: user.name.split(' ')[0] })
+                : t('cockpit.title')}
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              {t('cockpit.subtitle')}
+            </p>
+          </div>
         </div>
-        <p className="text-sm text-muted-foreground">
-          {t('cockpit.subtitle')}
-        </p>
       </div>
 
       {/* Hero CTA */}
@@ -325,7 +331,7 @@ export function CockpitPage() {
             onClick={() => navigate('/pitch-briefs/new')}
             disabled={briefsAtLimit}
             className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
-            title={briefsAtLimit ? `Limit reached (${tierStatus?.briefsLimit ?? 'N/A'}). Upgrade your plan.` : ''}
+            title={briefsAtLimit ? t('cockpit.limit_reached', { limit: tierStatus?.briefsLimit ?? 'N/A' }) : ''}
           >
             <Plus className="h-4 w-4" />
             {t('cockpit.new_brief')}
@@ -406,7 +412,7 @@ export function CockpitPage() {
             onClick={() => navigate('/pitch-lens/new')}
             disabled={lensesAtLimit}
             className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
-            title={lensesAtLimit ? `Limit reached (${tierStatus?.lensesLimit}). Upgrade your plan.` : ''}
+            title={lensesAtLimit ? t('cockpit.limit_reached', { limit: tierStatus?.lensesLimit }) : ''}
           >
             <Plus className="h-4 w-4" />
             {t('cockpit.new_lens')}

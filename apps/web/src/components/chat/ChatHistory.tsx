@@ -1,4 +1,6 @@
 import { useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
+import { MessageSquare } from 'lucide-react';
 import { ChatMessage } from './ChatMessage.js';
 import { AgentActivity } from './AgentActivity.js';
 import { ThemeSelector } from './ThemeSelector.js';
@@ -37,6 +39,7 @@ export function ChatHistory({
   onRespondToInteraction,
   onSendMessage,
 }: ChatHistoryProps) {
+  const { t } = useTranslation();
   const bottomRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const userScrolled = useRef(false);
@@ -71,13 +74,12 @@ export function ChatHistory({
     >
       {messages.length === 0 && !isStreaming && (
         <div className="flex h-full flex-col items-center justify-center p-8 text-center text-muted-foreground">
-          <p className="mb-2 text-lg font-medium">Start a conversation</p>
-          <p className="text-sm">
-            Describe your presentation or type{' '}
-            <code className="rounded bg-muted px-1 py-0.5 text-orange-400">
-              /help
-            </code>{' '}
-            for commands
+          <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10">
+            <MessageSquare className="h-6 w-6 text-primary" />
+          </div>
+          <p className="mb-1 text-lg font-semibold text-foreground">{t('chat.empty.title')}</p>
+          <p className="max-w-xs text-sm">
+            {t('chat.empty.subtitle')}
           </p>
         </div>
       )}

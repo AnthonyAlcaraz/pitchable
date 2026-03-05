@@ -61,7 +61,9 @@
     "view_all": "Tout afficher",
     "no_brief": "Aucun dossier",
     "no_lens": "Aucun profil",
-    "blank": "Vierge"
+    "blank": "Vierge",
+    "verify_email_banner": "Veuillez vérifier votre e-mail. Consultez votre boîte de réception ou",
+    "resend_verification_email": "renvoyer l'e-mail de vérification"
   },
   "nav": {
     "cockpit": "Tableau de Bord",
@@ -203,6 +205,10 @@
     "showcase": {
       "title": "De vraies présentations, créées avec Pitchable",
       "subtitle": "Des présentations professionnelles générées en minutes, pas en jours"
+    },
+    "showroom": {
+      "title": "Conçu pour les présentations à fort enjeu",
+      "subtitle": "16 thèmes professionnels de McKinsey à YC — avec images IA, titres d'impact et frameworks consulting."
     },
     "personas": {
       "title": "Conçu pour votre façon de travailler",
@@ -438,6 +444,8 @@
     "pitch_brief_label": "Dossier de Pitch",
     "pitch_lens_label": "Profil de Pitch",
     "starting_from_label": "Point de départ",
+    "welcome": "Bienvenue, {{name}}",
+    "limit_reached": "Limite atteinte ({{limit}}). Passez à un plan supérieur.",
     "select_lens_warning": "Sélectionnez un Profil de Pitch pour générer un deck.",
     "create_lens_first": " Créez-en un d'abord.",
     "hero_title": "Créer une nouvelle présentation",
@@ -485,7 +493,8 @@
   "chat": {
     "input": {
       "placeholder": "Décrivez votre présentation ou tapez / pour les commandes...",
-      "hint": "Entrée pour envoyer, Maj+Entrée pour un saut de ligne"
+      "hint": "Entrée pour envoyer, Maj+Entrée pour un saut de ligne",
+      "low_credits": "Crédits faibles"
     },
     "panel": {
       "title": "Chat",
@@ -499,6 +508,14 @@
       "regenerate": "Regénérer une diapositive",
       "images": "Générer des images",
       "help": "Afficher les commandes"
+    },
+    "empty": {
+      "title": "Que souhaitez-vous créer ?",
+      "subtitle": "Décrivez le sujet de votre présentation et l'IA construira votre deck étape par étape."
+    },
+    "suggestions": {
+      "title": "Sujets suggérés pour votre deck",
+      "hint": "Ou tapez votre propre sujet ci-dessous"
     },
     "phases": {
       "prepare": "Préparation",

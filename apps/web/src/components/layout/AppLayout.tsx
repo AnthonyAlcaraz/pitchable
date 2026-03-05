@@ -205,13 +205,13 @@ export function AppLayout() {
           <div className="flex items-center gap-2 border-b border-amber-500/30 bg-amber-500/10 px-4 py-2.5">
             <Mail className="h-4 w-4 shrink-0 text-amber-400" />
             <p className="flex-1 text-sm text-amber-200">
-              Please verify your email. Check your inbox or{' '}
+              {t('common.verify_email_banner')}{' '}
               <button
                 onClick={() => void handleResendVerification()}
                 disabled={resendingVerification}
                 className="font-medium text-amber-400 underline hover:text-amber-300 disabled:opacity-50"
               >
-                {resendingVerification ? 'sending...' : 'resend verification email'}
+                {resendingVerification ? 'sending...' : t('common.resend_verification_email')}
               </button>
               {resendMessage && (
                 <span className="ml-2 text-xs text-amber-300">{resendMessage}</span>

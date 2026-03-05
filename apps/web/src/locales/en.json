@@ -61,7 +61,9 @@
     "view_all": "View All",
     "no_brief": "No Brief",
     "no_lens": "No Lens",
-    "blank": "Blank"
+    "blank": "Blank",
+    "verify_email_banner": "Please verify your email. Check your inbox or",
+    "resend_verification_email": "resend verification email"
   },
   "nav": {
     "cockpit": "Cockpit",
@@ -203,6 +205,10 @@
     "showcase": {
       "title": "Real Presentations, Built with Pitchable",
       "subtitle": "Enterprise-grade decks generated in minutes, not days"
+    },
+    "showroom": {
+      "title": "Built for high-stakes presentations",
+      "subtitle": "16 professional themes from McKinsey to YC — each with AI imagery, action titles, and consulting frameworks."
     },
     "personas": {
       "title": "Built for the way you work",
@@ -440,6 +446,8 @@
     "pitch_brief_label": "Pitch Brief",
     "pitch_lens_label": "Pitch Lens",
     "starting_from_label": "Starting From",
+    "welcome": "Welcome, {{name}}",
+    "limit_reached": "Limit reached ({{limit}}). Upgrade your plan.",
     "select_lens_warning": "Select a Pitch Lens to generate a deck.",
     "create_lens_first": " Create one first.",
     "hero_title": "Create a new presentation",
@@ -503,6 +511,14 @@
       "regenerate": "Regenerate a slide",
       "images": "Generate images",
       "help": "Show commands"
+    },
+    "empty": {
+      "title": "What would you like to create?",
+      "subtitle": "Describe your presentation topic and the AI will build your deck step by step."
+    },
+    "suggestions": {
+      "title": "Suggested topics for your deck",
+      "hint": "Or type your own topic below"
     },
     "phases": {
       "prepare": "Preparing",

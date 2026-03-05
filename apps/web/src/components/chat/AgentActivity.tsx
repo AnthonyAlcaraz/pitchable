@@ -1,9 +1,10 @@
 import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { AgentStep } from '@/stores/chat.store';
 import { AgentThinkingCard } from './AgentThinkingCard';
 import { AgentStepGroup } from './AgentStepGroup';
 import { DeckProgressHeader } from './DeckProgressHeader';
-import { getStepConfig, PHASE_LABELS } from './step-config';
+import { getStepConfig, PHASE_KEYS } from './step-config';
 
 interface AgentActivityProps {
   thinkingText: string | null;
@@ -12,6 +13,7 @@ interface AgentActivityProps {
 }
 
 export function AgentActivity({ thinkingText, steps, streamingContent: _streamingContent }: AgentActivityProps) {
+  const { t } = useTranslation();
   const showThinking = !!thinkingText;
 
   // Group steps by phase
@@ -30,10 +32,10 @@ export function AgentActivity({ thinkingText, steps, streamingContent: _streamin
 
     return order.map((phase) => ({
       phase,
-      label: PHASE_LABELS[phase] ?? phase,
+      label: PHASE_KEYS[phase] ? t(PHASE_KEYS[phase]) : phase,
       steps: groups[phase],
     }));
-  }, [steps]);
+  }, [steps, t]);
 
   // Detect deck generation progress
   const deckProgress = useMemo(() => {

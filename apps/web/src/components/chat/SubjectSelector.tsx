@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Lightbulb, Pencil } from 'lucide-react';
 import type { SubjectSuggestion } from '../../stores/workflow.store.js';
 
@@ -8,13 +9,14 @@ interface SubjectSelectorProps {
 }
 
 export function SubjectSelector({ suggestions, onSelect, disabled }: SubjectSelectorProps) {
+  const { t } = useTranslation();
   if (suggestions.length === 0) return null;
 
   return (
     <div className="mx-4 my-2 rounded-lg border border-border bg-card overflow-hidden">
       <div className="flex items-center gap-2 border-b border-border bg-muted/30 px-3 py-2">
         <Lightbulb className="h-4 w-4 text-orange-400" />
-        <span className="text-xs font-medium text-foreground">Suggested topics for your deck</span>
+        <span className="text-xs font-medium text-foreground">{t('chat.suggestions.title')}</span>
       </div>
 
       <div className="space-y-1.5 p-3">
@@ -39,7 +41,7 @@ export function SubjectSelector({ suggestions, onSelect, disabled }: SubjectSele
 
       <div className="flex items-center gap-1.5 border-t border-border px-3 py-2">
         <Pencil className="h-3 w-3 text-muted-foreground" />
-        <span className="text-[10px] text-muted-foreground">Or type your own topic below</span>
+        <span className="text-[10px] text-muted-foreground">{t('chat.suggestions.hint')}</span>
       </div>
     </div>
   );
