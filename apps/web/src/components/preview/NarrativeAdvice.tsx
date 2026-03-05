@@ -75,7 +75,7 @@ export function NarrativeAdvice({ slideType, speakerNotes, onSaveSpeakerNotes }:
   const tips = COACHING_TIPS[slideType] ?? DEFAULT_TIPS;
 
   return (
-    <div className="flex gap-4">
+    <div className="flex flex-col gap-3 sm:flex-row sm:gap-4">
       {/* Speaker Notes */}
       <div className="flex-1 rounded-lg border border-border bg-card p-3">
         <div className="mb-2 flex items-center gap-1.5 text-xs font-medium text-foreground">
@@ -92,7 +92,7 @@ export function NarrativeAdvice({ slideType, speakerNotes, onSaveSpeakerNotes }:
       </div>
 
       {/* Narrative Coaching */}
-      <div className="w-72 flex-shrink-0 rounded-lg border border-amber-500/20 bg-amber-500/5 p-3">
+      <div className="w-full flex-shrink-0 rounded-lg border border-amber-500/20 bg-amber-500/5 p-3 sm:w-72">
         <div className="mb-2 flex items-center gap-1.5 text-xs font-medium text-amber-600 dark:text-amber-400">
           <Lightbulb className="h-3.5 w-3.5" />
           Delivery Tips

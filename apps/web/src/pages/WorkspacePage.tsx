@@ -49,9 +49,9 @@ export function WorkspacePage() {
           <span className="font-medium text-foreground">Pitchable</span>
         </Link>
         <div className="h-5 w-px bg-border" />
-        <div className="flex items-center gap-2">
-          <Layers className="h-4 w-4 text-primary" />
-          <span className="text-sm font-medium text-foreground">
+        <div className="flex min-w-0 items-center gap-2">
+          <Layers className="h-4 w-4 shrink-0 text-primary" />
+          <span className="truncate text-sm font-medium text-foreground">
             {id === 'new' ? t('workspace.new_presentation') : (presentationTitle || t('workspace.new_presentation'))}
           </span>
         </div>

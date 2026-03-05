@@ -676,22 +676,23 @@ export function PreviewPanel({ presentationId }: PreviewPanelProps) {
 
                   {/* Review actions */}
                   {isReviewing && !isCurrentApproved && !isEditing && (
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5 sm:gap-2">
                       <button
                         type="button"
                         onClick={handleApprove}
-                        className="flex items-center gap-1.5 rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 transition-colors"
+                        className="flex items-center gap-1 rounded-lg bg-green-600 px-2.5 py-1.5 text-xs font-medium text-white hover:bg-green-700 transition-colors sm:gap-1.5 sm:px-4 sm:py-2 sm:text-sm"
                       >
-                        <Check className="h-4 w-4" />
+                        <Check className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                         Approve
                       </button>
                       <button
                         type="button"
                         onClick={() => setIsEditing(true)}
-                        className="flex items-center gap-1.5 rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors"
+                        className="flex items-center gap-1 rounded-lg border border-border px-2.5 py-1.5 text-xs font-medium text-foreground hover:bg-muted transition-colors sm:gap-1.5 sm:px-4 sm:py-2 sm:text-sm"
                       >
-                        <Edit3 className="h-4 w-4" />
-                        Suggest Change
+                        <Edit3 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                        <span className="hidden sm:inline">Suggest Change</span>
+                        <span className="sm:hidden">Edit</span>
                       </button>
                     </div>
                   )}

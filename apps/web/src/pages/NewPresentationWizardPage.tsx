@@ -554,7 +554,7 @@ export function NewPresentationWizardPage() {
                 {/* Image generation summary */}
                 {selectedLens && (() => {
                   const slideRange = selectedLens.framework?.idealSlideRange;
-                  const freq = selectedLens.sidePanelImageFrequency || 4;
+                  const freq = selectedLens.sidePanelImageFrequency || 5;
                   const isBackground = (selectedLens.backgroundImageFrequency > 0 && selectedLens.sidePanelImageFrequency === 0);
                   const noImages = freq === 0;
                   const minSlides = slideRange?.min ?? 8;

@@ -41,3 +41,38 @@ npm-debug.log*
 pnpm-debug.log*
 .gitnexus
 .claude/worktrees/
+
+# Test artifacts
+apps/api/test-*.png
+apps/api/test-*.pdf
+apps/api/test-*.md
+apps/api/test-*.html
+apps/api/test-*.0*
+apps/api/test/
+tests/
+
+# One-off fix scripts
+fix-*.js
+
+# Debug artifacts
+bash.exe.stackdump
+test-pagination*
+
+# Reference decks (local only)
+reference-decks/
+
+# Temp scripts
+apps/api/temp_*.cjs
+apps/api/_check_keys.mjs
+apps/api/add-credits.js
+
+# Claude Code local config
+.claude/agents/
+.claude/skills/
+AGENTS.md
+
+# PM2 ecosystem config (local)
+apps/api/ecosystem.config.cjs
+
+# npm config (local)
+.npmrc
