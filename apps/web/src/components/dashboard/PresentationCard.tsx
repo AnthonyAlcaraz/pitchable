@@ -83,7 +83,7 @@ export function PresentationCard({
             className="mb-2 w-full rounded border border-primary/50 bg-transparent px-1 py-0.5 text-sm font-semibold text-foreground outline-none"
           />
         ) : (
-          <h3 className="mb-2 truncate text-sm font-semibold text-foreground">
+          <h3 className="mb-2 line-clamp-2 text-sm font-semibold leading-snug text-foreground">
             {presentation.title}
           </h3>
         )}

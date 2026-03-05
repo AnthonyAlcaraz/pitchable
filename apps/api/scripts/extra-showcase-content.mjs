@@ -525,7 +525,7 @@ const EXTRA_CONTENT_C = {
 
 const EXTRA_CONTENT_D = {
   TITLE: {
-    title: 'AI Research Platform —” Technical Overview',
+    title: 'AI Research Platform — Technical Overview',
     body: 'Helios Labs | Series A | Dr. Viktor Andreev, CEO & Chief Scientist',
   },
   CONTENT: {
