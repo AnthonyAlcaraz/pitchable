@@ -263,6 +263,18 @@ export class PrismaService
       `CREATE INDEX IF NOT EXISTS "GenerationMetric_operation_idx" ON "GenerationMetric"("operation")`,
       `CREATE INDEX IF NOT EXISTS "GenerationMetric_createdAt_idx" ON "GenerationMetric"("createdAt")`,
       `CREATE INDEX IF NOT EXISTS "GenerationMetric_model_createdAt_idx" ON "GenerationMetric"("model", "createdAt")`,
+      // Layout overrides column on Slide
+      `ALTER TABLE "Slide" ADD COLUMN IF NOT EXISTS "layoutOverrides" JSONB`,
+      // Credit reason enum values for newer features
+      `ALTER TYPE "CreditReason" ADD VALUE IF NOT EXISTS 'ENTITY_EXTRACTION'`,
+      `ALTER TYPE "CreditReason" ADD VALUE IF NOT EXISTS 'FIGMA_AI_MAPPING'`,
+      `ALTER TYPE "CreditReason" ADD VALUE IF NOT EXISTS 'LAYOUT_MODIFICATION'`,
+      // New SlideType enum values (content + academic)
+      `ALTER TYPE "SlideType" ADD VALUE IF NOT EXISTS 'MYTH_VS_REALITY'`,
+      `ALTER TYPE "SlideType" ADD VALUE IF NOT EXISTS 'NUMBER_STORY'`,
+      `ALTER TYPE "SlideType" ADD VALUE IF NOT EXISTS 'STORY_ARC'`,
+      `ALTER TYPE "SlideType" ADD VALUE IF NOT EXISTS 'TREND_INSIGHT'`,
+      `ALTER TYPE "SlideType" ADD VALUE IF NOT EXISTS 'CONTRARIAN_VIEW'`,
     ];
 
     for (const sql of migrations) {
