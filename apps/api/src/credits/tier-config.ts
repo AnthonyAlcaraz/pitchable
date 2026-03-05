@@ -46,7 +46,7 @@ export interface TierLimits {
  *   Export: free
  *
  * Pricing (targeting 50%+ margin):
- *   FREE       — 15 credits on signup (one-time), 3 decks max, 8 slides max, try & iterate
+ *   FREE       — 15 credits on signup (one-time), 1 deck/mo, 8 slides max, try & iterate
  *   STARTER    — $29/mo → 40 credits (4 illustrated decks, or 8 text-only)
  *   PRO        — $79/mo → 100 credits (10 illustrated, or 20 text-only)
  *   ENTERPRISE — custom → 300 credits
@@ -115,10 +115,10 @@ export const CREDIT_PACKS: CreditPack[] = [
 
 export const TIER_LIMITS: Record<string, TierLimits> = {
   FREE: {
-    maxDecksPerMonth: 3, // try & iterate (15 credits = ~3 text-only decks)
+    maxDecksPerMonth: 1, // one deck per month — upgrade for more
     maxSlidesPerDeck: 8, // meaningful preview (not crippled)
     creditsPerMonth: 0, // no monthly refresh; one-time 15 credits on signup
-    maxBriefs: 3,
+    maxBriefs: 1,
     maxLenses: 3,
     maxCustomGuidanceLength: 200,
     maxDocumentSizeMb: 5,
