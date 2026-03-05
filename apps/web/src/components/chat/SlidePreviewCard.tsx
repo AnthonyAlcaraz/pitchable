@@ -1,3 +1,10 @@
+function humanizeSource(name: string): string {
+  let clean = name.replace(/[-_][a-f0-9]{4,}[-_]?[a-f0-9]*/gi, '');
+  clean = clean.replace(/\.\w{2,4}$/, '');
+  clean = clean.replace(/[-_]+/g, ' ').trim();
+  return clean.charAt(0).toUpperCase() + clean.slice(1);
+}
+
 interface SlidePreviewCardProps {
   slideNumber: number;
   title: string;
@@ -30,7 +37,7 @@ export function SlidePreviewCard({
         {/* Header */}
         <div className="mb-1 flex items-center gap-1.5">
           <span className="rounded bg-orange-500/10 px-1 py-0.5 text-[9px] font-medium text-orange-400">
-            {slideType.replace('_', ' ')}
+            {slideType.replace(/_/g, ' ')}
           </span>
           <span className="text-[9px] text-muted-foreground">
             #{slideNumber}
@@ -68,7 +75,7 @@ export function SlidePreviewCard({
         {sources && sources.length > 0 && (
           <div className="mt-auto pt-1 border-t border-border/30">
             <p className="text-[8px] text-muted-foreground/50 truncate">
-              {sources.length === 1 ? `Source: ${sources[0]}` : `${sources.length} sources`}
+              {sources.length === 1 ? `Source: ${humanizeSource(sources[0])}` : `${sources.length} sources`}
             </p>
           </div>
         )}

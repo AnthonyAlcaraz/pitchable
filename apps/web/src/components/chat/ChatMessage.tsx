@@ -93,15 +93,24 @@ export function ChatMessage({
           </div>
         )}
 
-        {/* Deck-level KB sources summary */}
-        {outlineSources.length > 0 && (
-          <div className="mt-2 rounded-md bg-muted/30 px-3 py-2 border-l-2 border-orange-500/30">
-            <p className="text-[10px] font-medium text-muted-foreground mb-1">Knowledge Base Sources</p>
-            {outlineSources.map((s) => (
-              <p key={s.documentId} className="text-[9px] text-muted-foreground/70">{humanizeSourceName(s.documentTitle)}</p>
-            ))}
-          </div>
-        )}
+        {/* Deck-level KB sources summary (deduplicated) */}
+        {outlineSources.length > 0 && (() => {
+          const seen = new Set<string>();
+          const unique = outlineSources.filter((s) => {
+            const key = s.documentId;
+            if (seen.has(key)) return false;
+            seen.add(key);
+            return true;
+          });
+          return (
+            <div className="mt-2 rounded-md bg-muted/30 px-3 py-2 border-l-2 border-orange-500/30">
+              <p className="text-[10px] font-medium text-muted-foreground mb-1">Knowledge Base Sources ({unique.length})</p>
+              {unique.map((s) => (
+                <p key={s.documentId} className="text-[9px] text-muted-foreground/70">{humanizeSourceName(s.documentTitle)}</p>
+              ))}
+            </div>
+          );
+        })()}
 
 
 
