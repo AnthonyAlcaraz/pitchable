@@ -15,6 +15,7 @@ import { PresentationMode } from './PresentationMode';
 import { NarrativeAdvice } from './NarrativeAdvice';
 import { CascadeConfirmModal } from './CascadeConfirmModal';
 import { CircularProgress } from '@/components/ui/CircularProgress';
+import { cn } from '@/lib/utils';
 import { api } from '@/lib/api';
 import { getSocket } from '@/lib/socket';
 
@@ -598,26 +599,29 @@ export function PreviewPanel({ presentationId }: PreviewPanelProps) {
 
         {/* Main content area */}
         <div className="flex flex-1 overflow-hidden">
-          {/* Thumbnail sidebar with approval indicators */}
-          <ThumbnailSidebar
-            slides={slides}
-            currentIndex={currentSlideIndex}
-            onSelect={setCurrentSlide}
-            theme={presentation?.theme}
-            approvedSlides={isReviewing ? approvedSlides : undefined}
-            slideVerification={!isReviewing ? slideVerification : undefined}
-          />
+          {/* Thumbnail sidebar — hidden on mobile */}
+          <div className="hidden md:flex">
+            <ThumbnailSidebar
+              slides={slides}
+              currentIndex={currentSlideIndex}
+              onSelect={setCurrentSlide}
+              theme={presentation?.theme}
+              approvedSlides={isReviewing ? approvedSlides : undefined}
+              slideVerification={!isReviewing ? slideVerification : undefined}
+            />
+          </div>
 
           {/* Main slide view */}
-          <div ref={mainContentRef} className="flex-1 overflow-y-auto bg-muted/20 p-4 md:p-6">
+          <div ref={mainContentRef} className="flex-1 overflow-y-auto bg-muted/20 p-2 sm:p-4 md:p-6">
             {currentSlide && (
-              <div className="mx-auto w-full max-w-6xl space-y-4">
+              <div className="mx-auto w-full max-w-6xl space-y-3 sm:space-y-4">
 
-                {/* ── Preview image (primary) ─────────── */}
+                {/* ── Preview image (primary) — tap for fullscreen on mobile ─────────── */}
                 <div
                   key={currentSlide.id}
-                  className="relative overflow-hidden rounded-lg border border-border bg-black shadow-lg"
+                  className="relative cursor-pointer overflow-hidden rounded-lg border border-border bg-black shadow-lg md:cursor-default"
                   style={{ aspectRatio: '16/9', animation: 'fadeSlideIn 0.25s ease-out' }}
+                  onClick={() => { if (window.innerWidth < 768) handleFullscreen(); }}
                 >
                   {currentSlide.previewUrl ? (
                     <>
@@ -634,6 +638,24 @@ export function PreviewPanel({ presentationId }: PreviewPanelProps) {
                   ) : (
                     <SlideRenderer slide={currentSlide} theme={presentation?.theme} className="h-full w-full" />
                   )}
+                  {/* Mobile tap hint */}
+                  <div className="pointer-events-none absolute bottom-2 right-2 rounded-full bg-black/50 px-2 py-1 text-[10px] text-white/80 md:hidden">
+                    Tap to expand
+                  </div>
+                </div>
+
+                {/* ── Mobile slide navigator (replaces hidden thumbnails) ── */}
+                <div className="flex items-center justify-center gap-1 md:hidden">
+                  {slides.map((_, i) => (
+                    <button
+                      key={i}
+                      onClick={() => setCurrentSlide(i)}
+                      className={cn(
+                        'h-1.5 rounded-full transition-all',
+                        i === currentSlideIndex ? 'w-6 bg-primary' : 'w-1.5 bg-muted-foreground/30',
+                      )}
+                    />
+                  ))}
                 </div>
 
                 {/* ── Slide info + action bar ──────────── */}
@@ -683,6 +705,27 @@ export function PreviewPanel({ presentationId }: PreviewPanelProps) {
                     >
                       <Edit3 className="h-3 w-3" />
                       Edit
+                    </button>
+                  )}
+                </div>
+
+                {/* ── Mobile action bar ─────────────────── */}
+                <div className="flex items-center gap-2 md:hidden">
+                  <button
+                    type="button"
+                    onClick={() => handleExport('pptx')}
+                    className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-orange-500 px-4 py-2.5 text-sm font-medium text-white hover:bg-orange-600 transition-colors"
+                  >
+                    <Download className="h-4 w-4" />
+                    Download PPTX
+                  </button>
+                  {!isEditing && (
+                    <button
+                      type="button"
+                      onClick={() => setIsEditing(true)}
+                      className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-2.5 text-sm font-medium text-foreground hover:bg-muted transition-colors"
+                    >
+                      <Edit3 className="h-4 w-4" />
                     </button>
                   )}
                 </div>

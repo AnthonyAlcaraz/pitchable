@@ -89,14 +89,14 @@ export class ChatService {
         this.activity.track({ userId, eventType: 'generation_retrial', category: 'behavioral', metadata: { presentationId } });
         // Clear old outline and regenerate with the user's feedback
         this.generation.clearPendingOutline(presentationId);
-        yield* this.generation.generateOutline(userId, presentationId, {
+        yield* this.generateAndAutoExecute(userId, presentationId, {
           topic: content,
           presentationType: 'STANDARD',
         });
         return;
       }
-      // Block anything else — nudge toward approve/retry
-      const msg = 'Please **approve** the outline to generate slides, or tell me what to change.';
+      // Block anything else — deck is already being generated
+      const msg = 'Deck is being generated. Please wait for it to finish.';
       yield { type: 'token', content: msg };
       yield { type: 'done', content: '' };
       await this.persistAssistantMessage(presentationId, msg);
@@ -131,7 +131,7 @@ export class ChatService {
     if (slideCount === 0) {
       const generationIntent = this.detectGenerationIntent(content);
       if (generationIntent) {
-        yield* this.generation.generateOutline(userId, presentationId, generationIntent);
+        yield* this.generateAndAutoExecute(userId, presentationId, generationIntent);
         return;
       }
     }
@@ -143,7 +143,7 @@ export class ChatService {
         where: { presentationId, role: 'user' },
       });
       if (userMsgCount <= 1) {
-        yield* this.generation.generateOutline(userId, presentationId, {
+        yield* this.generateAndAutoExecute(userId, presentationId, {
           topic: content,
           presentationType: 'STANDARD',
         });
@@ -494,7 +494,7 @@ export class ChatService {
           yield { type: 'done', content: '' };
           break;
         }
-        yield* this.generation.generateOutline(userId, presentationId, {
+        yield* this.generateAndAutoExecute(userId, presentationId, {
           topic,
           presentationType: 'STANDARD',
         });
@@ -502,7 +502,7 @@ export class ChatService {
       }
       case 'regenerate': {
         const topic = args.join(' ') || 'the current presentation topic';
-        yield* this.generation.generateOutline(userId, presentationId, {
+        yield* this.generateAndAutoExecute(userId, presentationId, {
           topic,
           presentationType: 'STANDARD',
         });
@@ -792,6 +792,25 @@ export class ChatService {
       yield { type: 'token', content: msg };
       yield { type: 'done', content: '' };
       await this.persistAssistantMessage(presentationId, msg);
+    }
+  }
+
+  /**
+   * Generate outline + immediately execute it (no approval step).
+   * Streams: outline summary → "Generating slides..." → slide progress → done.
+   */
+  private async *generateAndAutoExecute(
+    userId: string,
+    presentationId: string,
+    config: GenerationConfig,
+  ): AsyncGenerator<ChatStreamEvent> {
+    // Generate the outline (streams tokens to client so they see the structure)
+    yield* this.generation.generateOutline(userId, presentationId, config);
+
+    // If outline generation succeeded, immediately execute it
+    if (this.generation.hasPendingOutline(presentationId)) {
+      yield { type: 'token', content: '\n\n**Generating slides...**\n' };
+      yield* this.generation.executeOutline(userId, presentationId);
     }
   }
 

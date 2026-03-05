@@ -294,7 +294,7 @@ export class GenerationService {
 
     yield {
       type: 'token',
-      content: `---\n_${outline.slides.length} slides. Type **approve** to generate the full deck, or tell me what to change._\n`,
+      content: `---\n_${outline.slides.length} slides. Generating deck..._\n`,
     };
 
     // 5. Persist as assistant message with messageType 'outline'

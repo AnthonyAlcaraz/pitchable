@@ -18,9 +18,10 @@ git push
 ### Railway Deploy Verification (MANDATORY after every push)
 
 ```bash
+# 1. Confirm deploy triggered for the right commit
 gh api repos/AnthonyAlcaraz/pitchable/deployments --jq '.[0] | {sha: .sha[0:7], created_at}'
-sleep 120
-gh api repos/AnthonyAlcaraz/pitchable/deployments --jq '.[0].id' | xargs -I{} gh api repos/AnthonyAlcaraz/pitchable/deployments/{}/statuses --jq '.[0].state'
+# 2. Poll until deploy succeeds/fails (every 20s, max 5min)
+DEPLOY_ID=$(gh api repos/AnthonyAlcaraz/pitchable/deployments --jq '.[0].id'); for i in $(seq 1 15); do STATUS=$(gh api "repos/AnthonyAlcaraz/pitchable/deployments/$DEPLOY_ID/statuses" --jq '.[0].state // "pending"'); echo "[$i] $STATUS"; [ "$STATUS" = "success" ] || [ "$STATUS" = "failure" ] && break; sleep 20; done
 ```
 
 **Railway gotchas:**

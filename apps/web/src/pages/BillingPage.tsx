@@ -68,9 +68,9 @@ export function BillingPage() {
   ];
 
   const CREDIT_PACKS = [
-    { id: 'pack_10', credits: 10, price: '$7.99', perCredit: '$0.80' },
-    { id: 'pack_25', credits: 25, price: '$14.99', perCredit: '$0.60' },
-    { id: 'pack_50', credits: 50, price: '$24.99', perCredit: '$0.50' },
+    { id: 'pack_10', credits: 10, price: '$12.99', perCredit: '$1.30' },
+    { id: 'pack_25', credits: 25, price: '$24.99', perCredit: '$1.00' },
+    { id: 'pack_50', credits: 50, price: '$39.99', perCredit: '$0.80' },
   ];
 
   useEffect(() => {

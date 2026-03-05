@@ -2,6 +2,7 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import { MessageSquare, Monitor } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useWorkflowStore } from '@/stores/workflow.store';
 
 interface SplitScreenProps {
   leftPanel?: ReactNode;
@@ -12,10 +13,21 @@ const MIN_PANEL_WIDTH = 300;
 const DEFAULT_LEFT_RATIO = 0.6;
 
 export function SplitScreen({ leftPanel, rightPanel }: SplitScreenProps) {
-  const [activeTab, setActiveTab] = useState<'chat' | 'preview'>('preview');
+  const [activeTab, setActiveTab] = useState<'chat' | 'preview'>('chat');
   const [leftRatio, setLeftRatio] = useState(DEFAULT_LEFT_RATIO);
   const [isDragging, setIsDragging] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const phase = useWorkflowStore((s) => s.phase);
+
+  // Auto-switch to preview tab on mobile when slides are ready
+  const prevPhaseRef = useRef(phase);
+  useEffect(() => {
+    const prev = prevPhaseRef.current;
+    prevPhaseRef.current = phase;
+    if (prev === 'generating' && (phase === 'reviewing' || phase === 'editing')) {
+      setActiveTab('preview');
+    }
+  }, [phase]);
 
   const handleMouseDown = useCallback(() => {
     setIsDragging(true);
