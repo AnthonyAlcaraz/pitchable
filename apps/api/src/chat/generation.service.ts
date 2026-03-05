@@ -41,6 +41,12 @@ import {
   PresentationStatus,
   SlideType,
   CreditReason,
+  AudienceType,
+  PitchGoal,
+  CompanyStage,
+  ToneStyle,
+  TechnicalLevel,
+  StoryFramework,
 } from '../../generated/prisma/enums.js';
 import type { DeckArchetype } from '../../generated/prisma/enums.js';
 import { DENSITY_LIMITS, type SlideContent } from '../constraints/density-validator.js';
@@ -147,10 +153,33 @@ export class GenerationService {
       include: { pitchLens: true, brief: true },
     });
 
-    // Guard: Pitch Lens is required for deck generation
+    // Auto-create Pitch Lens if missing (safety net for users who skip onboarding)
     if (!presWithContext?.pitchLens) {
-      yield { type: 'error', content: 'A Pitch Lens is required to generate a deck. Create one in the Cockpit or during onboarding.' };
-      return;
+      this.logger.warn(`Presentation ${presentationId} has no Pitch Lens — auto-creating default for user ${userId}`);
+      const autoLens = await this.prisma.pitchLens.create({
+        data: {
+          userId,
+          name: 'Auto-created Lens',
+          audienceType: AudienceType.CUSTOMERS,
+          pitchGoal: PitchGoal.SELL_PRODUCT,
+          industry: 'General',
+          companyStage: CompanyStage.GROWTH,
+          toneStyle: ToneStyle.CONVERSATIONAL,
+          technicalLevel: TechnicalLevel.SEMI_TECHNICAL,
+          selectedFramework: StoryFramework.HEROS_JOURNEY,
+          isDefault: true,
+        },
+      });
+      await this.prisma.presentation.update({
+        where: { id: presentationId },
+        data: { pitchLensId: autoLens.id },
+      });
+      // Re-fetch with the new lens attached
+      const refreshed = await this.prisma.presentation.findUnique({
+        where: { id: presentationId },
+        include: { pitchLens: true, brief: true },
+      });
+      if (refreshed) Object.assign(presWithContext!, refreshed);
     }
     let chatFrameworkSlideStructure: string[] | undefined;
     if (presWithContext?.pitchLens) {
@@ -294,11 +323,16 @@ export class GenerationService {
    * Check if a message is an approval of a pending outline.
    */
   isApproval(content: string): boolean {
-    const normalized = content.trim().toLowerCase();
+    const normalized = content.trim().toLowerCase().replace(/[!.]+$/, '');
     const approvalPhrases = [
       'approve', 'approved', 'yes', 'go ahead', 'looks good',
       'generate', 'do it', 'ok', 'okay', 'perfect', 'let\'s go',
       'ship it', 'proceed', 'confirm', 'build it', 'create it',
+      'sure', 'yep', 'yeah', 'yea', 'yup', 'sounds good', 'go for it',
+      'absolutely', 'lgtm', 'looks great', 'nice', 'good', 'great',
+      'love it', 'that works', 'works for me', 'let\'s do it',
+      'make it', 'start', 'begin', 'cool', 'fine', 'alright',
+      'sounds great', 'sounds perfect', 'i like it', 'go',
     ];
     return approvalPhrases.some((phrase) => normalized === phrase || normalized.startsWith(phrase));
   }

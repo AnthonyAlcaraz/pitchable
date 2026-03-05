@@ -27,10 +27,10 @@ export interface TierLimits {
  * Cost per illustrated deck (5 images): ~$2.05 + $0.70 = ~$2.75
  *
  * Credit value: 1 credit ~= $0.50 user-facing
- * Free signup gift: 5 credits = $2.50 value (sample only, incentivizes upgrade)
- *   → Path A: outline (1) + deck (4) = 5 credits (no images, no docs)
- *   → Path B: doc (1) + entities (1) + outline (1) + deck partial = can't finish
- *   → See the product, must upgrade for full experience
+ * Free signup gift: 15 credits = $7.50 value (try & iterate, incentivizes upgrade)
+ *   → Path A: outline (1) + deck (4) = 5 credits, leaves 10 for modifications/second deck
+ *   → Path B: doc (1) + entities (1) + outline (1) + deck (4) + mods = 10 credits
+ *   → Generous trial — users experience value loop before hitting paywall
  *
  * Credit deductions:
  *   Outline generation: 1 credit
@@ -46,7 +46,7 @@ export interface TierLimits {
  *   Export: free
  *
  * Pricing (targeting 50%+ margin):
- *   FREE       — 5 credits on signup (one-time), 1 deck max, 4 slides max, sample only
+ *   FREE       — 15 credits on signup (one-time), 3 decks max, 8 slides max, try & iterate
  *   STARTER    — $29/mo → 40 credits (4 illustrated decks, or 8 text-only)
  *   PRO        — $79/mo → 100 credits (10 illustrated, or 20 text-only)
  *   ENTERPRISE — custom → 300 credits
@@ -89,8 +89,8 @@ export const FREE_CHAT_MESSAGES_PER_PRESENTATION = 10;
 /** Credits deducted per chat message after free allowance. */
 export const CHAT_MESSAGE_COST = 1;
 
-/** Credits granted to new free-tier users on signup (sample deck only). */
-export const FREE_SIGNUP_CREDITS = 5;
+/** Credits granted to new free-tier users on signup (try & iterate). */
+export const FREE_SIGNUP_CREDITS = 15;
 
 export interface CreditPack {
   id: string;
@@ -115,11 +115,11 @@ export const CREDIT_PACKS: CreditPack[] = [
 
 export const TIER_LIMITS: Record<string, TierLimits> = {
   FREE: {
-    maxDecksPerMonth: 1, // one sample deck only
-    maxSlidesPerDeck: 4, // sample preview only
-    creditsPerMonth: 0, // no monthly refresh; one-time 5 credits on signup
-    maxBriefs: 1,
-    maxLenses: 1,
+    maxDecksPerMonth: 3, // try & iterate (15 credits = ~3 text-only decks)
+    maxSlidesPerDeck: 8, // meaningful preview (not crippled)
+    creditsPerMonth: 0, // no monthly refresh; one-time 15 credits on signup
+    maxBriefs: 3,
+    maxLenses: 3,
     maxCustomGuidanceLength: 200,
     maxDocumentSizeMb: 5,
     maxDocumentsPerBrief: 3,

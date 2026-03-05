@@ -323,6 +323,21 @@ export function OnboardingPage() {
     }
   }, [lensForm, createLens, goToPhase]);
 
+  // ── Quick Start (skip onboarding) ─────────────────────────
+
+  const handleQuickStart = useCallback(async () => {
+    setIsSubmitting(true);
+    try {
+      await completeOnboarding();
+      clearState();
+      navigate('/workspace/new', { replace: true });
+    } catch (err) {
+      console.error('Failed to complete onboarding:', err);
+    } finally {
+      setIsSubmitting(false);
+    }
+  }, [completeOnboarding, navigate]);
+
   // ── Generate ───────────────────────────────────────────────
 
   const handleGenerate = useCallback(async () => {
@@ -420,13 +435,22 @@ export function OnboardingPage() {
                 <p className="mt-1 text-xs text-muted-foreground">{t('onboarding.welcome.credits_desc')}</p>
               </div>
 
-              <button
-                onClick={() => goToPhase('brief')}
-                className="inline-flex items-center gap-2 rounded-lg bg-primary px-8 py-3 font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
-              >
-                {t('onboarding.welcome.get_started')}
-                <ArrowRight className="h-4 w-4" />
-              </button>
+              <div className="flex flex-col items-center gap-3">
+                <button
+                  onClick={() => goToPhase('brief')}
+                  className="inline-flex items-center gap-2 rounded-lg bg-primary px-8 py-3 font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+                >
+                  {t('onboarding.welcome.get_started')}
+                  <ArrowRight className="h-4 w-4" />
+                </button>
+                <button
+                  onClick={handleQuickStart}
+                  disabled={isSubmitting}
+                  className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                >
+                  Skip setup — start creating now →
+                </button>
+              </div>
             </div>
           )}
 
