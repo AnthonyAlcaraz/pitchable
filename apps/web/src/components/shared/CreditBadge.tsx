@@ -10,10 +10,14 @@ interface CreditBadgeProps {
 
 export function CreditBadge({ className, showIcon = true, size = 'sm' }: CreditBadgeProps) {
   const creditBalance = useAuthStore((s) => s.user?.creditBalance ?? 0);
+  const noCredits = creditBalance === 0;
 
   return (
     <div className={cn(
-      'flex items-center gap-1 rounded-full bg-amber-500/10 font-medium text-amber-600 dark:text-amber-400',
+      'flex items-center gap-1 rounded-full font-medium',
+      noCredits
+        ? 'bg-red-500/10 text-red-500 dark:text-red-400'
+        : 'bg-amber-500/10 text-amber-600 dark:text-amber-400',
       size === 'sm' ? 'px-2 py-0.5 text-[10px]' : 'px-2.5 py-1 text-xs',
       className,
     )}>

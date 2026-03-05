@@ -467,7 +467,11 @@
     "pitch_lenses": "Pitch Lenses",
     "new_lens": "New Lens",
     "create_lens": "Create Lens",
-    "empty_lenses_message": "Define your audience, goal, tone, and framework to guide AI generation"
+    "empty_lenses_message": "Define your audience, goal, tone, and framework to guide AI generation",
+    "no_credits_title": "You're out of credits",
+    "no_credits_description": "Top up your credits or upgrade your plan to continue generating presentations.",
+    "no_credits_upgrade": "Upgrade Plan",
+    "no_credits_buy": "Buy Credits"
   },
   "dashboard": {
     "welcome": "Welcome back, {{name}}",

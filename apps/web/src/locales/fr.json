@@ -467,7 +467,11 @@
     "pitch_lenses": "Profils de Pitch",
     "new_lens": "Nouveau profil",
     "create_lens": "Créer un profil",
-    "empty_lenses_message": "Définissez votre audience, votre objectif, votre ton et votre cadre narratif pour guider la génération IA"
+    "empty_lenses_message": "Définissez votre audience, votre objectif, votre ton et votre cadre narratif pour guider la génération IA",
+    "no_credits_title": "Vous n'avez plus de crédits",
+    "no_credits_description": "Rechargez vos crédits ou passez à un plan supérieur pour continuer à générer des présentations.",
+    "no_credits_upgrade": "Changer de plan",
+    "no_credits_buy": "Acheter des crédits"
   },
   "dashboard": {
     "welcome": "Bon retour, {{name}}",

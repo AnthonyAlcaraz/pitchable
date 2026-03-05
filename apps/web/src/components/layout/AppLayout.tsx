@@ -138,11 +138,11 @@ export function AppLayout() {
           {!collapsed && user && (
             <div className="mb-2 flex items-center gap-2 rounded-md px-3 py-2">
               <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-orange-500/10 text-xs font-medium text-orange-400">
-                {user.name.charAt(0).toUpperCase()}
+                {(user.name || user.email || '?').charAt(0).toUpperCase()}
               </div>
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-medium text-foreground">
-                  {user.name}
+                  {user.name || user.email}
                 </p>
                 <p className="flex items-center gap-1 text-xs text-muted-foreground">
                   <CreditCard className="h-3 w-3" />

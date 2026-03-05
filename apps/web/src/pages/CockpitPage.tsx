@@ -14,6 +14,7 @@ import {
   GitFork,
   Sparkles,
   Image,
+  AlertTriangle,
 } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth.store';
 import { usePresentationsStore } from '@/stores/presentations.store';
@@ -62,6 +63,7 @@ export function CockpitPage() {
 
   const briefsAtLimit = tierStatus && tierStatus.briefsLimit !== null ? tierStatus.briefsUsed >= tierStatus.briefsLimit : false;
   const lensesAtLimit = tierStatus ? tierStatus.lensesUsed >= tierStatus.lensesLimit : false;
+  const noCredits = (user?.creditBalance ?? 0) === 0;
 
   useEffect(() => {
     loadPresentations();
@@ -130,14 +132,43 @@ export function CockpitPage() {
             </div>
           </div>
           <button
-            onClick={() => navigate('/presentations/new')}
-            className="flex items-center gap-2 rounded-lg bg-primary px-6 py-3 font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+            onClick={() => navigate(noCredits ? '/billing' : '/presentations/new')}
+            className={`flex items-center gap-2 rounded-lg px-6 py-3 font-medium transition-colors ${noCredits ? 'bg-amber-500 text-white hover:bg-amber-600' : 'bg-primary text-primary-foreground hover:bg-primary/90'}`}
           >
-            {t('cockpit.hero_cta')}
+            {noCredits ? t('cockpit.no_credits_upgrade') : t('cockpit.hero_cta')}
             <ArrowRight className="h-4 w-4" />
           </button>
         </div>
       </div>
+
+      {/* No credits banner */}
+      {noCredits && (
+        <div className="mb-8 rounded-lg border border-amber-500/30 bg-amber-500/10 p-6">
+          <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-3">
+              <AlertTriangle className="h-6 w-6 shrink-0 text-amber-400" />
+              <div>
+                <h3 className="font-semibold text-foreground">{t('cockpit.no_credits_title')}</h3>
+                <p className="text-sm text-muted-foreground">{t('cockpit.no_credits_description')}</p>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => navigate('/billing')}
+                className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
+              >
+                {t('cockpit.no_credits_buy')}
+              </button>
+              <button
+                onClick={() => navigate('/billing')}
+                className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+              >
+                {t('cockpit.no_credits_upgrade')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Quick Generate (advanced) */}
       <details className="mb-8" open>
@@ -239,17 +270,19 @@ export function CockpitPage() {
 
       {/* Stats Row */}
       <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <Link to="/billing" className="block rounded-lg border border-border bg-card p-5 transition-colors hover:border-primary/30">
+        <Link to="/billing" className={`block rounded-lg border p-5 transition-colors hover:border-primary/30 ${noCredits ? 'border-amber-500/50 bg-amber-500/5' : 'border-border bg-card'}`}>
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-md bg-primary/10">
-              <CreditCard className="h-5 w-5 text-primary" />
+            <div className={`flex h-10 w-10 items-center justify-center rounded-md ${noCredits ? 'bg-amber-500/10' : 'bg-primary/10'}`}>
+              <CreditCard className={`h-5 w-5 ${noCredits ? 'text-amber-400' : 'text-primary'}`} />
             </div>
             <div>
               <p className="text-sm text-muted-foreground">{t('cockpit.credit_balance')}</p>
-              <p className="text-xl font-semibold text-foreground">
+              <p className={`text-xl font-semibold ${noCredits ? 'text-amber-400' : 'text-foreground'}`}>
                 {user?.creditBalance ?? 0}
               </p>
-              <p className="text-xs text-muted-foreground">{t('cockpit.credit_balance_link')}</p>
+              <p className={`text-xs ${noCredits ? 'font-medium text-amber-400' : 'text-muted-foreground'}`}>
+                {noCredits ? t('cockpit.no_credits_buy') : t('cockpit.credit_balance_link')}
+              </p>
             </div>
           </div>
         </Link>
