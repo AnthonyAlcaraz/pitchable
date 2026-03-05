@@ -140,13 +140,7 @@ export function SplitScreen({ leftPanel, rightPanel }: SplitScreenProps) {
           className="flex flex-col overflow-hidden border-r border-border"
           style={{ width: `${leftRatio * 100}%` }}
         >
-          <div className="flex h-10 items-center gap-2 border-b border-border px-4">
-            <Monitor className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm font-medium text-foreground">Preview</span>
-          </div>
-          <div className="flex flex-1 flex-col overflow-auto">
-            {leftContent}
-          </div>
+          {leftContent}
         </div>
 
         {/* Resizable divider */}
@@ -165,13 +159,7 @@ export function SplitScreen({ leftPanel, rightPanel }: SplitScreenProps) {
           className="flex flex-col overflow-hidden"
           style={{ width: `${(1 - leftRatio) * 100}%` }}
         >
-          <div className="flex h-10 items-center gap-2 border-b border-border px-4">
-            <MessageSquare className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm font-medium text-foreground">Chat</span>
-          </div>
-          <div className="flex flex-1 flex-col overflow-auto">
-            {rightContent}
-          </div>
+          {rightContent}
         </div>
       </div>
     </div>
