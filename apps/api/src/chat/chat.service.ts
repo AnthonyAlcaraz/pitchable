@@ -804,8 +804,14 @@ export class ChatService {
     presentationId: string,
     config: GenerationConfig,
   ): AsyncGenerator<ChatStreamEvent> {
-    // Generate the outline (streams tokens to client so they see the structure)
-    yield* this.generation.generateOutline(userId, presentationId, config);
+    // Generate the outline, wrapping to inject autoExecute flag on outline_ready
+    for await (const event of this.generation.generateOutline(userId, presentationId, config)) {
+      if (event.type === 'action' && event.metadata?.action === 'outline_ready') {
+        yield { ...event, metadata: { ...event.metadata, autoExecute: true } };
+      } else {
+        yield event;
+      }
+    }
 
     // If outline generation succeeded, immediately execute it
     if (this.generation.hasPendingOutline(presentationId)) {

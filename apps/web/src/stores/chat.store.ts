@@ -282,23 +282,29 @@ export const useChatStore = create<ChatState>((set, get) => ({
               usePresentationStore.getState().loadPresentation(pid);
             }
           } else if (metadata?.action === 'outline_ready') {
-            useWorkflowStore.getState().setPhase('outline_review');
             // Update presentation title from outline
             const outlineTitle = (metadata?.outline as Record<string, unknown>)?.title as string | undefined;
             if (outlineTitle) {
               usePresentationStore.getState().setTitle(outlineTitle);
             }
             set({ skipLocalMessage: true });
-            // Populate outline review state from metadata
-            const outlineData = metadata?.outline as OutlineReviewState['outlineData'];
-            if (outlineData) {
-              set({
-                outlineReviewState: {
-                  outlineData,
-                  currentStep: 0,
-                  approvedSteps: [],
-                },
-              });
+
+            // When autoExecute is set, skip the outline review UI — slides will generate immediately
+            if (metadata?.autoExecute) {
+              useWorkflowStore.getState().setPhase('generating');
+            } else {
+              useWorkflowStore.getState().setPhase('outline_review');
+              // Populate outline review state from metadata
+              const outlineData = metadata?.outline as OutlineReviewState['outlineData'];
+              if (outlineData) {
+                set({
+                  outlineReviewState: {
+                    outlineData,
+                    currentStep: 0,
+                    approvedSteps: [],
+                  },
+                });
+              }
             }
           } else if (metadata?.action === 'executing_outline') {
             useWorkflowStore.getState().setPhase('generating');
