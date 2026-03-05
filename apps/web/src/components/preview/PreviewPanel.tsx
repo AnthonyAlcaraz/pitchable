@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { PeachLogo } from '@/components/icons/PeachLogo';
 import {
   Download, ChevronDown, FileText, Loader2, Check, Edit3,
@@ -60,6 +61,7 @@ interface PreviewPanelProps {
 }
 
 export function PreviewPanel({ presentationId }: PreviewPanelProps) {
+  const { t } = useTranslation();
   const [isFullscreen, setIsFullscreen] = useState(false);
 
   // Presentation store
@@ -420,10 +422,10 @@ export function PreviewPanel({ presentationId }: PreviewPanelProps) {
           </div>
         </div>
         <p className="text-center text-sm font-medium text-foreground/70">
-          Your slides will appear here
+          {t('preview.empty.title')}
         </p>
         <p className="mt-1 text-center text-xs text-muted-foreground">
-          Start a conversation to generate slides in real-time
+          {t('preview.empty.subtitle')}
         </p>
       </div>
     );
@@ -443,28 +445,28 @@ export function PreviewPanel({ presentationId }: PreviewPanelProps) {
     const phaseContent = {
       subject_selection: {
         icon: <PeachLogo className="h-10 w-10 opacity-50" />,
-        title: 'Choose Your Topic',
-        subtitle: 'Select a suggested topic or type your own in the chat panel',
+        title: t('preview.phase.subject_selection_title'),
+        subtitle: t('preview.phase.subject_selection_subtitle'),
       },
       outline_review: {
         icon: <FileText className="h-10 w-10 text-orange-400/70" />,
-        title: 'Review Your Outline',
-        subtitle: 'Approve the outline in the chat panel to start generating slides',
+        title: t('preview.phase.outline_review_title'),
+        subtitle: t('preview.phase.outline_review_subtitle'),
       },
       generating: {
         icon: <Loader2 className="h-10 w-10 animate-spin text-orange-400" />,
-        title: 'Building Your Deck',
-        subtitle: 'Slides are being generated — watch progress in the chat panel',
+        title: t('preview.phase.generating_title'),
+        subtitle: t('preview.phase.generating_subtitle'),
       },
       reviewing: {
         icon: <Loader2 className="h-10 w-10 animate-spin text-orange-400" />,
-        title: 'Preparing Review',
-        subtitle: 'Your slides are almost ready for review',
+        title: t('preview.phase.reviewing_title'),
+        subtitle: t('preview.phase.reviewing_subtitle'),
       },
       editing: {
         icon: <PeachLogo className="h-10 w-10 opacity-50" />,
-        title: presentation?.title ?? 'Untitled Presentation',
-        subtitle: 'No slides yet. Ask the AI to generate an outline to get started.',
+        title: presentation?.title ?? t('preview.phase.untitled'),
+        subtitle: t('preview.phase.editing_subtitle'),
       },
     }[phase];
 
@@ -586,7 +588,7 @@ export function PreviewPanel({ presentationId }: PreviewPanelProps) {
             return (
               <div className="flex items-center gap-2 border-b border-border bg-teal-500/5 px-4 py-1.5">
                 <CircularProgress percent={pct} size={16} strokeWidth={2} status="verifying" indeterminate={isVerifying && pct < 100} />
-                <span className="text-xs text-teal-400">{isVerifying ? 'Verifying slides...' : 'Verification complete'}</span>
+                <span className="text-xs text-teal-400">{isVerifying ? t('preview.verify.in_progress') : t('preview.verify.complete')}</span>
                 <span className="text-xs text-muted-foreground">{verifiedCount}/{slides.length} checked</span>
               </div>
             );
@@ -604,7 +606,7 @@ export function PreviewPanel({ presentationId }: PreviewPanelProps) {
               showCheck
             />
             <span className={"text-xs " + (verificationResult.passed ? 'text-green-400' : 'text-amber-400')}>
-              {verificationResult.passed ? 'All checks passed' : "Quality review: " + verificationResult.metrics.slidesFixed + ' fixes applied'}
+              {verificationResult.passed ? t('preview.verify.all_passed') : t('preview.verify.fixes_applied', { count: verificationResult.metrics.slidesFixed })}
             </span>
             <span className="text-xs text-muted-foreground">
               Style {Math.round(verificationResult.metrics.avgStyleScore * 100)}% | Narrative {Math.round(verificationResult.metrics.narrativeScore * 100)}%

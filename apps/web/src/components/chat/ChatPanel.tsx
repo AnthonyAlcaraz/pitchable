@@ -110,7 +110,7 @@ export function ChatPanel({ presentationId, briefId, lensId }: ChatPanelProps) {
       if (newTab) {
         newTab.document.write(
           '<html><body style="background:#0f0f1a;color:#fff;display:flex;align-items:center;justify-content:center;height:100vh;font-family:system-ui">' +
-          '<div style="text-align:center"><p style="font-size:1.2rem">Preparing your export...</p><p style="color:#888">This may take a moment.</p></div></body></html>',
+          `<div style="text-align:center"><p style="font-size:1.2rem">${t('chat.export.preparing')}</p><p style="color:#888">${t('chat.export.wait')}</p></div></body></html>`,
         );
       }
       try {
@@ -192,7 +192,7 @@ export function ChatPanel({ presentationId, briefId, lensId }: ChatPanelProps) {
             </div>
           </div>
           <p className="text-sm font-medium text-foreground/80">{t('chat.panel.empty_state')}</p>
-          <p className="mt-1 text-xs text-muted-foreground">Describe your deck and Pitchable will craft it slide by slide</p>
+          <p className="mt-1 text-xs text-muted-foreground">{t('chat.empty.subtitle')}</p>
         </div>
       ) : (
         <ChatHistory

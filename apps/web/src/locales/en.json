@@ -530,6 +530,10 @@
       "credit_singular": "credit",
       "credit_plural": "credits"
     },
+    "export": {
+      "preparing": "Preparing your export...",
+      "wait": "This may take a moment."
+    },
     "progress": {
       "generating": "Generating deck",
       "generated": "Deck generated",
@@ -892,6 +896,30 @@
       "presentations_write": "Create, delete, fork presentations",
       "generation": "Generate presentations (costs credits)",
       "export": "Export to PPTX, PDF, Reveal.js HTML"
+    }
+  },
+  "preview": {
+    "empty": {
+      "title": "Your slides will appear here",
+      "subtitle": "Start a conversation to generate slides in real-time"
+    },
+    "phase": {
+      "subject_selection_title": "Choose Your Topic",
+      "subject_selection_subtitle": "Select a suggested topic or type your own in the chat panel",
+      "outline_review_title": "Review Your Outline",
+      "outline_review_subtitle": "Approve the outline in the chat panel to start generating slides",
+      "generating_title": "Building Your Deck",
+      "generating_subtitle": "Slides are being generated — watch progress in the chat panel",
+      "reviewing_title": "Preparing Review",
+      "reviewing_subtitle": "Your slides are almost ready for review",
+      "untitled": "Untitled Presentation",
+      "editing_subtitle": "No slides yet. Ask the AI to generate an outline to get started."
+    },
+    "verify": {
+      "in_progress": "Verifying slides...",
+      "complete": "Verification complete",
+      "all_passed": "All checks passed",
+      "fixes_applied": "Quality review: {{count}} fixes applied"
     }
   },
   "workspace": {

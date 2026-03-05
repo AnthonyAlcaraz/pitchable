@@ -256,7 +256,9 @@
       "step_2_desc": "Choisissez l'audience, l'objectif, le ton et le cadre narratif",
       "step_3_label": "Générez votre deck",
       "step_3_desc": "Décrivez votre sujet et regardez les diapositives apparaître en temps réel",
-      "get_started": "Commencer"
+      "get_started": "Commencer",
+      "credits_title": "15 crédits gratuits pour essayer Pitchable",
+      "credits_desc": "Générez un deck complet de 8 diapositives, itérez via le chat et exportez. Passez au supérieur pour plus de decks et de crédits chaque mois."
     },
     "brief": {
       "step_label": "Étape 1 sur 3",
@@ -453,6 +455,7 @@
     "hero_cta": "Nouvelle Présentation",
     "quick_generate_label": "Génération rapide (avancé)",
     "credit_balance": "Solde de crédits",
+    "credit_balance_link": "Gérer les crédits",
     "presentations": "Présentations",
     "pitch_briefs": "Dossiers de Pitch",
     "recent_presentations": "Présentations récentes",
@@ -527,6 +530,10 @@
       "credit_singular": "crédit",
       "credit_plural": "crédits"
     },
+    "export": {
+      "preparing": "Préparation de votre export...",
+      "wait": "Cela peut prendre un moment."
+    },
     "progress": {
       "generating": "Génération du deck",
       "generated": "Deck généré",
@@ -544,7 +551,9 @@
       "no_briefs_desc": "Créez votre premier Dossier de Pitch pour commencer à constituer des collections de connaissances alimentées par l'IA",
       "enter_name_prompt": "Entrez le nom du dossier :",
       "enter_description_prompt": "Entrez la description du dossier (facultatif) :",
-      "confirm_delete": "Cliquez à nouveau pour confirmer"
+      "confirm_delete": "Cliquez à nouveau pour confirmer",
+      "limit_banner": "Le plan gratuit inclut 1 dossier. Passez au supérieur pour en créer davantage.",
+      "limit_banner_cta": "Voir les plans"
     },
     "detail": {
       "back_to_briefs": "Retour aux dossiers",
@@ -591,6 +600,11 @@
       "brief_name_placeholder": "Entrez un nom pour votre Dossier de Pitch",
       "description_label": "Description",
       "description_placeholder": "Décrivez l'objectif et le contexte de ce Dossier de Pitch",
+      "doc_credit_note": "Chaque document coûte 1 crédit pour le téléversement + 1 crédit pour l'extraction de connaissances.",
+      "storage_usage": "Stockage : {{used}} Mo / {{limit}} Mo",
+      "storage_unlimited": "Stockage : {{used}} Mo (illimité)",
+      "storage_overflow": "Ce fichier ({{fileMb}} Mo) dépasserait votre limite de stockage de {{limit}} Mo. Supprimez des fichiers ou passez à un plan supérieur.",
+      "storage_label": "Stockage utilisé",
       "add_documents_title": "Ajouter des documents",
       "add_documents_desc": "Téléversez des fichiers, ajoutez du texte ou fournissez des URL pour construire le contexte de votre Dossier de Pitch.",
       "upload_files_title": "Téléverser des fichiers",
@@ -621,7 +635,9 @@
       "no_lenses_title": "Aucun Profil de Pitch pour le moment",
       "no_lenses_desc": "Un Profil de Pitch capture votre audience, vos objectifs et votre stratégie narrative. Toutes les présentations créées sous un profil héritent de ses directives.",
       "create_first_lens": "Créer votre premier profil",
-      "confirm_delete": "Supprimer ce Profil de Pitch ?"
+      "confirm_delete": "Supprimer ce Profil de Pitch ?",
+      "limit_banner": "Le plan gratuit inclut 1 profil. Passez au supérieur pour en créer davantage.",
+      "limit_banner_cta": "Voir les plans"
     },
     "detail": {
       "back_to_lenses": "Retour aux Profils de Pitch",
@@ -849,7 +865,15 @@
       "export": "Export (PPTX, PDF, HTML)",
       "export_cost": "Gratuit",
       "list_get_fork": "Lister / Obtenir / Dupliquer",
-      "list_get_fork_cost": "Gratuit"
+      "list_get_fork_cost": "Gratuit",
+      "document_ingestion": "Téléversement de document (par document)",
+      "document_ingestion_cost": "1 crédit",
+      "entity_extraction": "Extraction de connaissances (par document)",
+      "entity_extraction_cost": "1 crédit",
+      "chat_message": "Message de chat (après 10 gratuits par deck)",
+      "chat_message_cost": "1 crédit",
+      "website_crawl": "Exploration de site web (par 5 pages)",
+      "website_crawl_cost": "1 crédit"
     },
     "rate_limits_title": "Limites de débit",
     "rate_limits_table": {
@@ -872,6 +896,30 @@
       "presentations_write": "Créer, supprimer et dupliquer des présentations",
       "generation": "Générer des présentations (coûte des crédits)",
       "export": "Exporter en PPTX, PDF, Reveal.js HTML"
+    }
+  },
+  "preview": {
+    "empty": {
+      "title": "Vos diapositives apparaîtront ici",
+      "subtitle": "Lancez une conversation pour générer des diapositives en temps réel"
+    },
+    "phase": {
+      "subject_selection_title": "Choisissez votre sujet",
+      "subject_selection_subtitle": "Sélectionnez un sujet suggéré ou tapez le vôtre dans le panneau de chat",
+      "outline_review_title": "Vérifiez votre plan",
+      "outline_review_subtitle": "Approuvez le plan dans le panneau de chat pour lancer la génération",
+      "generating_title": "Construction de votre deck",
+      "generating_subtitle": "Les diapositives sont en cours de génération — suivez la progression dans le chat",
+      "reviewing_title": "Préparation de la vérification",
+      "reviewing_subtitle": "Vos diapositives sont presque prêtes",
+      "untitled": "Présentation sans titre",
+      "editing_subtitle": "Pas encore de diapositives. Demandez à l'IA de générer un plan pour commencer."
+    },
+    "verify": {
+      "in_progress": "Vérification des diapositives...",
+      "complete": "Vérification terminée",
+      "all_passed": "Tous les contrôles réussis",
+      "fixes_applied": "Revue qualité : {{count}} corrections appliquées"
     }
   },
   "workspace": {
