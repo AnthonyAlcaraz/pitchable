@@ -49,7 +49,10 @@ export function ChatHistory({
 
   useEffect(() => {
     if (!userScrolled.current) {
-      bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+      // Use requestAnimationFrame to ensure DOM has painted before scrolling
+      requestAnimationFrame(() => {
+        bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+      });
     }
   }, [messages, streamingContent, thinkingText, agentSteps, outlineReviewState]);
 

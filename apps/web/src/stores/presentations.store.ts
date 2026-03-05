@@ -16,6 +16,7 @@ export interface PresentationListItem {
   pitchLensId: string | null;
   pitchLensName: string | null;
   isPublic: boolean;
+  firstSlideId: string | null;
 }
 
 interface PresentationsState {

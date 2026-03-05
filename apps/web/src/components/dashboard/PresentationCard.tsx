@@ -51,9 +51,20 @@ export function PresentationCard({
     <div className="group relative rounded-lg border border-border bg-card transition-shadow hover:shadow-md">
       {/* Card body — clickable */}
       <Link to={`/workspace/${presentation.id}`} className="block p-5">
-        {/* Preview placeholder */}
-        <div className="mb-4 flex h-32 items-center justify-center rounded-md bg-muted/50">
-          <Layers className="h-10 w-10 text-muted-foreground/30" />
+        {/* Preview thumbnail */}
+        <div className="mb-4 h-32 overflow-hidden rounded-md bg-muted/50">
+          {presentation.firstSlideId ? (
+            <img
+              src={`/slides/${presentation.firstSlideId}/preview`}
+              alt=""
+              className="h-full w-full object-cover object-top"
+              loading="lazy"
+            />
+          ) : (
+            <div className="flex h-full items-center justify-center">
+              <Layers className="h-10 w-10 text-muted-foreground/30" />
+            </div>
+          )}
         </div>
 
         {/* Title */}

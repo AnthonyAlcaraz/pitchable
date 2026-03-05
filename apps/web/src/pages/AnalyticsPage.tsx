@@ -160,9 +160,15 @@ export function AnalyticsPage() {
       <div className="rounded-lg border border-border bg-card p-6">
         <h2 className="mb-4 text-lg font-semibold text-foreground">{t('analytics.top_presentations_title')}</h2>
         {stats.topPresentations.length === 0 ? (
-          <p className="py-8 text-center text-sm text-muted-foreground">
-            {t('analytics.no_presentations')}
-          </p>
+          <div className="flex flex-col items-center py-12 text-center">
+            <BarChart3 className="mb-3 h-10 w-10 text-muted-foreground/30" />
+            <p className="text-sm font-medium text-muted-foreground">
+              {t('analytics.no_presentations')}
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground/60">
+              Publish a deck to start tracking views and forks
+            </p>
+          </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">

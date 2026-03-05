@@ -133,9 +133,10 @@ export function CockpitPage() {
         </div>
       </div>
 
-      {/* Quick Generate (advanced, collapsible) */}
-      <details className="mb-8">
-        <summary className="cursor-pointer text-sm text-muted-foreground hover:text-foreground">
+      {/* Quick Generate (advanced) */}
+      <details className="mb-8" open>
+        <summary className="cursor-pointer text-sm font-medium text-foreground/70 hover:text-foreground flex items-center gap-2">
+          <Sparkles className="h-3.5 w-3.5 text-orange-400" />
           {t('cockpit.quick_generate_label')}
         </summary>
         <div className="mt-3 rounded-lg border border-border bg-card p-6">

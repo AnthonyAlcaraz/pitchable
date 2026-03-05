@@ -239,6 +239,7 @@ export class PresentationsService {
     pitchLensId: string | null;
     pitchLensName: string | null;
     isPublic: boolean;
+    firstSlideId: string | null;
   }>> {
     const presentations = await this.prisma.presentation.findMany({
       where: { userId },
@@ -247,6 +248,7 @@ export class PresentationsService {
         _count: { select: { slides: true } },
         brief: { select: { id: true, name: true } },
         pitchLens: { select: { id: true, name: true } },
+        slides: { take: 1, orderBy: { slideNumber: 'asc' as const }, select: { id: true } },
       },
     });
 
@@ -265,6 +267,7 @@ export class PresentationsService {
       pitchLensId: p.pitchLens?.id ?? null,
       pitchLensName: p.pitchLens?.name ?? null,
       isPublic: p.isPublic,
+      firstSlideId: p.slides[0]?.id ?? null,
     }));
   }
 

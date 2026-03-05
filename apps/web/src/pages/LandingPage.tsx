@@ -367,6 +367,50 @@ export function LandingPage() {
               {t('landing.hero.cta_secondary')}
             </Link>
           </div>
+
+          {/* Product mockup */}
+          <div className="mx-auto mt-16 max-w-4xl">
+            <div className="rounded-xl border border-white/10 bg-white/5 p-2 shadow-2xl shadow-orange-500/10 backdrop-blur-sm">
+              <div className="rounded-lg bg-[#0f0f1a] p-1">
+                {/* Browser chrome */}
+                <div className="mb-2 flex items-center gap-1.5 px-3 pt-2">
+                  <div className="h-2.5 w-2.5 rounded-full bg-red-500/60" />
+                  <div className="h-2.5 w-2.5 rounded-full bg-yellow-500/60" />
+                  <div className="h-2.5 w-2.5 rounded-full bg-green-500/60" />
+                  <div className="mx-3 flex-1 rounded-md bg-white/5 px-3 py-1 text-[10px] text-white/30">
+                    pitch-able.ai/workspace
+                  </div>
+                </div>
+                {/* Split-screen workspace mockup */}
+                <div className="flex gap-1 px-1 pb-1">
+                  {/* Preview pane */}
+                  <div className="flex-[3] rounded-md bg-gradient-to-br from-orange-500/10 to-orange-600/5 p-4">
+                    <div className="mb-3 h-3 w-24 rounded bg-white/10" />
+                    <div className="mb-2 h-2 w-full rounded bg-white/5" />
+                    <div className="mb-2 h-2 w-3/4 rounded bg-white/5" />
+                    <div className="mb-4 h-2 w-5/6 rounded bg-white/5" />
+                    <div className="aspect-video rounded bg-gradient-to-r from-orange-500/20 to-amber-500/10" />
+                  </div>
+                  {/* Chat pane */}
+                  <div className="flex-[2] rounded-md bg-white/[0.02] p-3">
+                    <div className="mb-3 flex items-center gap-2">
+                      <div className="h-5 w-5 rounded-full bg-orange-500/20" />
+                      <div className="h-2 w-16 rounded bg-white/10" />
+                    </div>
+                    <div className="mb-2 ml-7 h-2 w-3/4 rounded bg-white/5" />
+                    <div className="mb-4 ml-7 h-2 w-1/2 rounded bg-white/5" />
+                    <div className="mb-2 flex items-center gap-2 justify-end">
+                      <div className="h-2 w-20 rounded bg-orange-500/20" />
+                      <div className="h-5 w-5 rounded-full bg-orange-500/10" />
+                    </div>
+                    <div className="mt-auto rounded-md border border-white/5 bg-white/[0.02] p-2">
+                      <div className="h-2 w-2/3 rounded bg-white/5" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 

@@ -24,7 +24,7 @@ export function SlidePreviewCard({
   return (
     <div
       className={`rounded-lg border border-border bg-card overflow-hidden border-l-2 border-l-orange-500/40 ${className}`}
-      style={{ aspectRatio: '16/9', maxWidth: '320px' }}
+      style={{ minHeight: '120px' }}
     >
       <div className="flex h-full flex-col p-3">
         {/* Header */}
