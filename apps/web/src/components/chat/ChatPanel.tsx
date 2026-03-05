@@ -159,9 +159,9 @@ export function ChatPanel({ presentationId, briefId, lensId }: ChatPanelProps) {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex items-center gap-2 border-b border-border px-4 py-3">
-        <MessageSquare className="h-4 w-4 text-orange-400" />
-        <span className="text-sm font-medium text-foreground">{t('chat.panel.title')}</span>
+      <div className="flex items-center gap-2 border-b border-border px-4 py-2 md:py-3">
+        <MessageSquare className="hidden h-4 w-4 text-orange-400 md:block" />
+        <span className="hidden text-sm font-medium text-foreground md:inline">{t('chat.panel.title')}</span>
         {isLoading && (
           <span className="text-xs text-muted-foreground">{t('chat.panel.loading')}</span>
         )}
