@@ -241,12 +241,12 @@ export function PitchBriefDetailPage() {
               <p className="text-muted-foreground">{currentBrief.description}</p>
             )}
             <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
-              <span>Created {formatRelativeTime(currentBrief.createdAt)}</span>
-              <span>Updated {formatRelativeTime(currentBrief.updatedAt)}</span>
+              <span>{t('pitch_briefs.detail.created_ago', { time: formatRelativeTime(currentBrief.createdAt) })}</span>
+              <span>{t('pitch_briefs.detail.updated_ago', { time: formatRelativeTime(currentBrief.updatedAt) })}</span>
               {currentBrief.presentationCount > 0 && (
                 <span className="flex items-center gap-1">
                   <Presentation className="w-3 h-3" />
-                  {currentBrief.presentationCount} presentation{currentBrief.presentationCount !== 1 ? 's' : ''}
+                  {t('pitch_briefs.detail.presentations_count', { count: currentBrief.presentationCount })}
                 </span>
               )}
             </div>
@@ -270,10 +270,10 @@ export function PitchBriefDetailPage() {
             }}
             disabled={!canGenerate}
             className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-            title={!canGenerate ? 'Upload documents and link a lens first' : 'Generate a presentation from this brief'}
+            title={!canGenerate ? t('pitch_briefs.detail.generate_tooltip_disabled') : t('pitch_briefs.detail.generate_tooltip_enabled')}
           >
             <Presentation className="w-4 h-4" />
-            Generate Presentation
+            {t('pitch_briefs.detail.generate_presentation')}
           </button>
         </div>
       </div>
@@ -296,9 +296,9 @@ export function PitchBriefDetailPage() {
               <FileText className="w-4 h-4 text-muted-foreground flex-shrink-0" />
             )}
             <div>
-              <div className="text-sm font-medium text-foreground">{docs.length} Document{docs.length !== 1 ? 's' : ''}</div>
+              <div className="text-sm font-medium text-foreground">{t('pitch_briefs.detail.documents_count', { count: docs.length })}</div>
               <div className="text-[10px] text-muted-foreground">
-                {!hasDocuments ? 'Upload files to start' : allDocsReady ? `${readyCount} ready` : 'Processing...'}
+                {!hasDocuments ? t('pitch_briefs.detail.upload_files_to_start') : allDocsReady ? t('pitch_briefs.detail.docs_ready', { count: readyCount }) : t('pitch_briefs.detail.docs_processing')}
               </div>
             </div>
           </div>
@@ -310,9 +310,9 @@ export function PitchBriefDetailPage() {
               <Network className="w-4 h-4 text-muted-foreground flex-shrink-0" />
             )}
             <div>
-              <div className="text-sm font-medium text-foreground">{graphStats?.totalNodes ?? 0} Entities</div>
+              <div className="text-sm font-medium text-foreground">{t('pitch_briefs.detail.entities_count', { count: graphStats?.totalNodes ?? 0 })}</div>
               <div className="text-[10px] text-muted-foreground">
-                {hasEntities ? `${graphStats?.totalEdges ?? 0} relationships` : 'No entities yet'}
+                {hasEntities ? t('pitch_briefs.detail.relationships_count', { count: graphStats?.totalEdges ?? 0 }) : t('pitch_briefs.detail.no_entities')}
               </div>
             </div>
           </div>
@@ -324,9 +324,9 @@ export function PitchBriefDetailPage() {
               <AlertTriangle className="w-4 h-4 text-orange-500 flex-shrink-0" />
             )}
             <div>
-              <div className="text-sm font-medium text-foreground">{briefLenses.length} Lens{briefLenses.length !== 1 ? 'es' : ''}</div>
+              <div className="text-sm font-medium text-foreground">{t('pitch_briefs.detail.lenses_count', { count: briefLenses.length })}</div>
               <div className="text-[10px] text-muted-foreground">
-                {hasLenses ? 'Ready to generate' : 'Link a lens to generate'}
+                {hasLenses ? t('pitch_briefs.detail.ready_to_generate') : t('pitch_briefs.detail.link_lens_to_generate')}
               </div>
             </div>
           </div>
@@ -334,8 +334,8 @@ export function PitchBriefDetailPage() {
           <div className={`flex items-center gap-2 p-3 rounded-lg ${currentBrief.presentationCount > 0 ? 'bg-green-500/5' : 'bg-muted/50'}`}>
             <Presentation className={`w-4 h-4 flex-shrink-0 ${currentBrief.presentationCount > 0 ? 'text-green-500' : 'text-muted-foreground'}`} />
             <div>
-              <div className="text-sm font-medium text-foreground">{currentBrief.presentationCount} Deck{currentBrief.presentationCount !== 1 ? 's' : ''}</div>
-              <div className="text-[10px] text-muted-foreground">Generated</div>
+              <div className="text-sm font-medium text-foreground">{t('pitch_briefs.detail.decks_count', { count: currentBrief.presentationCount })}</div>
+              <div className="text-[10px] text-muted-foreground">{t('pitch_briefs.detail.generated')}</div>
             </div>
           </div>
         </div>
@@ -345,11 +345,11 @@ export function PitchBriefDetailPage() {
           <div className="mt-3 p-3 bg-red-500/5 border border-red-500/20 rounded-lg">
             <div className="flex items-center gap-2 mb-1">
               <AlertTriangle className="w-3.5 h-3.5 text-red-500" />
-              <span className="text-xs font-medium text-red-500">{errorDocs.length} document{errorDocs.length !== 1 ? 's' : ''} with issues</span>
+              <span className="text-xs font-medium text-red-500">{t('pitch_briefs.detail.docs_with_issues', { count: errorDocs.length })}</span>
             </div>
             {errorDocs.slice(0, 3).map((d) => (
               <p key={d.id} className="text-[11px] text-red-400 truncate ml-5">
-                {d.title}: {d.errorMessage || 'Processing failed'}
+                {d.title}: {d.errorMessage || t('pitch_briefs.detail.processing_failed')}
               </p>
             ))}
           </div>
@@ -384,8 +384,8 @@ export function PitchBriefDetailPage() {
                 onClick={() => fileInputRef.current?.click()}
               >
                 <Upload className="w-16 h-16 text-primary/40 mx-auto mb-4" />
-                <p className="text-lg font-medium text-foreground mb-2">Upload your first document</p>
-                <p className="text-sm text-muted-foreground mb-1">Start building your knowledge graph for smarter pitches</p>
+                <p className="text-lg font-medium text-foreground mb-2">{t('pitch_briefs.detail.upload_first_document')}</p>
+                <p className="text-sm text-muted-foreground mb-1">{t('pitch_briefs.detail.upload_first_description')}</p>
                 <p className="text-xs text-muted-foreground">{t('pitch_briefs.detail.supported_formats')}</p>
                 <input
                   ref={fileInputRef}
@@ -423,7 +423,7 @@ export function PitchBriefDetailPage() {
                   <div className="mb-6 p-4 bg-background border border-border rounded-lg">
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-sm font-medium" style={{ color: '#E88D67' }}>
-                        {readyCount}/{docs.length} documents ready
+                        {t('pitch_briefs.detail.docs_ready_progress', { ready: readyCount, total: docs.length })}
                       </span>
                       <span className="text-xs font-mono font-semibold tabular-nums" style={{ color: '#E88D67' }}>
                         {aggregateProgress}%
@@ -440,7 +440,7 @@ export function PitchBriefDetailPage() {
                     </div>
                     {processingDocs.length > 0 && (
                       <p className="mt-2 text-xs text-muted-foreground truncate">
-                        {documentProgress[processingDocs[0].id]?.message || `Processing ${processingDocs[0].title}...`}
+                        {documentProgress[processingDocs[0].id]?.message || t('pitch_briefs.detail.processing_doc', { title: processingDocs[0].title })}
                       </p>
                     )}
                   </div>
@@ -482,7 +482,7 @@ export function PitchBriefDetailPage() {
                                 onClick={(e) => e.stopPropagation()}
                               >
                                 <ExternalLink className="w-3 h-3" />
-                                Source
+                                {t('pitch_briefs.detail.source')}
                               </a>
                             )}
                           </div>
@@ -584,7 +584,7 @@ export function PitchBriefDetailPage() {
             <div className="p-4 bg-background border border-border rounded-lg">
               <h3 className="text-sm font-medium text-foreground mb-3 flex items-center gap-2">
                 <Globe className="w-4 h-4" />
-                Crawl Website
+                {t('pitch_briefs.detail.crawl_website')}
               </h3>
               <input
                 type="text"
@@ -595,7 +595,7 @@ export function PitchBriefDetailPage() {
               />
               <div className="flex gap-2 mb-2">
                 <div className="flex-1">
-                  <label className="text-xs text-muted-foreground">Max pages</label>
+                  <label className="text-xs text-muted-foreground">{t('pitch_briefs.detail.max_pages')}</label>
                   <input
                     type="number"
                     min={1}
@@ -611,7 +611,7 @@ export function PitchBriefDetailPage() {
                 disabled={!crawlUrl || isCrawling}
                 className="w-full px-3 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm"
               >
-                {isCrawling ? 'Crawling...' : 'Crawl & Ingest'}
+                {isCrawling ? t('pitch_briefs.detail.crawling') : t('pitch_briefs.detail.crawl_ingest')}
               </button>
             </div>
           </div>
@@ -693,7 +693,7 @@ export function PitchBriefDetailPage() {
               <div className="text-center py-8">
                 <Link2 className="w-10 h-10 text-muted-foreground mx-auto mb-3 opacity-50" />
                 <p className="text-sm text-muted-foreground mb-1">{t('pitch_briefs.detail.no_lenses_linked')}</p>
-                <p className="text-xs text-muted-foreground">Link a lens to define your audience and pitch style</p>
+                <p className="text-xs text-muted-foreground">{t('pitch_briefs.detail.link_lens_hint')}</p>
               </div>
             )}
           </div>
@@ -706,21 +706,21 @@ export function PitchBriefDetailPage() {
             <div className="bg-card border border-border rounded-lg p-6">
               <h2 className="text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
                 <Network className="w-5 h-5" />
-                Graph Stats
+                {t('pitch_briefs.detail.graph_stats')}
               </h2>
               <div className="grid grid-cols-2 gap-3 mb-4">
                 <div className="p-3 bg-background rounded-lg text-center">
                   <div className="text-2xl font-bold text-foreground">{graphStats.totalNodes}</div>
-                  <div className="text-xs text-muted-foreground">Nodes</div>
+                  <div className="text-xs text-muted-foreground">{t('pitch_briefs.detail.nodes')}</div>
                 </div>
                 <div className="p-3 bg-background rounded-lg text-center">
                   <div className="text-2xl font-bold text-foreground">{graphStats.totalEdges}</div>
-                  <div className="text-xs text-muted-foreground">Edges</div>
+                  <div className="text-xs text-muted-foreground">{t('pitch_briefs.detail.edges')}</div>
                 </div>
               </div>
               {Object.keys(graphStats.nodeTypes).length > 0 && (
                 <div className="mb-3">
-                  <h3 className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wider">Node Types</h3>
+                  <h3 className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wider">{t('pitch_briefs.detail.node_types')}</h3>
                   <div className="flex flex-wrap gap-1.5">
                     {Object.entries(graphStats.nodeTypes).sort((a, b) => b[1] - a[1]).map(([type, count]) => (
                       <span key={type} className={`text-xs px-2 py-1 rounded-full ${ENTITY_COLORS[type] ?? 'bg-gray-500/10 text-gray-400'}`}>
@@ -732,7 +732,7 @@ export function PitchBriefDetailPage() {
               )}
               {Object.keys(graphStats.edgeTypes).length > 0 && (
                 <div>
-                  <h3 className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wider">Edge Types</h3>
+                  <h3 className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wider">{t('pitch_briefs.detail.edge_types')}</h3>
                   <div className="flex flex-wrap gap-1.5">
                     {Object.entries(graphStats.edgeTypes).sort((a, b) => b[1] - a[1]).map(([type, count]) => (
                       <span key={type} className="text-xs px-2 py-1 rounded-full bg-gray-500/10 text-gray-400">

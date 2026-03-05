@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAdminStore } from '@/stores/admin.store';
 import type { AdminState } from '@/stores/admin.store';
 import { cn } from '@/lib/utils';
@@ -121,46 +122,48 @@ function SectionCard({ title, children }: { title: string; children: React.React
 /* ---------- Tab content components ---------- */
 
 function OverviewTab({ data }: { data: NonNullable<AdminState['overview']> }) {
+  const { t } = useTranslation();
   return (
     <div className="space-y-6">
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-        <StatCard icon={Activity} label="Active Users" value={data.activeUsers} />
-        <StatCard icon={FileText} label="Decks Created" value={data.decksCreated} />
-        <StatCard icon={Download} label="Exports" value={data.exports} />
-        <StatCard icon={UserPlus} label="Signups" value={data.signups} />
-        <StatCard icon={UsersRound} label="Total Users" value={data.totalUsers} />
+        <StatCard icon={Activity} label={t('admin.overview.active_users')} value={data.activeUsers} />
+        <StatCard icon={FileText} label={t('admin.overview.decks_created')} value={data.decksCreated} />
+        <StatCard icon={Download} label={t('admin.overview.exports')} value={data.exports} />
+        <StatCard icon={UserPlus} label={t('admin.overview.signups')} value={data.signups} />
+        <StatCard icon={UsersRound} label={t('admin.overview.total_users')} value={data.totalUsers} />
       </div>
-      <DailyChart data={data.dailyDecks} title="Daily Decks Created" />
-      <DailyChart data={data.dailySignups} title="Daily Signups" />
+      <DailyChart data={data.dailyDecks} title={t('admin.overview.daily_decks')} />
+      <DailyChart data={data.dailySignups} title={t('admin.overview.daily_signups')} />
     </div>
   );
 }
 
 function UsersTab({ data }: { data: NonNullable<AdminState['users']> }) {
+  const { t } = useTranslation();
   return (
     <div className="space-y-6">
-      <SectionCard title="Tier Distribution">
+      <SectionCard title={t('admin.users_tab.tier_distribution')}>
         {data.tierDistribution.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No data available.</p>
+          <p className="text-sm text-muted-foreground">{t('admin.no_data')}</p>
         ) : (
           <BarChart
-            data={data.tierDistribution.map((t) => ({ label: t.tier, value: t.count }))}
-            maxVal={Math.max(...data.tierDistribution.map((t) => t.count), 1)}
+            data={data.tierDistribution.map((td) => ({ label: td.tier, value: td.count }))}
+            maxVal={Math.max(...data.tierDistribution.map((td) => td.count), 1)}
           />
         )}
       </SectionCard>
 
-      <SectionCard title="Top Users by Activity">
+      <SectionCard title={t('admin.users_tab.top_users')}>
         {data.topUsers.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No data available.</p>
+          <p className="text-sm text-muted-foreground">{t('admin.no_data')}</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border text-left">
-                  <th className="pb-3 pr-4 font-medium text-muted-foreground">Name</th>
-                  <th className="pb-3 px-4 font-medium text-muted-foreground">Email</th>
-                  <th className="pb-3 pl-4 font-medium text-muted-foreground text-right">Events</th>
+                  <th className="pb-3 pr-4 font-medium text-muted-foreground">{t('admin.users_tab.name')}</th>
+                  <th className="pb-3 px-4 font-medium text-muted-foreground">{t('admin.users_tab.email')}</th>
+                  <th className="pb-3 pl-4 font-medium text-muted-foreground text-right">{t('admin.users_tab.events')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
@@ -181,30 +184,31 @@ function UsersTab({ data }: { data: NonNullable<AdminState['users']> }) {
 }
 
 function FeaturesTab({ data }: { data: NonNullable<AdminState['features']> }) {
+  const { t } = useTranslation();
   return (
     <div className="grid gap-6 lg:grid-cols-2">
-      <SectionCard title="Slide Types">
+      <SectionCard title={t('admin.features_tab.slide_types')}>
         <BarChart
           data={data.slideTypes.map((s) => ({ label: s.type, value: s.count }))}
           maxVal={Math.max(...data.slideTypes.map((s) => s.count), 1)}
         />
       </SectionCard>
 
-      <SectionCard title="Themes">
+      <SectionCard title={t('admin.features_tab.themes')}>
         <BarChart
-          data={data.themes.map((t) => ({ label: t.name, value: t.count }))}
-          maxVal={Math.max(...data.themes.map((t) => t.count), 1)}
+          data={data.themes.map((th) => ({ label: th.name, value: th.count }))}
+          maxVal={Math.max(...data.themes.map((th) => th.count), 1)}
         />
       </SectionCard>
 
-      <SectionCard title="Export Formats">
+      <SectionCard title={t('admin.features_tab.export_formats')}>
         <BarChart
           data={data.exportFormats.map((f) => ({ label: f.format, value: f.count }))}
           maxVal={Math.max(...data.exportFormats.map((f) => f.count), 1)}
         />
       </SectionCard>
 
-      <SectionCard title="Presentation Types">
+      <SectionCard title={t('admin.features_tab.presentation_types')}>
         <BarChart
           data={data.presentationTypes.map((p) => ({ label: p.type, value: p.count }))}
           maxVal={Math.max(...data.presentationTypes.map((p) => p.count), 1)}
@@ -215,29 +219,30 @@ function FeaturesTab({ data }: { data: NonNullable<AdminState['features']> }) {
 }
 
 function GenerationsTab({ data }: { data: NonNullable<AdminState['generations']> }) {
+  const { t } = useTranslation();
   return (
     <div className="space-y-6">
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard icon={Zap} label="Total Generations" value={data.total} />
-        <StatCard icon={CheckCircle} label="Success Rate" value={`${data.successRate.toFixed(1)}%`} />
+        <StatCard icon={Zap} label={t('admin.generations_tab.total')} value={data.total} />
+        <StatCard icon={CheckCircle} label={t('admin.generations_tab.success_rate')} value={`${data.successRate.toFixed(1)}%`} />
         <StatCard
           icon={DollarSign}
-          label="Est. Total Cost"
+          label={t('admin.generations_tab.est_total_cost')}
           value={`$${data.costEstimate.total.toFixed(2)}`}
         />
         <StatCard
           icon={Cpu}
-          label="Total Tokens"
+          label={t('admin.generations_tab.total_tokens')}
           value={(data.tokenUsage.totalInput + data.tokenUsage.totalOutput).toLocaleString()}
         />
       </div>
 
-      <DailyChart data={data.dailyGenerations} title="Daily Generations" />
+      <DailyChart data={data.dailyGenerations} title={t('admin.generations_tab.daily_generations')} />
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <SectionCard title="Avg Duration by Operation">
+        <SectionCard title={t('admin.generations_tab.avg_duration')}>
           {data.avgDuration.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No data available.</p>
+            <p className="text-sm text-muted-foreground">{t('admin.no_data')}</p>
           ) : (
             <div className="space-y-2">
               {data.avgDuration.map((d) => (
@@ -253,9 +258,9 @@ function GenerationsTab({ data }: { data: NonNullable<AdminState['generations']>
           )}
         </SectionCard>
 
-        <SectionCard title="Cost by Model">
+        <SectionCard title={t('admin.generations_tab.cost_by_model')}>
           {data.costEstimate.byModel.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No data available.</p>
+            <p className="text-sm text-muted-foreground">{t('admin.no_data')}</p>
           ) : (
             <BarChart
               data={data.costEstimate.byModel.map((m) => ({
@@ -268,18 +273,18 @@ function GenerationsTab({ data }: { data: NonNullable<AdminState['generations']>
         </SectionCard>
       </div>
 
-      <SectionCard title="Model Breakdown">
+      <SectionCard title={t('admin.generations_tab.model_breakdown')}>
         {data.modelBreakdown.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No data available.</p>
+          <p className="text-sm text-muted-foreground">{t('admin.no_data')}</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border text-left">
-                  <th className="pb-3 pr-4 font-medium text-muted-foreground">Model</th>
-                  <th className="pb-3 px-4 font-medium text-muted-foreground text-right">Count</th>
-                  <th className="pb-3 px-4 font-medium text-muted-foreground text-right">Input Tokens</th>
-                  <th className="pb-3 pl-4 font-medium text-muted-foreground text-right">Output Tokens</th>
+                  <th className="pb-3 pr-4 font-medium text-muted-foreground">{t('admin.generations_tab.model')}</th>
+                  <th className="pb-3 px-4 font-medium text-muted-foreground text-right">{t('admin.generations_tab.count')}</th>
+                  <th className="pb-3 px-4 font-medium text-muted-foreground text-right">{t('admin.generations_tab.input_tokens')}</th>
+                  <th className="pb-3 pl-4 font-medium text-muted-foreground text-right">{t('admin.generations_tab.output_tokens')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
@@ -297,23 +302,23 @@ function GenerationsTab({ data }: { data: NonNullable<AdminState['generations']>
         )}
       </SectionCard>
 
-      <SectionCard title="Token Usage Summary">
+      <SectionCard title={t('admin.generations_tab.token_usage')}>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <div className="text-center">
             <p className="text-2xl font-bold text-foreground">{data.tokenUsage.totalInput.toLocaleString()}</p>
-            <p className="text-xs text-muted-foreground">Input Tokens</p>
+            <p className="text-xs text-muted-foreground">{t('admin.generations_tab.input_tokens')}</p>
           </div>
           <div className="text-center">
             <p className="text-2xl font-bold text-foreground">{data.tokenUsage.totalOutput.toLocaleString()}</p>
-            <p className="text-xs text-muted-foreground">Output Tokens</p>
+            <p className="text-xs text-muted-foreground">{t('admin.generations_tab.output_tokens')}</p>
           </div>
           <div className="text-center">
             <p className="text-2xl font-bold text-foreground">{data.tokenUsage.totalCacheRead.toLocaleString()}</p>
-            <p className="text-xs text-muted-foreground">Cache Reads</p>
+            <p className="text-xs text-muted-foreground">{t('admin.generations_tab.cache_reads')}</p>
           </div>
           <div className="text-center">
             <p className="text-2xl font-bold text-foreground">{data.tokenUsage.totalCacheWrite.toLocaleString()}</p>
-            <p className="text-xs text-muted-foreground">Cache Writes</p>
+            <p className="text-xs text-muted-foreground">{t('admin.generations_tab.cache_writes')}</p>
           </div>
         </div>
       </SectionCard>
@@ -322,24 +327,25 @@ function GenerationsTab({ data }: { data: NonNullable<AdminState['generations']>
 }
 
 function ApiKeysTab({ data }: { data: NonNullable<AdminState['apiKeys']> }) {
+  const { t } = useTranslation();
   return (
     <div className="space-y-6">
       <div className="grid gap-4 sm:grid-cols-2">
-        <StatCard icon={Key} label="Total Keys" value={data.totalKeys} />
-        <StatCard icon={CheckCircle} label="Active Keys" value={data.activeKeys} />
+        <StatCard icon={Key} label={t('admin.api_keys_tab.total_keys')} value={data.totalKeys} />
+        <StatCard icon={CheckCircle} label={t('admin.api_keys_tab.active_keys')} value={data.activeKeys} />
       </div>
 
-      <SectionCard title="Key Usage">
+      <SectionCard title={t('admin.api_keys_tab.key_usage')}>
         {data.keyUsage.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No API key usage recorded.</p>
+          <p className="text-sm text-muted-foreground">{t('admin.no_api_key_usage')}</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border text-left">
-                  <th className="pb-3 pr-4 font-medium text-muted-foreground">Key Prefix</th>
-                  <th className="pb-3 px-4 font-medium text-muted-foreground">Name</th>
-                  <th className="pb-3 pl-4 font-medium text-muted-foreground text-right">Requests</th>
+                  <th className="pb-3 pr-4 font-medium text-muted-foreground">{t('admin.api_keys_tab.key_prefix')}</th>
+                  <th className="pb-3 px-4 font-medium text-muted-foreground">{t('admin.api_keys_tab.name')}</th>
+                  <th className="pb-3 pl-4 font-medium text-muted-foreground text-right">{t('admin.api_keys_tab.requests')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
@@ -360,11 +366,12 @@ function ApiKeysTab({ data }: { data: NonNullable<AdminState['apiKeys']> }) {
 }
 
 function FunnelTab({ data }: { data: NonNullable<AdminState['funnel']> }) {
+  const { t } = useTranslation();
   const maxCount = Math.max(...data.steps.map((s) => s.count), 1);
   return (
-    <SectionCard title="Conversion Funnel">
+    <SectionCard title={t('admin.funnel_tab.title')}>
       {data.steps.length === 0 ? (
-        <p className="text-sm text-muted-foreground">No funnel data available.</p>
+        <p className="text-sm text-muted-foreground">{t('admin.no_funnel_data')}</p>
       ) : (
         <div className="space-y-3">
           {data.steps.map((step, idx) => {
@@ -377,7 +384,7 @@ function FunnelTab({ data }: { data: NonNullable<AdminState['funnel']> }) {
                   <span className="font-medium text-foreground">{step.label}</span>
                   <span className="flex items-center gap-2">
                     {convRate !== null && (
-                      <span className="text-xs text-muted-foreground">{convRate}% from prev</span>
+                      <span className="text-xs text-muted-foreground">{t('admin.funnel_tab.from_prev', { rate: convRate })}</span>
                     )}
                     <span className="tabular-nums text-foreground">{step.count.toLocaleString()}</span>
                   </span>
@@ -400,12 +407,12 @@ function FunnelTab({ data }: { data: NonNullable<AdminState['funnel']> }) {
 /* ---------- Tabs config ---------- */
 
 const TABS = [
-  { id: 'overview', label: 'Overview', icon: BarChart3 },
-  { id: 'users', label: 'Users', icon: Users },
-  { id: 'features', label: 'Features', icon: Layers },
-  { id: 'generations', label: 'Generations', icon: Cpu },
-  { id: 'api-keys', label: 'API Keys', icon: Key },
-  { id: 'funnel', label: 'Funnel', icon: GitMerge },
+  { id: 'overview', label: 'admin.tabs.overview', icon: BarChart3 },
+  { id: 'users', label: 'admin.tabs.users', icon: Users },
+  { id: 'features', label: 'admin.tabs.features', icon: Layers },
+  { id: 'generations', label: 'admin.tabs.generations', icon: Cpu },
+  { id: 'api-keys', label: 'admin.tabs.api_keys', icon: Key },
+  { id: 'funnel', label: 'admin.tabs.funnel', icon: GitMerge },
 ] as const;
 
 type TabId = (typeof TABS)[number]['id'];
@@ -413,6 +420,7 @@ type TabId = (typeof TABS)[number]['id'];
 /* ---------- Main page ---------- */
 
 export default function AdminDashboardPage() {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<TabId>('overview');
   const [selectedDays, setSelectedDays] = useState(30);
   const store = useAdminStore();
@@ -441,16 +449,16 @@ export default function AdminDashboardPage() {
       <div className="mb-6 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <BarChart3 className="h-7 w-7 text-orange-400" />
-          <h1 className="text-2xl font-bold text-foreground">Admin Dashboard</h1>
+          <h1 className="text-2xl font-bold text-foreground">{t('admin.title')}</h1>
         </div>
         <select
           value={selectedDays}
           onChange={(e) => setSelectedDays(Number(e.target.value))}
           className="rounded-md border border-border bg-card px-3 py-1.5 text-sm text-foreground"
         >
-          <option value={7}>Last 7 days</option>
-          <option value={30}>Last 30 days</option>
-          <option value={90}>Last 90 days</option>
+          <option value={7}>{t('admin.last_7_days')}</option>
+          <option value={30}>{t('admin.last_30_days')}</option>
+          <option value={90}>{t('admin.last_90_days')}</option>
         </select>
       </div>
 
@@ -468,7 +476,7 @@ export default function AdminDashboardPage() {
             )}
           >
             <tab.icon className="h-4 w-4" />
-            {tab.label}
+            {t(tab.label)}
           </button>
         ))}
       </div>

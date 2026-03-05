@@ -626,7 +626,43 @@
       "search_title": "Search",
       "search_placeholder": "Search knowledge base...",
       "score_label": "Score: {{score}}",
-      "no_results": "No results found"
+      "no_results": "No results found",
+      "created_ago": "Created {{time}}",
+      "updated_ago": "Updated {{time}}",
+      "presentations_count_one": "{{count}} presentation",
+      "presentations_count_other": "{{count}} presentations",
+      "generate_presentation": "Generate Presentation",
+      "generate_tooltip_disabled": "Upload documents and link a lens first",
+      "generate_tooltip_enabled": "Generate a presentation from this brief",
+      "documents_count_one": "{{count}} Document",
+      "documents_count_other": "{{count}} Documents",
+      "upload_files_to_start": "Upload files to start",
+      "docs_ready": "{{count}} ready",
+      "docs_processing": "Processing...",
+      "entities_count": "{{count}} Entities",
+      "relationships_count": "{{count}} relationships",
+      "no_entities": "No entities yet",
+      "lenses_count_one": "{{count}} Lens",
+      "lenses_count_other": "{{count}} Lenses",
+      "ready_to_generate": "Ready to generate",
+      "link_lens_to_generate": "Link a lens to generate",
+      "decks_count_one": "{{count}} Deck",
+      "decks_count_other": "{{count}} Decks",
+      "generated": "Generated",
+      "docs_with_issues_one": "{{count}} document with issues",
+      "docs_with_issues_other": "{{count}} documents with issues",
+      "processing_failed": "Processing failed",
+      "upload_first_document": "Upload your first document",
+      "upload_first_description": "Start building your knowledge graph for smarter pitches",
+      "docs_ready_progress": "{{ready}}/{{total}} documents ready",
+      "processing_doc": "Processing {{title}}...",
+      "source": "Source",
+      "crawl_website": "Crawl Website",
+      "max_pages": "Max pages",
+      "crawling": "Crawling...",
+      "crawl_ingest": "Crawl & Ingest",
+      "link_lens_hint": "Link a lens to define your audience and pitch style",
+      "graph_stats": "Graph Stats"
     },
     "wizard": {
       "back_to_briefs": "Back to Pitch Briefs",
@@ -760,7 +796,31 @@
       "review_figma_token_provided": "Token: Provided",
       "review_figma_token_not_set": "Token: Not set",
       "create_lens": "Create Lens",
-      "save_changes": "Save Changes"
+      "save_changes": "Save Changes",
+      "figma_description": "Paste a Figma URL to import your template. AI will auto-map frames to slide types.",
+      "figma_import": "Import",
+      "figma_template_linked": "Template linked — AI mappings applied",
+      "figma_select_existing": "Or select existing template",
+      "figma_none": "None",
+      "upgrade_for_more": "Upgrade for more characters",
+      "image_generation": "Image Generation",
+      "bg_images_label": "Background images (full-slide, 15% opacity)",
+      "side_panel_label": "Side panel images (right side, 35% width)",
+      "img_none": "None",
+      "img_few": "Few (~2)",
+      "img_some": "Some (~4)",
+      "img_many": "Many (~6)",
+      "accent_color_diversity": "Accent Color Diversity",
+      "accent_color_diversity_desc": "Vary accent colors across slide elements for visual variety",
+      "review_accent_color": "Accent Color Diversity",
+      "review_bg_images": "Background images",
+      "review_side_images": "Side panel images",
+      "review_figma_template": "Figma Template",
+      "img_freq_none": "None",
+      "img_freq_few": "Few (~2 per deck)",
+      "img_freq_some": "Some (~4 per deck)",
+      "img_freq_many": "Many (~6 per deck)",
+      "img_freq_custom": "Custom (1 per {{n}} slides)"
     }
   },
   "gallery": {
@@ -1050,5 +1110,79 @@
     "technical_level": "Technical Level",
     "framework": "Framework",
     "required": "*"
+  },
+  "not_found": {
+    "title": "Page not found",
+    "description": "The page you are looking for does not exist or has been moved.",
+    "go_home": "Go back home",
+    "go_dashboard": "Go to dashboard"
+  },
+  "admin": {
+    "title": "Admin Dashboard",
+    "no_data": "No data available.",
+    "no_funnel_data": "No funnel data available.",
+    "no_api_key_usage": "No API key usage recorded.",
+    "last_7_days": "Last 7 days",
+    "last_30_days": "Last 30 days",
+    "last_90_days": "Last 90 days",
+    "tabs": {
+      "overview": "Overview",
+      "users": "Users",
+      "features": "Features",
+      "generations": "Generations",
+      "api_keys": "API Keys",
+      "funnel": "Funnel"
+    },
+    "overview": {
+      "active_users": "Active Users",
+      "decks_created": "Decks Created",
+      "exports": "Exports",
+      "signups": "Signups",
+      "total_users": "Total Users",
+      "daily_decks": "Daily Decks Created",
+      "daily_signups": "Daily Signups"
+    },
+    "users_tab": {
+      "tier_distribution": "Tier Distribution",
+      "top_users": "Top Users by Activity",
+      "name": "Name",
+      "email": "Email",
+      "events": "Events"
+    },
+    "features_tab": {
+      "slide_types": "Slide Types",
+      "themes": "Themes",
+      "export_formats": "Export Formats",
+      "presentation_types": "Presentation Types"
+    },
+    "generations_tab": {
+      "total": "Total Generations",
+      "success_rate": "Success Rate",
+      "est_total_cost": "Est. Total Cost",
+      "total_tokens": "Total Tokens",
+      "daily_generations": "Daily Generations",
+      "avg_duration": "Avg Duration by Operation",
+      "cost_by_model": "Cost by Model",
+      "model_breakdown": "Model Breakdown",
+      "model": "Model",
+      "count": "Count",
+      "input_tokens": "Input Tokens",
+      "output_tokens": "Output Tokens",
+      "token_usage": "Token Usage Summary",
+      "cache_reads": "Cache Reads",
+      "cache_writes": "Cache Writes"
+    },
+    "api_keys_tab": {
+      "total_keys": "Total Keys",
+      "active_keys": "Active Keys",
+      "key_usage": "Key Usage",
+      "key_prefix": "Key Prefix",
+      "name": "Name",
+      "requests": "Requests"
+    },
+    "funnel_tab": {
+      "title": "Conversion Funnel",
+      "from_prev": "{{rate}}% from prev"
+    }
   }
 }

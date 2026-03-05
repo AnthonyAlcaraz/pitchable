@@ -626,7 +626,43 @@
       "search_title": "Recherche",
       "search_placeholder": "Rechercher dans la base de connaissances...",
       "score_label": "Score : {{score}}",
-      "no_results": "Aucun résultat trouvé"
+      "no_results": "Aucun résultat trouvé",
+      "created_ago": "Créé {{time}}",
+      "updated_ago": "Mis à jour {{time}}",
+      "presentations_count_one": "{{count}} présentation",
+      "presentations_count_other": "{{count}} présentations",
+      "generate_presentation": "Générer une présentation",
+      "generate_tooltip_disabled": "Ajoutez des documents et liez un lens d'abord",
+      "generate_tooltip_enabled": "Générer une présentation à partir de ce brief",
+      "documents_count_one": "{{count}} Document",
+      "documents_count_other": "{{count}} Documents",
+      "upload_files_to_start": "Ajoutez des fichiers pour commencer",
+      "docs_ready": "{{count}} prêts",
+      "docs_processing": "Traitement...",
+      "entities_count": "{{count}} Entités",
+      "relationships_count": "{{count}} relations",
+      "no_entities": "Aucune entité",
+      "lenses_count_one": "{{count}} Lens",
+      "lenses_count_other": "{{count}} Lenses",
+      "ready_to_generate": "Prêt à générer",
+      "link_lens_to_generate": "Liez un lens pour générer",
+      "decks_count_one": "{{count}} Deck",
+      "decks_count_other": "{{count}} Decks",
+      "generated": "Généré",
+      "docs_with_issues_one": "{{count}} document avec des erreurs",
+      "docs_with_issues_other": "{{count}} documents avec des erreurs",
+      "processing_failed": "Échec du traitement",
+      "upload_first_document": "Ajoutez votre premier document",
+      "upload_first_description": "Construisez votre graphe de connaissances pour des pitchs plus intelligents",
+      "docs_ready_progress": "{{ready}}/{{total}} documents prêts",
+      "processing_doc": "Traitement de {{title}}...",
+      "source": "Source",
+      "crawl_website": "Explorer le site web",
+      "max_pages": "Pages max",
+      "crawling": "Exploration...",
+      "crawl_ingest": "Explorer et ingérer",
+      "link_lens_hint": "Liez un lens pour définir votre audience et style de pitch",
+      "graph_stats": "Statistiques du graphe"
     },
     "wizard": {
       "back_to_briefs": "Retour aux Dossiers de Pitch",
@@ -760,7 +796,31 @@
       "review_figma_token_provided": "Jeton : Fourni",
       "review_figma_token_not_set": "Jeton : Non défini",
       "create_lens": "Créer le profil",
-      "save_changes": "Enregistrer les modifications"
+      "save_changes": "Enregistrer les modifications",
+      "figma_description": "Collez une URL Figma pour importer votre modèle. L'IA associera automatiquement les frames aux types de slides.",
+      "figma_import": "Importer",
+      "figma_template_linked": "Modèle lié — associations IA appliquées",
+      "figma_select_existing": "Ou sélectionner un modèle existant",
+      "figma_none": "Aucun",
+      "upgrade_for_more": "Passez à un plan supérieur pour plus de caractères",
+      "image_generation": "Génération d'images",
+      "bg_images_label": "Images d'arrière-plan (plein slide, 15% opacité)",
+      "side_panel_label": "Images panneau latéral (côté droit, 35% largeur)",
+      "img_none": "Aucune",
+      "img_few": "Peu (~2)",
+      "img_some": "Quelques (~4)",
+      "img_many": "Beaucoup (~6)",
+      "accent_color_diversity": "Diversité des couleurs d'accent",
+      "accent_color_diversity_desc": "Varier les couleurs d'accent entre les éléments pour plus de variété visuelle",
+      "review_accent_color": "Diversité des couleurs d'accent",
+      "review_bg_images": "Images d'arrière-plan",
+      "review_side_images": "Images panneau latéral",
+      "review_figma_template": "Modèle Figma",
+      "img_freq_none": "Aucune",
+      "img_freq_few": "Peu (~2 par deck)",
+      "img_freq_some": "Quelques (~4 par deck)",
+      "img_freq_many": "Beaucoup (~6 par deck)",
+      "img_freq_custom": "Personnalisé (1 tous les {{n}} slides)"
     }
   },
   "gallery": {
@@ -1050,5 +1110,79 @@
     "technical_level": "Niveau technique",
     "framework": "Cadre narratif",
     "required": "*"
+  },
+  "not_found": {
+    "title": "Page introuvable",
+    "description": "La page que vous recherchez n'existe pas ou a été déplacée.",
+    "go_home": "Retour à l'accueil",
+    "go_dashboard": "Aller au tableau de bord"
+  },
+  "admin": {
+    "title": "Tableau de bord admin",
+    "no_data": "Aucune donnée disponible.",
+    "no_funnel_data": "Aucune donnée d'entonnoir disponible.",
+    "no_api_key_usage": "Aucune utilisation de clé API enregistrée.",
+    "last_7_days": "7 derniers jours",
+    "last_30_days": "30 derniers jours",
+    "last_90_days": "90 derniers jours",
+    "tabs": {
+      "overview": "Vue d'ensemble",
+      "users": "Utilisateurs",
+      "features": "Fonctionnalités",
+      "generations": "Générations",
+      "api_keys": "Clés API",
+      "funnel": "Entonnoir"
+    },
+    "overview": {
+      "active_users": "Utilisateurs actifs",
+      "decks_created": "Decks créés",
+      "exports": "Exports",
+      "signups": "Inscriptions",
+      "total_users": "Total utilisateurs",
+      "daily_decks": "Decks créés par jour",
+      "daily_signups": "Inscriptions par jour"
+    },
+    "users_tab": {
+      "tier_distribution": "Répartition par plan",
+      "top_users": "Utilisateurs les plus actifs",
+      "name": "Nom",
+      "email": "E-mail",
+      "events": "Événements"
+    },
+    "features_tab": {
+      "slide_types": "Types de slides",
+      "themes": "Thèmes",
+      "export_formats": "Formats d'export",
+      "presentation_types": "Types de présentations"
+    },
+    "generations_tab": {
+      "total": "Total des générations",
+      "success_rate": "Taux de réussite",
+      "est_total_cost": "Coût total estimé",
+      "total_tokens": "Total tokens",
+      "daily_generations": "Générations par jour",
+      "avg_duration": "Durée moy. par opération",
+      "cost_by_model": "Coût par modèle",
+      "model_breakdown": "Détail par modèle",
+      "model": "Modèle",
+      "count": "Nombre",
+      "input_tokens": "Tokens en entrée",
+      "output_tokens": "Tokens en sortie",
+      "token_usage": "Résumé d'utilisation des tokens",
+      "cache_reads": "Lectures cache",
+      "cache_writes": "Écritures cache"
+    },
+    "api_keys_tab": {
+      "total_keys": "Total des clés",
+      "active_keys": "Clés actives",
+      "key_usage": "Utilisation des clés",
+      "key_prefix": "Préfixe de clé",
+      "name": "Nom",
+      "requests": "Requêtes"
+    },
+    "funnel_tab": {
+      "title": "Entonnoir de conversion",
+      "from_prev": "{{rate}}% du précédent"
+    }
   }
 }
