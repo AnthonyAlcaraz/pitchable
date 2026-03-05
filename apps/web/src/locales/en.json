@@ -139,7 +139,7 @@
       "badge": "For founders, sales teams, and educators",
       "title_before": "Every idea deserves to be",
       "title_highlight": "pitchable",
-      "subtitle": "Whether you're closing a deal, defending a thesis, or pitching investors \u2014 Pitchable builds the deck your audience needs to hear.",
+      "subtitle": "Whether you're closing a deal, defending a thesis, or pitching investors — Pitchable builds the deck your audience needs to hear.",
       "cta_primary": "Get Started Free",
       "cta_secondary": "Browse Gallery"
     },
@@ -235,7 +235,7 @@
     },
     "cta": {
       "title": "Your next idea is worth sharing",
-      "subtitle": "Founders, salespeople, teachers, students, researchers, consultants \u2014 if you have something to present, we'll make it land. Free sample, no credit card.",
+      "subtitle": "Founders, salespeople, teachers, students, researchers, consultants — if you have something to present, we'll make it land. Free sample, no credit card.",
       "button": "Get Started Free"
     },
     "footer": {
@@ -280,7 +280,7 @@
       "url_placeholder": "https://example.com/document",
       "added_count": "Added ({{count}})",
       "brief_created": "Brief Created",
-      "brief_created_desc": "\"{{name}}\" \u2014 {{count}} {{documentWord}} added",
+      "brief_created_desc": "\"{{name}}\" — {{count}} {{documentWord}} added",
       "skip_brief": "Skip Brief",
       "skip_documents": "Skip Documents",
       "continue_to_strategy": "Continue to Strategy"
@@ -422,8 +422,8 @@
       "credits_label": "{{count}} Credits",
       "per_credit": "{{price}} per credit",
       "buy_credits": "Buy Credits",
-      "save_more_free": "Save more with a plan upgrade \u2014 STARTER gives 40 credits/month for just $29.",
-      "save_more_starter": "Save more with a plan upgrade \u2014 PRO gives 100 credits/month for just $79."
+      "save_more_free": "Save more with a plan upgrade — STARTER gives 40 credits/month for just $29.",
+      "save_more_starter": "Save more with a plan upgrade — PRO gives 100 credits/month for just $79."
     },
     "transaction_history": {
       "title": "Transaction History",
@@ -461,7 +461,7 @@
     "recent_presentations": "Recent Presentations",
     "new_brief": "New Brief",
     "create_brief": "Create Brief",
-    "empty_briefs_message": "Add your context \u2014 upload documents, paste text, or add URLs to build your knowledge base",
+    "empty_briefs_message": "Add your context — upload documents, paste text, or add URLs to build your knowledge base",
     "pitch_lenses": "Pitch Lenses",
     "new_lens": "New Lens",
     "create_lens": "Create Lens",
@@ -539,6 +539,44 @@
       "generated": "Deck generated",
       "slide_count": "{{current}}/{{total}} slides",
       "current_label": "Current: {{label}}"
+    },
+    "outline": {
+      "title": "Outline Review",
+      "approved_count": "{{current}}/{{total}} approved",
+      "approve_all": "Approve all",
+      "approve": "Approve",
+      "approve_remaining": "Approve remaining",
+      "suggest_change": "Suggest change",
+      "edit_cost": "Editing costs 1 credit",
+      "edit_placeholder": "Describe what you want to change...",
+      "regenerating": "Regenerating...",
+      "regenerate": "Regenerate",
+      "ready": "Outline ready — {{count}} slides",
+      "ready_subtitle": "All slides reviewed. Click below to generate your deck.",
+      "generate_deck": "Generate Deck"
+    },
+    "slide_types": {
+      "TITLE": "Title slide — sets the deck topic",
+      "PROBLEM": "Problem statement — the pain point",
+      "SOLUTION": "Solution overview — your answer",
+      "ARCHITECTURE": "Architecture diagram — system design",
+      "PROCESS": "Process flow — step-by-step",
+      "COMPARISON": "Comparison — side by side",
+      "DATA_METRICS": "Data & metrics — key numbers",
+      "CTA": "Call to action — next steps",
+      "CONTENT": "Content — detailed information",
+      "QUOTE": "Quote — impactful statement",
+      "VISUAL_HUMOR": "Visual humor — engaging break",
+      "OUTLINE": "Outline — agenda or structure",
+      "TEAM": "Team — key people",
+      "TIMELINE": "Timeline — milestones",
+      "SECTION_DIVIDER": "Section divider — transition",
+      "METRICS_HIGHLIGHT": "Metrics highlight — key figures",
+      "FEATURE_GRID": "Feature grid — capabilities",
+      "PRODUCT_SHOWCASE": "Product showcase — demo",
+      "LOGO_WALL": "Logo wall — partners or clients",
+      "MARKET_SIZING": "Market sizing — TAM/SAM/SOM",
+      "SPLIT_STATEMENT": "Split statement — contrasting ideas"
     }
   },
   "pitch_briefs": {
@@ -670,7 +708,7 @@
       "back_to_lenses": "Back to Pitch Lenses",
       "create_title": "Create Pitch Lens",
       "edit_title": "Edit Pitch Lens",
-      "title_template": "{{action}} Pitch Lens \u2014 {{step}}",
+      "title_template": "{{action}} Pitch Lens — {{step}}",
       "step_name": "Name",
       "step_audience": "Audience",
       "step_goal": "Goal",
@@ -778,7 +816,7 @@
     "title": "API Keys",
     "subtitle": "Manage API keys for programmatic access and MCP integration",
     "create_key": "Create API Key",
-    "save_key_warning": "Save this key now \u2014 you won't see it again",
+    "save_key_warning": "Save this key now — you won't see it again",
     "create_dialog_title": "Create API Key",
     "name_label": "Name",
     "name_placeholder": "e.g. My Agent Key",
@@ -808,7 +846,7 @@
     "total_forks": "Total Forks",
     "public": "Public",
     "total_decks": "Total Decks",
-    "chart_title": "Views \u2014 Last 30 Days",
+    "chart_title": "Views — Last 30 Days",
     "top_presentations_title": "Top Presentations",
     "no_presentations": "No presentations yet. Create one to start tracking analytics.",
     "table_title": "Title",
@@ -824,7 +862,7 @@
     "subtitle": "Programmatic access to Pitchable via REST API and MCP (Model Context Protocol)",
     "auth_title": "Authentication",
     "auth_desc": "All API requests require an API key. Create one in",
-    "auth_link": "Settings \u2192 API Keys",
+    "auth_link": "Settings → API Keys",
     "rest_api_title": "REST API",
     "rest_api_base_url": "Base URL:",
     "rest_api_endpoints": {
@@ -840,7 +878,7 @@
     },
     "generate_title": "Generate a Presentation",
     "mcp_title": "MCP (Model Context Protocol)",
-    "mcp_desc": "Connect Pitchable to any AI agent that supports MCP \u2014 Claude Code, Cursor, Windsurf, and more.",
+    "mcp_desc": "Connect Pitchable to any AI agent that supports MCP — Claude Code, Cursor, Windsurf, and more.",
     "mcp_claude_code": "Claude Code",
     "mcp_cursor": "Cursor",
     "mcp_available_tools": "Available Tools",

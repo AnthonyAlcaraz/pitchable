@@ -1,30 +1,31 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Check, ChevronRight, Edit3, SkipForward, Loader2, Coins } from 'lucide-react';
 import type { OutlineReviewState } from '../../stores/chat.store.js';
 
-/** Short descriptions to help users understand each slide type */
-const SLIDE_TYPE_DESCRIPTIONS: Record<string, string> = {
-  TITLE: 'Opening slide with your deck title and subtitle',
-  PROBLEM: 'Define the pain point or challenge your audience faces',
-  SOLUTION: 'Present your answer to the problem',
-  ARCHITECTURE: 'Show system design, technical stack, or how components connect',
-  PROCESS: 'Step-by-step flow or methodology breakdown',
-  COMPARISON: 'Side-by-side analysis — before/after, us vs them, options evaluated',
-  DATA_METRICS: 'Key numbers, charts, KPIs, or quantitative evidence',
-  CTA: 'Call-to-action — what you want the audience to do next',
-  CONTENT: 'General content slide with bullets or paragraphs',
-  QUOTE: 'Featured quote from a customer, expert, or notable source',
-  VISUAL_HUMOR: 'Image-forward humor slide to lighten the mood',
-  OUTLINE: 'Agenda or table of contents for the presentation',
-  TEAM: 'Team members, roles, and credentials',
-  TIMELINE: 'Chronological milestones or roadmap',
-  SECTION_DIVIDER: 'Visual break between major sections',
-  METRICS_HIGHLIGHT: 'Spotlight on 2-3 hero metrics with large numbers',
-  FEATURE_GRID: 'Grid layout showing multiple features or capabilities',
-  PRODUCT_SHOWCASE: 'Product screenshot or demo walkthrough',
-  LOGO_WALL: 'Client logos, partner logos, or tech stack icons',
-  MARKET_SIZING: 'TAM/SAM/SOM or market opportunity analysis',
-  SPLIT_STATEMENT: 'Bold statement split across the slide for impact',
+/** i18n keys for slide type descriptions */
+const SLIDE_TYPE_KEYS: Record<string, string> = {
+  TITLE: 'chat.slide_types.TITLE',
+  PROBLEM: 'chat.slide_types.PROBLEM',
+  SOLUTION: 'chat.slide_types.SOLUTION',
+  ARCHITECTURE: 'chat.slide_types.ARCHITECTURE',
+  PROCESS: 'chat.slide_types.PROCESS',
+  COMPARISON: 'chat.slide_types.COMPARISON',
+  DATA_METRICS: 'chat.slide_types.DATA_METRICS',
+  CTA: 'chat.slide_types.CTA',
+  CONTENT: 'chat.slide_types.CONTENT',
+  QUOTE: 'chat.slide_types.QUOTE',
+  VISUAL_HUMOR: 'chat.slide_types.VISUAL_HUMOR',
+  OUTLINE: 'chat.slide_types.OUTLINE',
+  TEAM: 'chat.slide_types.TEAM',
+  TIMELINE: 'chat.slide_types.TIMELINE',
+  SECTION_DIVIDER: 'chat.slide_types.SECTION_DIVIDER',
+  METRICS_HIGHLIGHT: 'chat.slide_types.METRICS_HIGHLIGHT',
+  FEATURE_GRID: 'chat.slide_types.FEATURE_GRID',
+  PRODUCT_SHOWCASE: 'chat.slide_types.PRODUCT_SHOWCASE',
+  LOGO_WALL: 'chat.slide_types.LOGO_WALL',
+  MARKET_SIZING: 'chat.slide_types.MARKET_SIZING',
+  SPLIT_STATEMENT: 'chat.slide_types.SPLIT_STATEMENT',
 };
 
 interface OutlineReviewFlowProps {
@@ -44,6 +45,7 @@ export function OutlineReviewFlow({
   onFinalApprove,
   onEditSlide,
 }: OutlineReviewFlowProps) {
+  const { t } = useTranslation();
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleDraft, setTitleDraft] = useState(state.outlineData?.title ?? '');
   const [editingSlideIdx, setEditingSlideIdx] = useState<number | null>(null);
@@ -84,10 +86,10 @@ export function OutlineReviewFlow({
       {/* Progress indicator */}
       <div className="flex items-center gap-2 text-xs text-muted-foreground">
         <span className="font-medium text-orange-400">
-          Outline Review
+          {t('chat.outline.title')}
         </span>
         <span>
-          {Math.min(approvedSteps.length, totalSteps)}/{totalSteps} approved
+          {t('chat.outline.approved_count', { current: Math.min(approvedSteps.length, totalSteps), total: totalSteps })}
         </span>
         {!allApproved && (
           <button
@@ -96,7 +98,7 @@ export function OutlineReviewFlow({
             className="ml-auto flex items-center gap-1 text-xs text-muted-foreground hover:text-orange-400 transition-colors"
           >
             <SkipForward className="h-3 w-3" />
-            Approve all
+            {t('chat.outline.approve_all')}
           </button>
         )}
       </div>
@@ -139,7 +141,7 @@ export function OutlineReviewFlow({
               onClick={handleTitleSave}
               className="rounded bg-orange-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-orange-600"
             >
-              Save
+              {t('common.save')}
             </button>
           </div>
         ) : (
@@ -154,7 +156,7 @@ export function OutlineReviewFlow({
               className="flex items-center gap-1.5 rounded-lg bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-700 transition-colors"
             >
               <Check className="h-3 w-3" />
-              Approve
+              {t('chat.outline.approve')}
             </button>
             <button
               type="button"
@@ -162,7 +164,7 @@ export function OutlineReviewFlow({
               className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted transition-colors"
             >
               <Edit3 className="h-3 w-3" />
-              Edit
+              {t('common.edit')}
             </button>
           </div>
         )}
@@ -203,9 +205,9 @@ export function OutlineReviewFlow({
                     <Check className="h-3.5 w-3.5 text-green-400" />
                   )}
                 </div>
-                {SLIDE_TYPE_DESCRIPTIONS[slide.slideType] && (
+                {SLIDE_TYPE_KEYS[slide.slideType] && (
                   <p className="text-[10px] text-muted-foreground/70 italic mb-1">
-                    {SLIDE_TYPE_DESCRIPTIONS[slide.slideType]}
+                    {t(SLIDE_TYPE_KEYS[slide.slideType])}
                   </p>
                 )}
                 <h4 className="text-sm font-semibold text-foreground mb-1">
@@ -236,12 +238,12 @@ export function OutlineReviewFlow({
               <div className="mt-2 space-y-2" style={{ animation: 'fadeSlideIn 0.2s ease-out' }}>
                 <div className="flex items-center gap-1.5 text-[10px] text-yellow-400">
                   <Coins className="h-3 w-3" />
-                  Editing costs 1 credit
+                  {t('chat.outline.edit_cost')}
                 </div>
                 <textarea
                   value={slideFeedback}
                   onChange={(e) => setSlideFeedback(e.target.value)}
-                  placeholder="Describe what you'd like to change..."
+                  placeholder={t('chat.outline.edit_placeholder')}
                   className="w-full rounded border border-orange-500/30 bg-background px-3 py-2 text-xs text-foreground outline-none focus:border-orange-500 resize-none"
                   rows={2}
                   autoFocus
@@ -269,7 +271,7 @@ export function OutlineReviewFlow({
                     className="flex items-center gap-1.5 rounded bg-orange-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-orange-600 disabled:opacity-50 transition-colors"
                   >
                     {slideEditLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Edit3 className="h-3 w-3" />}
-                    {slideEditLoading ? 'Regenerating...' : 'Regenerate'}
+                    {slideEditLoading ? t('chat.outline.regenerating') : t('chat.outline.regenerate')}
                   </button>
                   <button
                     type="button"
@@ -277,7 +279,7 @@ export function OutlineReviewFlow({
                     disabled={slideEditLoading}
                     className="text-xs text-muted-foreground hover:text-foreground transition-colors"
                   >
-                    Cancel
+                    {t('common.cancel')}
                   </button>
                 </div>
               </div>
@@ -291,7 +293,7 @@ export function OutlineReviewFlow({
                   className="flex items-center gap-1.5 rounded-lg bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-700 transition-colors"
                 >
                   <Check className="h-3 w-3" />
-                  Approve
+                  {t('chat.outline.approve')}
                 </button>
                 {onEditSlide && (
                   <button
@@ -300,7 +302,7 @@ export function OutlineReviewFlow({
                     className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted transition-colors"
                   >
                     <Edit3 className="h-3 w-3" />
-                    Suggest change
+                    {t('chat.outline.suggest_change')}
                   </button>
                 )}
                 <button
@@ -309,7 +311,7 @@ export function OutlineReviewFlow({
                   className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-orange-400 transition-colors"
                 >
                   <ChevronRight className="h-3 w-3" />
-                  Approve remaining
+                  {t('chat.outline.approve_remaining')}
                 </button>
               </div>
             )}
@@ -324,17 +326,17 @@ export function OutlineReviewFlow({
           style={{ animation: 'fadeSlideIn 0.3s ease-out' }}
         >
           <p className="text-sm font-medium text-foreground mb-1">
-            Outline ready — {outlineData.slides.length} slides
+            {t('chat.outline.ready', { count: outlineData.slides.length })}
           </p>
           <p className="text-xs text-muted-foreground mb-3">
-            All slides reviewed. Click below to generate your deck.
+            {t('chat.outline.ready_subtitle')}
           </p>
           <button
             type="button"
             onClick={onFinalApprove}
             className="rounded-lg bg-orange-500 px-6 py-2 text-sm font-medium text-white hover:bg-orange-600 transition-colors"
           >
-            Generate Deck
+            {t('chat.outline.generate_deck')}
           </button>
         </div>
       )}
