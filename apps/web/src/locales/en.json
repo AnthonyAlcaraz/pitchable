@@ -132,7 +132,9 @@
       "back_to_login": "Back to login",
       "passwords_mismatch": "Passwords do not match",
       "password_too_short": "Password must be at least 8 characters"
-    }
+    },
+    "google_button": "Continue with Google",
+    "or_divider": "or"
   },
   "landing": {
     "hero": {

@@ -132,7 +132,9 @@
       "back_to_login": "Retour à la connexion",
       "passwords_mismatch": "Les mots de passe ne correspondent pas",
       "password_too_short": "Le mot de passe doit contenir au moins 8 caractères"
-    }
+    },
+    "google_button": "Continuer avec Google",
+    "or_divider": "ou"
   },
   "landing": {
     "hero": {
