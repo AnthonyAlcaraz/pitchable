@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { MessageSquare, Monitor } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useWorkflowStore } from '@/stores/workflow.store';
+import { usePresentationStore } from '@/stores/presentation.store';
 
 interface SplitScreenProps {
   leftPanel?: ReactNode;
@@ -18,6 +19,7 @@ export function SplitScreen({ leftPanel, rightPanel }: SplitScreenProps) {
   const [isDragging, setIsDragging] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const phase = useWorkflowStore((s) => s.phase);
+  const slideCount = usePresentationStore((s) => s.presentation?.slides?.length ?? 0);
 
   // Auto-switch to preview tab on mobile when slides are ready
   const prevPhaseRef = useRef(phase);
@@ -110,6 +112,11 @@ export function SplitScreen({ leftPanel, rightPanel }: SplitScreenProps) {
         >
           <Monitor className="h-4 w-4" />
           Preview
+          {slideCount > 0 && activeTab !== 'preview' && (
+            <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">
+              {slideCount}
+            </span>
+          )}
         </button>
       </div>
 

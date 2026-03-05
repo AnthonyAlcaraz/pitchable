@@ -159,6 +159,21 @@ export function PreviewPanel({ presentationId }: PreviewPanelProps) {
     mainContentRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
   }, [currentSlideIndex]);
 
+  // ── Swipe gesture for mobile slide navigation ────────
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    touchStartRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+  }, []);
+  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+    if (!touchStartRef.current) return;
+    const dx = e.changedTouches[0].clientX - touchStartRef.current.x;
+    const dy = e.changedTouches[0].clientY - touchStartRef.current.y;
+    touchStartRef.current = null;
+    if (Math.abs(dx) < 50 || Math.abs(dy) > Math.abs(dx)) return; // too short or vertical
+    if (dx < 0) nextSlide();
+    else previousSlide();
+  }, [nextSlide, previousSlide]);
+
   useEffect(() => setImgLoaded(false), [currentSlide?.id]);
 
   // ── Close export menu on outside click ─────────────────
@@ -622,6 +637,8 @@ export function PreviewPanel({ presentationId }: PreviewPanelProps) {
                   className="relative cursor-pointer overflow-hidden rounded-lg border border-border bg-black shadow-lg md:cursor-default"
                   style={{ aspectRatio: '16/9', animation: 'fadeSlideIn 0.25s ease-out' }}
                   onClick={() => { if (window.innerWidth < 768) handleFullscreen(); }}
+                  onTouchStart={handleTouchStart}
+                  onTouchEnd={handleTouchEnd}
                 >
                   {currentSlide.previewUrl ? (
                     <>
@@ -645,16 +662,19 @@ export function PreviewPanel({ presentationId }: PreviewPanelProps) {
                 </div>
 
                 {/* ── Mobile slide navigator (replaces hidden thumbnails) ── */}
-                <div className="flex items-center justify-center gap-1 md:hidden">
+                <div className="flex items-center justify-center gap-0 md:hidden">
                   {slides.map((_, i) => (
                     <button
                       key={i}
                       onClick={() => setCurrentSlide(i)}
-                      className={cn(
-                        'h-1.5 rounded-full transition-all',
+                      className="flex items-center justify-center p-2"
+                      aria-label={`Go to slide ${i + 1}`}
+                    >
+                      <span className={cn(
+                        'block h-1.5 rounded-full transition-all',
                         i === currentSlideIndex ? 'w-6 bg-primary' : 'w-1.5 bg-muted-foreground/30',
-                      )}
-                    />
+                      )} />
+                    </button>
                   ))}
                 </div>
 
