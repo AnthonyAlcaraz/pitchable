@@ -110,10 +110,10 @@ export function OnboardingPage() {
 
       if (totalDocs > 0) {
         // Auto-generate brief name from first document
-        const autoName = pendingFiles[0]?.name?.replace(/\.[^.]+$/, '')
+        const autoName = (pendingFiles[0]?.name?.replace(/\.[^.]+$/, '')
           || pendingTexts[0]?.title
           || pendingUrls[0]?.title
-          || 'My Pitch Deck';
+          || 'My Pitch Deck').slice(0, 200);
 
         briefId = await createBrief({ name: autoName });
 

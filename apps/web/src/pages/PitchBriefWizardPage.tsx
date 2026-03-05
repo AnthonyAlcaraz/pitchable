@@ -377,12 +377,12 @@ export function PitchBriefWizardPage() {
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  maxLength={100}
+                  maxLength={200}
                   placeholder={t('pitch_briefs.wizard.brief_name_placeholder')}
                   className="w-full px-4 py-2 bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
                 />
                 <p className="mt-1 text-xs text-muted-foreground">
-                  {t('common.characters_count', { count: name.length, max: 100 })}
+                  {t('common.characters_count', { count: name.length, max: 200 })}
                 </p>
               </div>
 

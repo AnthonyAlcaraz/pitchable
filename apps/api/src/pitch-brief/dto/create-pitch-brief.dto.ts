@@ -2,7 +2,7 @@ import { IsString, IsOptional, MaxLength } from 'class-validator';
 
 export class CreatePitchBriefDto {
   @IsString()
-  @MaxLength(100)
+  @MaxLength(200)
   name: string;
 
   @IsOptional()
