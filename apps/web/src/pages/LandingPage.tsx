@@ -20,6 +20,60 @@ import {
 } from 'lucide-react';
 import { PeachLogo } from '@/components/icons/PeachLogo';
 
+// ── Scroll-reveal hook ──────────────────────────────────────
+
+function useRevealOnScroll<T extends HTMLElement = HTMLDivElement>(
+  options: { threshold?: number; rootMargin?: string } = {},
+) {
+  const ref = useRef<T>(null);
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: options.threshold ?? 0.15, rootMargin: options.rootMargin ?? '0px' },
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [options.threshold, options.rootMargin]);
+
+  return { ref, isVisible };
+}
+
+/** Staggered reveal for child items — returns per-item style with delay */
+function staggerDelay(index: number, isVisible: boolean): React.CSSProperties {
+  return {
+    opacity: isVisible ? 1 : 0,
+    transform: isVisible ? 'translateY(0)' : 'translateY(24px)',
+    transition: `opacity 0.5s ease-out ${index * 0.1}s, transform 0.5s ease-out ${index * 0.1}s`,
+  };
+}
+
+/** Section-level reveal style */
+function revealStyle(isVisible: boolean, variant: 'slide' | 'scale' = 'slide'): React.CSSProperties {
+  if (variant === 'scale') {
+    return {
+      opacity: isVisible ? 1 : 0,
+      transform: isVisible ? 'scale(1)' : 'scale(0.95)',
+      transition: 'opacity 0.6s ease-out, transform 0.6s ease-out',
+    };
+  }
+  return {
+    opacity: isVisible ? 1 : 0,
+    transform: isVisible ? 'translateY(0)' : 'translateY(32px)',
+    transition: 'opacity 0.6s ease-out, transform 0.6s ease-out',
+  };
+}
+
 // ── Animated Counter ─────────────────────────────────────────
 
 function useCountUp(target: number, duration = 2000) {
@@ -217,6 +271,15 @@ export function LandingPage() {
   const users = useCountUp(stats.totalUsers);
   const slides = useCountUp(stats.totalSlides);
 
+  // Scroll-reveal refs for each section
+  const statsReveal = useRevealOnScroll();
+  const featuresReveal = useRevealOnScroll();
+  const howItWorksReveal = useRevealOnScroll();
+  const showroomReveal = useRevealOnScroll();
+  const personasReveal = useRevealOnScroll();
+  const pricingReveal = useRevealOnScroll();
+  const ctaReveal = useRevealOnScroll();
+
   // ── Showcase auto-advance carousel ──
   const [activeSlide, setActiveSlide] = useState(0);
   const isPaused = useRef(false);
@@ -369,7 +432,7 @@ export function LandingPage() {
           </div>
 
           {/* Product mockup */}
-          <div className="mx-auto mt-16 max-w-4xl">
+          <div className="mx-auto mt-16 max-w-4xl" style={{ animation: 'heroMockupRise 0.8s ease-out 0.3s both' }}>
             <div className="rounded-xl border border-white/10 bg-white/5 p-2 shadow-2xl shadow-orange-500/10 backdrop-blur-sm">
               <div className="rounded-lg bg-[#0f0f1a] p-1">
                 {/* Browser chrome */}
@@ -415,17 +478,17 @@ export function LandingPage() {
       </section>
 
       {/* ── Stats ────────────────────────────────────── */}
-      <section className="border-y border-border bg-card/50 py-16">
+      <section ref={statsReveal.ref} className="border-y border-border bg-card/50 py-16">
         <div className="mx-auto grid max-w-4xl gap-8 px-6 sm:grid-cols-3">
-          <div ref={presentations.ref} className="text-center">
+          <div ref={presentations.ref} className="text-center" style={staggerDelay(0, statsReveal.isVisible)}>
             <p className="text-4xl font-bold text-foreground">{presentations.count.toLocaleString()}+</p>
             <p className="mt-1 text-sm text-muted-foreground">{t('landing.stats.presentations_created')}</p>
           </div>
-          <div ref={users.ref} className="text-center">
+          <div ref={users.ref} className="text-center" style={staggerDelay(1, statsReveal.isVisible)}>
             <p className="text-4xl font-bold text-foreground">{users.count.toLocaleString()}+</p>
             <p className="mt-1 text-sm text-muted-foreground">{t('landing.stats.active_users')}</p>
           </div>
-          <div ref={slides.ref} className="text-center">
+          <div ref={slides.ref} className="text-center" style={staggerDelay(2, statsReveal.isVisible)}>
             <p className="text-4xl font-bold text-foreground">{slides.count.toLocaleString()}+</p>
             <p className="mt-1 text-sm text-muted-foreground">{t('landing.stats.slides_generated')}</p>
           </div>
@@ -433,9 +496,9 @@ export function LandingPage() {
       </section>
 
       {/* ── Features ─────────────────────────────────── */}
-      <section className="py-24">
+      <section ref={featuresReveal.ref} className="py-24">
         <div className="mx-auto max-w-6xl px-6">
-          <div className="mb-14 text-center">
+          <div className="mb-14 text-center" style={revealStyle(featuresReveal.isVisible)}>
             <h2 className="mb-3 text-3xl font-bold text-foreground">
               {t('landing.features.title')}
             </h2>
@@ -445,10 +508,11 @@ export function LandingPage() {
           </div>
 
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {features.map((f) => (
+            {features.map((f, i) => (
               <div
                 key={f.title}
                 className="rounded-2xl border border-border bg-card p-6 transition-all hover:border-orange-500/20 hover:shadow-lg hover:shadow-orange-500/5"
+                style={staggerDelay(i, featuresReveal.isVisible)}
               >
                 <div className={`mb-4 flex h-11 w-11 items-center justify-center rounded-xl ${f.color}`}>
                   <f.icon className="h-5 w-5" />
@@ -462,17 +526,17 @@ export function LandingPage() {
       </section>
 
       {/* ── How it works ─────────────────────────────── */}
-      <section className="border-y border-border bg-card/50 py-24">
+      <section ref={howItWorksReveal.ref} className="border-y border-border bg-card/50 py-24">
         <div className="mx-auto max-w-6xl px-6">
-          <div className="mb-14 text-center">
+          <div className="mb-14 text-center" style={revealStyle(howItWorksReveal.isVisible)}>
             <h2 className="mb-3 text-3xl font-bold text-foreground">
               {t('landing.how_it_works.title')}
             </h2>
           </div>
 
           <div className="grid gap-10 sm:grid-cols-3">
-            {howItWorksSteps.map((s) => (
-              <div key={s.step} className="text-center">
+            {howItWorksSteps.map((s, i) => (
+              <div key={s.step} className="text-center" style={staggerDelay(i, howItWorksReveal.isVisible)}>
                 <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-orange-500 text-lg font-bold text-white shadow-lg shadow-orange-500/20">
                   {s.step}
                 </div>
@@ -485,12 +549,12 @@ export function LandingPage() {
       </section>
 
       {/* ── Slide Showroom ──────────────────────────────── */}
-      <section className="relative overflow-hidden py-24 sm:py-32">
+      <section ref={showroomReveal.ref} className="relative overflow-hidden py-24 sm:py-32">
         <div className="absolute inset-0 bg-[#0a0a0a]" />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_100%,rgba(249,115,22,0.15),transparent)]" />
 
         <div className="relative mx-auto max-w-5xl px-6">
-          <div className="mb-10 text-center">
+          <div className="mb-10 text-center" style={revealStyle(showroomReveal.isVisible)}>
             <h2 className="mb-3 text-3xl font-bold text-white sm:text-4xl">
               Built for high-stakes presentations
             </h2>
@@ -552,9 +616,9 @@ export function LandingPage() {
       </section>
 
       {/* ── Personas ─────────────────────────────────── */}
-      <section className="py-24">
+      <section ref={personasReveal.ref} className="py-24">
         <div className="mx-auto max-w-6xl px-6">
-          <div className="mb-14 text-center">
+          <div className="mb-14 text-center" style={revealStyle(personasReveal.isVisible)}>
             <h2 className="mb-3 text-3xl font-bold text-foreground">
               {t('landing.personas.title')}
             </h2>
@@ -571,10 +635,11 @@ export function LandingPage() {
               { icon: BookMarked, title: t('landing.personas.students_title'), desc: t('landing.personas.students_desc'), color: 'text-violet-400 bg-violet-500/10' },
               { icon: Briefcase, title: t('landing.personas.consultants_title'), desc: t('landing.personas.consultants_desc'), color: 'text-amber-400 bg-amber-500/10' },
               { icon: FlaskConical, title: t('landing.personas.researchers_title'), desc: t('landing.personas.researchers_desc'), color: 'text-rose-400 bg-rose-500/10' },
-            ].map((p) => (
+            ].map((p, i) => (
               <div
                 key={p.title}
                 className="rounded-2xl border border-border bg-card p-6 transition-all hover:border-orange-500/20 hover:shadow-lg hover:shadow-orange-500/5"
+                style={staggerDelay(i, personasReveal.isVisible)}
               >
                 <div className={`mb-4 flex h-11 w-11 items-center justify-center rounded-xl ${p.color}`}>
                   <p.icon className="h-5 w-5" />
@@ -588,9 +653,9 @@ export function LandingPage() {
       </section>
 
       {/* ── Pricing ──────────────────────────────────── */}
-      <section className="py-24">
+      <section ref={pricingReveal.ref} className="py-24">
         <div className="mx-auto max-w-6xl px-6">
-          <div className="mb-14 text-center">
+          <div className="mb-14 text-center" style={revealStyle(pricingReveal.isVisible)}>
             <h2 className="mb-3 text-3xl font-bold text-foreground">
               {t('landing.pricing.title')}
             </h2>
@@ -600,7 +665,7 @@ export function LandingPage() {
           </div>
 
           <div className="grid gap-6 md:grid-cols-3">
-            {pricingPlans.map((plan) => (
+            {pricingPlans.map((plan, i) => (
               <div
                 key={plan.name}
                 className={`relative rounded-2xl border p-8 transition-all hover:shadow-lg ${
@@ -608,6 +673,7 @@ export function LandingPage() {
                     ? 'border-orange-500 bg-card shadow-lg shadow-orange-500/10'
                     : 'border-border bg-card hover:border-orange-500/20 hover:shadow-orange-500/5'
                 }`}
+                style={staggerDelay(i, pricingReveal.isVisible)}
               >
                 {plan.popular && (
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-orange-500 px-4 py-1 text-xs font-semibold text-white">
@@ -647,10 +713,10 @@ export function LandingPage() {
       </section>
 
       {/* ── CTA — gradient glow from bottom ───────────────────── */}
-      <section className="relative overflow-hidden py-24">
+      <section ref={ctaReveal.ref} className="relative overflow-hidden py-24">
         <div className="absolute inset-0 bg-[#0a0a0a]" />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_120%,rgba(249,115,22,0.25),transparent)]" />
-        <div className="relative mx-auto max-w-3xl px-6 text-center">
+        <div className="relative mx-auto max-w-3xl px-6 text-center" style={revealStyle(ctaReveal.isVisible, 'scale')}>
           <h2 className="mb-4 text-3xl font-bold text-white">
             {t('landing.cta.title')}
           </h2>
