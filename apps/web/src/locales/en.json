@@ -915,6 +915,7 @@
     "chart_title": "Views — Last 30 Days",
     "top_presentations_title": "Top Presentations",
     "no_presentations": "No presentations yet. Create one to start tracking analytics.",
+    "no_presentations_hint": "Publish a deck to start tracking views and forks",
     "table_title": "Title",
     "table_views": "Views",
     "table_forks": "Forks",

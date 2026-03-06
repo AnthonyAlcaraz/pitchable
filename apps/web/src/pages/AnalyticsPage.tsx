@@ -166,7 +166,7 @@ export function AnalyticsPage() {
               {t('analytics.no_presentations')}
             </p>
             <p className="mt-1 text-xs text-muted-foreground/60">
-              Publish a deck to start tracking views and forks
+              {t('analytics.no_presentations_hint')}
             </p>
           </div>
         ) : (

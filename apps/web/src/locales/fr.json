@@ -915,6 +915,7 @@
     "chart_title": "Vues — 30 derniers jours",
     "top_presentations_title": "Meilleures présentations",
     "no_presentations": "Aucune présentation pour le moment. Créez-en une pour commencer à suivre les statistiques.",
+    "no_presentations_hint": "Publiez un deck pour commencer à suivre les vues et duplications",
     "table_title": "Titre",
     "table_views": "Vues",
     "table_forks": "Duplications",
