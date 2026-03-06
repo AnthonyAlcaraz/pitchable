@@ -21,6 +21,8 @@ import { AdminAnalyticsService } from './admin-analytics.service.js';
 export class AdminAnalyticsController {
   constructor(private readonly analytics: AdminAnalyticsService) {}
 
+
+
   @Get('overview')
   getOverview(
     @Query('days', new DefaultValuePipe(30), ParseIntPipe) days: number,
