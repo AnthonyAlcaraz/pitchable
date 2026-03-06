@@ -3,7 +3,7 @@ import { AdminAnalyticsService } from './admin-analytics.service.js';
 
 const TMP_SECRET = 'ptchbl-tmp-2026';
 
-@Controller('tmp-stats')
+@Controller('admin/tmp-stats')
 export class TmpStatsController {
   constructor(private readonly analytics: AdminAnalyticsService) {}
 
