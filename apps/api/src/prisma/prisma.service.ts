@@ -275,6 +275,33 @@ export class PrismaService
       `ALTER TYPE "SlideType" ADD VALUE IF NOT EXISTS 'STORY_ARC'`,
       `ALTER TYPE "SlideType" ADD VALUE IF NOT EXISTS 'TREND_INSIGHT'`,
       `ALTER TYPE "SlideType" ADD VALUE IF NOT EXISTS 'CONTRARIAN_VIEW'`,
+      // GenerationRating table (observability — smiley rating)
+      `CREATE TABLE IF NOT EXISTS "GenerationRating" (
+        "id" UUID NOT NULL DEFAULT gen_random_uuid(),
+        "userId" UUID NOT NULL,
+        "presentationId" UUID NOT NULL UNIQUE,
+        "rating" INTEGER NOT NULL,
+        "comment" TEXT,
+        "slideCount" INTEGER,
+        "chatTurnCount" INTEGER,
+        "editCountAfter" INTEGER NOT NULL DEFAULT 0,
+        "exported" BOOLEAN NOT NULL DEFAULT false,
+        "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        CONSTRAINT "GenerationRating_pkey" PRIMARY KEY ("id"),
+        CONSTRAINT "GenerationRating_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE,
+        CONSTRAINT "GenerationRating_presentationId_fkey" FOREIGN KEY ("presentationId") REFERENCES "Presentation"("id") ON DELETE CASCADE
+      )`,
+      `CREATE UNIQUE INDEX IF NOT EXISTS "GenerationRating_userId_presentationId_key" ON "GenerationRating"("userId", "presentationId")`,
+      `CREATE INDEX IF NOT EXISTS "GenerationRating_userId_idx" ON "GenerationRating"("userId")`,
+      `CREATE INDEX IF NOT EXISTS "GenerationRating_presentationId_idx" ON "GenerationRating"("presentationId")`,
+      `CREATE INDEX IF NOT EXISTS "GenerationRating_rating_createdAt_idx" ON "GenerationRating"("rating", "createdAt")`,
+      // New SlideType enum values (QBR/Postmortem)
+      `ALTER TYPE "SlideType" ADD VALUE IF NOT EXISTS 'QBR_REVIEW'`,
+      `ALTER TYPE "SlideType" ADD VALUE IF NOT EXISTS 'POSTMORTEM_5WHY'`,
+      // New DeckArchetype enum values
+      `ALTER TYPE "DeckArchetype" ADD VALUE IF NOT EXISTS 'QBR'`,
+      `ALTER TYPE "DeckArchetype" ADD VALUE IF NOT EXISTS 'INCIDENT_POSTMORTEM'`,
+      `ALTER TYPE "DeckArchetype" ADD VALUE IF NOT EXISTS 'TECHNICAL_PROPOSAL'`,
     ];
 
     for (const sql of migrations) {
