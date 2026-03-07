@@ -23,9 +23,9 @@ export class TmpStatsController {
         `SELECT s.tier, s.status, u.email, s."createdAt" as created, s."stripeSubscriptionId" as stripe FROM "Subscription" s JOIN "User" u ON s."userId" = u.id ORDER BY s."createdAt" DESC`,
       );
       const recentUsers = await this.prisma.$queryRawUnsafe(
-        `SELECT email, name, plan, "createdAt" as created, "authProvider" as provider, "creditBalance" as credits, "emailVerified" as verified FROM "User" ORDER BY "createdAt" DESC LIMIT 20`,
+        `SELECT email, name, tier, "createdAt" as created, "authProvider" as provider, "creditBalance" as credits, "emailVerified" as verified FROM "User" ORDER BY "createdAt" DESC LIMIT 20`,
       );
-      const plans = await this.prisma.$queryRawUnsafe(`SELECT plan, count(*) as count FROM "User" GROUP BY plan ORDER BY count DESC`);
+      const tiers = await this.prisma.$queryRawUnsafe(`SELECT tier, count(*) as count FROM "User" GROUP BY tier ORDER BY count DESC`);
       const exports = await this.prisma.$queryRawUnsafe(
         `SELECT format, count(*) as count FROM "ExportJob" WHERE status = 'COMPLETED' GROUP BY format ORDER BY count DESC`,
       );
@@ -34,7 +34,7 @@ export class TmpStatsController {
 
       return serialize({
         userSummary: { total: (users as any[])[0]?.total, verified: (verified as any[])[0]?.c, google: (google as any[])[0]?.c },
-        planDistribution: plans,
+        tierDistribution: tiers,
         subscriptions: subs,
         recentUsers,
         exports,
