@@ -16,40 +16,28 @@ export class TmpStatsController {
     if (secret !== TMP_SECRET) throw new ForbiddenException();
 
     try {
-      const users = await this.prisma.$queryRawUnsafe(
-        `SELECT count(*) as total FROM "User"`,
-      );
-      const verified = await this.prisma.$queryRawUnsafe(
-        `SELECT count(*) as c FROM "User" WHERE "emailVerified" = true`,
-      );
-      const google = await this.prisma.$queryRawUnsafe(
-        `SELECT count(*) as c FROM "User" WHERE "authProvider" = 'google'`,
-      );
+      const users = await this.prisma.$queryRawUnsafe(`SELECT count(*) as total FROM "User"`);
+      const verified = await this.prisma.$queryRawUnsafe(`SELECT count(*) as c FROM "User" WHERE "emailVerified" = true`);
+      const google = await this.prisma.$queryRawUnsafe(`SELECT count(*) as c FROM "User" WHERE "authProvider" = 'google'`);
       const subs = await this.prisma.$queryRawUnsafe(
-        `SELECT s.plan, s.status, u.email, s."createdAt" as created, s."stripeSubscriptionId" as stripe FROM "Subscription" s JOIN "User" u ON s."userId" = u.id ORDER BY s."createdAt" DESC`,
+        `SELECT s.tier, s.status, u.email, s."createdAt" as created, s."stripeSubscriptionId" as stripe FROM "Subscription" s JOIN "User" u ON s."userId" = u.id ORDER BY s."createdAt" DESC`,
       );
       const recentUsers = await this.prisma.$queryRawUnsafe(
         `SELECT email, name, plan, "createdAt" as created, "authProvider" as provider, "creditBalance" as credits, "emailVerified" as verified FROM "User" ORDER BY "createdAt" DESC LIMIT 20`,
       );
-      const plans = await this.prisma.$queryRawUnsafe(
-        `SELECT plan, count(*) as count FROM "User" GROUP BY plan ORDER BY count DESC`,
-      );
+      const plans = await this.prisma.$queryRawUnsafe(`SELECT plan, count(*) as count FROM "User" GROUP BY plan ORDER BY count DESC`);
       const exports = await this.prisma.$queryRawUnsafe(
         `SELECT format, count(*) as count FROM "ExportJob" WHERE status = 'COMPLETED' GROUP BY format ORDER BY count DESC`,
       );
-      const decks = await this.prisma.$queryRawUnsafe(
-        `SELECT count(*) as total FROM "Presentation"`,
-      );
-      const decksWeek = await this.prisma.$queryRawUnsafe(
-        `SELECT count(*) as c FROM "Presentation" WHERE "createdAt" > NOW() - INTERVAL '7 days'`,
-      );
+      const decks = await this.prisma.$queryRawUnsafe(`SELECT count(*) as total FROM "Presentation"`);
+      const decksWeek = await this.prisma.$queryRawUnsafe(`SELECT count(*) as c FROM "Presentation" WHERE "createdAt" > NOW() - INTERVAL '7 days'`);
 
       return serialize({
         userSummary: { total: (users as any[])[0]?.total, verified: (verified as any[])[0]?.c, google: (google as any[])[0]?.c },
         planDistribution: plans,
         subscriptions: subs,
-        recentUsers: recentUsers,
-        exports: exports,
+        recentUsers,
+        exports,
         decks: { total: (decks as any[])[0]?.total, week: (decksWeek as any[])[0]?.c },
       });
     } catch (e) {
