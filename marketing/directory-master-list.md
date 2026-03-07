@@ -3,7 +3,7 @@
 **Product:** Pitchable — AI pitch deck generator
 **URL:** https://pitch-able.ai
 **Categories to select:** Presentation, Productivity, Business, AI Tools, Startups
-**Last updated:** 2026-03-05
+**Last updated:** 2026-03-07
 
 ---
 

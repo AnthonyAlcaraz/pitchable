@@ -25,7 +25,7 @@ Productivity, AI Tools, Presentations, Pitch Decks, Startup Tools, Design, Busin
 
 **Pricing:** Freemium — Free tier, Starter $29/mo, Pro $79/mo, Enterprise custom
 
-**Stage:** Live (20 users, 177 presentations, 34 exports)
+**Stage:** Live (35 users, 182 presentations, 143 exports)
 
 ---
 

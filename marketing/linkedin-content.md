@@ -21,12 +21,12 @@ You drop in a brief, paste a document, or type a topic. You pick the audience, g
 Then you edit via chat. "Make slide 3 shorter." "Add a market sizing breakdown." "Rewrite the CTA as a question." No slide editor. No PowerPoint formatting spiral.
 
 After 6 months of building:
-— 20 users in production
-— 177 presentations generated
-— 360 chat messages used to iterate on decks
-— 34 successful exports to PPTX or PDF
+— 35 users in production
+— 182 presentations generated
+— 377 chat messages used to iterate on decks
+— 143 successful exports to PPTX or PDF
 
-The number I care most about is 360. Users don't just generate once and leave. They come back and iterate. That's the signal that the editing loop actually works.
+The number I care most about is 377. Users don't just generate once and leave. They come back and iterate. That's the signal that the editing loop actually works.
 
 Free tier: 15 credits, no card, 2–3 complete decks.
 
@@ -70,7 +70,7 @@ pitch-able.ai
 **Week 1 — Building Pitchable in public**
 
 This week:
-— 3 new users signed up (total: 20)
+— 3 new users signed up (total: 35)
 — 14 decks generated
 — 4 exports completed
 
@@ -96,7 +96,7 @@ pitch-able.ai
 
 **Headline:** 10 Things I Learned Building an AI Pitch Deck Tool
 
-**Subtext:** 177 presentations. 20 users. 6 months. Here's what the data actually showed.
+**Subtext:** 182 presentations. 35 users. 6 months. Here's what the data actually showed.
 
 **Visual:** Dark card, white text, Pitchable logo bottom-right.
 
@@ -130,7 +130,7 @@ pitch-able.ai
 
 **Headline:** The chat editor is more valuable than the generator.
 
-**Body:** 360 chat messages across 177 decks means an average of 2 edits per deck. Some users sent 15+ messages on a single deck. The generation gets them in the door. The chat keeps them there.
+**Body:** 377 chat messages across 182 decks means an average of 2 edits per deck. Some users sent 15+ messages on a single deck. The generation gets them in the door. The chat keeps them there.
 
 ---
 
@@ -178,7 +178,7 @@ pitch-able.ai
 
 **Headline:** Lesson 10: The deck that gets built always beats the perfect deck in someone's head.
 
-**Body:** 177 decks created. 34 exported. 20 users. None of them waited until it was perfect.
+**Body:** 182 decks created. 143 exported. 35 users. None of them waited until it was perfect.
 
 If you're building decks for investors, clients, or internal reviews — try Pitchable free.
 

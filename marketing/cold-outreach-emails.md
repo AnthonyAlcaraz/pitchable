@@ -16,7 +16,7 @@
 
 Hi [FIRST_NAME],
 
-Saw [COMPANY] is [TRIGGER — e.g., raising a seed round / just announced X]. If you're still building the deck, Pitchable generates a full investor pitch in 2 minutes from a brief or existing doc. 20 founders have used it across 177 decks — free tier includes 2–3 complete decks, no card required.
+Saw [COMPANY] is [TRIGGER — e.g., raising a seed round / just announced X]. If you're still building the deck, Pitchable generates a full investor pitch in 2 minutes from a brief or existing doc. 35 users have used it across 182 decks — free tier includes 2–3 complete decks, no card required.
 
 Worth a try before your next LP/VC meeting: pitch-able.ai
 
@@ -122,7 +122,7 @@ Anthony
 
 Hi [FIRST_NAME],
 
-I run Pitchable — it generates investor decks from briefs in 2–15 minutes. Not a pitch to you: I'm talking to VCs because founders with clearer, faster-produced decks save everyone's time in initial meetings. 177 decks generated so far, free tier available. Worth sharing with portcos or inbound founders whose decks need structure before a call.
+I run Pitchable — it generates investor decks from briefs in 2–15 minutes. Not a pitch to you: I'm talking to VCs because founders with clearer, faster-produced decks save everyone's time in initial meetings. 182 decks generated so far, free tier available. Worth sharing with portcos or inbound founders whose decks need structure before a call.
 
 pitch-able.ai — happy to set up a demo.
 

@@ -132,10 +132,10 @@ Boring tech choice. Right one.
 
 Here's where we are after the first wave of real users:
 
-- 20 users
-- 177 presentations generated
-- 360 chat messages to iterate on decks
-- 34 PPTX/PDF exports
+- 35 users
+- 182 presentations generated
+- 377 chat messages to iterate on decks
+- 143 PPTX/PDF exports
 
 Users don't just generate and leave. They iterate. That's the signal I cared about most.
 

@@ -54,10 +54,13 @@ Free tier ships with 15 credits — enough for 2 to 3 complete decks at no cost,
 
 **Numbers so far (real users, not projections)**
 
-- 20 users in production
-- 177 presentations created
-- 360 chat messages sent (users actually iterate, not just export-once)
-- 34 successful exports to PPTX/PDF
+- 35 users in production
+- 182 presentations created
+- 377 chat messages sent (users actually iterate, not just export-once)
+- 143 successful exports (111 PDF, 30 PPTX, 1 Reveal.js)
+- 2,134 total slides generated
+- 202 AI generations with 100% success rate
+- 16 themes available
 
 Built by Anthony Alcaraz. If you're raising a round, pitching a client, or building a business case, Pitchable cuts the slide-building time to near zero.
 
@@ -81,7 +84,7 @@ The result: you give Pitchable a brief or a doc, pick your audience and goal, an
 
 **What's imperfect**: AI sometimes invents market size numbers. Layouts are Markdown-based, not pixel-perfect. Generation queue can take up to 15 minutes when busy.
 
-20 users have created 177 presentations and sent 360 chat messages iterating on them. 34 decks exported to PPTX or PDF.
+35 users have created 182 presentations and sent 377 chat messages iterating on them. 143 decks exported to PPTX or PDF.
 
 I'd love your feedback. Try it at pitch-able.ai.
 
@@ -137,7 +140,7 @@ Additional tags: pitch decks, presentations, AI writing, fundraising, business t
 - Format: GIF (upload → extraction result appears)
 
 ### Screenshot 7 — Stats / social proof callout
-- Design a simple graphic: "177 decks generated. 34 exports. 20 users."
+- Design a simple graphic: "182 decks generated. 2,134 slides. 143 exports. 35 users."
 - Can be a simple dark card, no animation needed
 - Format: 1200x628 static image for PH thumbnail
 

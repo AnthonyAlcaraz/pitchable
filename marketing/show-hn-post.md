@@ -28,14 +28,14 @@ The flow looks like this:
 4. The resulting deck is stored and served back. The user can then edit slides via chat — they type natural language instructions, Claude interprets them as Marp Markdown diffs, and the deck updates.
 5. Final export runs through Marp CLI again to produce PPTX or PDF.
 
-The whole stack: NestJS + Prisma + PostgreSQL + BullMQ + Marp CLI + Claude Sonnet/Haiku routing based on task complexity.
+The whole stack: NestJS + Prisma + PostgreSQL + BullMQ + Marp CLI + Claude Opus 4.6/Sonnet 4.6 routing based on task complexity.
 
 **What's live**
 
-- 20 users in production
-- 177 decks generated
-- 360 chat edit messages processed
-- 34 PPTX/PDF exports completed
+- 35 users in production
+- 182 decks generated
+- 377 chat edit messages processed
+- 143 PPTX/PDF exports completed
 - Free tier: 15 credits (2–3 full decks), no card required
 
 Demo: pitch-able.ai
